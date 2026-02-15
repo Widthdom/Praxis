@@ -1,0 +1,50 @@
+name: CodeQL
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+    branches:
+      - main
+      - master
+  schedule:
+    - cron: "20 2 * * 1"
+
+permissions:
+  actions: read
+  contents: read
+  security-events: write
+
+jobs:
+  analyze:
+    name: Analyze (C#)
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: csharp
+          build-mode: manual
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Install MAUI workload
+        run: dotnet workload install maui
+
+      - name: Restore app (Windows target)
+        run: dotnet restore Praxis/Praxis.csproj -p:TargetFramework=net10.0-windows10.0.19041.0 -p:RuntimeIdentifier=win-x64
+
+      - name: Build app (Windows target)
+        run: dotnet build Praxis/Praxis.csproj -c Release -f net10.0-windows10.0.19041.0 -r win-x64 --no-restore -v minimal
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3

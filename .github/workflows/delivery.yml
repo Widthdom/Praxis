@@ -24,10 +24,12 @@ jobs:
           - name: windows
             os: windows-latest
             tfm: net10.0-windows10.0.19041.0
+            rid: win-x64
             output: artifacts/windows
           - name: maccatalyst
             os: macos-latest
             tfm: net10.0-maccatalyst
+            rid: maccatalyst-x64
             output: artifacts/maccatalyst
 
     steps:
@@ -43,7 +45,7 @@ jobs:
         run: dotnet workload install maui
 
       - name: Publish app
-        run: dotnet publish Praxis/Praxis.csproj -c Release -f ${{ matrix.tfm }} -o ${{ matrix.output }} -v minimal -p:EnableCodeSigning=false -p:CodesignRequireProvisioningProfile=false
+        run: dotnet publish Praxis/Praxis.csproj -c Release -f ${{ matrix.tfm }} -r ${{ matrix.rid }} -o ${{ matrix.output }} -v minimal -p:TargetFramework=${{ matrix.tfm }} -p:EnableWindowsTargeting=false -p:EnableCodeSigning=false -p:CodesignRequireProvisioningProfile=false
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
