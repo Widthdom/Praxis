@@ -41,7 +41,7 @@ jobs:
         run: dotnet workload install maui
 
       - name: Build app (Windows target)
-        run: dotnet build Praxis/Praxis.csproj -c Release -f net10.0-windows10.0.19041.0 -v minimal -p:TargetFrameworks=net10.0-windows10.0.19041.0 -p:EnableWindowsTargeting=true
+        run: dotnet build Praxis/Praxis.csproj -c Release -f net10.0-windows10.0.19041.0 -v minimal
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3
