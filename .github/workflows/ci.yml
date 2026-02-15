@@ -51,11 +51,8 @@ jobs:
       - name: Install MAUI workload
         run: dotnet workload install maui
 
-      - name: Restore app
-        run: dotnet restore Praxis/Praxis.csproj --framework net10.0-windows10.0.19041.0 --runtime win-x64
-
       - name: Build app (Windows)
-        run: dotnet build Praxis/Praxis.csproj -c Release -f net10.0-windows10.0.19041.0 -r win-x64 --no-restore -v minimal
+        run: dotnet build Praxis/Praxis.csproj -c Release -f net10.0-windows10.0.19041.0 -r win-x64 -v minimal
 
   mac-build:
     name: Mac Catalyst Build
@@ -72,8 +69,5 @@ jobs:
       - name: Install MAUI workload
         run: dotnet workload install maui
 
-      - name: Restore app
-        run: dotnet restore Praxis/Praxis.csproj --framework net10.0-maccatalyst -p:EnableWindowsTargeting=false
-
       - name: Build app (Mac Catalyst)
-        run: dotnet build Praxis/Praxis.csproj -c Release -f net10.0-maccatalyst --no-restore -v minimal -p:EnableWindowsTargeting=false -p:EnableCodeSigning=false -p:CodesignRequireProvisioningProfile=false
+        run: dotnet build Praxis/Praxis.csproj -c Release -f net10.0-maccatalyst -v minimal -p:EnableWindowsTargeting=false -p:EnableCodeSigning=false -p:CodesignRequireProvisioningProfile=false

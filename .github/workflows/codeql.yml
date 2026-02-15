@@ -40,11 +40,8 @@ jobs:
       - name: Install MAUI workload
         run: dotnet workload install maui
 
-      - name: Restore app (Windows target)
-        run: dotnet restore Praxis/Praxis.csproj --framework net10.0-windows10.0.19041.0 --runtime win-x64
-
       - name: Build app (Windows target)
-        run: dotnet build Praxis/Praxis.csproj -c Release -f net10.0-windows10.0.19041.0 -r win-x64 --no-restore -v minimal
+        run: dotnet build Praxis/Praxis.csproj -c Release -f net10.0-windows10.0.19041.0 -r win-x64 -v minimal
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3
