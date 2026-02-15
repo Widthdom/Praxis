@@ -69,5 +69,26 @@ jobs:
       - name: Install MAUI workload
         run: dotnet workload install maui
 
+      - name: Check Xcode compatibility
+        id: xcode_check
+        shell: bash
+        run: |
+          set -euo pipefail
+          XCODE_VERSION="$(xcodebuild -version | awk '/Xcode/ {print $2}')"
+          echo "Detected Xcode: ${XCODE_VERSION}"
+          MAJOR="$(echo "${XCODE_VERSION}" | cut -d. -f1)"
+          MINOR="$(echo "${XCODE_VERSION}" | cut -d. -f2)"
+          if [[ "${MAJOR}" -gt 26 ]] || [[ "${MAJOR}" -eq 26 && "${MINOR}" -ge 2 ]]; then
+            echo "compatible=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "compatible=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::Skipping Mac Catalyst build. .NET 10 MAUI requires Xcode 26.2+, runner has Xcode ${XCODE_VERSION}."
+          fi
+
       - name: Build app (Mac Catalyst)
+        if: steps.xcode_check.outputs.compatible == 'true'
         run: dotnet build Praxis/Praxis.csproj -c Release -f net10.0-maccatalyst -v minimal -p:EnableCodeSigning=false -p:CodesignRequireProvisioningProfile=false
+
+      - name: Mac build skipped
+        if: steps.xcode_check.outputs.compatible != 'true'
+        run: echo "Mac Catalyst build skipped due to runner Xcode version."

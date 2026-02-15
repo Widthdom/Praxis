@@ -46,8 +46,32 @@ jobs:
       - name: Install MAUI workload
         run: dotnet workload install maui
 
+      - name: Check Xcode compatibility (Mac Catalyst)
+        id: xcode_check
+        if: matrix.name == 'maccatalyst'
+        shell: bash
+        run: |
+          set -euo pipefail
+          XCODE_VERSION="$(xcodebuild -version | awk '/Xcode/ {print $2}')"
+          echo "Detected Xcode: ${XCODE_VERSION}"
+          MAJOR="$(echo "${XCODE_VERSION}" | cut -d. -f1)"
+          MINOR="$(echo "${XCODE_VERSION}" | cut -d. -f2)"
+          if [[ "${MAJOR}" -gt 26 ]] || [[ "${MAJOR}" -eq 26 && "${MINOR}" -ge 2 ]]; then
+            echo "compatible=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "compatible=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::Skipping Mac Catalyst publish. .NET 10 MAUI requires Xcode 26.2+, runner has Xcode ${XCODE_VERSION}."
+          fi
+
       - name: Publish app
+        if: matrix.name != 'maccatalyst' || steps.xcode_check.outputs.compatible == 'true'
         run: dotnet publish Praxis/Praxis.csproj -c Release -f ${{ matrix.tfm }} -r ${{ matrix.rid }} -o ${{ matrix.output }} -v minimal ${{ matrix.props }}
+
+      - name: Mac publish skipped
+        if: matrix.name == 'maccatalyst' && steps.xcode_check.outputs.compatible != 'true'
+        run: |
+          mkdir -p ${{ matrix.output }}
+          echo "Skipped due to runner Xcode version." > ${{ matrix.output }}/SKIPPED.txt
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
