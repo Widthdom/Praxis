@@ -73,7 +73,7 @@ Platform-specific run examples:
 dotnet run --project Praxis/Praxis.csproj -f net10.0-windows10.0.19041.0
 
 # macOS (Mac Catalyst)
-dotnet build Praxis/Praxis.csproj -f net10.0-maccatalyst
+dotnet build Praxis/Praxis.csproj -t:Run -f net10.0-maccatalyst -p:RunWithOpen=false
 ```
 
 ## Notes
@@ -158,7 +158,7 @@ dotnet test Praxis.slnx
 dotnet run --project Praxis/Praxis.csproj -f net10.0-windows10.0.19041.0
 
 # macOS（Mac Catalyst）
-dotnet build Praxis/Praxis.csproj -f net10.0-maccatalyst
+dotnet build Praxis/Praxis.csproj -t:Run -f net10.0-maccatalyst -p:RunWithOpen=false
 ```
 
 ## 補足
