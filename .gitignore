@@ -1,0 +1,59 @@
+# Build outputs
+bin/
+obj/
+out/
+artifacts/
+.dotnet_home/
+.dotnet_cli/
+
+# User-specific files
+*.user
+*.rsuser
+*.suo
+*.userprefs
+*.sln.docstates
+
+# IDE folders
+.vs/
+.vscode/
+.idea/
+
+# Logs and temp
+*.log
+*.tmp
+*.temp
+*.cache
+*.pid
+*.seed
+corehost_trace.txt
+
+# Test results / coverage
+TestResults/
+coverage/
+*.coverage
+*.coveragexml
+*.trx
+
+# NuGet
+packages/
+*.nupkg
+*.snupkg
+
+# OS metadata (Windows / macOS)
+Thumbs.db
+Desktop.ini
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# MAUI / platform generated
+*.appx
+*.appxbundle
+*.msix
+*.msixbundle
+*.ipa
+*.dSYM/
+*.framework/
+
+# Backups
+*.bak

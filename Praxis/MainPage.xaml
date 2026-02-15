@@ -1,0 +1,398 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:behaviors="clr-namespace:Praxis.Behaviors"
+             xmlns:converters="clr-namespace:Praxis.Converters"
+             xmlns:corelogic="clr-namespace:Praxis.Core.Logic;assembly=Praxis.Core"
+             x:Class="Praxis.MainPage"
+             x:Name="RootPage"
+             Title="Praxis">
+    <ContentPage.Resources>
+        <converters:BoolToScrollBarVisibilityConverter x:Key="BoolToScrollBarVisibilityConverter" />
+    </ContentPage.Resources>
+
+    <Grid x:Name="RootGrid" Padding="18" RowDefinitions="Auto,*,Auto,Auto" RowSpacing="14">
+        <Grid.GestureRecognizers>
+            <PointerGestureRecognizer PointerPressed="RootGrid_PointerPressed" />
+        </Grid.GestureRecognizers>
+        <Grid x:Name="TopBarGrid" ColumnDefinitions="2*,Auto,2*" ColumnSpacing="8">
+            <Entry x:Name="MainCommandEntry" Grid.Column="0"
+                   Placeholder="Command"
+                   Text="{Binding CommandInput}"
+                   ReturnType="Go"
+                   ReturnCommand="{Binding ExecuteCommandInputCommand}"
+                   Focused="MainCommandEntry_Focused"
+                   HandlerChanged="MainCommandEntry_HandlerChanged">
+                <Entry.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="MainCommandEntry_Tapped" />
+                    <PointerGestureRecognizer PointerPressed="MainCommandEntry_PointerPressed" />
+                </Entry.GestureRecognizers>
+            </Entry>
+            <Button x:Name="CreateButton" Grid.Column="1"
+                    Text="{OnPlatform WinUI='&#xE710;', MacCatalyst='+'}"
+                    FontFamily="{OnPlatform WinUI='Segoe MDL2 Assets', MacCatalyst=''}"
+                    WidthRequest="44"
+                    HeightRequest="40"
+                    Padding="0"
+                    Command="{Binding CreateNewCommand}" />
+            <Entry x:Name="MainSearchEntry" Grid.Column="2"
+                   Placeholder="Search"
+                   Text="{Binding SearchText}"
+                   Focused="MainSearchEntry_Focused"
+                   HandlerChanged="MainSearchEntry_HandlerChanged" />
+        </Grid>
+
+        <Border x:Name="CommandSuggestionPopup"
+                Grid.RowSpan="4"
+                IsVisible="{Binding IsCommandSuggestionOpen}"
+                Stroke="{AppThemeBinding Light=#BBBBBB, Dark=#565656}"
+                BackgroundColor="{AppThemeBinding Light=#F3F3F3, Dark=#252525}"
+                StrokeShape="RoundRectangle 10"
+                Padding="6"
+                MaximumHeightRequest="280"
+                HorizontalOptions="Start"
+                VerticalOptions="Start"
+                TranslationX="0"
+                TranslationY="0"
+                ZIndex="950">
+            <Border.Shadow>
+                <Shadow Brush="{AppThemeBinding Light=#55000000, Dark=#AA000000}" Opacity="0.22" Offset="0,8" Radius="18" />
+            </Border.Shadow>
+            <CollectionView ItemsSource="{Binding CommandSuggestions}"
+                            SelectedItem="{Binding SelectedCommandSuggestion, Mode=TwoWay}"
+                            SelectionMode="Single">
+                <CollectionView.ItemsLayout>
+                    <LinearItemsLayout Orientation="Vertical" ItemSpacing="2" />
+                </CollectionView.ItemsLayout>
+                <CollectionView.ItemTemplate>
+                    <DataTemplate>
+                        <Grid ColumnDefinitions="1*,1*,4*" Padding="8,6" BackgroundColor="Transparent">
+                            <VisualStateManager.VisualStateGroups>
+                                <VisualStateGroup Name="CommonStates">
+                                    <VisualState Name="Normal" />
+                                    <VisualState Name="Selected">
+                                        <VisualState.Setters>
+                                            <Setter Property="BackgroundColor"
+                                                    Value="{AppThemeBinding Light=#E6E6E6, Dark=#3D3D3D}" />
+                                        </VisualState.Setters>
+                                    </VisualState>
+                                </VisualStateGroup>
+                            </VisualStateManager.VisualStateGroups>
+                            <Grid.GestureRecognizers>
+                                <TapGestureRecognizer Command="{Binding Source={x:Reference RootPage}, Path=BindingContext.PickSuggestionCommand}"
+                                                      CommandParameter="{Binding .}" />
+                            </Grid.GestureRecognizers>
+                            <Label Grid.Column="0"
+                                   Text="{Binding Command}"
+                                   LineBreakMode="TailTruncation" />
+                            <Label Grid.Column="1"
+                                   Text="{Binding ButtonText}"
+                                   LineBreakMode="TailTruncation" />
+                            <Label Grid.Column="2"
+                                   Text="{Binding ToolArguments}"
+                                   LineBreakMode="TailTruncation" />
+                        </Grid>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+        </Border>
+
+        <Border Grid.Row="1"
+                Stroke="{AppThemeBinding Light=#CECECE, Dark=#4E4E4E}"
+                BackgroundColor="{AppThemeBinding Light=#FCFCFC, Dark=#212121}"
+                StrokeShape="RoundRectangle 20"
+                Padding="14"
+                SizeChanged="PlacementArea_SizeChanged">
+            <Border.Shadow>
+                <Shadow Brush="{AppThemeBinding Light=#55000000, Dark=#AA000000}" Opacity="0.20" Offset="0,8" Radius="20" />
+            </Border.Shadow>
+
+            <Grid>
+                <ScrollView Orientation="{Binding PlacementScrollOrientation}"
+                            x:Name="PlacementScroll"
+                            Scrolled="PlacementScroll_Scrolled"
+                            HorizontalScrollBarVisibility="{Binding HasHorizontalOverflow, Converter={StaticResource BoolToScrollBarVisibilityConverter}}"
+                            VerticalScrollBarVisibility="{Binding HasVerticalOverflow, Converter={StaticResource BoolToScrollBarVisibilityConverter}}">
+                    <AbsoluteLayout x:Name="PlacementCanvas"
+                                    WidthRequest="{Binding CanvasWidth}"
+                                    HeightRequest="{Binding CanvasHeight}"
+                                    BindableLayout.ItemsSource="{Binding VisibleButtons}">
+                        <AbsoluteLayout.GestureRecognizers>
+                            <PointerGestureRecognizer PointerPressed="Selection_PointerPressed"
+                                                      PointerMoved="Selection_PointerMoved"
+                                                      PointerReleased="Selection_PointerReleased" />
+                            <TapGestureRecognizer Buttons="Secondary"
+                                                  Tapped="PlacementCanvas_SecondaryTapped" />
+                        </AbsoluteLayout.GestureRecognizers>
+                        <BindableLayout.ItemTemplate>
+                            <DataTemplate>
+                                <Border AbsoluteLayout.LayoutBounds="{Binding LayoutBounds}"
+                                        AbsoluteLayout.LayoutFlags="None"
+                                        Stroke="{AppThemeBinding Light=#B6B6B6, Dark=#545454}"
+                                        StrokeShape="RoundRectangle 12"
+                                        BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#363636}"
+                                        Padding="0">
+                                    <Border.Triggers>
+                                        <DataTrigger TargetType="Border" Binding="{Binding IsSelected}" Value="True">
+                                            <Setter Property="BackgroundColor" Value="{AppThemeBinding Light=#DCDCDC, Dark=#505050}" />
+                                        </DataTrigger>
+                                    </Border.Triggers>
+                                    <Border.Behaviors>
+                                        <behaviors:MiddleClickBehavior Command="{Binding Source={x:Reference RootPage}, Path=BindingContext.OpenEditorCommand}" />
+                                    </Border.Behaviors>
+                                    <Border.GestureRecognizers>
+                                        <PanGestureRecognizer PanUpdated="Draggable_PanUpdated" />
+                                        <PointerGestureRecognizer PointerPressed="Draggable_PointerPressed"
+                                                                  PointerMoved="Draggable_PointerMoved"
+                                                                  PointerReleased="Draggable_PointerReleased" />
+                                        <TapGestureRecognizer Tapped="Draggable_Tapped" />
+                                        <TapGestureRecognizer Buttons="Secondary"
+                                                              Command="{Binding Source={x:Reference RootPage}, Path=BindingContext.OpenContextMenuCommand}"
+                                                              CommandParameter="{Binding .}" />
+                                    </Border.GestureRecognizers>
+                                    <Grid Padding="10,6" InputTransparent="True">
+                                        <Label Text="{Binding ButtonText}"
+                                               TextColor="{AppThemeBinding Light=#1A1A1A, Dark=#F2F2F2}"
+                                               HorizontalTextAlignment="Center"
+                                               VerticalTextAlignment="Center" />
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </BindableLayout.ItemTemplate>
+                    </AbsoluteLayout>
+                </ScrollView>
+                <Border x:Name="SelectionRect"
+                        IsVisible="False"
+                        InputTransparent="True"
+                        ZIndex="1000"
+                        HorizontalOptions="Start"
+                        VerticalOptions="Start"
+                        WidthRequest="0"
+                        HeightRequest="0"
+                        Stroke="{AppThemeBinding Light=#7A7A7A, Dark=#A8A8A8}"
+                        StrokeThickness="2"
+                        BackgroundColor="{AppThemeBinding Light=#40B0B0B0, Dark=#40686868}"
+                        StrokeShape="RoundRectangle 2" />
+            </Grid>
+        </Border>
+
+        <Border Grid.Row="2"
+                Stroke="{AppThemeBinding Light=#CECECE, Dark=#4E4E4E}"
+                BackgroundColor="{AppThemeBinding Light=#FCFCFC, Dark=#212121}"
+                StrokeShape="RoundRectangle 20"
+                Padding="12"
+                MinimumHeightRequest="92">
+            <Border.Shadow>
+                <Shadow Brush="{AppThemeBinding Light=#44000000, Dark=#99000000}" Opacity="0.18" Offset="0,6" Radius="18" />
+            </Border.Shadow>
+
+            <ScrollView Orientation="Horizontal">
+                <HorizontalStackLayout Spacing="10" BindableLayout.ItemsSource="{Binding DockButtons}">
+                    <BindableLayout.ItemTemplate>
+                        <DataTemplate>
+                            <Border Stroke="{AppThemeBinding Light=#B6B6B6, Dark=#545454}"
+                                    StrokeShape="RoundRectangle 12"
+                                    BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#363636}"
+                                    WidthRequest="{x:Static corelogic:ButtonLayoutDefaults.Width}"
+                                    HeightRequest="{x:Static corelogic:ButtonLayoutDefaults.Height}"
+                                    Padding="0">
+                                <Border.Behaviors>
+                                    <behaviors:MiddleClickBehavior Command="{Binding Source={x:Reference RootPage}, Path=BindingContext.OpenEditorCommand}" />
+                                </Border.Behaviors>
+                                <Grid Padding="10,6">
+                                    <Grid.GestureRecognizers>
+                                        <TapGestureRecognizer Command="{Binding Source={x:Reference RootPage}, Path=BindingContext.ExecuteButtonCommand}"
+                                                              CommandParameter="{Binding .}" />
+                                        <TapGestureRecognizer Buttons="Secondary"
+                                                              Command="{Binding Source={x:Reference RootPage}, Path=BindingContext.OpenContextMenuCommand}"
+                                                              CommandParameter="{Binding .}" />
+                                    </Grid.GestureRecognizers>
+                                    <Label Text="{Binding ButtonText}"
+                                           TextColor="{AppThemeBinding Light=#1A1A1A, Dark=#F2F2F2}"
+                                           HorizontalTextAlignment="Center"
+                                           VerticalTextAlignment="Center" />
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </BindableLayout.ItemTemplate>
+                </HorizontalStackLayout>
+            </ScrollView>
+        </Border>
+
+        <Border x:Name="StatusBarBorder"
+                Grid.Row="3"
+                Stroke="{AppThemeBinding Light=#B8B8B8, Dark=#4C4C4C}"
+                BackgroundColor="{AppThemeBinding Light=#F2F2F2, Dark=#1E1E1E}"
+                StrokeShape="RoundRectangle 10"
+                Padding="10,6">
+            <Label Text="{Binding StatusText}" FontSize="13" />
+        </Border>
+
+        <Grid Grid.RowSpan="4"
+              IsVisible="{Binding IsContextMenuOpen}"
+              BackgroundColor="Transparent">
+            <Grid.GestureRecognizers>
+                <TapGestureRecognizer Command="{Binding CloseContextMenuCommand}" />
+            </Grid.GestureRecognizers>
+            <Border HorizontalOptions="Center"
+                    VerticalOptions="Center"
+                    WidthRequest="220"
+                    Padding="10"
+                    Stroke="{AppThemeBinding Light=#B8B8B8, Dark=#505050}"
+                    BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#1F1F1F}"
+                    StrokeShape="RoundRectangle 14">
+                <VerticalStackLayout Spacing="8">
+                    <Button x:Name="ContextEditButton"
+                            Text="Edit"
+                            Command="{Binding ContextEditCommand}" />
+                    <Button x:Name="ContextDeleteButton"
+                            Text="Delete"
+                            Command="{Binding ContextDeleteCommand}" />
+                </VerticalStackLayout>
+            </Border>
+        </Grid>
+
+        <Grid Grid.RowSpan="4"
+              IsVisible="{Binding IsEditorOpen}"
+              BackgroundColor="Transparent">
+            <Border HorizontalOptions="Center"
+                    VerticalOptions="Center"
+                    WidthRequest="760"
+                    MaximumWidthRequest="860"
+                    Padding="18"
+                    Stroke="{AppThemeBinding Light=#B5B5B5, Dark=#505050}"
+                    BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#1F1F1F}"
+                    StrokeShape="RoundRectangle 18">
+                <Border.Shadow>
+                    <Shadow Brush="{AppThemeBinding Light=#66000000, Dark=#AA000000}" Opacity="0.22" Offset="0,10" Radius="22" />
+                </Border.Shadow>
+
+                <Grid RowDefinitions="*,Auto" RowSpacing="12">
+                    <ScrollView Grid.Row="0">
+                        <Grid ColumnDefinitions="140,*,44" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto" ColumnSpacing="8" RowSpacing="8">
+                            <Label Grid.Row="0" Grid.Column="0" Text="GUID" VerticalTextAlignment="Center" HeightRequest="40" />
+                            <Entry x:Name="ModalGuidEntry" Grid.Row="0" Grid.Column="1" Text="{Binding Editor.GuidText}" IsReadOnly="True" HeightRequest="40" />
+                            <Button x:Name="CopyGuidButton" Grid.Row="0" Grid.Column="2" Text="{OnPlatform WinUI='&#xE8C8;', MacCatalyst='⧉'}" FontFamily="{OnPlatform WinUI='Segoe MDL2 Assets', MacCatalyst=''}"
+                                    Command="{Binding CopyFieldCommand}"
+                                    CommandParameter="{Binding Editor.GuidText}" HeightRequest="40" WidthRequest="40" Padding="0"
+                                    Clicked="CopyIconButton_Clicked" />
+
+                            <Label Grid.Row="1" Grid.Column="0" Text="Command" VerticalTextAlignment="Center" HeightRequest="40" />
+                            <Entry x:Name="ModalCommandEntry" Grid.Row="1" Grid.Column="1" Text="{Binding Editor.Command}" HeightRequest="40" />
+                            <Button x:Name="CopyCommandButton" Grid.Row="1" Grid.Column="2" Text="{OnPlatform WinUI='&#xE8C8;', MacCatalyst='⧉'}" FontFamily="{OnPlatform WinUI='Segoe MDL2 Assets', MacCatalyst=''}"
+                                    Command="{Binding CopyFieldCommand}"
+                                    CommandParameter="{Binding Editor.Command}" HeightRequest="40" WidthRequest="40" Padding="0"
+                                    Clicked="CopyIconButton_Clicked" />
+
+                            <Label Grid.Row="2" Grid.Column="0" Text="Button Text" VerticalTextAlignment="Center" HeightRequest="40" />
+                            <Entry x:Name="ModalButtonTextEntry" Grid.Row="2" Grid.Column="1" Text="{Binding Editor.ButtonText}" HeightRequest="40" />
+                            <Button x:Name="CopyButtonTextButton" Grid.Row="2" Grid.Column="2" Text="{OnPlatform WinUI='&#xE8C8;', MacCatalyst='⧉'}" FontFamily="{OnPlatform WinUI='Segoe MDL2 Assets', MacCatalyst=''}"
+                                    Command="{Binding CopyFieldCommand}"
+                                    CommandParameter="{Binding Editor.ButtonText}" HeightRequest="40" WidthRequest="40" Padding="0"
+                                    Clicked="CopyIconButton_Clicked" />
+
+                            <Label Grid.Row="3" Grid.Column="0" Text="Tool" VerticalTextAlignment="Center" HeightRequest="40" />
+                            <Entry x:Name="ModalToolEntry" Grid.Row="3" Grid.Column="1" Text="{Binding Editor.Tool}" HeightRequest="40" />
+                            <Button x:Name="CopyToolButton" Grid.Row="3" Grid.Column="2" Text="{OnPlatform WinUI='&#xE8C8;', MacCatalyst='⧉'}" FontFamily="{OnPlatform WinUI='Segoe MDL2 Assets', MacCatalyst=''}"
+                                    Command="{Binding CopyFieldCommand}"
+                                    CommandParameter="{Binding Editor.Tool}" HeightRequest="40" WidthRequest="40" Padding="0"
+                                    Clicked="CopyIconButton_Clicked" />
+
+                            <Label Grid.Row="4" Grid.Column="0" Text="Arguments" VerticalTextAlignment="Center" HeightRequest="40" />
+                            <Entry x:Name="ModalArgumentsEntry" Grid.Row="4" Grid.Column="1" Text="{Binding Editor.Arguments}" HeightRequest="40" />
+                            <Button x:Name="CopyArgumentsButton" Grid.Row="4" Grid.Column="2" Text="{OnPlatform WinUI='&#xE8C8;', MacCatalyst='⧉'}" FontFamily="{OnPlatform WinUI='Segoe MDL2 Assets', MacCatalyst=''}"
+                                    Command="{Binding CopyFieldCommand}"
+                                    CommandParameter="{Binding Editor.Arguments}" HeightRequest="40" WidthRequest="40" Padding="0"
+                                    Clicked="CopyIconButton_Clicked" />
+
+                            <Label Grid.Row="5" Grid.Column="0" Text="Clip Word" VerticalTextAlignment="Center" HeightRequest="40" />
+                            <Entry x:Name="ModalClipWordEntry" Grid.Row="5" Grid.Column="1" Text="{Binding Editor.ClipText}" HeightRequest="40" />
+                            <Button x:Name="CopyClipWordButton" Grid.Row="5" Grid.Column="2" Text="{OnPlatform WinUI='&#xE8C8;', MacCatalyst='⧉'}" FontFamily="{OnPlatform WinUI='Segoe MDL2 Assets', MacCatalyst=''}"
+                                    Command="{Binding CopyFieldCommand}"
+                                    CommandParameter="{Binding Editor.ClipText}" HeightRequest="40" WidthRequest="40" Padding="0"
+                                    Clicked="CopyIconButton_Clicked" />
+
+                            <Label Grid.Row="6" Grid.Column="0" Text="Note" VerticalTextAlignment="Start" />
+                            <Editor x:Name="ModalNoteEditor" Grid.Row="6" Grid.Column="1" Text="{Binding Editor.Note}" AutoSize="TextChanges" MinimumHeightRequest="40" />
+                            <Button x:Name="CopyNoteButton" Grid.Row="6" Grid.Column="2" Text="{OnPlatform WinUI='&#xE8C8;', MacCatalyst='⧉'}" FontFamily="{OnPlatform WinUI='Segoe MDL2 Assets', MacCatalyst=''}"
+                                    Command="{Binding CopyFieldCommand}"
+                                    CommandParameter="{Binding Editor.Note}" HeightRequest="40" WidthRequest="40" Padding="0" VerticalOptions="Start"
+                                    Clicked="CopyIconButton_Clicked" />
+                        </Grid>
+                    </ScrollView>
+
+                    <HorizontalStackLayout Grid.Row="1"
+                                           HorizontalOptions="Center"
+                                           Spacing="10">
+                        <Button x:Name="ModalCancelButton" Text="Cancel" WidthRequest="96" Command="{Binding CancelEditorCommand}" />
+                        <Button x:Name="ModalSaveButton" Text="Save" WidthRequest="96" Command="{Binding SaveEditorCommand}" />
+                    </HorizontalStackLayout>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <Grid x:Name="ConflictOverlay"
+              Grid.RowSpan="4"
+              IsVisible="False"
+              BackgroundColor="Transparent"
+              ZIndex="980">
+            <Border HorizontalOptions="Center"
+                    VerticalOptions="Center"
+                    WidthRequest="520"
+                    MaximumWidthRequest="620"
+                    Padding="18"
+                    Stroke="{AppThemeBinding Light=#B5B5B5, Dark=#505050}"
+                    BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#1F1F1F}"
+                    StrokeShape="RoundRectangle 18">
+                <Border.Shadow>
+                    <Shadow Brush="{AppThemeBinding Light=#66000000, Dark=#AA000000}" Opacity="0.22" Offset="0,10" Radius="22" />
+                </Border.Shadow>
+                <VerticalStackLayout Spacing="12">
+                    <Label x:Name="ConflictTitleLabel"
+                           FontSize="22"
+                           TextColor="{AppThemeBinding Light=#1A1A1A, Dark=#F2F2F2}" />
+                    <Label x:Name="ConflictMessageLabel"
+                           FontSize="14"
+                           TextColor="{AppThemeBinding Light=#303030, Dark=#D0D0D0}" />
+                    <HorizontalStackLayout HorizontalOptions="Center" Spacing="10">
+                        <Button x:Name="ConflictReloadButton"
+                                Text="Reload latest"
+                                WidthRequest="132"
+                                Clicked="ConflictReloadButton_Clicked" />
+                        <Button x:Name="ConflictOverwriteButton"
+                                Text="Overwrite mine"
+                                WidthRequest="132"
+                                Clicked="ConflictOverwriteButton_Clicked" />
+                        <Button x:Name="ConflictCancelButton"
+                                Text="Cancel"
+                                WidthRequest="132"
+                                Clicked="ConflictCancelButton_Clicked" />
+                    </HorizontalStackLayout>
+                </VerticalStackLayout>
+            </Border>
+        </Grid>
+
+        <Grid x:Name="CopyNoticeOverlay"
+              Grid.RowSpan="4"
+              IsVisible="False"
+              Opacity="0"
+              InputTransparent="True"
+              ZIndex="999">
+            <Border x:Name="CopyNoticeBox"
+                    HorizontalOptions="Center"
+                    VerticalOptions="Center"
+                    WidthRequest="78"
+                    HeightRequest="78"
+                    BackgroundColor="{AppThemeBinding Light=#D9FFFFFF, Dark=#D9202020}"
+                    Stroke="{AppThemeBinding Light=#C4C4C4, Dark=#707070}"
+                    StrokeShape="RoundRectangle 18">
+                <Label Text="{OnPlatform WinUI='&#xE8C8;', MacCatalyst='⧉'}"
+                       FontFamily="{OnPlatform WinUI='Segoe MDL2 Assets', MacCatalyst=''}"
+                       FontSize="30"
+                       HorizontalTextAlignment="Center"
+                       VerticalTextAlignment="Center"
+                       TextColor="{AppThemeBinding Light=#202020, Dark=#F2F2F2}" />
+            </Border>
+        </Grid>
+    </Grid>
+</ContentPage>

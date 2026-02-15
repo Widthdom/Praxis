@@ -1,0 +1,79 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+    branches:
+      - main
+      - master
+
+permissions:
+  contents: read
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+
+jobs:
+  core-tests:
+    name: Core Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Restore tests
+        run: dotnet restore Praxis.Tests/Praxis.Tests.csproj
+
+      - name: Run tests
+        run: dotnet test Praxis.Tests/Praxis.Tests.csproj -c Release --no-restore -v minimal
+
+  windows-build:
+    name: Windows Build
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Install MAUI workload
+        run: dotnet workload install maui
+
+      - name: Restore app
+        run: dotnet restore Praxis/Praxis.csproj
+
+      - name: Build app (Windows)
+        run: dotnet build Praxis/Praxis.csproj -c Release -f net10.0-windows10.0.19041.0 --no-restore -v minimal
+
+  mac-build:
+    name: Mac Catalyst Build
+    runs-on: macos-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Install MAUI workload
+        run: dotnet workload install maui
+
+      - name: Restore app
+        run: dotnet restore Praxis/Praxis.csproj
+
+      - name: Build app (Mac Catalyst)
+        run: dotnet build Praxis/Praxis.csproj -c Release -f net10.0-maccatalyst --no-restore -v minimal -p:EnableCodeSigning=false -p:CodesignRequireProvisioningProfile=false

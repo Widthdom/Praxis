@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<ResourceDictionary xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml">
+    <Color x:Key="Primary">#111111</Color>
+    <Color x:Key="Secondary">#F2F2F2</Color>
+    <Color x:Key="Accent">#6D6D6D</Color>
+    <Color x:Key="TextLight">#111111</Color>
+    <Color x:Key="TextDark">#F2F2F2</Color>
+    <Color x:Key="SurfaceLight">#FFFFFF</Color>
+    <Color x:Key="SurfaceDark">#161616</Color>
+    <Color x:Key="CardLight">#FCFCFC</Color>
+    <Color x:Key="CardDark">#212121</Color>
+    <Color x:Key="StrokeLight">#CECECE</Color>
+    <Color x:Key="StrokeDark">#4E4E4E</Color>
+
+    <SolidColorBrush x:Key="PrimaryBrush" Color="{StaticResource Primary}" />
+    <SolidColorBrush x:Key="SecondaryBrush" Color="{StaticResource Secondary}" />
+</ResourceDictionary>
