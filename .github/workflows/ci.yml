@@ -52,7 +52,7 @@ jobs:
         run: dotnet workload install maui
 
       - name: Build app (Windows)
-        run: dotnet build Praxis/Praxis.csproj -c Release -f net10.0-windows10.0.19041.0 -r win-x64 -v minimal
+        run: dotnet build Praxis/Praxis.csproj -c Release -f net10.0-windows10.0.19041.0 -v minimal -p:TargetFrameworks=net10.0-windows10.0.19041.0 -p:EnableWindowsTargeting=true
 
   mac-build:
     name: Mac Catalyst Build
@@ -70,4 +70,4 @@ jobs:
         run: dotnet workload install maui
 
       - name: Build app (Mac Catalyst)
-        run: dotnet build Praxis/Praxis.csproj -c Release -f net10.0-maccatalyst -v minimal -p:EnableWindowsTargeting=false -p:EnableCodeSigning=false -p:CodesignRequireProvisioningProfile=false
+        run: dotnet build Praxis/Praxis.csproj -c Release -f net10.0-maccatalyst -v minimal -p:TargetFrameworks=net10.0-maccatalyst -p:EnableCodeSigning=false -p:CodesignRequireProvisioningProfile=false
