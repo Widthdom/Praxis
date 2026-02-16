@@ -1,26 +1,18 @@
 #if MACCATALYST
 using Foundation;
 using Microsoft.Maui.ApplicationModel;
-using Microsoft.Maui.Handlers;
-using Microsoft.Maui.Platform;
 using UIKit;
 
 namespace Praxis.Controls;
 
-public class CommandEntryHandler : EntryHandler
+public class CommandEntryHandler : MacEntryHandler
 {
-    protected override MauiTextField CreatePlatformView()
+    protected override MacEntryTextField CreatePlatformView()
     {
         return new CommandEntryTextField();
     }
 
-    protected override void ConnectHandler(MauiTextField platformView)
-    {
-        base.ConnectHandler(platformView);
-        platformView.BorderStyle = UITextBorderStyle.RoundedRect;
-    }
-
-    private sealed class CommandEntryTextField : MauiTextField
+    private sealed class CommandEntryTextField : MacEntryTextField
     {
         public override void PressesBegan(NSSet<UIPress> presses, UIPressesEvent? evt)
         {

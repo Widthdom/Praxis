@@ -1,4 +1,8 @@
 using Microsoft.Extensions.DependencyInjection;
+using System.Reflection;
+#if MACCATALYST
+using UIKit;
+#endif
 
 namespace Praxis;
 
@@ -6,7 +10,6 @@ public partial class App : Application
 {
     private readonly IServiceProvider services;
     private Page? rootPage;
-    private static readonly string StartupLogPath = Services.AppStoragePaths.StartupLogPath;
     public static event Action<string>? ThemeShortcutRequested;
     public static event Action<string>? EditorShortcutRequested;
     public static event Action<string>? CommandInputShortcutRequested;
@@ -22,9 +25,8 @@ public partial class App : Application
         {
             InitializeComponent();
         }
-        catch (Exception ex)
+        catch
         {
-            WriteStartupLog($"App InitializeComponent error: {ex}");
             Resources = new ResourceDictionary();
         }
     }
@@ -55,9 +57,18 @@ public partial class App : Application
                     nativeWindow.Activate();
                 }
             }
-            catch (Exception ex)
+            catch
             {
-                WriteStartupLog($"Window activate error: {ex.Message}");
+            }
+        };
+#endif
+#if MACCATALYST
+        window.HandlerChanged += (_, _) =>
+        {
+            ActivateMacWindow(window);
+            if (window.Dispatcher is not null)
+            {
+                window.Dispatcher.DispatchDelayed(TimeSpan.FromMilliseconds(120), () => ActivateMacWindow(window));
             }
         };
 #endif
@@ -73,7 +84,6 @@ public partial class App : Application
         }
         catch (Exception ex)
         {
-            WriteStartupLog($"Resolve RootPage error: {ex}");
             return new ContentPage
             {
                 Title = "Praxis",
@@ -128,18 +138,6 @@ public partial class App : Application
     }
 #endif
 
-    public static void WriteStartupLog(string message)
-    {
-        try
-        {
-            Directory.CreateDirectory(Path.GetDirectoryName(StartupLogPath)!);
-            File.AppendAllText(StartupLogPath, $"{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff} {message}{Environment.NewLine}");
-        }
-        catch
-        {
-        }
-    }
-
     public static void RaiseThemeShortcut(string mode)
     {
         try
@@ -184,4 +182,76 @@ public partial class App : Application
         }
     }
 
+#if MACCATALYST
+    private static void ActivateMacWindow(Window window)
+    {
+        try
+        {
+            if (window.Handler?.PlatformView is not UIWindow nativeWindow)
+            {
+                return;
+            }
+
+            if (!nativeWindow.IsKeyWindow)
+            {
+                nativeWindow.MakeKeyAndVisible();
+            }
+
+            if (nativeWindow.RootViewController is UIResponder responder && responder.CanBecomeFirstResponder)
+            {
+                responder.BecomeFirstResponder();
+            }
+
+            if (UIApplication.SharedApplication.Delegate is UIResponder appDelegate && appDelegate.CanBecomeFirstResponder)
+            {
+                appDelegate.BecomeFirstResponder();
+            }
+
+            ActivateMacApplication();
+        }
+        catch
+        {
+        }
+    }
+
+    private static void ActivateMacApplication()
+    {
+        try
+        {
+            foreach (var scene in UIApplication.SharedApplication.ConnectedScenes)
+            {
+                if (scene is not UIWindowScene windowScene)
+                {
+                    continue;
+                }
+
+                var activateMethod = FindSceneActivationMethod("ActivateSceneSession");
+                if (activateMethod is not null)
+                {
+                    activateMethod.Invoke(UIApplication.SharedApplication, [windowScene.Session, null, null, null]);
+                    continue;
+                }
+
+                var requestMethod = FindSceneActivationMethod("RequestSceneSessionActivation");
+                requestMethod?.Invoke(UIApplication.SharedApplication, [windowScene.Session, null, null, null]);
+            }
+        }
+        catch
+        {
+        }
+    }
+
+    private static MethodInfo? FindSceneActivationMethod(string name)
+    {
+        foreach (var method in typeof(UIApplication).GetMethods(BindingFlags.Public | BindingFlags.Instance))
+        {
+            if (method.Name == name && method.GetParameters().Length == 4)
+            {
+                return method;
+            }
+        }
+
+        return null;
+    }
+#endif
 }

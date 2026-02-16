@@ -53,6 +53,7 @@ public partial class MainPage : ContentPage
     private UIKeyCommand? commandSuggestionDownKeyCommand;
     private Microsoft.Maui.Dispatching.IDispatcherTimer? macMiddleButtonPollTimer;
     private bool macMiddleButtonWasDown;
+    private bool macInitialCommandFocusApplied;
 #endif
 
     public MainPage(MainViewModel viewModel)
@@ -65,7 +66,6 @@ public partial class MainPage : ContentPage
         catch (Exception ex)
         {
             xamlLoaded = false;
-            App.WriteStartupLog($"MainPage InitializeComponent error: {ex}");
             Content = new VerticalStackLayout
             {
                 Padding = 24,
@@ -112,7 +112,14 @@ public partial class MainPage : ContentPage
         MainSearchEntry.SizeChanged += (_, _) => UpdateCommandSuggestionPopupPlacement();
         if (Application.Current is not null)
         {
-            Application.Current.RequestedThemeChanged += (_, _) => Dispatcher.Dispatch(ApplyNeutralStatusBackground);
+            Application.Current.RequestedThemeChanged += (_, _) => Dispatcher.Dispatch(() =>
+            {
+                ApplyNeutralStatusBackground();
+#if MACCATALYST
+                ApplyMacVisualTuning();
+                ApplyMacNoteEditorVisualState();
+#endif
+            });
         }
 #if MACCATALYST
         RebuildCommandSuggestionStack();
@@ -146,13 +153,13 @@ public partial class MainPage : ContentPage
             SyncViewportToViewModel();
 #if MACCATALYST
             ApplyMacVisualTuning();
+            ApplyMacInitialCommandFocus();
             StartMacMiddleButtonPolling();
 #endif
             UpdateNoteEditorHeight();
         }
         catch (Exception ex)
         {
-            App.WriteStartupLog($"MainPage InitializeAsync error: {ex}");
             await DisplayAlertAsync("Initialization Error", ex.Message, "OK");
         }
     }
@@ -250,9 +257,25 @@ public partial class MainPage : ContentPage
             textView.Layer.BorderWidth = 0;
             textView.Layer.CornerRadius = 0;
         }
+        ApplyMacNoteEditorVisualState();
+        ModalNoteFocusUnderline.IsVisible = ModalNoteEditor.IsFocused;
         ApplyMacEditorKeyCommands();
 #endif
         UpdateNoteEditorHeight();
+    }
+
+    private void ModalNoteEditor_Focused(object? sender, FocusEventArgs e)
+    {
+#if MACCATALYST
+        ModalNoteFocusUnderline.IsVisible = true;
+#endif
+    }
+
+    private void ModalNoteEditor_Unfocused(object? sender, FocusEventArgs e)
+    {
+#if MACCATALYST
+        ModalNoteFocusUnderline.IsVisible = false;
+#endif
     }
 
     private void ModalNoteEditor_TextChanged(object? sender, TextChangedEventArgs e)
@@ -2250,8 +2273,38 @@ public partial class MainPage : ContentPage
     {
         EnsureMacFirstResponder();
         ApplyMacContentScale();
+        ApplyMacNoteEditorVisualState();
         ApplyMacCommandSuggestionKeyCommands();
         ApplyMacEditorKeyCommands();
+    }
+
+    private void ApplyMacInitialCommandFocus()
+    {
+        if (macInitialCommandFocusApplied || !xamlLoaded || viewModel.IsEditorOpen)
+        {
+            return;
+        }
+
+        macInitialCommandFocusApplied = true;
+        Dispatcher.Dispatch(() => MainCommandEntry.Focus());
+        Dispatcher.DispatchDelayed(TimeSpan.FromMilliseconds(140), () =>
+        {
+            if (!MainCommandEntry.IsFocused)
+            {
+                MainCommandEntry.Focus();
+            }
+        });
+    }
+
+    private void ApplyMacNoteEditorVisualState()
+    {
+        if (ModalNoteEditor.Handler?.PlatformView is not UITextView textView)
+        {
+            return;
+        }
+
+        var dark = Application.Current?.RequestedTheme == AppTheme.Dark;
+        textView.TintColor = dark ? UIColor.White : UIColor.Black;
     }
 
     private bool IsMainCommandEntryReadyForSuggestionNavigation()
@@ -2405,13 +2458,18 @@ public partial class MainPage : ContentPage
 
     private void EnsureMacFirstResponder()
     {
+        if (Window?.Handler?.PlatformView is UIWindow nativeWindow && !nativeWindow.IsKeyWindow)
+        {
+            nativeWindow.MakeKeyAndVisible();
+        }
+
         if (UIApplication.SharedApplication.Delegate is UIResponder appDelegate && appDelegate.CanBecomeFirstResponder)
         {
             appDelegate.BecomeFirstResponder();
         }
 
-        if (Window?.Handler?.PlatformView is UIWindow nativeWindow &&
-            nativeWindow.RootViewController is UIResponder controllerResponder &&
+        if (Window?.Handler?.PlatformView is UIWindow activeWindow &&
+            activeWindow.RootViewController is UIResponder controllerResponder &&
             controllerResponder.CanBecomeFirstResponder)
         {
             controllerResponder.BecomeFirstResponder();

@@ -21,6 +21,7 @@ public static class MauiProgram
 #if MACCATALYST
         builder.ConfigureMauiHandlers(handlers =>
         {
+            handlers.AddHandler(typeof(Entry), typeof(MacEntryHandler));
             handlers.AddHandler(typeof(CommandEntry), typeof(CommandEntryHandler));
         });
 #endif

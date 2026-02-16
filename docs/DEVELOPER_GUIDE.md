@@ -48,7 +48,7 @@ README is user-facing summary; this guide is the implementation-level source of 
   - Uses a local signal file (`buttons.sync`) and `FileSystemWatcher` for multi-window notifications
   - Payload includes instance id and timestamp; self-origin events are ignored
 - `Services/AppStoragePaths.cs`
-  - Centralizes shared local-storage constants/paths (DB, startup log, sync signal)
+  - Centralizes shared local-storage constants/paths (DB, sync signal)
 - `Controls/CommandEntry.cs` / `Platforms/MacCatalyst/Handlers/CommandEntryHandler.cs`
   - macOS command input uses a dedicated control/handler so `Up/Down` suggestion navigation is handled reliably at native `UITextField` level
 - `Praxis.Core/Logic/*.cs`
@@ -118,6 +118,10 @@ README is user-facing summary; this guide is the implementation-level source of 
   - `Up/Down` wraps at list edges, and `Enter` executes selected suggestion
   - Windows arrow key handling is attached in `MainPage.xaml.cs` (`MainCommandEntry_HandlerChanged` / native `KeyDown`)
   - macOS arrow key handling is attached in `Controls/CommandEntry` + `Platforms/MacCatalyst/Handlers/CommandEntryHandler.cs` (`PressesBegan`)
+  - macOS `Entry` visual/focus behavior is handled by `Platforms/MacCatalyst/Handlers/MacEntryHandler.cs`:
+    - suppresses default blue focus ring
+    - uses bottom-edge emphasis that respects corner radius
+    - sets caret color by theme (Light=black, Dark=white)
 - Placement-area rendering/performance:
   - `MainPage.xaml.cs` forwards viewport scroll/size to `MainViewModel.UpdateViewport(...)`
   - `MainViewModel` keeps filtered list and updates `VisibleButtons` via diff (insert/move/remove), not full clear+rebind
@@ -205,7 +209,7 @@ README はユーザー向け要約、このガイドは実装仕様の正本で�
   - ローカル通知ファイル（`buttons.sync`）と `FileSystemWatcher` で複数ウィンドウ通知を実現
   - ペイロードのインスタンスID/時刻で自己通知を除外
 - `Services/AppStoragePaths.cs`
-  - ローカル保存先の共通定数/パス（DB、startup log、同期シグナル）を集約
+  - ローカル保存先の共通定数/パス（DB、同期シグナル）を集約
 - `Controls/CommandEntry.cs` / `Platforms/MacCatalyst/Handlers/CommandEntryHandler.cs`
   - macOS の command 入力は専用コントロール/ハンドラを使い、候補 `↑/↓` をネイティブ `UITextField` レベルで安定処理する
 - `Praxis.Core/Logic/*.cs`
@@ -275,6 +279,10 @@ README はユーザー向け要約、このガイドは実装仕様の正本で�
   - `↑/↓` は候補端で循環し、`Enter` で選択候補を実行する
   - Windows の方向キー上下は `MainPage.xaml.cs` の `MainCommandEntry_HandlerChanged` / ネイティブ `KeyDown` で処理
   - macOS の方向キー上下は `Controls/CommandEntry` + `Platforms/MacCatalyst/Handlers/CommandEntryHandler.cs` の `PressesBegan` で処理
+  - macOS の `Entry` 見た目/フォーカス挙動は `Platforms/MacCatalyst/Handlers/MacEntryHandler.cs` で制御する。
+    - 標準の青いフォーカスリングを抑制
+    - 角丸に沿った下辺強調を適用
+    - キャレット色をテーマ連動（Light=黒、Dark=白）
 - 配置領域の描画/性能最適化:
   - `MainPage.xaml.cs` からスクロール位置と表示サイズを `MainViewModel.UpdateViewport(...)` に連携
   - `MainViewModel` はフィルタ済み一覧を保持し、`VisibleButtons` を差分更新（insert/move/remove）する

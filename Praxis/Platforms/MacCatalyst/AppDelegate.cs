@@ -33,6 +33,7 @@ public class AppDelegate : MauiUIApplicationDelegate
     public override void OnActivated(UIApplication application)
     {
         base.OnActivated(application);
+        EnsureKeyWindow(application);
         if (CanBecomeFirstResponder)
         {
             BecomeFirstResponder();
@@ -44,6 +45,7 @@ public class AppDelegate : MauiUIApplicationDelegate
         var result = base.FinishedLaunching(application, launchOptions);
         MainThread.BeginInvokeOnMainThread(() =>
         {
+            EnsureKeyWindow(application);
             if (CanBecomeFirstResponder)
             {
                 BecomeFirstResponder();
@@ -345,4 +347,24 @@ public class AppDelegate : MauiUIApplicationDelegate
         return -1;
     }
 
+    private static void EnsureKeyWindow(UIApplication application)
+    {
+        foreach (var scene in application.ConnectedScenes)
+        {
+            if (scene is not UIWindowScene windowScene)
+            {
+                continue;
+            }
+
+            foreach (var window in windowScene.Windows)
+            {
+                if (window.IsKeyWindow)
+                {
+                    return;
+                }
+
+                window.MakeKeyAndVisible();
+            }
+        }
+    }
 }
