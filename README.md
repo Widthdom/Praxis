@@ -22,6 +22,7 @@ It stores launcher buttons in SQLite and can execute tools with arguments.
 
 ## Behavior Notes
 - Suggestions are shown from partial `command` matches and can be selected by keyboard.
+- Suggestion keyboard behavior: `Up/Down` moves selection, wraps at edges, and `Enter` executes selected command.
 - Empty-space right-click on the placement area opens create modal at cursor position.
 - Dragging uses 10px snap; multi-select is supported with rectangle and modifier click.
 - If `tool` is empty, `Arguments` falls back to URL/path launch behavior.
@@ -73,7 +74,13 @@ Platform-specific run examples:
 dotnet run --project Praxis/Praxis.csproj -f net10.0-windows10.0.19041.0
 
 # macOS (Mac Catalyst)
-dotnet build Praxis/Praxis.csproj -t:Run -f net10.0-maccatalyst -p:RunWithOpen=false
+dotnet build Praxis/Praxis.csproj -t:Run -f net10.0-maccatalyst -r maccatalyst-arm64 -p:RunWithOpen=false
+```
+
+If `-t:Run` fails at launch on macOS, use this fallback:
+```bash
+dotnet build Praxis/Praxis.csproj -f net10.0-maccatalyst -r maccatalyst-arm64
+open Praxis/bin/Debug/net10.0-maccatalyst/maccatalyst-arm64/Praxis.app
 ```
 
 ## Notes
@@ -107,6 +114,7 @@ SQLite にボタン情報を保存し、ツールと引数を実行できます�
 
 ## 動作メモ
 - command 部分一致で候補を表示し、キーボードで選択実行できます。
+- 候補一覧のキーボード操作は `↑/↓` で移動、端で循環（先頭で↑→末尾、末尾で↓→先頭）、`Enter` で実行です。
 - 配置領域の空白右クリックで、その座標に新規作成モーダルを開きます。
 - ドラッグは 10px スナップ、矩形選択と修飾キー選択に対応しています。
 - `tool` が空の場合は `Arguments` を URL/パスとしてフォールバック起動します。
@@ -158,7 +166,13 @@ dotnet test Praxis.slnx
 dotnet run --project Praxis/Praxis.csproj -f net10.0-windows10.0.19041.0
 
 # macOS（Mac Catalyst）
-dotnet build Praxis/Praxis.csproj -t:Run -f net10.0-maccatalyst -p:RunWithOpen=false
+dotnet build Praxis/Praxis.csproj -t:Run -f net10.0-maccatalyst -r maccatalyst-arm64 -p:RunWithOpen=false
+```
+
+`-t:Run` で起動時エラーになる場合は、以下の手順で起動してください。
+```bash
+dotnet build Praxis/Praxis.csproj -f net10.0-maccatalyst -r maccatalyst-arm64
+open Praxis/bin/Debug/net10.0-maccatalyst/maccatalyst-arm64/Praxis.app
 ```
 
 ## 補足

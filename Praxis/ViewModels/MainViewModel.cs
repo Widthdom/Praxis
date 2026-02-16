@@ -35,6 +35,7 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty] private string statusText = "Ready";
     [ObservableProperty] private int statusRevision;
     [ObservableProperty] private bool isCommandSuggestionOpen;
+    [ObservableProperty] private double commandSuggestionPopupHeight = 44;
     [ObservableProperty] private CommandSuggestionItemViewModel? selectedCommandSuggestion;
     [ObservableProperty] private int selectedCommandSuggestionIndex = -1;
     [ObservableProperty] private double areaWidth = 820;
@@ -692,6 +693,11 @@ public partial class MainViewModel : ObservableObject
         commandSuggestionDebounceCts?.Cancel();
         commandSuggestionDebounceCts?.Dispose();
         commandSuggestionDebounceCts = null;
+        foreach (var item in CommandSuggestions)
+        {
+            item.IsSelected = false;
+        }
+        CommandSuggestionPopupHeight = 44;
         IsCommandSuggestionOpen = false;
         SelectedCommandSuggestion = null;
         SelectedCommandSuggestionIndex = -1;
@@ -720,7 +726,7 @@ public partial class MainViewModel : ObservableObject
             return;
         }
 
-        RefreshCommandSuggestions(CommandInput);
+        RefreshCommandSuggestionsOnMainThread(CommandInput);
     }
 
     private void SetStatus(string message)
@@ -808,7 +814,7 @@ public partial class MainViewModel : ObservableObject
 
         if (string.IsNullOrWhiteSpace(value))
         {
-            RefreshCommandSuggestions(value);
+            RefreshCommandSuggestionsOnMainThread(value);
             return;
         }
 
@@ -827,57 +833,93 @@ public partial class MainViewModel : ObservableObject
                 return;
             }
 
-            RefreshCommandSuggestions(CommandInput);
+            RefreshCommandSuggestionsOnMainThread(CommandInput);
         }
         catch (OperationCanceledException)
         {
         }
+        catch
+        {
+            MainThread.BeginInvokeOnMainThread(CloseCommandSuggestions);
+        }
+    }
+
+    private void RefreshCommandSuggestionsOnMainThread(string value)
+    {
+        if (MainThread.IsMainThread)
+        {
+            RefreshCommandSuggestions(value);
+            return;
+        }
+
+        MainThread.BeginInvokeOnMainThread(() => RefreshCommandSuggestions(value));
     }
 
     private void RefreshCommandSuggestions(string value)
     {
-        var query = value?.Trim() ?? string.Empty;
-        CommandSuggestions.Clear();
+        try
+        {
+            var query = value?.Trim() ?? string.Empty;
+            CommandSuggestions.Clear();
+            CommandSuggestionPopupHeight = 44;
+            IsCommandSuggestionOpen = false;
+            SelectedCommandSuggestion = null;
+            SelectedCommandSuggestionIndex = -1;
 
-        if (string.IsNullOrWhiteSpace(query))
+            if (string.IsNullOrWhiteSpace(query))
+            {
+                CloseCommandSuggestions();
+                return;
+            }
+
+            var matches = allButtons
+                .Where(x => !string.IsNullOrWhiteSpace(x.Command) && x.Command.Contains(query, StringComparison.OrdinalIgnoreCase))
+                .OrderByDescending(x => x.Command.StartsWith(query, StringComparison.OrdinalIgnoreCase))
+                .ThenBy(x => x.Command)
+                .ThenBy(x => x.ButtonText)
+                .Take(30)
+                .Select(x => new CommandSuggestionItemViewModel(x));
+
+            foreach (var item in matches)
+            {
+                CommandSuggestions.Add(item);
+            }
+
+            if (CommandSuggestions.Count == 0)
+            {
+                CloseCommandSuggestions();
+                return;
+            }
+
+            CommandSuggestionPopupHeight = Math.Min(280, Math.Max(44, 12 + CommandSuggestions.Count * 38));
+            IsCommandSuggestionOpen = true;
+            SetSelectedSuggestionIndex(0);
+        }
+        catch
         {
             CloseCommandSuggestions();
-            return;
         }
-
-        var matches = allButtons
-            .Where(x => !string.IsNullOrWhiteSpace(x.Command) && x.Command.Contains(query, StringComparison.OrdinalIgnoreCase))
-            .OrderByDescending(x => x.Command.StartsWith(query, StringComparison.OrdinalIgnoreCase))
-            .ThenBy(x => x.Command)
-            .ThenBy(x => x.ButtonText)
-            .Take(30)
-            .Select(x => new CommandSuggestionItemViewModel(x));
-
-        foreach (var item in matches)
-        {
-            CommandSuggestions.Add(item);
-        }
-
-        if (CommandSuggestions.Count == 0)
-        {
-            CloseCommandSuggestions();
-            return;
-        }
-
-        IsCommandSuggestionOpen = true;
-        SetSelectedSuggestionIndex(0);
     }
 
     private void SetSelectedSuggestionIndex(int index)
     {
         if (index < 0 || index >= CommandSuggestions.Count)
         {
+            foreach (var item in CommandSuggestions)
+            {
+                item.IsSelected = false;
+            }
             SelectedCommandSuggestionIndex = -1;
             SelectedCommandSuggestion = null;
             return;
         }
 
         SelectedCommandSuggestionIndex = index;
+        for (var i = 0; i < CommandSuggestions.Count; i++)
+        {
+            CommandSuggestions[i].IsSelected = i == index;
+        }
+
         SelectedCommandSuggestion = CommandSuggestions[index];
     }
 

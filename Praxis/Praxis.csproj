@@ -19,7 +19,16 @@
   <PropertyGroup Condition="$([MSBuild]::IsOSPlatform('osx'))">
     <TargetFrameworks>net10.0-maccatalyst</TargetFrameworks>
   </PropertyGroup>
-
+  <PropertyGroup Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'maccatalyst' and '$(Configuration)' == 'Debug'">
+    <EnableCodeSigning>false</EnableCodeSigning>
+    <CodesignRequireProvisioningProfile>false</CodesignRequireProvisioningProfile>
+  </PropertyGroup>
+  <PropertyGroup Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'maccatalyst'">
+    <MauiXamlInflator>XamlC</MauiXamlInflator>
+    <_MauiForceXamlCForDebug>true</_MauiForceXamlCForDebug>
+    <RuntimeIdentifier Condition="'$(RuntimeIdentifier)' == ''">maccatalyst-$([System.Runtime.InteropServices.RuntimeInformation]::ProcessArchitecture.ToString().ToLowerInvariant())</RuntimeIdentifier>
+    <NoWarn>$(NoWarn);MAUI1001;XC0022;XC0025;NU1900</NoWarn>
+  </PropertyGroup>
   <ItemGroup>
     <MauiIcon Include="Resources\AppIcon\appicon.svg" ForegroundFile="Resources\AppIcon\appiconfg.svg" Color="#0F5A4D" />
     <MauiSplashScreen Include="Resources\Splash\splash.svg" Color="#0F5A4D" BaseSize="128,128" />
@@ -38,5 +47,14 @@
   <ItemGroup>
     <ProjectReference Include="..\Praxis.Core\Praxis.Core.csproj" />
   </ItemGroup>
-</Project>
+  <Target Name="AdhocSignSqliteDylibForMacCatalystRun"
+          BeforeTargets="Run"
+          Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'maccatalyst' and Exists('$(OutputPath)$(AssemblyName).app/Contents/MonoBundle/libe_sqlite3.dylib')">
+    <Exec Command="codesign --force --sign - &quot;$(OutputPath)$(AssemblyName).app/Contents/MonoBundle/libe_sqlite3.dylib&quot;" />
+  </Target>
 
+  <Target Name="EnsureBuildBeforeMacCatalystRun"
+          BeforeTargets="ComputeRunArguments"
+          DependsOnTargets="Build"
+          Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'maccatalyst'" />
+</Project>

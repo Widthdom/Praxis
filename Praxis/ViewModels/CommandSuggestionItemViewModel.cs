@@ -1,6 +1,8 @@
+using CommunityToolkit.Mvvm.ComponentModel;
+
 namespace Praxis.ViewModels;
 
-public sealed class CommandSuggestionItemViewModel
+public partial class CommandSuggestionItemViewModel : ObservableObject
 {
     public CommandSuggestionItemViewModel(LauncherButtonItemViewModel source)
     {
@@ -8,6 +10,7 @@ public sealed class CommandSuggestionItemViewModel
     }
 
     public LauncherButtonItemViewModel Source { get; }
+    [ObservableProperty] private bool isSelected;
     public string Command => Source.Command;
     public string ButtonText => Source.ButtonText;
     public string ToolArguments

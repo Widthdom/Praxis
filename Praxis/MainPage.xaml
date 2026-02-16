@@ -2,6 +2,7 @@
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:behaviors="clr-namespace:Praxis.Behaviors"
+             xmlns:controls="clr-namespace:Praxis.Controls"
              xmlns:converters="clr-namespace:Praxis.Converters"
              xmlns:corelogic="clr-namespace:Praxis.Core.Logic;assembly=Praxis.Core"
              x:Class="Praxis.MainPage"
@@ -13,21 +14,22 @@
 
     <Grid x:Name="RootGrid" Padding="18" RowDefinitions="Auto,*,Auto,Auto" RowSpacing="14">
         <Grid.GestureRecognizers>
-            <PointerGestureRecognizer PointerPressed="RootGrid_PointerPressed" />
+            <PointerGestureRecognizer PointerPressed="RootGrid_PointerPressed"
+                                      PointerMoved="RootGrid_PointerMoved" />
         </Grid.GestureRecognizers>
         <Grid x:Name="TopBarGrid" ColumnDefinitions="2*,Auto,2*" ColumnSpacing="8">
-            <Entry x:Name="MainCommandEntry" Grid.Column="0"
-                   Placeholder="Command"
-                   Text="{Binding CommandInput}"
-                   ReturnType="Go"
-                   ReturnCommand="{Binding ExecuteCommandInputCommand}"
-                   Focused="MainCommandEntry_Focused"
-                   HandlerChanged="MainCommandEntry_HandlerChanged">
-                <Entry.GestureRecognizers>
+            <controls:CommandEntry x:Name="MainCommandEntry" Grid.Column="0"
+                                   Placeholder="Command"
+                                   Text="{Binding CommandInput}"
+                                   ReturnType="Go"
+                                   ReturnCommand="{Binding ExecuteCommandInputCommand}"
+                                   Focused="MainCommandEntry_Focused"
+                                   HandlerChanged="MainCommandEntry_HandlerChanged">
+                <controls:CommandEntry.GestureRecognizers>
                     <TapGestureRecognizer Tapped="MainCommandEntry_Tapped" />
                     <PointerGestureRecognizer PointerPressed="MainCommandEntry_PointerPressed" />
-                </Entry.GestureRecognizers>
-            </Entry>
+                </controls:CommandEntry.GestureRecognizers>
+            </controls:CommandEntry>
             <Button x:Name="CreateButton" Grid.Column="1"
                     Text="{OnPlatform WinUI='&#xE710;', MacCatalyst='+'}"
                     FontFamily="{OnPlatform WinUI='Segoe MDL2 Assets', MacCatalyst=''}"
@@ -49,6 +51,8 @@
                 BackgroundColor="{AppThemeBinding Light=#F3F3F3, Dark=#252525}"
                 StrokeShape="RoundRectangle 10"
                 Padding="6"
+                HeightRequest="{Binding CommandSuggestionPopupHeight}"
+                MinimumHeightRequest="44"
                 MaximumHeightRequest="280"
                 HorizontalOptions="Start"
                 VerticalOptions="Start"
@@ -58,7 +62,8 @@
             <Border.Shadow>
                 <Shadow Brush="{AppThemeBinding Light=#55000000, Dark=#AA000000}" Opacity="0.22" Offset="0,8" Radius="18" />
             </Border.Shadow>
-            <CollectionView ItemsSource="{Binding CommandSuggestions}"
+            <CollectionView IsVisible="{OnPlatform WinUI=True, MacCatalyst=False}"
+                            ItemsSource="{Binding CommandSuggestions}"
                             SelectedItem="{Binding SelectedCommandSuggestion, Mode=TwoWay}"
                             SelectionMode="Single">
                 <CollectionView.ItemsLayout>
@@ -95,6 +100,13 @@
                     </DataTemplate>
                 </CollectionView.ItemTemplate>
             </CollectionView>
+
+            <ScrollView IsVisible="{OnPlatform WinUI=False, MacCatalyst=True}"
+                        Orientation="Vertical">
+                <VerticalStackLayout x:Name="CommandSuggestionStack"
+                                     Spacing="2"
+                                     HorizontalOptions="Fill" />
+            </ScrollView>
         </Border>
 
         <Border Grid.Row="1"
@@ -118,6 +130,7 @@
                                     HeightRequest="{Binding CanvasHeight}"
                                     BindableLayout.ItemsSource="{Binding VisibleButtons}">
                         <AbsoluteLayout.GestureRecognizers>
+                            <PanGestureRecognizer PanUpdated="Selection_PanUpdated" />
                             <PointerGestureRecognizer PointerPressed="Selection_PointerPressed"
                                                       PointerMoved="Selection_PointerMoved"
                                                       PointerReleased="Selection_PointerReleased" />
@@ -132,14 +145,14 @@
                                         StrokeShape="RoundRectangle 12"
                                         BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#363636}"
                                         Padding="0">
+                                    <Border.Behaviors>
+                                        <behaviors:MiddleClickBehavior Command="{Binding Source={x:Reference RootPage}, Path=BindingContext.OpenEditorCommand}" />
+                                    </Border.Behaviors>
                                     <Border.Triggers>
                                         <DataTrigger TargetType="Border" Binding="{Binding IsSelected}" Value="True">
                                             <Setter Property="BackgroundColor" Value="{AppThemeBinding Light=#DCDCDC, Dark=#505050}" />
                                         </DataTrigger>
                                     </Border.Triggers>
-                                    <Border.Behaviors>
-                                        <behaviors:MiddleClickBehavior Command="{Binding Source={x:Reference RootPage}, Path=BindingContext.OpenEditorCommand}" />
-                                    </Border.Behaviors>
                                     <Border.GestureRecognizers>
                                         <PanGestureRecognizer PanUpdated="Draggable_PanUpdated" />
                                         <PointerGestureRecognizer PointerPressed="Draggable_PointerPressed"
@@ -147,8 +160,7 @@
                                                                   PointerReleased="Draggable_PointerReleased" />
                                         <TapGestureRecognizer Tapped="Draggable_Tapped" />
                                         <TapGestureRecognizer Buttons="Secondary"
-                                                              Command="{Binding Source={x:Reference RootPage}, Path=BindingContext.OpenContextMenuCommand}"
-                                                              CommandParameter="{Binding .}" />
+                                                              Tapped="Draggable_SecondaryTapped" />
                                     </Border.GestureRecognizers>
                                     <Grid Padding="10,6" InputTransparent="True">
                                         <Label Text="{Binding ButtonText}"
@@ -186,8 +198,8 @@
                 <Shadow Brush="{AppThemeBinding Light=#44000000, Dark=#99000000}" Opacity="0.18" Offset="0,6" Radius="18" />
             </Border.Shadow>
 
-            <ScrollView Orientation="Horizontal">
-                <HorizontalStackLayout Spacing="10" BindableLayout.ItemsSource="{Binding DockButtons}">
+            <ScrollView x:Name="DockScroll" Orientation="Horizontal">
+                <HorizontalStackLayout x:Name="DockButtonsStack" Spacing="10" BindableLayout.ItemsSource="{Binding DockButtons}">
                     <BindableLayout.ItemTemplate>
                         <DataTemplate>
                             <Border Stroke="{AppThemeBinding Light=#B6B6B6, Dark=#545454}"
@@ -201,11 +213,11 @@
                                 </Border.Behaviors>
                                 <Grid Padding="10,6">
                                     <Grid.GestureRecognizers>
+                                        <PointerGestureRecognizer PointerPressed="DockButton_PointerPressed" />
                                         <TapGestureRecognizer Command="{Binding Source={x:Reference RootPage}, Path=BindingContext.ExecuteButtonCommand}"
                                                               CommandParameter="{Binding .}" />
                                         <TapGestureRecognizer Buttons="Secondary"
-                                                              Command="{Binding Source={x:Reference RootPage}, Path=BindingContext.OpenContextMenuCommand}"
-                                                              CommandParameter="{Binding .}" />
+                                                              Tapped="DockButton_SecondaryTapped" />
                                     </Grid.GestureRecognizers>
                                     <Label Text="{Binding ButtonText}"
                                            TextColor="{AppThemeBinding Light=#1A1A1A, Dark=#F2F2F2}"
@@ -312,8 +324,27 @@
                                     CommandParameter="{Binding Editor.ClipText}" HeightRequest="40" WidthRequest="40" Padding="0"
                                     Clicked="CopyIconButton_Clicked" />
 
-                            <Label Grid.Row="6" Grid.Column="0" Text="Note" VerticalTextAlignment="Start" />
-                            <Editor x:Name="ModalNoteEditor" Grid.Row="6" Grid.Column="1" Text="{Binding Editor.Note}" AutoSize="TextChanges" MinimumHeightRequest="40" />
+                            <Label Grid.Row="6" Grid.Column="0" Text="Note" VerticalTextAlignment="Center" HeightRequest="40" />
+                            <Border x:Name="ModalNoteContainer"
+                                    Grid.Row="6"
+                                    Grid.Column="1"
+                                    Stroke="{AppThemeBinding Light=#CECECE, Dark=#4E4E4E}"
+                                    StrokeThickness="1"
+                                    BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#2A2A2A}"
+                                    StrokeShape="RoundRectangle 4"
+                                    MinimumHeightRequest="40"
+                                    HeightRequest="40"
+                                    Padding="0">
+                                <Editor x:Name="ModalNoteEditor"
+                                        Text="{Binding Editor.Note}"
+                                        AutoSize="Disabled"
+                                        MinimumHeightRequest="40"
+                                        HeightRequest="40"
+                                        BackgroundColor="Transparent"
+                                        TextChanged="ModalNoteEditor_TextChanged"
+                                        HandlerChanged="ModalNoteEditor_HandlerChanged"
+                                        Margin="0" />
+                            </Border>
                             <Button x:Name="CopyNoteButton" Grid.Row="6" Grid.Column="2" Text="{OnPlatform WinUI='&#xE8C8;', MacCatalyst='⧉'}" FontFamily="{OnPlatform WinUI='Segoe MDL2 Assets', MacCatalyst=''}"
                                     Command="{Binding CopyFieldCommand}"
                                     CommandParameter="{Binding Editor.Note}" HeightRequest="40" WidthRequest="40" Padding="0" VerticalOptions="Start"

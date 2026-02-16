@@ -49,6 +49,8 @@ README is user-facing summary; this guide is the implementation-level source of 
   - Payload includes instance id and timestamp; self-origin events are ignored
 - `Services/AppStoragePaths.cs`
   - Centralizes shared local-storage constants/paths (DB, startup log, sync signal)
+- `Controls/CommandEntry.cs` / `Platforms/MacCatalyst/Handlers/CommandEntryHandler.cs`
+  - macOS command input uses a dedicated control/handler so `Up/Down` suggestion navigation is handled reliably at native `UITextField` level
 - `Praxis.Core/Logic/*.cs`
   - Search matcher, command line builder, grid snap, log retention, launch target resolver, button layout defaults, record version comparer
 
@@ -87,7 +89,7 @@ README is user-facing summary; this guide is the implementation-level source of 
 - Icon glyphs are platform-mapped (`OnPlatform`): WinUI uses `Segoe MDL2 Assets`, macOS uses fallback symbols.
 - Modal footer action buttons (`Cancel`/`Save`) are centered and use equal width for visual balance.
 - Dock item visuals are intentionally matched to placement-area button visuals.
-- Middle click edit is implemented via `Behaviors/MiddleClickBehavior.cs` (Windows pointer event).
+- Middle click edit is implemented via `Behaviors/MiddleClickBehavior.cs` plus macOS fallbacks in `MainPage.xaml.cs` / `Platforms/MacCatalyst/AppDelegate.cs`.
 - Tab focus policy is applied in `MainPage.xaml.cs` (`ApplyTabPolicy`) by toggling native `IsTabStop`.
 - Selection rectangle is rendered as `SelectionRect` in `MainPage.xaml` with gray stroke/fill.
 - Selection toggle modifier handling is centralized in `MainPage.xaml.cs`:
@@ -113,7 +115,9 @@ README is user-facing summary; this guide is the implementation-level source of 
   - `MainViewModel` builds `CommandSuggestions` from partial match on `LauncherButtonItemViewModel.Command`
   - Suggestion refresh is debounced (`~120ms`) to reduce rapid recomputation during typing
   - Candidate row displays `Command`, `ButtonText`, `Tool Arguments` in `1:1:4` width ratio
+  - `Up/Down` wraps at list edges, and `Enter` executes selected suggestion
   - Windows arrow key handling is attached in `MainPage.xaml.cs` (`MainCommandEntry_HandlerChanged` / native `KeyDown`)
+  - macOS arrow key handling is attached in `Controls/CommandEntry` + `Platforms/MacCatalyst/Handlers/CommandEntryHandler.cs` (`PressesBegan`)
 - Placement-area rendering/performance:
   - `MainPage.xaml.cs` forwards viewport scroll/size to `MainViewModel.UpdateViewport(...)`
   - `MainViewModel` keeps filtered list and updates `VisibleButtons` via diff (insert/move/remove), not full clear+rebind
@@ -202,6 +206,8 @@ README はユーザー向け要約、このガイドは実装仕様の正本で�
   - ペイロードのインスタンスID/時刻で自己通知を除外
 - `Services/AppStoragePaths.cs`
   - ローカル保存先の共通定数/パス（DB、startup log、同期シグナル）を集約
+- `Controls/CommandEntry.cs` / `Platforms/MacCatalyst/Handlers/CommandEntryHandler.cs`
+  - macOS の command 入力は専用コントロール/ハンドラを使い、候補 `↑/↓` をネイティブ `UITextField` レベルで安定処理する
 - `Praxis.Core/Logic/*.cs`
   - 検索マッチャー、コマンドライン構築、グリッドスナップ、ログ保持期間処理、起動ターゲット解決、ボタンレイアウト既定値、レコード版比較
 
@@ -240,7 +246,7 @@ README はユーザー向け要約、このガイドは実装仕様の正本で�
 - アイコングリフは `OnPlatform` で出し分ける（Windows は `Segoe MDL2 Assets`、macOS は互換シンボル）。
 - モーダル下部のアクションボタン（`Cancel` / `Save`）は中央寄せ・同一幅で揃えている。
 - Dock ボタンの見た目は、配置領域のボタンと意図的に揃えている。
-- ホイールクリック編集は `Behaviors/MiddleClickBehavior.cs`（Windows ポインタイベント）で実装している。
+- ホイールクリック編集は `Behaviors/MiddleClickBehavior.cs` に加え、macOS 向けフォールバックを `MainPage.xaml.cs` / `Platforms/MacCatalyst/AppDelegate.cs` で実装している。
 - Tab フォーカス制御は `MainPage.xaml.cs` の `ApplyTabPolicy` でネイティブ `IsTabStop` を切り替えて実現している。
 - 矩形選択は `MainPage.xaml` の `SelectionRect`（グレーストローク/グレー透過塗り）で描画している。
 - 選択トグル修飾キー判定は `MainPage.xaml.cs` に集約している。
@@ -266,7 +272,9 @@ README はユーザー向け要約、このガイドは実装仕様の正本で�
   - `MainViewModel` で `LauncherButtonItemViewModel.Command` の部分一致候補 (`CommandSuggestions`) を構築
   - 候補更新はデバウンス（約 `120ms`）して、連続入力時の再計算を抑える
   - 候補行は `Command`、`ButtonText`、`Tool Arguments` を `1:1:4` 比率で表示
+  - `↑/↓` は候補端で循環し、`Enter` で選択候補を実行する
   - Windows の方向キー上下は `MainPage.xaml.cs` の `MainCommandEntry_HandlerChanged` / ネイティブ `KeyDown` で処理
+  - macOS の方向キー上下は `Controls/CommandEntry` + `Platforms/MacCatalyst/Handlers/CommandEntryHandler.cs` の `PressesBegan` で処理
 - 配置領域の描画/性能最適化:
   - `MainPage.xaml.cs` からスクロール位置と表示サイズを `MainViewModel.UpdateViewport(...)` に連携
   - `MainViewModel` はフィルタ済み一覧を保持し、`VisibleButtons` を差分更新（insert/move/remove）する

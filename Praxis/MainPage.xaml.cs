@@ -1,27 +1,40 @@
 using Praxis.ViewModels;
+using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Reflection;
 using Praxis.Behaviors;
+#if MACCATALYST
+using Foundation;
+using ObjCRuntime;
+using CoreGraphics;
+using UIKit;
+#endif
 
 namespace Praxis;
 
 public partial class MainPage : ContentPage
 {
     private readonly MainViewModel viewModel;
+    private bool xamlLoaded;
     private bool initialized;
     private CancellationTokenSource? copyNoticeCts;
     private CancellationTokenSource? statusFlashCts;
     private bool pointerDragging;
-    private Point pointerStart;
+    private Point pointerStart = Point.Zero;
     private double pointerLastDx;
     private double pointerLastDy;
+    private double panDragLastDx;
+    private double panDragLastDy;
+    private object? panDragItem;
     private bool selectionDragging;
+    private bool selectionPanPrimed;
     private Guid? suppressTapExecuteForItemId;
     private bool suppressNextRootSuggestionClose;
     private Point selectionStartCanvas;
     private Point selectionStartViewport;
     private Point selectionLastCanvas;
     private Point selectionLastViewport;
+    private Point? lastPointerOnRoot;
     private TaskCompletionSource<EditorConflictResolution>? editorConflictTcs;
 #if WINDOWS
     private Microsoft.UI.Xaml.UIElement? capturedElement;
@@ -30,16 +43,28 @@ public partial class MainPage : ContentPage
     private Microsoft.UI.Xaml.UIElement? pageNativeElement;
     private Microsoft.UI.Xaml.Input.KeyEventHandler? pageKeyDownHandler;
 #endif
+#if MACCATALYST
+    private UIKeyCommand? modalEscapeKeyCommand;
+    private UIKeyCommand? modalSaveKeyCommand;
+    private static readonly string macEscapeKeyInput = ResolveMacKeyInput("InputEscape", "\u001B");
+    private static readonly string macUpArrowKeyInput = ResolveMacKeyInput("InputUpArrow", "\uF700");
+    private static readonly string macDownArrowKeyInput = ResolveMacKeyInput("InputDownArrow", "\uF701");
+    private UIKeyCommand? commandSuggestionUpKeyCommand;
+    private UIKeyCommand? commandSuggestionDownKeyCommand;
+    private Microsoft.Maui.Dispatching.IDispatcherTimer? macMiddleButtonPollTimer;
+    private bool macMiddleButtonWasDown;
+#endif
 
     public MainPage(MainViewModel viewModel)
     {
-        App.WriteStartupLog("MainPage ctor begin");
         try
         {
             InitializeComponent();
+            xamlLoaded = true;
         }
         catch (Exception ex)
         {
+            xamlLoaded = false;
             App.WriteStartupLog($"MainPage InitializeComponent error: {ex}");
             Content = new VerticalStackLayout
             {
@@ -52,9 +77,18 @@ public partial class MainPage : ContentPage
             };
         }
         BindingContext = this.viewModel = viewModel;
+        if (!xamlLoaded)
+        {
+            return;
+        }
+
         this.viewModel.ResolveEditorConflictAsync = ResolveEditorConflictAsync;
         this.viewModel.PropertyChanged += ViewModelOnPropertyChanged;
+        this.viewModel.CommandSuggestions.CollectionChanged += CommandSuggestionsOnCollectionChanged;
         App.ThemeShortcutRequested += OnThemeShortcutRequested;
+        App.EditorShortcutRequested += OnEditorShortcutRequested;
+        App.CommandInputShortcutRequested += OnCommandInputShortcutRequested;
+        App.MiddleMouseClickRequested += OnMiddleMouseClickRequested;
         HandlerChanged += (_, _) =>
         {
             ApplyTabPolicy();
@@ -62,8 +96,17 @@ public partial class MainPage : ContentPage
             EnsureWindowsKeyHooks();
 #endif
             ApplyNeutralStatusBackground();
+#if MACCATALYST
+            ApplyMacVisualTuning();
+#endif
         };
-        SizeChanged += (_, _) => UpdateCommandSuggestionPopupPlacement();
+        SizeChanged += (_, _) =>
+        {
+            UpdateCommandSuggestionPopupPlacement();
+#if MACCATALYST
+            ApplyMacContentScale();
+#endif
+        };
         TopBarGrid.SizeChanged += (_, _) => UpdateCommandSuggestionPopupPlacement();
         MainCommandEntry.SizeChanged += (_, _) => UpdateCommandSuggestionPopupPlacement();
         MainSearchEntry.SizeChanged += (_, _) => UpdateCommandSuggestionPopupPlacement();
@@ -71,13 +114,19 @@ public partial class MainPage : ContentPage
         {
             Application.Current.RequestedThemeChanged += (_, _) => Dispatcher.Dispatch(ApplyNeutralStatusBackground);
         }
-        App.WriteStartupLog("MainPage ctor end");
+#if MACCATALYST
+        RebuildCommandSuggestionStack();
+#endif
     }
 
     protected override async void OnAppearing()
     {
         base.OnAppearing();
-        App.WriteStartupLog("MainPage OnAppearing");
+
+        if (!xamlLoaded)
+        {
+            return;
+        }
 
         if (initialized)
         {
@@ -95,13 +144,36 @@ public partial class MainPage : ContentPage
 #endif
             ApplyNeutralStatusBackground();
             SyncViewportToViewModel();
-            App.WriteStartupLog("MainPage InitializeAsync success");
+#if MACCATALYST
+            ApplyMacVisualTuning();
+            StartMacMiddleButtonPolling();
+#endif
+            UpdateNoteEditorHeight();
         }
         catch (Exception ex)
         {
             App.WriteStartupLog($"MainPage InitializeAsync error: {ex}");
             await DisplayAlertAsync("Initialization Error", ex.Message, "OK");
         }
+    }
+
+    protected override bool OnBackButtonPressed()
+    {
+        if (viewModel.IsEditorOpen && viewModel.CancelEditorCommand.CanExecute(null))
+        {
+            viewModel.CancelEditorCommand.Execute(null);
+            return true;
+        }
+
+        return base.OnBackButtonPressed();
+    }
+
+    protected override void OnDisappearing()
+    {
+        base.OnDisappearing();
+#if MACCATALYST
+        StopMacMiddleButtonPolling();
+#endif
     }
 
     private void PlacementArea_SizeChanged(object? sender, EventArgs e)
@@ -169,6 +241,46 @@ public partial class MainPage : ContentPage
         }
     }
 
+    private void ModalNoteEditor_HandlerChanged(object? sender, EventArgs e)
+    {
+#if MACCATALYST
+        if (ModalNoteEditor.Handler?.PlatformView is UITextView textView)
+        {
+            textView.BackgroundColor = UIColor.Clear;
+            textView.Layer.BorderWidth = 0;
+            textView.Layer.CornerRadius = 0;
+        }
+        ApplyMacEditorKeyCommands();
+#endif
+        UpdateNoteEditorHeight();
+    }
+
+    private void ModalNoteEditor_TextChanged(object? sender, TextChangedEventArgs e)
+    {
+        UpdateNoteEditorHeight();
+    }
+
+    private void UpdateNoteEditorHeight()
+    {
+        if (!xamlLoaded)
+        {
+            return;
+        }
+
+        const double singleLineHeight = 40;
+        const double maxHeight = 220;
+        const double perLineHeight = 24;
+        const double basePadding = 16;
+        var text = ModalNoteEditor.Text ?? string.Empty;
+        var lineCount = Math.Max(1, text.Count(c => c == '\n') + 1);
+        var targetHeight = lineCount <= 1
+            ? singleLineHeight
+            : Math.Min(maxHeight, basePadding + (lineCount * perLineHeight));
+
+        ModalNoteEditor.HeightRequest = targetHeight;
+        ModalNoteContainer.HeightRequest = targetHeight;
+    }
+
     private void Draggable_PanUpdated(object? sender, PanUpdatedEventArgs e)
     {
 #if !WINDOWS
@@ -177,13 +289,80 @@ public partial class MainPage : ContentPage
             return;
         }
 
-        ExecuteDragFromItem(bindable.BindingContext, e.StatusType, e.TotalX, e.TotalY);
+        switch (e.StatusType)
+        {
+            case GestureStatus.Started:
+                panDragItem = bindable.BindingContext;
+                panDragLastDx = 0;
+                panDragLastDy = 0;
+                ExecuteDragFromItem(panDragItem, GestureStatus.Started, 0, 0);
+                break;
+            case GestureStatus.Running:
+                panDragLastDx = e.TotalX;
+                panDragLastDy = e.TotalY;
+                ExecuteDragFromItem(panDragItem ?? bindable.BindingContext, GestureStatus.Running, panDragLastDx, panDragLastDy);
+                break;
+            case GestureStatus.Completed:
+            case GestureStatus.Canceled:
+            {
+                var dx = e.TotalX;
+                var dy = e.TotalY;
+                if (Math.Abs(dx) < 0.5 && Math.Abs(panDragLastDx) >= 0.5)
+                {
+                    dx = panDragLastDx;
+                }
+
+                if (Math.Abs(dy) < 0.5 && Math.Abs(panDragLastDy) >= 0.5)
+                {
+                    dy = panDragLastDy;
+                }
+
+                ExecuteDragFromItem(panDragItem ?? bindable.BindingContext, GestureStatus.Completed, dx, dy);
+                panDragItem = null;
+                panDragLastDx = 0;
+                panDragLastDy = 0;
+                break;
+            }
+            default:
+                break;
+        }
 #endif
     }
 
     private void Draggable_PointerPressed(object? sender, PointerEventArgs e)
     {
-        if (sender is not BindableObject bindable || !IsPrimaryPointerPressed(e))
+        if (sender is not BindableObject bindable)
+        {
+            return;
+        }
+
+#if MACCATALYST
+        if (IsOtherMouseFromPlatformArgs(e.PlatformArgs) && bindable.BindingContext is LauncherButtonItemViewModel otherMouseItem)
+        {
+            suppressTapExecuteForItemId = otherMouseItem.Id;
+            pointerDragging = false;
+            ReleaseCapturedPointer();
+            if (viewModel.OpenEditorCommand.CanExecute(otherMouseItem))
+            {
+                viewModel.OpenEditorCommand.Execute(otherMouseItem);
+            }
+            return;
+        }
+#endif
+
+        if (IsMiddlePointerPressed(e) && bindable.BindingContext is LauncherButtonItemViewModel middleItem)
+        {
+            suppressTapExecuteForItemId = middleItem.Id;
+            pointerDragging = false;
+            ReleaseCapturedPointer();
+            if (viewModel.OpenEditorCommand.CanExecute(middleItem))
+            {
+                viewModel.OpenEditorCommand.Execute(middleItem);
+            }
+            return;
+        }
+
+        if (!IsPrimaryPointerPressed(e))
         {
             return;
         }
@@ -197,6 +376,21 @@ public partial class MainPage : ContentPage
             return;
         }
 
+ #if MACCATALYST
+        if (IsSecondaryPointerPressed(e) && bindable.BindingContext is LauncherButtonItemViewModel secondaryItem)
+        {
+            suppressTapExecuteForItemId = secondaryItem.Id;
+            pointerDragging = false;
+            ReleaseCapturedPointer();
+            if (viewModel.OpenContextMenuCommand.CanExecute(secondaryItem))
+            {
+                viewModel.OpenContextMenuCommand.Execute(secondaryItem);
+            }
+            return;
+        }
+ #endif
+
+#if !MACCATALYST
         suppressTapExecuteForItemId = null;
 
         var p = e.GetPosition(this);
@@ -213,6 +407,7 @@ public partial class MainPage : ContentPage
         TryCapturePointer(sender, e);
 #endif
         ExecuteDragFromItem(bindable.BindingContext, GestureStatus.Started, 0, 0);
+#endif
     }
 
     private void Draggable_PointerMoved(object? sender, PointerEventArgs e)
@@ -246,6 +441,20 @@ public partial class MainPage : ContentPage
 
     private void Draggable_PointerReleased(object? sender, PointerEventArgs e)
     {
+        if (sender is BindableObject bindableForMiddle &&
+            IsMiddlePointerPressed(e) &&
+            bindableForMiddle.BindingContext is LauncherButtonItemViewModel middleItem)
+        {
+            suppressTapExecuteForItemId = middleItem.Id;
+            pointerDragging = false;
+            ReleaseCapturedPointer();
+            if (viewModel.OpenEditorCommand.CanExecute(middleItem))
+            {
+                viewModel.OpenEditorCommand.Execute(middleItem);
+            }
+            return;
+        }
+
         if (!pointerDragging || sender is not BindableObject bindable)
         {
             return;
@@ -257,6 +466,73 @@ public partial class MainPage : ContentPage
         var dx = p?.X - pointerStart.X ?? pointerLastDx;
         var dy = p?.Y - pointerStart.Y ?? pointerLastDy;
         ExecuteDragFromItem(bindable.BindingContext, GestureStatus.Completed, dx, dy);
+    }
+
+    private void DockButton_PointerPressed(object? sender, PointerEventArgs e)
+    {
+        if (sender is not BindableObject bindable || bindable.BindingContext is not LauncherButtonItemViewModel item)
+        {
+            return;
+        }
+
+#if MACCATALYST
+        if (IsOtherMouseFromPlatformArgs(e.PlatformArgs))
+        {
+            if (viewModel.OpenEditorCommand.CanExecute(item))
+            {
+                viewModel.OpenEditorCommand.Execute(item);
+            }
+            return;
+        }
+#endif
+
+        if (IsMiddlePointerPressed(e))
+        {
+            if (viewModel.OpenEditorCommand.CanExecute(item))
+            {
+                viewModel.OpenEditorCommand.Execute(item);
+            }
+
+            return;
+        }
+
+#if MACCATALYST
+        if (!IsSecondaryPointerPressed(e))
+        {
+            return;
+        }
+
+        if (viewModel.OpenContextMenuCommand.CanExecute(item))
+        {
+            viewModel.OpenContextMenuCommand.Execute(item);
+        }
+#endif
+    }
+
+    private void Draggable_SecondaryTapped(object? sender, TappedEventArgs e)
+    {
+        if (sender is not BindableObject bindable || bindable.BindingContext is not LauncherButtonItemViewModel item)
+        {
+            return;
+        }
+
+        if (viewModel.OpenContextMenuCommand.CanExecute(item))
+        {
+            viewModel.OpenContextMenuCommand.Execute(item);
+        }
+    }
+
+    private void DockButton_SecondaryTapped(object? sender, TappedEventArgs e)
+    {
+        if (sender is not BindableObject bindable || bindable.BindingContext is not LauncherButtonItemViewModel item)
+        {
+            return;
+        }
+
+        if (viewModel.OpenContextMenuCommand.CanExecute(item))
+        {
+            viewModel.OpenContextMenuCommand.Execute(item);
+        }
     }
 
     private void Selection_PointerPressed(object? sender, PointerEventArgs e)
@@ -284,6 +560,22 @@ public partial class MainPage : ContentPage
             return;
         }
 
+#if MACCATALYST
+        if (!IsPrimaryPointerPressed(e) || IsOnAnyVisibleButton(point.Value))
+        {
+            selectionPanPrimed = false;
+            return;
+        }
+
+        selectionDragging = true;
+        selectionPanPrimed = true;
+        selectionStartCanvas = point.Value;
+        selectionStartViewport = ClampToPlacementViewport(viewportPoint.Value);
+        selectionLastCanvas = selectionStartCanvas;
+        selectionLastViewport = selectionStartViewport;
+        UpdateSelectionRect(selectionStartViewport, selectionStartViewport);
+        ExecuteSelectionPayload(new SelectionPayload(selectionStartCanvas.X, selectionStartCanvas.Y, selectionStartCanvas.X, selectionStartCanvas.Y, GestureStatus.Started));
+#else
         if (!IsPrimaryPointerPressed(e) || IsOnAnyVisibleButton(point.Value))
         {
             return;
@@ -299,6 +591,65 @@ public partial class MainPage : ContentPage
 #endif
         UpdateSelectionRect(selectionStartViewport, selectionStartViewport);
         ExecuteSelectionPayload(new SelectionPayload(selectionStartCanvas.X, selectionStartCanvas.Y, selectionStartCanvas.X, selectionStartCanvas.Y, GestureStatus.Started));
+#endif
+    }
+
+    private void Selection_PanUpdated(object? sender, PanUpdatedEventArgs e)
+    {
+#if WINDOWS
+        return;
+#else
+        if (viewModel.IsEditorOpen || viewModel.IsContextMenuOpen)
+        {
+            return;
+        }
+
+        switch (e.StatusType)
+        {
+            case GestureStatus.Started:
+                if (!selectionPanPrimed || !selectionDragging)
+                {
+                    return;
+                }
+
+                selectionLastViewport = selectionStartViewport;
+                selectionLastCanvas = selectionStartCanvas;
+                UpdateSelectionRect(selectionStartViewport, selectionStartViewport);
+                return;
+            case GestureStatus.Running:
+                if (!selectionDragging)
+                {
+                    return;
+                }
+
+                var viewportPoint = ClampToPlacementViewport(new Point(
+                    selectionStartViewport.X + e.TotalX,
+                    selectionStartViewport.Y + e.TotalY));
+                var canvasPoint = new Point(
+                    viewportPoint.X + PlacementScroll.ScrollX,
+                    viewportPoint.Y + PlacementScroll.ScrollY);
+
+                selectionLastViewport = viewportPoint;
+                selectionLastCanvas = canvasPoint;
+                UpdateSelectionRect(selectionStartViewport, viewportPoint);
+                ExecuteSelectionPayload(new SelectionPayload(selectionStartCanvas.X, selectionStartCanvas.Y, canvasPoint.X, canvasPoint.Y, GestureStatus.Running));
+                return;
+            case GestureStatus.Completed:
+            case GestureStatus.Canceled:
+                if (!selectionDragging)
+                {
+                    return;
+                }
+
+                selectionDragging = false;
+                selectionPanPrimed = false;
+                UpdateSelectionRect(selectionStartViewport, selectionLastViewport, hide: true);
+                ExecuteSelectionPayload(new SelectionPayload(selectionStartCanvas.X, selectionStartCanvas.Y, selectionLastCanvas.X, selectionLastCanvas.Y, GestureStatus.Completed));
+                return;
+            default:
+                return;
+        }
+#endif
     }
 
     private async void PlacementCanvas_SecondaryTapped(object? sender, TappedEventArgs e)
@@ -330,6 +681,7 @@ public partial class MainPage : ContentPage
 
     private void Selection_PointerMoved(object? sender, PointerEventArgs e)
     {
+#if !MACCATALYST
         if (!selectionDragging)
         {
             return;
@@ -359,13 +711,17 @@ public partial class MainPage : ContentPage
         }
 
         selectionLastCanvas = point.Value;
-        selectionLastViewport = viewportPoint.Value;
-        UpdateSelectionRect(selectionStartViewport, viewportPoint.Value);
+        selectionLastViewport = ClampToPlacementViewport(viewportPoint.Value);
+        UpdateSelectionRect(selectionStartViewport, selectionLastViewport);
         ExecuteSelectionPayload(new SelectionPayload(selectionStartCanvas.X, selectionStartCanvas.Y, point.Value.X, point.Value.Y, GestureStatus.Running));
+#endif
     }
 
     private void Selection_PointerReleased(object? sender, PointerEventArgs e)
     {
+#if MACCATALYST
+        selectionPanPrimed = false;
+#else
         if (!selectionDragging)
         {
             return;
@@ -375,9 +731,10 @@ public partial class MainPage : ContentPage
         ReleaseCapturedPointer();
         var point = GetCanvasPointFromPointer(e) ?? selectionStartCanvas;
         selectionLastCanvas = point;
-        selectionLastViewport = e.GetPosition(PlacementScroll) ?? selectionStartViewport;
-        UpdateSelectionRect(selectionStartViewport, e.GetPosition(PlacementScroll) ?? selectionStartViewport, hide: true);
+        selectionLastViewport = ClampToPlacementViewport(e.GetPosition(PlacementScroll) ?? selectionStartViewport);
+        UpdateSelectionRect(selectionStartViewport, selectionLastViewport, hide: true);
         ExecuteSelectionPayload(new SelectionPayload(selectionStartCanvas.X, selectionStartCanvas.Y, point.X, point.Y, GestureStatus.Completed));
+#endif
     }
 
     private void ExecuteDragFromItem(object? item, GestureStatus status, double totalX, double totalY)
@@ -475,6 +832,8 @@ public partial class MainPage : ContentPage
         var routedProp = platformArgs?.GetType().GetProperty("PointerRoutedEventArgs");
         var routed = routedProp?.GetValue(platformArgs) as Microsoft.UI.Xaml.Input.PointerRoutedEventArgs;
         return routed?.GetCurrentPoint(null).Properties?.IsLeftButtonPressed == true;
+#elif MACCATALYST
+        return IsPrimaryFromPlatformArgs(e.PlatformArgs);
 #else
         return true;
 #endif
@@ -487,9 +846,443 @@ public partial class MainPage : ContentPage
         var routedProp = platformArgs?.GetType().GetProperty("PointerRoutedEventArgs");
         var routed = routedProp?.GetValue(platformArgs) as Microsoft.UI.Xaml.Input.PointerRoutedEventArgs;
         return routed?.GetCurrentPoint(null).Properties?.IsRightButtonPressed == true;
+#elif MACCATALYST
+        return IsSecondaryFromPlatformArgs(e.PlatformArgs);
 #else
         return false;
 #endif
+    }
+
+    private static bool IsMiddlePointerPressed(PointerEventArgs e)
+    {
+#if WINDOWS
+        var platformArgs = e.PlatformArgs;
+        var routedProp = platformArgs?.GetType().GetProperty("PointerRoutedEventArgs");
+        var routed = routedProp?.GetValue(platformArgs) as Microsoft.UI.Xaml.Input.PointerRoutedEventArgs;
+        return routed?.GetCurrentPoint(null).Properties?.IsMiddleButtonPressed == true;
+#elif MACCATALYST
+        return IsMiddleFromPlatformArgs(e.PlatformArgs);
+#else
+        return false;
+#endif
+    }
+
+    private static bool IsMiddleFromPlatformArgs(object? platformArgs)
+    {
+        if (platformArgs is null)
+        {
+            return false;
+        }
+
+        if (IsMiddleFromObject(platformArgs))
+        {
+            return true;
+        }
+
+        var gestureRecognizer = TryGetProperty(platformArgs, "GestureRecognizer");
+        if (IsMiddleFromObject(gestureRecognizer))
+        {
+            return true;
+        }
+
+        var nativeEvent = TryGetProperty(platformArgs, "Event");
+        if (IsMiddleFromObject(nativeEvent))
+        {
+            return true;
+        }
+
+        return false;
+    }
+
+    private static bool IsOtherMouseFromPlatformArgs(object? platformArgs)
+    {
+        if (platformArgs is null)
+        {
+            return false;
+        }
+
+        var snapshot = BuildPointerDebugSnapshot(platformArgs);
+        if (snapshot.Contains("OtherMouse", StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        var text = platformArgs.ToString() ?? string.Empty;
+        return text.Contains("OtherMouse", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool IsPrimaryFromPlatformArgs(object? platformArgs)
+    {
+        if (platformArgs is null)
+        {
+            return true;
+        }
+
+        if (IsSecondaryFromPlatformArgs(platformArgs) || IsMiddleFromPlatformArgs(platformArgs))
+        {
+            return false;
+        }
+
+        if (IsPrimaryFromObject(platformArgs))
+        {
+            return true;
+        }
+
+        var gestureRecognizer = TryGetProperty(platformArgs, "GestureRecognizer");
+        if (IsPrimaryFromObject(gestureRecognizer))
+        {
+            return true;
+        }
+
+        var nativeEvent = TryGetProperty(platformArgs, "Event");
+        if (IsPrimaryFromObject(nativeEvent))
+        {
+            return true;
+        }
+
+        return true;
+    }
+
+    private static bool IsSecondaryFromPlatformArgs(object? platformArgs)
+    {
+        if (platformArgs is null)
+        {
+            return false;
+        }
+
+        if (IsSecondaryFromObject(platformArgs))
+        {
+            return true;
+        }
+
+        var gestureRecognizer = TryGetProperty(platformArgs, "GestureRecognizer");
+        if (IsSecondaryFromObject(gestureRecognizer))
+        {
+            return true;
+        }
+
+        var nativeEvent = TryGetProperty(platformArgs, "Event");
+        if (IsSecondaryFromObject(nativeEvent))
+        {
+            return true;
+        }
+
+        return false;
+    }
+
+    private static bool IsPrimaryFromObject(object? source)
+    {
+        if (source is null)
+        {
+            return false;
+        }
+
+        var leftPressed = TryGetProperty(source, "IsLeftButtonPressed");
+        if (leftPressed is bool pressed && pressed)
+        {
+            return true;
+        }
+
+        var pressedButton = TryGetProperty(source, "PressedButton");
+        if (IsPrimaryButtonValue(pressedButton))
+        {
+            return true;
+        }
+
+        var button = TryGetProperty(source, "Button");
+        if (IsPrimaryButtonValue(button))
+        {
+            return true;
+        }
+
+        var buttons = TryGetProperty(source, "Buttons");
+        if (IsPrimaryButtonValue(buttons))
+        {
+            return true;
+        }
+
+        var buttonMask = TryGetProperty(source, "ButtonMask");
+        if (TryConvertToUInt64(buttonMask, out var mask) && mask != 0 && (mask & 0x1) != 0 && (mask & ~0x1UL) == 0)
+        {
+            return true;
+        }
+
+        var buttonNumber = TryGetProperty(source, "ButtonNumber");
+        if (TryConvertToInt32(buttonNumber, out var number) && number == 0)
+        {
+            return true;
+        }
+
+        var currentEvent = TryGetProperty(source, "CurrentEvent");
+        if (currentEvent is not null && !ReferenceEquals(currentEvent, source))
+        {
+            return IsPrimaryFromObject(currentEvent);
+        }
+
+        return false;
+    }
+
+    private static bool IsMiddleFromObject(object? source)
+    {
+        if (source is null)
+        {
+            return false;
+        }
+
+        var eventTypeText = TryGetProperty(source, "Type")?.ToString() ?? string.Empty;
+        if (eventTypeText.Contains("OtherMouse", StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        var middlePressed = TryGetProperty(source, "IsMiddleButtonPressed");
+        if (middlePressed is bool pressed && pressed)
+        {
+            return true;
+        }
+
+        var pressedButton = TryGetProperty(source, "PressedButton");
+        if (IsMiddleButtonValue(pressedButton))
+        {
+            return true;
+        }
+
+        var button = TryGetProperty(source, "Button");
+        if (IsMiddleButtonValue(button))
+        {
+            return true;
+        }
+
+        var buttons = TryGetProperty(source, "Buttons");
+        if (IsMiddleButtonValue(buttons))
+        {
+            return true;
+        }
+
+        var buttonNumber = TryGetProperty(source, "ButtonNumber");
+        if (TryConvertToInt32(buttonNumber, out var number) && number >= 2)
+        {
+            return true;
+        }
+        var looksLikeOtherMouse = eventTypeText.Contains("OtherMouse", StringComparison.OrdinalIgnoreCase);
+
+        var buttonMask = TryGetProperty(source, "ButtonMask");
+        if (TryConvertToUInt64(buttonMask, out var mask))
+        {
+            if ((mask & 0x4) != 0 || (mask & 0x8) != 0 || (mask & 0x10) != 0)
+            {
+                return true;
+            }
+
+            if ((mask & 0x2) != 0 && looksLikeOtherMouse)
+            {
+                return true;
+            }
+        }
+
+        var currentEvent = TryGetProperty(source, "CurrentEvent");
+        if (currentEvent is not null && !ReferenceEquals(currentEvent, source))
+        {
+            return IsMiddleFromObject(currentEvent);
+        }
+
+        return false;
+    }
+
+    private static bool IsSecondaryFromObject(object? source)
+    {
+        if (source is null)
+        {
+            return false;
+        }
+
+        var rightPressed = TryGetProperty(source, "IsRightButtonPressed");
+        if (rightPressed is bool pressed && pressed)
+        {
+            return true;
+        }
+
+        var pressedButton = TryGetProperty(source, "PressedButton");
+        if (IsSecondaryButtonValue(pressedButton))
+        {
+            return true;
+        }
+
+        var button = TryGetProperty(source, "Button");
+        if (IsSecondaryButtonValue(button))
+        {
+            return true;
+        }
+
+        var buttons = TryGetProperty(source, "Buttons");
+        if (IsSecondaryButtonValue(buttons))
+        {
+            return true;
+        }
+
+        var buttonMask = TryGetProperty(source, "ButtonMask");
+        if (TryConvertToUInt64(buttonMask, out var mask) && (mask & 0x2) != 0)
+        {
+            return true;
+        }
+
+        var buttonNumber = TryGetProperty(source, "ButtonNumber");
+        if (TryConvertToInt32(buttonNumber, out var number) && number == 1)
+        {
+            return true;
+        }
+
+        var currentEvent = TryGetProperty(source, "CurrentEvent");
+        if (currentEvent is not null && !ReferenceEquals(currentEvent, source))
+        {
+            return IsSecondaryFromObject(currentEvent);
+        }
+
+        return false;
+    }
+
+    private static bool IsMiddleButtonValue(object? value)
+    {
+        if (value is null)
+        {
+            return false;
+        }
+
+        var text = value.ToString() ?? string.Empty;
+        if (text.Contains("Middle", StringComparison.OrdinalIgnoreCase) ||
+            text.Contains("Auxiliary", StringComparison.OrdinalIgnoreCase) ||
+            text.Contains("Center", StringComparison.OrdinalIgnoreCase) ||
+            text.Contains("Tertiary", StringComparison.OrdinalIgnoreCase) ||
+            text.Contains("Other", StringComparison.OrdinalIgnoreCase) ||
+            text.Contains("Button2", StringComparison.OrdinalIgnoreCase) ||
+            text.Contains("Button3", StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        return int.TryParse(text, out var number) && (number == 2 || number == 3);
+    }
+
+    private static bool IsSecondaryButtonValue(object? value)
+    {
+        if (value is null)
+        {
+            return false;
+        }
+
+        if (IsMiddleButtonValue(value))
+        {
+            return false;
+        }
+
+        var text = value.ToString() ?? string.Empty;
+        if (text.Contains("Secondary", StringComparison.OrdinalIgnoreCase) ||
+            text.Contains("Right", StringComparison.OrdinalIgnoreCase) ||
+            text.Contains("Button1", StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        return int.TryParse(text, out var number) && number == 1;
+    }
+
+    private static bool IsPrimaryButtonValue(object? value)
+    {
+        if (value is null)
+        {
+            return false;
+        }
+
+        var text = value.ToString() ?? string.Empty;
+        if (text.Contains("Primary", StringComparison.OrdinalIgnoreCase) ||
+            text.Contains("Left", StringComparison.OrdinalIgnoreCase) ||
+            text.Contains("Button0", StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        return int.TryParse(text, out var number) && number == 0;
+    }
+
+#if MACCATALYST
+    private static string BuildPointerDebugSnapshot(object? platformArgs)
+    {
+        if (platformArgs is null)
+        {
+            return string.Empty;
+        }
+
+        var segments = new List<string>();
+        AppendPointerDebugSnapshot(segments, "args", platformArgs);
+        var gestureRecognizer = TryGetProperty(platformArgs, "GestureRecognizer");
+        if (gestureRecognizer is not null)
+        {
+            AppendPointerDebugSnapshot(segments, "gesture", gestureRecognizer);
+        }
+
+        var nativeEvent = TryGetProperty(platformArgs, "Event");
+        if (nativeEvent is not null)
+        {
+            AppendPointerDebugSnapshot(segments, "event", nativeEvent);
+        }
+
+        return string.Join(" | ", segments);
+    }
+
+    private static void AppendPointerDebugSnapshot(List<string> segments, string prefix, object source)
+    {
+        var type = TryGetProperty(source, "Type");
+        var pressedButton = TryGetProperty(source, "PressedButton");
+        var button = TryGetProperty(source, "Button");
+        var buttons = TryGetProperty(source, "Buttons");
+        var buttonMask = TryGetProperty(source, "ButtonMask");
+        var buttonNumber = TryGetProperty(source, "ButtonNumber");
+
+        var segment = $"{prefix}.src={source.GetType().Name}";
+        if (type is not null) segment += $",type={type}";
+        if (pressedButton is not null) segment += $",pressed={pressedButton}";
+        if (button is not null) segment += $",button={button}";
+        if (buttons is not null) segment += $",buttons={buttons}";
+        if (buttonMask is not null) segment += $",mask={buttonMask}";
+        if (buttonNumber is not null) segment += $",number={buttonNumber}";
+        segments.Add(segment);
+    }
+#endif
+
+    private static bool TryConvertToUInt64(object? value, out ulong number)
+    {
+        switch (value)
+        {
+            case null:
+                number = 0;
+                return false;
+            case ulong unsignedLong:
+                number = unsignedLong;
+                return true;
+            case Enum enumValue:
+                number = Convert.ToUInt64(enumValue);
+                return true;
+            default:
+                return ulong.TryParse(value.ToString(), out number);
+        }
+    }
+
+    private static bool TryConvertToInt32(object? value, out int number)
+    {
+        switch (value)
+        {
+            case null:
+                number = 0;
+                return false;
+            case int signed:
+                number = signed;
+                return true;
+            case Enum enumValue:
+                number = Convert.ToInt32(enumValue);
+                return true;
+            default:
+                return int.TryParse(value.ToString(), out number);
+        }
     }
 
     private Point? GetCanvasPointFromPointer(PointerEventArgs e)
@@ -501,6 +1294,15 @@ public partial class MainPage : ContentPage
         }
 
         return new Point(p.Value.X + PlacementScroll.ScrollX, p.Value.Y + PlacementScroll.ScrollY);
+    }
+
+    private Point ClampToPlacementViewport(Point point)
+    {
+        var maxX = Math.Max(0, PlacementScroll.Width);
+        var maxY = Math.Max(0, PlacementScroll.Height);
+        return new Point(
+            Math.Clamp(point.X, 0, maxX),
+            Math.Clamp(point.Y, 0, maxY));
     }
 
     private bool IsOnAnyVisibleButton(Point point)
@@ -644,14 +1446,21 @@ public partial class MainPage : ContentPage
             if (e.PropertyName == nameof(MainViewModel.IsEditorOpen))
             {
                 ApplyTabPolicy();
+                UpdateNoteEditorHeight();
             }
             return;
         }
 
         ApplyTabPolicy();
+        UpdateNoteEditorHeight();
         Dispatcher.DispatchDelayed(TimeSpan.FromMilliseconds(60), () =>
         {
             ModalCommandEntry.Focus();
+#if MACCATALYST
+            EnsureMacFirstResponder();
+            ApplyMacEditorKeyCommands();
+            Dispatcher.DispatchDelayed(TimeSpan.FromMilliseconds(220), ApplyMacEditorKeyCommands);
+#endif
         });
     }
 
@@ -797,6 +1606,9 @@ public partial class MainPage : ContentPage
 #if WINDOWS
         EnsureWindowsKeyHooks();
         EnsureWindowsTextBoxHooks();
+#endif
+#if MACCATALYST
+        ApplyMacCommandSuggestionKeyCommands();
 #endif
         UpdateCommandSuggestionPopupPlacement();
     }
@@ -1006,9 +1818,117 @@ public partial class MainPage : ContentPage
 
 #endif
 
+    private void CommandSuggestionsOnCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+    {
+        if (e.OldItems is not null)
+        {
+            foreach (var oldItem in e.OldItems.OfType<CommandSuggestionItemViewModel>())
+            {
+                oldItem.PropertyChanged -= CommandSuggestionItemOnPropertyChanged;
+            }
+        }
+
+        if (e.NewItems is not null)
+        {
+            foreach (var newItem in e.NewItems.OfType<CommandSuggestionItemViewModel>())
+            {
+                newItem.PropertyChanged += CommandSuggestionItemOnPropertyChanged;
+            }
+        }
+
+#if MACCATALYST
+        Dispatcher.Dispatch(RebuildCommandSuggestionStack);
+#endif
+    }
+
+    private void CommandSuggestionItemOnPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+#if MACCATALYST
+        if (e.PropertyName == nameof(CommandSuggestionItemViewModel.IsSelected))
+        {
+            Dispatcher.Dispatch(RebuildCommandSuggestionStack);
+        }
+#endif
+    }
+
     private void OnThemeShortcutRequested(string mode)
     {
         Dispatcher.Dispatch(() => ApplyThemeShortcut(mode));
+    }
+
+    private void OnEditorShortcutRequested(string action)
+    {
+        Dispatcher.Dispatch(() =>
+        {
+            if (!viewModel.IsEditorOpen)
+            {
+                return;
+            }
+
+            if (string.Equals(action, "Save", StringComparison.OrdinalIgnoreCase))
+            {
+                if (viewModel.SaveEditorCommand.CanExecute(null))
+                {
+                    viewModel.SaveEditorCommand.Execute(null);
+                }
+
+                return;
+            }
+
+            if (!string.Equals(action, "Cancel", StringComparison.OrdinalIgnoreCase))
+            {
+                return;
+            }
+
+            if (viewModel.CancelEditorCommand.CanExecute(null))
+            {
+                viewModel.CancelEditorCommand.Execute(null);
+            }
+        });
+    }
+
+    private void OnCommandInputShortcutRequested(string action)
+    {
+#if MACCATALYST
+        Dispatcher.Dispatch(() =>
+        {
+            if (!IsMainCommandEntryReadyForSuggestionNavigation())
+            {
+                return;
+            }
+
+            if (string.Equals(action, "Up", StringComparison.OrdinalIgnoreCase))
+            {
+                if (viewModel.MoveSuggestionUpCommand.CanExecute(null))
+                {
+                    viewModel.MoveSuggestionUpCommand.Execute(null);
+                }
+
+                return;
+            }
+
+            if (string.Equals(action, "Down", StringComparison.OrdinalIgnoreCase) &&
+                viewModel.MoveSuggestionDownCommand.CanExecute(null))
+            {
+                viewModel.MoveSuggestionDownCommand.Execute(null);
+            }
+        });
+#endif
+    }
+
+    private void OnMiddleMouseClickRequested()
+    {
+#if MACCATALYST
+        Dispatcher.Dispatch(() =>
+        {
+            if (lastPointerOnRoot is null)
+            {
+                return;
+            }
+
+            HandleMacMiddleClick(lastPointerOnRoot.Value);
+        });
+#endif
     }
 
     private void ApplyThemeShortcut(string mode)
@@ -1083,24 +2003,134 @@ public partial class MainPage : ContentPage
             return;
         }
 
+        var pointer = e.GetPosition(RootGrid);
+        if (pointer is not null)
+        {
+            lastPointerOnRoot = pointer.Value;
+        }
+
+#if MACCATALYST
+        if (pointer is not null && IsMiddlePointerPressed(e) && !IsSecondaryPointerPressed(e))
+        {
+            if (HandleMacMiddleClick(pointer.Value))
+            {
+                return;
+            }
+        }
+#endif
+
         if (!viewModel.IsCommandSuggestionOpen)
         {
             return;
         }
 
-        var p = e.GetPosition(RootGrid);
-        if (p is null)
+        if (pointer is null)
         {
             return;
         }
 
-        if (IsPointInsideElement(p.Value, MainCommandEntry) || IsPointInsideElement(p.Value, CommandSuggestionPopup))
+        if (IsPointInsideElement(pointer.Value, MainCommandEntry) || IsPointInsideElement(pointer.Value, CommandSuggestionPopup))
         {
             return;
         }
 
         CloseCommandSuggestionPopup();
     }
+
+    private void RootGrid_PointerMoved(object? sender, PointerEventArgs e)
+    {
+        var pointer = e.GetPosition(RootGrid);
+        if (pointer is not null)
+        {
+            lastPointerOnRoot = pointer.Value;
+        }
+    }
+
+#if MACCATALYST
+    private bool HandleMacMiddleClick(Point rootPoint)
+    {
+        if (viewModel.IsEditorOpen || viewModel.IsContextMenuOpen)
+        {
+            return false;
+        }
+
+        var hit = TryGetPlacementButtonAtRootPoint(rootPoint) ?? TryGetDockButtonAtRootPoint(rootPoint);
+        if (hit is null)
+        {
+            return false;
+        }
+
+        suppressTapExecuteForItemId = hit.Id;
+        if (viewModel.OpenEditorCommand.CanExecute(hit))
+        {
+            viewModel.OpenEditorCommand.Execute(hit);
+            return true;
+        }
+
+        return false;
+    }
+
+    private LauncherButtonItemViewModel? TryGetPlacementButtonAtRootPoint(Point rootPoint)
+    {
+        var local = TryConvertRootPointToElementLocal(rootPoint, PlacementScroll);
+        if (local is null)
+        {
+            return null;
+        }
+
+        var canvasPoint = new Point(local.Value.X + PlacementScroll.ScrollX, local.Value.Y + PlacementScroll.ScrollY);
+        return viewModel.VisibleButtons.LastOrDefault(item =>
+            canvasPoint.X >= item.X &&
+            canvasPoint.X <= item.X + item.Width &&
+            canvasPoint.Y >= item.Y &&
+            canvasPoint.Y <= item.Y + item.Height);
+    }
+
+    private LauncherButtonItemViewModel? TryGetDockButtonAtRootPoint(Point rootPoint)
+    {
+        var local = TryConvertRootPointToElementLocal(rootPoint, DockScroll);
+        if (local is null)
+        {
+            return null;
+        }
+
+        var x = local.Value.X + DockScroll.ScrollX;
+        var y = local.Value.Y + DockScroll.ScrollY;
+        const double spacing = 10;
+        var cursor = 0.0;
+
+        foreach (var item in viewModel.DockButtons)
+        {
+            var width = Math.Max(1, item.Width);
+            var height = Math.Max(1, item.Height);
+            if (x >= cursor && x <= cursor + width && y >= 0 && y <= height)
+            {
+                return item;
+            }
+
+            cursor += width + spacing;
+        }
+
+        return null;
+    }
+
+    private Point? TryConvertRootPointToElementLocal(Point rootPoint, VisualElement element)
+    {
+        if (element.Width <= 0 || element.Height <= 0)
+        {
+            return null;
+        }
+
+        var offset = GetPositionRelativeToAncestor(element, RootGrid);
+        var local = new Point(rootPoint.X - offset.X, rootPoint.Y - offset.Y);
+        if (local.X < 0 || local.Y < 0 || local.X > element.Width || local.Y > element.Height)
+        {
+            return null;
+        }
+
+        return local;
+    }
+#endif
 
     private void UpdateCommandSuggestionPopupPlacement()
     {
@@ -1150,6 +2180,331 @@ public partial class MainPage : ContentPage
             viewModel.ReopenCommandSuggestionsCommand.Execute(null);
         }
     }
+
+#if MACCATALYST
+    private void RebuildCommandSuggestionStack()
+    {
+        if (!xamlLoaded)
+        {
+            return;
+        }
+
+        CommandSuggestionStack.Children.Clear();
+        foreach (var item in viewModel.CommandSuggestions)
+        {
+            var row = new Grid
+            {
+                ColumnDefinitions = new ColumnDefinitionCollection
+                {
+                    new ColumnDefinition(new GridLength(1, GridUnitType.Star)),
+                    new ColumnDefinition(new GridLength(1, GridUnitType.Star)),
+                    new ColumnDefinition(new GridLength(4, GridUnitType.Star)),
+                },
+                ColumnSpacing = 10,
+                Padding = new Thickness(8, 6),
+                MinimumHeightRequest = 34,
+                HorizontalOptions = LayoutOptions.Fill,
+                BackgroundColor = item.IsSelected
+                    ? (Application.Current?.RequestedTheme == AppTheme.Dark ? Color.FromArgb("#3D3D3D") : Color.FromArgb("#E6E6E6"))
+                    : Colors.Transparent,
+            };
+
+            var tap = new TapGestureRecognizer();
+            tap.Tapped += (_, _) =>
+            {
+                if (viewModel.PickSuggestionCommand.CanExecute(item))
+                {
+                    viewModel.PickSuggestionCommand.Execute(item);
+                }
+            };
+            row.GestureRecognizers.Add(tap);
+
+            var commandLabel = new Label
+            {
+                Text = item.Command,
+                LineBreakMode = LineBreakMode.TailTruncation,
+            };
+            row.Children.Add(commandLabel);
+
+            var buttonTextLabel = new Label
+            {
+                Text = item.ButtonText,
+                LineBreakMode = LineBreakMode.TailTruncation,
+            };
+            row.SetColumn(buttonTextLabel, 1);
+            row.Children.Add(buttonTextLabel);
+
+            var toolArgsLabel = new Label
+            {
+                Text = item.ToolArguments,
+                LineBreakMode = LineBreakMode.TailTruncation,
+            };
+            row.SetColumn(toolArgsLabel, 2);
+            row.Children.Add(toolArgsLabel);
+
+            CommandSuggestionStack.Children.Add(row);
+        }
+    }
+
+    private void ApplyMacVisualTuning()
+    {
+        EnsureMacFirstResponder();
+        ApplyMacContentScale();
+        ApplyMacCommandSuggestionKeyCommands();
+        ApplyMacEditorKeyCommands();
+    }
+
+    private bool IsMainCommandEntryReadyForSuggestionNavigation()
+    {
+        if (!xamlLoaded || viewModel.IsEditorOpen || viewModel.IsContextMenuOpen)
+        {
+            return false;
+        }
+
+        if (viewModel.IsCommandSuggestionOpen)
+        {
+            return true;
+        }
+
+        if (MainCommandEntry.IsFocused)
+        {
+            return true;
+        }
+
+        return MainCommandEntry.Handler?.PlatformView is UIResponder responder && responder.IsFirstResponder;
+    }
+
+    private void ApplyMacEditorKeyCommands()
+    {
+        if (!viewModel.IsEditorOpen)
+        {
+            return;
+        }
+
+        modalEscapeKeyCommand ??= CreateMacEscapeKeyCommand();
+        modalSaveKeyCommand ??= UIKeyCommand.Create(new NSString("s"), UIKeyModifierFlags.Command, new Selector("handleEditorSave:"));
+
+        RegisterMacEditorCommands(ModalCommandEntry.Handler?.PlatformView as UIResponder);
+        RegisterMacEditorCommands(ModalButtonTextEntry.Handler?.PlatformView as UIResponder);
+        RegisterMacEditorCommands(ModalToolEntry.Handler?.PlatformView as UIResponder);
+        RegisterMacEditorCommands(ModalArgumentsEntry.Handler?.PlatformView as UIResponder);
+        RegisterMacEditorCommands(ModalClipWordEntry.Handler?.PlatformView as UIResponder);
+        RegisterMacEditorCommands(ModalNoteEditor.Handler?.PlatformView as UIResponder);
+        RegisterMacEditorCommands(UIApplication.SharedApplication.Delegate as UIResponder);
+        if (Window?.Handler?.PlatformView is UIWindow nativeWindow)
+        {
+            RegisterMacEditorCommands(nativeWindow);
+            RegisterMacEditorCommands(nativeWindow.RootViewController);
+        }
+    }
+
+    private void ApplyMacCommandSuggestionKeyCommands()
+    {
+        commandSuggestionUpKeyCommand ??= CreateMacCommandSuggestionKeyCommand(macUpArrowKeyInput, "handleCommandSuggestionUp:");
+        commandSuggestionDownKeyCommand ??= CreateMacCommandSuggestionKeyCommand(macDownArrowKeyInput, "handleCommandSuggestionDown:");
+
+        RegisterMacCommandSuggestionCommands(MainCommandEntry.Handler?.PlatformView as UIResponder);
+        if (Window?.Handler?.PlatformView is UIWindow nativeWindow)
+        {
+            RegisterMacCommandSuggestionCommands(nativeWindow);
+            RegisterMacCommandSuggestionCommands(nativeWindow.RootViewController);
+        }
+    }
+
+    private void RegisterMacCommandSuggestionCommands(UIResponder? responder)
+    {
+        if (responder is null || commandSuggestionUpKeyCommand is null || commandSuggestionDownKeyCommand is null)
+        {
+            return;
+        }
+
+        InvokeResponderSelector(responder, "removeKeyCommand:", commandSuggestionUpKeyCommand);
+        InvokeResponderSelector(responder, "removeKeyCommand:", commandSuggestionDownKeyCommand);
+        InvokeResponderSelector(responder, "addKeyCommand:", commandSuggestionUpKeyCommand);
+        InvokeResponderSelector(responder, "addKeyCommand:", commandSuggestionDownKeyCommand);
+    }
+
+    private void RegisterMacEditorCommands(UIResponder? responder)
+    {
+        if (responder is null || modalEscapeKeyCommand is null || modalSaveKeyCommand is null)
+        {
+            return;
+        }
+
+        InvokeResponderSelector(responder, "removeKeyCommand:", modalEscapeKeyCommand);
+        InvokeResponderSelector(responder, "removeKeyCommand:", modalSaveKeyCommand);
+        InvokeResponderSelector(responder, "addKeyCommand:", modalEscapeKeyCommand);
+        InvokeResponderSelector(responder, "addKeyCommand:", modalSaveKeyCommand);
+    }
+
+    private static void InvokeResponderSelector(UIResponder responder, string selectorName, NSObject argument)
+    {
+        var selector = new Selector(selectorName);
+        if (!responder.RespondsToSelector(selector))
+        {
+            return;
+        }
+
+        responder.PerformSelector(selector, argument, 0);
+    }
+
+    private static UIKeyCommand CreateMacEscapeKeyCommand()
+    {
+        var command = UIKeyCommand.Create(new NSString(macEscapeKeyInput), 0, new Selector("handleEditorCancel:"));
+        TrySetKeyCommandPriorityOverSystem(command);
+        return command;
+    }
+
+    private static UIKeyCommand CreateMacCommandSuggestionKeyCommand(string keyInput, string selectorName)
+    {
+        var command = UIKeyCommand.Create(new NSString(keyInput), 0, new Selector(selectorName));
+        TrySetKeyCommandPriorityOverSystem(command);
+        return command;
+    }
+
+    private static void TrySetKeyCommandPriorityOverSystem(UIKeyCommand command)
+    {
+        const BindingFlags flags = BindingFlags.Public | BindingFlags.Instance;
+        var prop = typeof(UIKeyCommand).GetProperty("WantsPriorityOverSystemBehavior", flags);
+        if (prop?.CanWrite == true)
+        {
+            prop.SetValue(command, true);
+            return;
+        }
+
+        var method = typeof(UIKeyCommand).GetMethod("SetWantsPriorityOverSystemBehavior", flags);
+        method?.Invoke(command, [true]);
+    }
+
+    private static string ResolveMacKeyInput(string inputName, string fallback)
+    {
+        var keyInputProperty = typeof(UIKeyCommand).GetProperty(inputName, BindingFlags.Public | BindingFlags.Static);
+        if (keyInputProperty?.GetValue(null) is NSString nsInput)
+        {
+            return nsInput.ToString();
+        }
+
+        if (keyInputProperty?.GetValue(null) is string inputText && !string.IsNullOrEmpty(inputText))
+        {
+            return inputText;
+        }
+
+        var keyInputField = typeof(UIKeyCommand).GetField(inputName, BindingFlags.Public | BindingFlags.Static);
+        if (keyInputField?.GetValue(null) is NSString nsInputField)
+        {
+            return nsInputField.ToString();
+        }
+
+        if (keyInputField?.GetValue(null) is string inputFieldText && !string.IsNullOrEmpty(inputFieldText))
+        {
+            return inputFieldText;
+        }
+
+        return fallback;
+    }
+
+    private void EnsureMacFirstResponder()
+    {
+        if (UIApplication.SharedApplication.Delegate is UIResponder appDelegate && appDelegate.CanBecomeFirstResponder)
+        {
+            appDelegate.BecomeFirstResponder();
+        }
+
+        if (Window?.Handler?.PlatformView is UIWindow nativeWindow &&
+            nativeWindow.RootViewController is UIResponder controllerResponder &&
+            controllerResponder.CanBecomeFirstResponder)
+        {
+            controllerResponder.BecomeFirstResponder();
+        }
+    }
+
+    private void ApplyMacContentScale()
+    {
+        if (Handler?.PlatformView is not UIView rootView)
+        {
+            return;
+        }
+
+        var scale = UIScreen.MainScreen.Scale;
+        ApplyMacContentScaleRecursive(rootView, scale);
+    }
+
+    private static void ApplyMacContentScaleRecursive(UIView view, nfloat scale)
+    {
+        view.ContentScaleFactor = scale;
+        view.Layer.ContentsScale = scale;
+        foreach (var subview in view.Subviews)
+        {
+            ApplyMacContentScaleRecursive(subview, scale);
+        }
+    }
+
+    private void StartMacMiddleButtonPolling()
+    {
+        if (macMiddleButtonPollTimer is not null)
+        {
+            return;
+        }
+
+        var dispatcher = Dispatcher;
+        if (dispatcher is null)
+        {
+            return;
+        }
+
+        macMiddleButtonPollTimer = dispatcher.CreateTimer();
+        macMiddleButtonPollTimer.Interval = TimeSpan.FromMilliseconds(16);
+        macMiddleButtonPollTimer.IsRepeating = true;
+        macMiddleButtonPollTimer.Tick += OnMacMiddleButtonPollTick;
+        macMiddleButtonWasDown = IsMacMiddleButtonCurrentlyDown();
+        macMiddleButtonPollTimer.Start();
+    }
+
+    private void StopMacMiddleButtonPolling()
+    {
+        if (macMiddleButtonPollTimer is null)
+        {
+            return;
+        }
+
+        macMiddleButtonPollTimer.Tick -= OnMacMiddleButtonPollTick;
+        macMiddleButtonPollTimer.Stop();
+        macMiddleButtonPollTimer = null;
+    }
+
+    private void OnMacMiddleButtonPollTick(object? sender, EventArgs e)
+    {
+        var isDown = IsMacMiddleButtonCurrentlyDown();
+        if (isDown && !macMiddleButtonWasDown)
+        {
+            if (lastPointerOnRoot is Point pointer)
+            {
+                HandleMacMiddleClick(pointer);
+            }
+        }
+
+        macMiddleButtonWasDown = isDown;
+    }
+
+    private static bool IsMacMiddleButtonCurrentlyDown()
+    {
+        try
+        {
+            return CGEventSource.GetButtonState(CGEventSourceStateID.HidSystem, CGMouseButton.Center);
+        }
+        catch
+        {
+            try
+            {
+                return CGEventSource.GetButtonState(CGEventSourceStateID.CombinedSession, CGMouseButton.Center);
+            }
+            catch
+            {
+                return false;
+            }
+        }
+    }
+#endif
 
     private static Point GetPositionRelativeToAncestor(VisualElement element, VisualElement ancestor)
     {

@@ -1,26 +1,39 @@
+using Microsoft.Extensions.DependencyInjection;
+
 namespace Praxis;
 
 public partial class App : Application
 {
-    private readonly MainPage mainPage;
+    private readonly IServiceProvider services;
+    private Page? rootPage;
     private static readonly string StartupLogPath = Services.AppStoragePaths.StartupLogPath;
     public static event Action<string>? ThemeShortcutRequested;
+    public static event Action<string>? EditorShortcutRequested;
+    public static event Action<string>? CommandInputShortcutRequested;
+    public static event Action? MiddleMouseClickRequested;
 #if WINDOWS
     private static readonly Microsoft.UI.Xaml.Input.KeyEventHandler WindowRootKeyDownHandler = NativeRootOnKeyDown;
 #endif
 
-    public App(MainPage mainPage)
+    public App(IServiceProvider services)
     {
-        WriteStartupLog("App ctor begin");
-        InitializeComponent();
-        this.mainPage = mainPage;
-        WriteStartupLog("App ctor end");
+        this.services = services;
+        try
+        {
+            InitializeComponent();
+        }
+        catch (Exception ex)
+        {
+            WriteStartupLog($"App InitializeComponent error: {ex}");
+            Resources = new ResourceDictionary();
+        }
     }
 
     protected override Window CreateWindow(IActivationState? activationState)
     {
-        WriteStartupLog("CreateWindow begin");
-        var window = new Window(mainPage)
+        rootPage ??= ResolveRootPage();
+
+        var window = new Window(rootPage)
         {
             Width = 1000,
             Height = 700,
@@ -40,11 +53,6 @@ public partial class App : Application
                         rootElement.AddHandler(Microsoft.UI.Xaml.UIElement.KeyDownEvent, WindowRootKeyDownHandler, true);
                     }
                     nativeWindow.Activate();
-                    WriteStartupLog("Window activated");
-                }
-                else
-                {
-                    WriteStartupLog("Window handler exists but native window is null");
                 }
             }
             catch (Exception ex)
@@ -54,8 +62,36 @@ public partial class App : Application
         };
 #endif
 
-        WriteStartupLog("CreateWindow end");
         return window;
+    }
+
+    private Page ResolveRootPage()
+    {
+        try
+        {
+            return services.GetRequiredService<MainPage>();
+        }
+        catch (Exception ex)
+        {
+            WriteStartupLog($"Resolve RootPage error: {ex}");
+            return new ContentPage
+            {
+                Title = "Praxis",
+                Content = new ScrollView
+                {
+                    Content = new VerticalStackLayout
+                    {
+                        Padding = 24,
+                        Spacing = 10,
+                        Children =
+                        {
+                            new Label { Text = "Failed to initialize MainPage." },
+                            new Label { Text = ex.Message },
+                        },
+                    },
+                },
+            };
+        }
     }
 
 #if WINDOWS
@@ -114,4 +150,38 @@ public partial class App : Application
         {
         }
     }
+
+    public static void RaiseEditorShortcut(string action)
+    {
+        try
+        {
+            EditorShortcutRequested?.Invoke(action);
+        }
+        catch
+        {
+        }
+    }
+
+    public static void RaiseCommandInputShortcut(string action)
+    {
+        try
+        {
+            CommandInputShortcutRequested?.Invoke(action);
+        }
+        catch
+        {
+        }
+    }
+
+    public static void RaiseMiddleMouseClick()
+    {
+        try
+        {
+            MiddleMouseClickRequested?.Invoke();
+        }
+        catch
+        {
+        }
+    }
+
 }

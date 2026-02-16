@@ -1,4 +1,6 @@
 using Microsoft.Extensions.Logging;
+using Microsoft.Maui.Handlers;
+using Praxis.Controls;
 using Praxis.Services;
 using Praxis.ViewModels;
 
@@ -16,6 +18,12 @@ public static class MauiProgram
                 fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
                 fonts.AddFont("OpenSans-Semibold.ttf", "OpenSansSemibold");
             });
+#if MACCATALYST
+        builder.ConfigureMauiHandlers(handlers =>
+        {
+            handlers.AddHandler(typeof(CommandEntry), typeof(CommandEntryHandler));
+        });
+#endif
 
         builder.Services.AddSingleton<IAppRepository, SqliteAppRepository>();
         builder.Services.AddSingleton<ICommandExecutor, CommandExecutor>();
