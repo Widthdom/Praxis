@@ -1034,11 +1034,13 @@ public partial class MainPage : ContentPage
             return false;
         }
 
+#if MACCATALYST
         var snapshot = BuildPointerDebugSnapshot(platformArgs);
         if (snapshot.Contains("OtherMouse", StringComparison.OrdinalIgnoreCase))
         {
             return true;
         }
+#endif
 
         var text = platformArgs.ToString() ?? string.Empty;
         return text.Contains("OtherMouse", StringComparison.OrdinalIgnoreCase);
@@ -2012,7 +2014,9 @@ public partial class MainPage : ContentPage
 
             if (string.Equals(action, "Save", StringComparison.OrdinalIgnoreCase))
             {
+#if MACCATALYST
                 ClearMacModalPseudoFocus();
+#endif
                 if (viewModel.SaveEditorCommand.CanExecute(null))
                 {
                     viewModel.SaveEditorCommand.Execute(null);
@@ -2065,7 +2069,9 @@ public partial class MainPage : ContentPage
                 return;
             }
 
+#if MACCATALYST
             ClearMacModalPseudoFocus();
+#endif
             if (viewModel.CancelEditorCommand.CanExecute(null))
             {
                 viewModel.CancelEditorCommand.Execute(null);
