@@ -116,6 +116,7 @@ README is user-facing summary; this guide is the implementation-level source of 
   - Suggestion refresh is debounced (`~120ms`) to reduce rapid recomputation during typing
   - Candidate row displays `Command`, `ButtonText`, `Tool Arguments` in `1:1:4` width ratio
   - `Up/Down` wraps at list edges, and `Enter` executes selected suggestion
+  - Plain Enter execution from command box runs all exact command matches (trim-aware, case-insensitive)
   - Windows arrow key handling is attached in `MainPage.xaml.cs` (`MainCommandEntry_HandlerChanged` / native `KeyDown`)
   - macOS arrow key handling is attached in `Controls/CommandEntry` + `Platforms/MacCatalyst/Handlers/CommandEntryHandler.cs` (`PressesBegan`)
   - macOS `Entry` visual/focus behavior is handled by `Platforms/MacCatalyst/Handlers/MacEntryHandler.cs`:
@@ -135,12 +136,19 @@ README is user-facing summary; this guide is the implementation-level source of 
   - Top-bar create icon button uses `CreateNewCommand` and does not consume clipboard.
   - Right-click on empty placement area is handled in `Selection_PointerPressed` and opens create editor at clicked canvas coordinates.
   - Right-click create flow seeds editor `Arguments` from clipboard.
+  - Starting create flow clears `SearchText` (top-bar create and empty-area right-click).
+- Editor modal field behavior:
+  - `Clip Word` uses multiline `Editor` (same behavior class as `Note`).
 - Conflict resolution dialog:
   - Replaces native action sheet with in-app overlay dialog (`ConflictOverlay`) for visual consistency.
   - Supports both Light and Dark themes.
 
 ## Test Coverage Notes
 - `Praxis.Tests/UnitTest1.cs` (`CoreLogicTests` class) covers baseline behavior.
+- `Praxis.Tests/CommandRecordMatcherTests.cs` covers:
+  - exact command match selection for command-box Enter execution
+  - trim/case-insensitive match behavior
+  - blank/no-match handling
 - `Praxis.Tests/CoreLogicEdgeCaseTests.cs` covers edge cases for:
   - command-line normalization
   - grid snapping/clamping boundaries
@@ -282,6 +290,7 @@ README はユーザー向け要約、このガイドは実装仕様の正本で�
   - 候補更新はデバウンス（約 `120ms`）して、連続入力時の再計算を抑える
   - 候補行は `Command`、`ButtonText`、`Tool Arguments` を `1:1:4` 比率で表示
   - `↑/↓` は候補端で循環し、`Enter` で選択候補を実行する
+  - コマンド欄で候補未選択の `Enter` 実行時は、`command` 完全一致（前後空白除去・大文字小文字非依存）の対象を全件実行する
   - Windows の方向キー上下は `MainPage.xaml.cs` の `MainCommandEntry_HandlerChanged` / ネイティブ `KeyDown` で処理
   - macOS の方向キー上下は `Controls/CommandEntry` + `Platforms/MacCatalyst/Handlers/CommandEntryHandler.cs` の `PressesBegan` で処理
   - macOS の `Entry` 見た目/フォーカス挙動は `Platforms/MacCatalyst/Handlers/MacEntryHandler.cs` で制御する。
@@ -301,12 +310,19 @@ README はユーザー向け要約、このガイドは実装仕様の正本で�
   - 上部の Create アイコンボタンは `CreateNewCommand` を実行し、クリップボードは参照しない。
   - 配置領域の空白右クリックは `Selection_PointerPressed` で処理し、クリックしたキャンバス座標で新規作成モーダルを開く。
   - 空白右クリック作成時のみ、エディタの `Arguments` にクリップボード値を初期設定する。
+  - 新規作成開始時（上部 Create / 空白右クリック）の両経路で `SearchText` をクリアする。
+- 編集モーダルの欄仕様:
+  - `Clip Word` は `Note` と同様に複数行 `Editor` を使い、行数に応じて高さを調整する。
 - 競合解決ダイアログ:
   - OS 既定のアクションシートではなく、アプリ内オーバーレイ（`ConflictOverlay`）で表示してデザインを統一。
   - ライト/ダーク両テーマに対応。
 
 ## テストカバレッジメモ
 - `Praxis.Tests/UnitTest1.cs`（`CoreLogicTests` クラス）は基本動作を検証する。
+- `Praxis.Tests/CommandRecordMatcherTests.cs` は次を検証する。
+  - コマンド欄 Enter 実行で使う command 完全一致選択
+  - 前後空白除去 / 大文字小文字非依存の一致挙動
+  - 空入力 / 非一致時の扱い
 - `Praxis.Tests/CoreLogicEdgeCaseTests.cs` は次の境界系を検証する。
   - コマンドライン文字列正規化
   - グリッドスナップ / 領域クランプ境界

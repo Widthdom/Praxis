@@ -133,14 +133,51 @@ public partial class MainViewModel : ObservableObject
             return;
         }
 
-        var target = await repository.GetByCommandAsync(cmd);
-        if (target is null)
+        var targets = CommandRecordMatcher.FindMatches(allButtons.Select(x => x.ToRecord()), cmd).ToList();
+        if (targets.Count == 0)
+        {
+            var singleTarget = await repository.GetByCommandAsync(cmd);
+            if (singleTarget is not null)
+            {
+                targets.Add(singleTarget);
+            }
+        }
+
+        if (targets.Count == 0)
         {
             SetStatus($"Command not found: {cmd}");
             return;
         }
 
-        await ExecuteRecordAsync(target, false);
+        if (targets.Count == 1)
+        {
+            await ExecuteRecordAsync(targets[0], false);
+            return;
+        }
+
+        var successCount = 0;
+        string? lastFailureMessage = null;
+
+        foreach (var target in targets)
+        {
+            var result = await ExecuteRecordAsync(target, false, updateStatus: false);
+            if (result.Success)
+            {
+                successCount++;
+            }
+            else
+            {
+                lastFailureMessage = result.Message;
+            }
+        }
+
+        if (successCount == targets.Count)
+        {
+            SetStatus($"Executed {targets.Count} commands.");
+            return;
+        }
+
+        SetStatus($"Executed {successCount}/{targets.Count}. Last error: {lastFailureMessage}");
     }
 
     [RelayCommand]
@@ -270,6 +307,7 @@ public partial class MainViewModel : ObservableObject
             UpdatedAtUtc = DateTime.UtcNow,
         };
 
+        SearchText = string.Empty;
         Editor = ButtonEditorViewModel.FromRecord(record, isExistingRecord: false);
         IsEditorOpen = true;
         IsContextMenuOpen = false;
@@ -542,7 +580,7 @@ public partial class MainViewModel : ObservableObject
         await Task.CompletedTask;
     }
 
-    private async Task ExecuteRecordAsync(LauncherButtonRecord record, bool fromButton)
+    private async Task<(bool Success, string Message)> ExecuteRecordAsync(LauncherButtonRecord record, bool fromButton, bool updateStatus = true)
     {
         var result = await commandExecutor.ExecuteAsync(record.Tool, record.Arguments);
 
@@ -563,7 +601,12 @@ public partial class MainViewModel : ObservableObject
         });
 
         await repository.PurgeOldLogsAsync(30);
-        SetStatus(result.Success ? "Executed." : $"Failed: {result.Message}");
+        if (updateStatus)
+        {
+            SetStatus(result.Success ? "Executed." : $"Failed: {result.Message}");
+        }
+
+        return result;
     }
 
     private async Task AddToDockAsync(LauncherButtonItemViewModel item)

@@ -23,11 +23,14 @@ It stores launcher buttons in SQLite and can execute tools with arguments.
 ## Behavior Notes
 - Suggestions are shown from partial `command` matches and can be selected by keyboard.
 - Suggestion keyboard behavior: `Up/Down` moves selection, wraps at edges, and `Enter` executes selected command.
+- Enter from command box executes all buttons whose `command` exactly matches input (case-insensitive, trim-aware).
 - Editor modal keyboard behavior:
   - `Tab`/`Shift+Tab` stays inside modal controls and wraps at edges.
   - On macOS, `GUID` remains read-only/selectable (not editable).
   - On macOS, when pseudo-focus is on `Cancel`/`Save`, `Enter` triggers that action.
+- In editor modal, `Clip Word` is multiline like `Note`.
 - Empty-space right-click on the placement area opens create modal at cursor position.
+- Starting a new button (top create button or empty-area right-click) clears search box.
 - Dragging uses 10px snap; multi-select is supported with rectangle and modifier click.
 - If `tool` is empty, `Arguments` falls back to URL/path launch behavior.
 - Theme shortcuts:
@@ -119,11 +122,14 @@ SQLite にボタン情報を保存し、ツールと引数を実行できます�
 ## 動作メモ
 - command 部分一致で候補を表示し、キーボードで選択実行できます。
 - 候補一覧のキーボード操作は `↑/↓` で移動、端で循環（先頭で↑→末尾、末尾で↓→先頭）、`Enter` で実行です。
+- コマンド欄で `Enter` 実行したとき、`command` 完全一致（前後空白除去・大文字小文字非依存）のボタンが複数あれば全件実行します。
 - 編集モーダルのキーボード操作:
   - `Tab` / `Shift+Tab` はモーダル内のみで循環し、端でラップします。
   - macOS では `GUID` 欄は選択可能ですが編集不可です。
   - macOS では `Cancel` / `Save` の擬似フォーカス時に `Enter` で該当アクションを実行します。
+- 編集モーダルの `Clip Word` は `Note` と同様に複数行入力に対応しています。
 - 配置領域の空白右クリックで、その座標に新規作成モーダルを開きます。
+- 新規作成開始時（上部 Create ボタン / 配置領域の空白右クリック）に検索欄はクリアされます。
 - ドラッグは 10px スナップ、矩形選択と修飾キー選択に対応しています。
 - `tool` が空の場合は `Arguments` を URL/パスとしてフォールバック起動します。
 - テーマ切替ショートカット:

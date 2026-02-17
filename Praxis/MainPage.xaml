@@ -318,10 +318,41 @@
                                     Clicked="CopyIconButton_Clicked" />
 
                             <Label Grid.Row="5" Grid.Column="0" Text="Clip Word" VerticalTextAlignment="Center" HeightRequest="40" />
-                            <Entry x:Name="ModalClipWordEntry" Grid.Row="5" Grid.Column="1" Text="{Binding Editor.ClipText}" HeightRequest="40" />
+                            <Border x:Name="ModalClipWordContainer"
+                                    Grid.Row="5"
+                                    Grid.Column="1"
+                                    Stroke="{AppThemeBinding Light=#CECECE, Dark=#4E4E4E}"
+                                    StrokeThickness="1"
+                                    BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#2A2A2A}"
+                                    StrokeShape="RoundRectangle 6"
+                                    MinimumHeightRequest="40"
+                                    HeightRequest="40"
+                                    Padding="0">
+                                <Grid>
+                                    <Editor x:Name="ModalClipWordEditor"
+                                            Text="{Binding Editor.ClipText}"
+                                            AutoSize="Disabled"
+                                            MinimumHeightRequest="40"
+                                            HeightRequest="40"
+                                            BackgroundColor="Transparent"
+                                            TextChanged="ModalClipWordEditor_TextChanged"
+                                            HandlerChanged="ModalClipWordEditor_HandlerChanged"
+                                            Focused="ModalClipWordEditor_Focused"
+                                            Unfocused="ModalClipWordEditor_Unfocused"
+                                            Margin="0" />
+                                    <BoxView x:Name="ModalClipWordFocusUnderline"
+                                             IsVisible="False"
+                                             HeightRequest="1.5"
+                                             VerticalOptions="End"
+                                             HorizontalOptions="Fill"
+                                             Margin="5,0"
+                                             InputTransparent="True"
+                                             BackgroundColor="{AppThemeBinding Light=#4A4A4A, Dark=#A0A0A0}" />
+                                </Grid>
+                            </Border>
                             <Button x:Name="CopyClipWordButton" Grid.Row="5" Grid.Column="2" Text="{OnPlatform WinUI='&#xE8C8;', MacCatalyst='⧉'}" FontFamily="{OnPlatform WinUI='Segoe MDL2 Assets', MacCatalyst=''}"
                                     Command="{Binding CopyFieldCommand}"
-                                    CommandParameter="{Binding Editor.ClipText}" HeightRequest="40" WidthRequest="40" Padding="0"
+                                    CommandParameter="{Binding Editor.ClipText}" HeightRequest="40" WidthRequest="40" Padding="0" VerticalOptions="Start"
                                     Clicked="CopyIconButton_Clicked" />
 
                             <Label Grid.Row="6" Grid.Column="0" Text="Note" VerticalTextAlignment="Center" HeightRequest="40" />

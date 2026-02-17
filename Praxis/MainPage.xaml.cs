@@ -167,7 +167,7 @@ public partial class MainPage : ContentPage
         ModalButtonTextEntry.Focused += ModalEditorField_Focused;
         ModalToolEntry.Focused += ModalEditorField_Focused;
         ModalArgumentsEntry.Focused += ModalEditorField_Focused;
-        ModalClipWordEntry.Focused += ModalEditorField_Focused;
+        ModalClipWordEditor.Focused += ModalEditorField_Focused;
 #endif
     }
 
@@ -201,7 +201,7 @@ public partial class MainPage : ContentPage
             ApplyMacInitialCommandFocus();
             StartMacMiddleButtonPolling();
 #endif
-            UpdateNoteEditorHeight();
+            UpdateModalEditorHeights();
         }
         catch (Exception ex)
         {
@@ -309,7 +309,38 @@ public partial class MainPage : ContentPage
         ModalNoteFocusUnderline.IsVisible = ModalNoteEditor.IsFocused;
         ApplyMacEditorKeyCommands();
 #endif
-        UpdateNoteEditorHeight();
+        UpdateModalEditorHeights();
+    }
+
+    private void ModalClipWordEditor_HandlerChanged(object? sender, EventArgs e)
+    {
+#if MACCATALYST
+        if (ModalClipWordEditor.Handler?.PlatformView is UITextView textView)
+        {
+            textView.BackgroundColor = UIColor.Clear;
+            textView.Layer.BorderWidth = 0;
+            textView.Layer.CornerRadius = 0;
+        }
+        ApplyMacClipWordEditorVisualState();
+        ModalClipWordFocusUnderline.IsVisible = ModalClipWordEditor.IsFocused;
+        ApplyMacEditorKeyCommands();
+#endif
+        UpdateModalEditorHeights();
+    }
+
+    private void ModalClipWordEditor_Focused(object? sender, FocusEventArgs e)
+    {
+#if MACCATALYST
+        ClearMacModalPseudoFocus();
+        ModalClipWordFocusUnderline.IsVisible = true;
+#endif
+    }
+
+    private void ModalClipWordEditor_Unfocused(object? sender, FocusEventArgs e)
+    {
+#if MACCATALYST
+        ModalClipWordFocusUnderline.IsVisible = false;
+#endif
     }
 
     private void ModalNoteEditor_Focused(object? sender, FocusEventArgs e)
@@ -348,28 +379,39 @@ public partial class MainPage : ContentPage
 
     private void ModalNoteEditor_TextChanged(object? sender, TextChangedEventArgs e)
     {
-        UpdateNoteEditorHeight();
+        UpdateModalEditorHeights();
     }
 
-    private void UpdateNoteEditorHeight()
+    private void ModalClipWordEditor_TextChanged(object? sender, TextChangedEventArgs e)
+    {
+        UpdateModalEditorHeights();
+    }
+
+    private void UpdateModalEditorHeights()
     {
         if (!xamlLoaded)
         {
             return;
         }
 
+        UpdateEditorHeight(ModalClipWordEditor, ModalClipWordContainer);
+        UpdateEditorHeight(ModalNoteEditor, ModalNoteContainer);
+    }
+
+    private static void UpdateEditorHeight(Editor editor, Border container)
+    {
         const double singleLineHeight = 40;
         const double maxHeight = 220;
         const double perLineHeight = 24;
         const double basePadding = 16;
-        var text = ModalNoteEditor.Text ?? string.Empty;
+        var text = editor.Text ?? string.Empty;
         var lineCount = Math.Max(1, text.Count(c => c == '\n') + 1);
         var targetHeight = lineCount <= 1
             ? singleLineHeight
             : Math.Min(maxHeight, basePadding + (lineCount * perLineHeight));
 
-        ModalNoteEditor.HeightRequest = targetHeight;
-        ModalNoteContainer.HeightRequest = targetHeight;
+        editor.HeightRequest = targetHeight;
+        container.HeightRequest = targetHeight;
     }
 
     private void Draggable_PanUpdated(object? sender, PanUpdatedEventArgs e)
@@ -1538,7 +1580,7 @@ public partial class MainPage : ContentPage
             {
                 App.SetEditorOpenState(viewModel.IsEditorOpen);
                 ApplyTabPolicy();
-                UpdateNoteEditorHeight();
+                UpdateModalEditorHeights();
 #if MACCATALYST
                 if (!viewModel.IsEditorOpen)
                 {
@@ -1552,7 +1594,7 @@ public partial class MainPage : ContentPage
 
         App.SetEditorOpenState(true);
         ApplyTabPolicy();
-        UpdateNoteEditorHeight();
+        UpdateModalEditorHeights();
 #if MACCATALYST
         macGuidLockedText = viewModel.Editor.GuidText ?? string.Empty;
 #endif
@@ -1688,7 +1730,7 @@ public partial class MainPage : ContentPage
         SetTabStop(ModalButtonTextEntry, editorOpen);
         SetTabStop(ModalToolEntry, editorOpen);
         SetTabStop(ModalArgumentsEntry, editorOpen);
-        SetTabStop(ModalClipWordEntry, editorOpen);
+        SetTabStop(ModalClipWordEditor, editorOpen);
         SetTabStop(ModalNoteEditor, editorOpen);
         SetTabStop(ModalCancelButton, editorOpen);
         SetTabStop(ModalSaveButton, editorOpen);
@@ -2402,7 +2444,7 @@ public partial class MainPage : ContentPage
             ModalFocusTarget.ButtonText => IsModalFocusTargetActive(ModalButtonTextEntry),
             ModalFocusTarget.Tool => IsModalFocusTargetActive(ModalToolEntry),
             ModalFocusTarget.Arguments => IsModalFocusTargetActive(ModalArgumentsEntry),
-            ModalFocusTarget.ClipWord => IsModalFocusTargetActive(ModalClipWordEntry),
+            ModalFocusTarget.ClipWord => IsModalFocusTargetActive(ModalClipWordEditor),
             ModalFocusTarget.Note => IsModalFocusTargetActive(ModalNoteEditor),
             ModalFocusTarget.CancelButton => macPseudoFocusedModalTarget == ModalFocusTarget.CancelButton,
             ModalFocusTarget.SaveButton => macPseudoFocusedModalTarget == ModalFocusTarget.SaveButton,
@@ -2425,7 +2467,7 @@ public partial class MainPage : ContentPage
             case ModalFocusTarget.Arguments:
                 return TryFocusModalVisual(ModalArgumentsEntry);
             case ModalFocusTarget.ClipWord:
-                return TryFocusModalVisual(ModalClipWordEntry);
+                return TryFocusModalVisual(ModalClipWordEditor);
             case ModalFocusTarget.Note:
                 return TryFocusModalVisual(ModalNoteEditor);
             case ModalFocusTarget.CancelButton:
@@ -2581,10 +2623,22 @@ public partial class MainPage : ContentPage
     {
         EnsureMacFirstResponder();
         ApplyMacContentScale();
+        ApplyMacClipWordEditorVisualState();
         ApplyMacNoteEditorVisualState();
         ApplyMacModalPseudoFocusVisuals();
         ApplyMacCommandSuggestionKeyCommands();
         ApplyMacEditorKeyCommands();
+    }
+
+    private void ApplyMacClipWordEditorVisualState()
+    {
+        if (ModalClipWordEditor.Handler?.PlatformView is not UITextView textView)
+        {
+            return;
+        }
+
+        var dark = Application.Current?.RequestedTheme == AppTheme.Dark;
+        textView.TintColor = dark ? UIColor.White : UIColor.Black;
     }
 
     private void ApplyMacInitialCommandFocus()
@@ -2659,7 +2713,7 @@ public partial class MainPage : ContentPage
             ModalButtonTextEntry.Handler?.PlatformView as UIResponder,
             ModalToolEntry.Handler?.PlatformView as UIResponder,
             ModalArgumentsEntry.Handler?.PlatformView as UIResponder,
-            ModalClipWordEntry.Handler?.PlatformView as UIResponder,
+            ModalClipWordEditor.Handler?.PlatformView as UIResponder,
             ModalNoteEditor.Handler?.PlatformView as UIResponder,
             ModalCancelButton.Handler?.PlatformView as UIResponder,
             ModalSaveButton.Handler?.PlatformView as UIResponder,
@@ -3070,7 +3124,7 @@ public partial class MainPage : ContentPage
         ModalButtonTextEntry.Unfocus();
         ModalToolEntry.Unfocus();
         ModalArgumentsEntry.Unfocus();
-        ModalClipWordEntry.Unfocus();
+        ModalClipWordEditor.Unfocus();
         ModalNoteEditor.Unfocus();
 
         if (ModalGuidEntry.Handler?.PlatformView is UITextField guidField && guidField.IsFirstResponder)
@@ -3098,7 +3152,7 @@ public partial class MainPage : ContentPage
             argumentsField.ResignFirstResponder();
         }
 
-        if (ModalClipWordEntry.Handler?.PlatformView is UITextField clipWordField && clipWordField.IsFirstResponder)
+        if (ModalClipWordEditor.Handler?.PlatformView is UITextView clipWordField && clipWordField.IsFirstResponder)
         {
             clipWordField.ResignFirstResponder();
         }
@@ -3108,6 +3162,7 @@ public partial class MainPage : ContentPage
             noteField.ResignFirstResponder();
         }
 
+        ModalClipWordFocusUnderline.IsVisible = false;
         ModalNoteFocusUnderline.IsVisible = false;
     }
 
