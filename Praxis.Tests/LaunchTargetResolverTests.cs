@@ -74,4 +74,30 @@ public class LaunchTargetResolverTests
         Assert.Equal(LaunchTargetKind.None, result.Kind);
         Assert.Equal(string.Empty, result.Target);
     }
+
+    [Fact]
+    public void Resolve_ExpandsEnvironmentVariables_ForPathLikeValues()
+    {
+        const string key = "PRAXIS_TEST_HOME";
+        var oldValue = Environment.GetEnvironmentVariable(key);
+        try
+        {
+            Environment.SetEnvironmentVariable(key, "/tmp/praxis");
+            var result = LaunchTargetResolver.Resolve("%PRAXIS_TEST_HOME%/notes.txt");
+            Assert.Equal(LaunchTargetKind.FileSystemPath, result.Kind);
+            Assert.Equal("/tmp/praxis/notes.txt", result.Target);
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable(key, oldValue);
+        }
+    }
+
+    [Fact]
+    public void Resolve_TrimsWrappingQuotes_ForPathValues()
+    {
+        var result = LaunchTargetResolver.Resolve(" \"~/Documents/Praxis\" ");
+        Assert.Equal(LaunchTargetKind.FileSystemPath, result.Kind);
+        Assert.Equal("~/Documents/Praxis", result.Target);
+    }
 }

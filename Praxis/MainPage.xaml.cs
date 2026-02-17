@@ -44,9 +44,42 @@ public partial class MainPage : ContentPage
     private Microsoft.UI.Xaml.Input.KeyEventHandler? pageKeyDownHandler;
 #endif
 #if MACCATALYST
+    private enum ModalFocusTarget
+    {
+        Guid,
+        Command,
+        ButtonText,
+        Tool,
+        Arguments,
+        ClipWord,
+        Note,
+        CancelButton,
+        SaveButton,
+    }
+
+    private static readonly ModalFocusTarget[] ModalFocusOrder =
+    [
+        ModalFocusTarget.Guid,
+        ModalFocusTarget.Command,
+        ModalFocusTarget.ButtonText,
+        ModalFocusTarget.Tool,
+        ModalFocusTarget.Arguments,
+        ModalFocusTarget.ClipWord,
+        ModalFocusTarget.Note,
+        ModalFocusTarget.CancelButton,
+        ModalFocusTarget.SaveButton,
+    ];
+
     private UIKeyCommand? modalEscapeKeyCommand;
     private UIKeyCommand? modalSaveKeyCommand;
+    private UIKeyCommand? modalTabNextKeyCommand;
+    private UIKeyCommand? modalTabPreviousKeyCommand;
+    private UIKeyCommand? modalPrimaryActionKeyCommand;
+    private UIKeyCommand? modalPrimaryActionAlternateKeyCommand;
     private static readonly string macEscapeKeyInput = ResolveMacKeyInput("InputEscape", "\u001B");
+    private static readonly string macTabKeyInput = ResolveMacKeyInput("InputTab", "\t");
+    private static readonly string macReturnKeyInput = ResolveMacKeyInput("InputReturn", "\r");
+    private static readonly string? macEnterKeyInput = TryResolveMacKeyInput("InputEnter");
     private static readonly string macUpArrowKeyInput = ResolveMacKeyInput("InputUpArrow", "\uF700");
     private static readonly string macDownArrowKeyInput = ResolveMacKeyInput("InputDownArrow", "\uF701");
     private UIKeyCommand? commandSuggestionUpKeyCommand;
@@ -54,6 +87,11 @@ public partial class MainPage : ContentPage
     private Microsoft.Maui.Dispatching.IDispatcherTimer? macMiddleButtonPollTimer;
     private bool macMiddleButtonWasDown;
     private bool macInitialCommandFocusApplied;
+    private ModalFocusTarget? macPseudoFocusedModalTarget;
+    private readonly UITextFieldDelegate macGuidReadOnlyDelegate = new MacGuidReadOnlyTextFieldDelegate();
+    private UITextField? macGuidNativeTextField;
+    private string macGuidLockedText = string.Empty;
+    private bool macApplyingGuidTextLock;
 #endif
 
     public MainPage(MainViewModel viewModel)
@@ -83,6 +121,7 @@ public partial class MainPage : ContentPage
         }
 
         this.viewModel.ResolveEditorConflictAsync = ResolveEditorConflictAsync;
+        App.SetEditorOpenState(this.viewModel.IsEditorOpen);
         this.viewModel.PropertyChanged += ViewModelOnPropertyChanged;
         this.viewModel.CommandSuggestions.CollectionChanged += CommandSuggestionsOnCollectionChanged;
         App.ThemeShortcutRequested += OnThemeShortcutRequested;
@@ -123,6 +162,12 @@ public partial class MainPage : ContentPage
         }
 #if MACCATALYST
         RebuildCommandSuggestionStack();
+        ModalGuidEntry.Focused += ModalEditorField_Focused;
+        ModalCommandEntry.Focused += ModalEditorField_Focused;
+        ModalButtonTextEntry.Focused += ModalEditorField_Focused;
+        ModalToolEntry.Focused += ModalEditorField_Focused;
+        ModalArgumentsEntry.Focused += ModalEditorField_Focused;
+        ModalClipWordEntry.Focused += ModalEditorField_Focused;
 #endif
     }
 
@@ -178,7 +223,10 @@ public partial class MainPage : ContentPage
     protected override void OnDisappearing()
     {
         base.OnDisappearing();
+        App.SetEditorOpenState(false);
 #if MACCATALYST
+        DetachMacGuidEntryReadOnlyBehavior();
+        macGuidLockedText = string.Empty;
         StopMacMiddleButtonPolling();
 #endif
     }
@@ -267,6 +315,7 @@ public partial class MainPage : ContentPage
     private void ModalNoteEditor_Focused(object? sender, FocusEventArgs e)
     {
 #if MACCATALYST
+        ClearMacModalPseudoFocus();
         ModalNoteFocusUnderline.IsVisible = true;
 #endif
     }
@@ -275,6 +324,25 @@ public partial class MainPage : ContentPage
     {
 #if MACCATALYST
         ModalNoteFocusUnderline.IsVisible = false;
+#endif
+    }
+
+    private void ModalGuidEntry_HandlerChanged(object? sender, EventArgs e)
+    {
+#if MACCATALYST
+        EnsureMacGuidEntryReadOnlyBehavior();
+#endif
+    }
+
+    private void ModalEditorField_Focused(object? sender, FocusEventArgs e)
+    {
+#if MACCATALYST
+        if (ReferenceEquals(sender, ModalGuidEntry))
+        {
+            EnsureMacGuidEntryReadOnlyBehavior();
+        }
+
+        ClearMacModalPseudoFocus();
 #endif
     }
 
@@ -1468,14 +1536,26 @@ public partial class MainPage : ContentPage
         {
             if (e.PropertyName == nameof(MainViewModel.IsEditorOpen))
             {
+                App.SetEditorOpenState(viewModel.IsEditorOpen);
                 ApplyTabPolicy();
                 UpdateNoteEditorHeight();
+#if MACCATALYST
+                if (!viewModel.IsEditorOpen)
+                {
+                    ClearMacModalPseudoFocus();
+                    macGuidLockedText = string.Empty;
+                }
+#endif
             }
             return;
         }
 
+        App.SetEditorOpenState(true);
         ApplyTabPolicy();
         UpdateNoteEditorHeight();
+#if MACCATALYST
+        macGuidLockedText = viewModel.Editor.GuidText ?? string.Empty;
+#endif
         Dispatcher.DispatchDelayed(TimeSpan.FromMilliseconds(60), () =>
         {
             ModalCommandEntry.Focus();
@@ -1890,6 +1970,7 @@ public partial class MainPage : ContentPage
 
             if (string.Equals(action, "Save", StringComparison.OrdinalIgnoreCase))
             {
+                ClearMacModalPseudoFocus();
                 if (viewModel.SaveEditorCommand.CanExecute(null))
                 {
                     viewModel.SaveEditorCommand.Execute(null);
@@ -1898,11 +1979,51 @@ public partial class MainPage : ContentPage
                 return;
             }
 
+            if (string.Equals(action, "PrimaryAction", StringComparison.OrdinalIgnoreCase))
+            {
+#if MACCATALYST
+                if (macPseudoFocusedModalTarget == ModalFocusTarget.CancelButton)
+                {
+                    ClearMacModalPseudoFocus();
+                    if (viewModel.CancelEditorCommand.CanExecute(null))
+                    {
+                        viewModel.CancelEditorCommand.Execute(null);
+                    }
+                }
+                else if (macPseudoFocusedModalTarget == ModalFocusTarget.SaveButton)
+                {
+                    ClearMacModalPseudoFocus();
+                    if (viewModel.SaveEditorCommand.CanExecute(null))
+                    {
+                        viewModel.SaveEditorCommand.Execute(null);
+                    }
+                }
+#endif
+                return;
+            }
+
+            if (string.Equals(action, "TabNext", StringComparison.OrdinalIgnoreCase))
+            {
+#if MACCATALYST
+                MoveModalFocus(forward: true);
+#endif
+                return;
+            }
+
+            if (string.Equals(action, "TabPrevious", StringComparison.OrdinalIgnoreCase))
+            {
+#if MACCATALYST
+                MoveModalFocus(forward: false);
+#endif
+                return;
+            }
+
             if (!string.Equals(action, "Cancel", StringComparison.OrdinalIgnoreCase))
             {
                 return;
             }
 
+            ClearMacModalPseudoFocus();
             if (viewModel.CancelEditorCommand.CanExecute(null))
             {
                 viewModel.CancelEditorCommand.Execute(null);
@@ -2205,6 +2326,193 @@ public partial class MainPage : ContentPage
     }
 
 #if MACCATALYST
+    private void MoveModalFocus(bool forward)
+    {
+        if (ModalFocusOrder.Length == 0)
+        {
+            return;
+        }
+
+        var currentIndex = GetCurrentModalFocusIndex();
+        if (currentIndex < 0)
+        {
+            FocusModalTarget(ModalCommandEntry);
+            return;
+        }
+
+        var step = forward ? 1 : -1;
+        var probe = currentIndex;
+        for (var i = 0; i < ModalFocusOrder.Length; i++)
+        {
+            probe = (probe + step + ModalFocusOrder.Length) % ModalFocusOrder.Length;
+            if (TryActivateModalFocusTarget(ModalFocusOrder[probe]))
+            {
+                return;
+            }
+        }
+    }
+
+    private static bool IsModalFocusTargetActive(VisualElement target)
+    {
+        if (target.IsFocused)
+        {
+            return true;
+        }
+
+        return target.Handler?.PlatformView is UIResponder responder && responder.IsFirstResponder;
+    }
+
+    private static void FocusModalTarget(VisualElement target)
+    {
+        if (target.Focus())
+        {
+            return;
+        }
+
+        if (target.Handler?.PlatformView is UIResponder responder && responder.CanBecomeFirstResponder)
+        {
+            responder.BecomeFirstResponder();
+        }
+    }
+
+    private int GetCurrentModalFocusIndex()
+    {
+        if (macPseudoFocusedModalTarget is ModalFocusTarget pseudoTarget)
+        {
+            return Array.IndexOf(ModalFocusOrder, pseudoTarget);
+        }
+
+        for (var i = 0; i < ModalFocusOrder.Length; i++)
+        {
+            if (IsModalTargetActive(ModalFocusOrder[i]))
+            {
+                return i;
+            }
+        }
+
+        return -1;
+    }
+
+    private bool IsModalTargetActive(ModalFocusTarget target)
+    {
+        return target switch
+        {
+            ModalFocusTarget.Guid => IsModalFocusTargetActive(ModalGuidEntry),
+            ModalFocusTarget.Command => IsModalFocusTargetActive(ModalCommandEntry),
+            ModalFocusTarget.ButtonText => IsModalFocusTargetActive(ModalButtonTextEntry),
+            ModalFocusTarget.Tool => IsModalFocusTargetActive(ModalToolEntry),
+            ModalFocusTarget.Arguments => IsModalFocusTargetActive(ModalArgumentsEntry),
+            ModalFocusTarget.ClipWord => IsModalFocusTargetActive(ModalClipWordEntry),
+            ModalFocusTarget.Note => IsModalFocusTargetActive(ModalNoteEditor),
+            ModalFocusTarget.CancelButton => macPseudoFocusedModalTarget == ModalFocusTarget.CancelButton,
+            ModalFocusTarget.SaveButton => macPseudoFocusedModalTarget == ModalFocusTarget.SaveButton,
+            _ => false,
+        };
+    }
+
+    private bool TryActivateModalFocusTarget(ModalFocusTarget target)
+    {
+        switch (target)
+        {
+            case ModalFocusTarget.Guid:
+                return TryFocusModalGuidTarget();
+            case ModalFocusTarget.Command:
+                return TryFocusModalVisual(ModalCommandEntry);
+            case ModalFocusTarget.ButtonText:
+                return TryFocusModalVisual(ModalButtonTextEntry);
+            case ModalFocusTarget.Tool:
+                return TryFocusModalVisual(ModalToolEntry);
+            case ModalFocusTarget.Arguments:
+                return TryFocusModalVisual(ModalArgumentsEntry);
+            case ModalFocusTarget.ClipWord:
+                return TryFocusModalVisual(ModalClipWordEntry);
+            case ModalFocusTarget.Note:
+                return TryFocusModalVisual(ModalNoteEditor);
+            case ModalFocusTarget.CancelButton:
+                SetMacModalPseudoFocus(ModalFocusTarget.CancelButton);
+                return true;
+            case ModalFocusTarget.SaveButton:
+                SetMacModalPseudoFocus(ModalFocusTarget.SaveButton);
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    private bool TryFocusModalGuidTarget()
+    {
+        ClearMacModalPseudoFocus();
+        FocusModalTarget(ModalGuidEntry);
+        EnsureMacGuidEntryReadOnlyBehavior();
+
+        if (ModalGuidEntry.Handler?.PlatformView is UITextField textField)
+        {
+            if (!textField.IsFirstResponder)
+            {
+                textField.BecomeFirstResponder();
+            }
+
+            var allTextRange = textField.GetTextRange(textField.BeginningOfDocument, textField.EndOfDocument);
+            if (allTextRange is not null)
+            {
+                textField.SelectedTextRange = allTextRange;
+            }
+
+            return textField.IsFirstResponder;
+        }
+
+        return IsModalFocusTargetActive(ModalGuidEntry);
+    }
+
+    private bool TryFocusModalVisual(VisualElement target)
+    {
+        ClearMacModalPseudoFocus();
+        FocusModalTarget(target);
+        return IsModalFocusTargetActive(target);
+    }
+
+    private void SetMacModalPseudoFocus(ModalFocusTarget target)
+    {
+        ResignModalInputFirstResponder();
+        macPseudoFocusedModalTarget = target;
+        ApplyMacModalPseudoFocusVisuals();
+        ApplyMacEditorKeyCommands();
+    }
+
+    private void ClearMacModalPseudoFocus()
+    {
+        if (macPseudoFocusedModalTarget is null)
+        {
+            return;
+        }
+
+        macPseudoFocusedModalTarget = null;
+        ApplyMacModalPseudoFocusVisuals();
+        ApplyMacEditorKeyCommands();
+    }
+
+    private void ApplyMacModalPseudoFocusVisuals()
+    {
+        var dark = Application.Current?.RequestedTheme == AppTheme.Dark;
+        var focusedBorderColor = dark ? Color.FromArgb("#F2F2F2") : Color.FromArgb("#1A1A1A");
+
+        ApplyMacPseudoFocusVisual(ModalCancelButton, macPseudoFocusedModalTarget == ModalFocusTarget.CancelButton, focusedBorderColor);
+        ApplyMacPseudoFocusVisual(ModalSaveButton, macPseudoFocusedModalTarget == ModalFocusTarget.SaveButton, focusedBorderColor);
+    }
+
+    private static void ApplyMacPseudoFocusVisual(Button button, bool focused, Color focusedBorderColor)
+    {
+        if (focused)
+        {
+            button.BorderColor = focusedBorderColor;
+            button.BorderWidth = 1.5;
+            return;
+        }
+
+        button.BorderColor = Colors.Transparent;
+        button.BorderWidth = 0;
+    }
+
     private void RebuildCommandSuggestionStack()
     {
         if (!xamlLoaded)
@@ -2274,6 +2582,7 @@ public partial class MainPage : ContentPage
         EnsureMacFirstResponder();
         ApplyMacContentScale();
         ApplyMacNoteEditorVisualState();
+        ApplyMacModalPseudoFocusVisuals();
         ApplyMacCommandSuggestionKeyCommands();
         ApplyMacEditorKeyCommands();
     }
@@ -2329,25 +2638,58 @@ public partial class MainPage : ContentPage
 
     private void ApplyMacEditorKeyCommands()
     {
-        if (!viewModel.IsEditorOpen)
-        {
-            return;
-        }
-
         modalEscapeKeyCommand ??= CreateMacEscapeKeyCommand();
         modalSaveKeyCommand ??= UIKeyCommand.Create(new NSString("s"), UIKeyModifierFlags.Command, new Selector("handleEditorSave:"));
+        modalTabNextKeyCommand ??= TryCreateMacEditorKeyCommand(macTabKeyInput, 0, "handleEditorTabNext:");
+        modalTabPreviousKeyCommand ??= TryCreateMacEditorKeyCommand(macTabKeyInput, UIKeyModifierFlags.Shift, "handleEditorTabPrevious:");
+        modalPrimaryActionKeyCommand ??= TryCreateMacEditorKeyCommand(macReturnKeyInput, 0, "handleEditorPrimaryAction:");
+        if (!string.IsNullOrEmpty(macEnterKeyInput))
+        {
+            modalPrimaryActionAlternateKeyCommand ??= TryCreateMacEditorKeyCommand(macEnterKeyInput!, 0, "handleEditorPrimaryAction:");
+        }
+        EnsureMacGuidEntryReadOnlyBehavior();
+        var includePrimaryAction =
+            macPseudoFocusedModalTarget is ModalFocusTarget.CancelButton or ModalFocusTarget.SaveButton &&
+            modalPrimaryActionKeyCommand is not null;
 
-        RegisterMacEditorCommands(ModalCommandEntry.Handler?.PlatformView as UIResponder);
-        RegisterMacEditorCommands(ModalButtonTextEntry.Handler?.PlatformView as UIResponder);
-        RegisterMacEditorCommands(ModalToolEntry.Handler?.PlatformView as UIResponder);
-        RegisterMacEditorCommands(ModalArgumentsEntry.Handler?.PlatformView as UIResponder);
-        RegisterMacEditorCommands(ModalClipWordEntry.Handler?.PlatformView as UIResponder);
-        RegisterMacEditorCommands(ModalNoteEditor.Handler?.PlatformView as UIResponder);
-        RegisterMacEditorCommands(UIApplication.SharedApplication.Delegate as UIResponder);
+        var responders = new UIResponder?[]
+        {
+            ModalCommandEntry.Handler?.PlatformView as UIResponder,
+            ModalGuidEntry.Handler?.PlatformView as UIResponder,
+            ModalButtonTextEntry.Handler?.PlatformView as UIResponder,
+            ModalToolEntry.Handler?.PlatformView as UIResponder,
+            ModalArgumentsEntry.Handler?.PlatformView as UIResponder,
+            ModalClipWordEntry.Handler?.PlatformView as UIResponder,
+            ModalNoteEditor.Handler?.PlatformView as UIResponder,
+            ModalCancelButton.Handler?.PlatformView as UIResponder,
+            ModalSaveButton.Handler?.PlatformView as UIResponder,
+            UIApplication.SharedApplication.Delegate as UIResponder,
+        };
+
+        foreach (var responder in responders)
+        {
+            if (viewModel.IsEditorOpen)
+            {
+                RegisterMacEditorCommands(responder, includePrimaryAction);
+            }
+            else
+            {
+                UnregisterMacEditorCommands(responder);
+            }
+        }
+
         if (Window?.Handler?.PlatformView is UIWindow nativeWindow)
         {
-            RegisterMacEditorCommands(nativeWindow);
-            RegisterMacEditorCommands(nativeWindow.RootViewController);
+            if (viewModel.IsEditorOpen)
+            {
+                RegisterMacEditorCommands(nativeWindow, includePrimaryAction);
+                RegisterMacEditorCommands(nativeWindow.RootViewController, includePrimaryAction);
+            }
+            else
+            {
+                UnregisterMacEditorCommands(nativeWindow);
+                UnregisterMacEditorCommands(nativeWindow.RootViewController);
+            }
         }
     }
 
@@ -2377,17 +2719,62 @@ public partial class MainPage : ContentPage
         InvokeResponderSelector(responder, "addKeyCommand:", commandSuggestionDownKeyCommand);
     }
 
-    private void RegisterMacEditorCommands(UIResponder? responder)
+    private void RegisterMacEditorCommands(UIResponder? responder, bool includePrimaryAction)
     {
-        if (responder is null || modalEscapeKeyCommand is null || modalSaveKeyCommand is null)
+        if (responder is null ||
+            modalEscapeKeyCommand is null ||
+            modalSaveKeyCommand is null ||
+            modalTabNextKeyCommand is null ||
+            modalTabPreviousKeyCommand is null ||
+            modalPrimaryActionKeyCommand is null)
         {
             return;
         }
 
         InvokeResponderSelector(responder, "removeKeyCommand:", modalEscapeKeyCommand);
         InvokeResponderSelector(responder, "removeKeyCommand:", modalSaveKeyCommand);
+        InvokeResponderSelector(responder, "removeKeyCommand:", modalTabNextKeyCommand);
+        InvokeResponderSelector(responder, "removeKeyCommand:", modalTabPreviousKeyCommand);
+        InvokeResponderSelector(responder, "removeKeyCommand:", modalPrimaryActionKeyCommand);
+        if (modalPrimaryActionAlternateKeyCommand is not null)
+        {
+            InvokeResponderSelector(responder, "removeKeyCommand:", modalPrimaryActionAlternateKeyCommand);
+        }
         InvokeResponderSelector(responder, "addKeyCommand:", modalEscapeKeyCommand);
         InvokeResponderSelector(responder, "addKeyCommand:", modalSaveKeyCommand);
+        InvokeResponderSelector(responder, "addKeyCommand:", modalTabNextKeyCommand);
+        InvokeResponderSelector(responder, "addKeyCommand:", modalTabPreviousKeyCommand);
+        if (includePrimaryAction)
+        {
+            InvokeResponderSelector(responder, "addKeyCommand:", modalPrimaryActionKeyCommand);
+            if (modalPrimaryActionAlternateKeyCommand is not null)
+            {
+                InvokeResponderSelector(responder, "addKeyCommand:", modalPrimaryActionAlternateKeyCommand);
+            }
+        }
+    }
+
+    private void UnregisterMacEditorCommands(UIResponder? responder)
+    {
+        if (responder is null ||
+            modalEscapeKeyCommand is null ||
+            modalSaveKeyCommand is null ||
+            modalTabNextKeyCommand is null ||
+            modalTabPreviousKeyCommand is null ||
+            modalPrimaryActionKeyCommand is null)
+        {
+            return;
+        }
+
+        InvokeResponderSelector(responder, "removeKeyCommand:", modalEscapeKeyCommand);
+        InvokeResponderSelector(responder, "removeKeyCommand:", modalSaveKeyCommand);
+        InvokeResponderSelector(responder, "removeKeyCommand:", modalTabNextKeyCommand);
+        InvokeResponderSelector(responder, "removeKeyCommand:", modalTabPreviousKeyCommand);
+        InvokeResponderSelector(responder, "removeKeyCommand:", modalPrimaryActionKeyCommand);
+        if (modalPrimaryActionAlternateKeyCommand is not null)
+        {
+            InvokeResponderSelector(responder, "removeKeyCommand:", modalPrimaryActionAlternateKeyCommand);
+        }
     }
 
     private static void InvokeResponderSelector(UIResponder responder, string selectorName, NSObject argument)
@@ -2406,6 +2793,30 @@ public partial class MainPage : ContentPage
         var command = UIKeyCommand.Create(new NSString(macEscapeKeyInput), 0, new Selector("handleEditorCancel:"));
         TrySetKeyCommandPriorityOverSystem(command);
         return command;
+    }
+
+    private static UIKeyCommand CreateMacEditorKeyCommand(string keyInput, UIKeyModifierFlags modifiers, string selectorName)
+    {
+        var command = UIKeyCommand.Create(new NSString(keyInput), modifiers, new Selector(selectorName));
+        TrySetKeyCommandPriorityOverSystem(command);
+        return command;
+    }
+
+    private static UIKeyCommand? TryCreateMacEditorKeyCommand(string keyInput, UIKeyModifierFlags modifiers, string selectorName)
+    {
+        if (string.IsNullOrEmpty(keyInput))
+        {
+            return null;
+        }
+
+        try
+        {
+            return CreateMacEditorKeyCommand(keyInput, modifiers, selectorName);
+        }
+        catch
+        {
+            return null;
+        }
     }
 
     private static UIKeyCommand CreateMacCommandSuggestionKeyCommand(string keyInput, string selectorName)
@@ -2431,6 +2842,11 @@ public partial class MainPage : ContentPage
 
     private static string ResolveMacKeyInput(string inputName, string fallback)
     {
+        return TryResolveMacKeyInput(inputName) ?? fallback;
+    }
+
+    private static string? TryResolveMacKeyInput(string inputName)
+    {
         var keyInputProperty = typeof(UIKeyCommand).GetProperty(inputName, BindingFlags.Public | BindingFlags.Static);
         if (keyInputProperty?.GetValue(null) is NSString nsInput)
         {
@@ -2453,7 +2869,7 @@ public partial class MainPage : ContentPage
             return inputFieldText;
         }
 
-        return fallback;
+        return null;
     }
 
     private void EnsureMacFirstResponder()
@@ -2561,6 +2977,150 @@ public partial class MainPage : ContentPage
                 return false;
             }
         }
+    }
+
+    private void EnsureMacGuidEntryReadOnlyBehavior()
+    {
+        if (ModalGuidEntry.Handler?.PlatformView is not UITextField textField)
+        {
+            return;
+        }
+
+        if (!ReferenceEquals(macGuidNativeTextField, textField))
+        {
+            DetachMacGuidEntryReadOnlyBehavior();
+            macGuidNativeTextField = textField;
+        }
+
+        textField.Delegate = macGuidReadOnlyDelegate;
+        textField.EditingChanged -= OnMacGuidEntryEditingChanged;
+        textField.EditingChanged += OnMacGuidEntryEditingChanged;
+        textField.UserInteractionEnabled = true;
+        textField.Enabled = true;
+
+        if (string.IsNullOrEmpty(macGuidLockedText))
+        {
+            macGuidLockedText = ModalGuidEntry.Text ?? string.Empty;
+        }
+
+        if (!string.Equals(textField.Text, macGuidLockedText, StringComparison.Ordinal))
+        {
+            textField.Text = macGuidLockedText;
+        }
+    }
+
+    private void DetachMacGuidEntryReadOnlyBehavior()
+    {
+        if (macGuidNativeTextField is null)
+        {
+            return;
+        }
+
+        macGuidNativeTextField.EditingChanged -= OnMacGuidEntryEditingChanged;
+        macGuidNativeTextField = null;
+    }
+
+    private void OnMacGuidEntryEditingChanged(object? sender, EventArgs e)
+    {
+        if (macApplyingGuidTextLock || sender is not UITextField textField)
+        {
+            return;
+        }
+
+        if (string.IsNullOrEmpty(macGuidLockedText))
+        {
+            macGuidLockedText = viewModel.Editor.GuidText ?? string.Empty;
+        }
+
+        if (string.Equals(textField.Text, macGuidLockedText, StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        macApplyingGuidTextLock = true;
+        try
+        {
+            textField.Text = macGuidLockedText;
+            if (!string.Equals(ModalGuidEntry.Text, macGuidLockedText, StringComparison.Ordinal))
+            {
+                ModalGuidEntry.Text = macGuidLockedText;
+            }
+
+            if (!string.Equals(viewModel.Editor.GuidText, macGuidLockedText, StringComparison.Ordinal))
+            {
+                viewModel.Editor.GuidText = macGuidLockedText;
+            }
+
+            var allTextRange = textField.GetTextRange(textField.BeginningOfDocument, textField.EndOfDocument);
+            if (allTextRange is not null)
+            {
+                textField.SelectedTextRange = allTextRange;
+            }
+        }
+        finally
+        {
+            macApplyingGuidTextLock = false;
+        }
+    }
+
+    private void ResignModalInputFirstResponder()
+    {
+        ModalGuidEntry.Unfocus();
+        ModalCommandEntry.Unfocus();
+        ModalButtonTextEntry.Unfocus();
+        ModalToolEntry.Unfocus();
+        ModalArgumentsEntry.Unfocus();
+        ModalClipWordEntry.Unfocus();
+        ModalNoteEditor.Unfocus();
+
+        if (ModalGuidEntry.Handler?.PlatformView is UITextField guidField && guidField.IsFirstResponder)
+        {
+            guidField.ResignFirstResponder();
+        }
+
+        if (ModalCommandEntry.Handler?.PlatformView is UITextField commandField && commandField.IsFirstResponder)
+        {
+            commandField.ResignFirstResponder();
+        }
+
+        if (ModalButtonTextEntry.Handler?.PlatformView is UITextField buttonTextField && buttonTextField.IsFirstResponder)
+        {
+            buttonTextField.ResignFirstResponder();
+        }
+
+        if (ModalToolEntry.Handler?.PlatformView is UITextField toolField && toolField.IsFirstResponder)
+        {
+            toolField.ResignFirstResponder();
+        }
+
+        if (ModalArgumentsEntry.Handler?.PlatformView is UITextField argumentsField && argumentsField.IsFirstResponder)
+        {
+            argumentsField.ResignFirstResponder();
+        }
+
+        if (ModalClipWordEntry.Handler?.PlatformView is UITextField clipWordField && clipWordField.IsFirstResponder)
+        {
+            clipWordField.ResignFirstResponder();
+        }
+
+        if (ModalNoteEditor.Handler?.PlatformView is UITextView noteField && noteField.IsFirstResponder)
+        {
+            noteField.ResignFirstResponder();
+        }
+
+        ModalNoteFocusUnderline.IsVisible = false;
+    }
+
+    private sealed class MacGuidReadOnlyTextFieldDelegate : UITextFieldDelegate
+    {
+        public override bool ShouldBeginEditing(UITextField textField)
+            => true;
+
+        public override bool ShouldClear(UITextField textField)
+            => false;
+
+        public override bool ShouldChangeCharacters(UITextField textField, NSRange range, string replacementString)
+            => false;
     }
 #endif
 

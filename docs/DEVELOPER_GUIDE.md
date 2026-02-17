@@ -122,6 +122,10 @@ README is user-facing summary; this guide is the implementation-level source of 
     - suppresses default blue focus ring
     - uses bottom-edge emphasis that respects corner radius
     - sets caret color by theme (Light=black, Dark=white)
+- macOS editor modal keyboard behavior:
+  - `Tab` / `Shift+Tab` traversal is confined to modal controls and wraps at edges.
+  - `GUID` is selectable but not editable.
+  - When pseudo-focus is on `Cancel` / `Save`, `Enter` executes the focused action.
 - Placement-area rendering/performance:
   - `MainPage.xaml.cs` forwards viewport scroll/size to `MainViewModel.UpdateViewport(...)`
   - `MainViewModel` keeps filtered list and updates `VisibleButtons` via diff (insert/move/remove), not full clear+rebind
@@ -145,6 +149,7 @@ README is user-facing summary; this guide is the implementation-level source of 
 - `Praxis.Tests/LaunchTargetResolverTests.cs` covers fallback-target parsing:
   - HTTP(S) detection
   - path-like argument detection
+  - environment-variable expansion and quoted path handling
   - unsupported scheme/blank handling
 - `Praxis.Tests/CoreLogicPerformanceSafetyTests.cs` covers regression/safety checks for:
   - button layout defaults (`120x40`) and 10px-grid alignment
@@ -283,6 +288,10 @@ README はユーザー向け要約、このガイドは実装仕様の正本で�
     - 標準の青いフォーカスリングを抑制
     - 角丸に沿った下辺強調を適用
     - キャレット色をテーマ連動（Light=黒、Dark=白）
+- macOS の編集モーダルのキーボード挙動:
+  - `Tab` / `Shift+Tab` の遷移はモーダル内に閉じ、端で循環する。
+  - `GUID` 欄は選択可能だが編集不可。
+  - `Cancel` / `Save` の擬似フォーカス中は `Enter` で該当アクションを実行する。
 - 配置領域の描画/性能最適化:
   - `MainPage.xaml.cs` からスクロール位置と表示サイズを `MainViewModel.UpdateViewport(...)` に連携
   - `MainViewModel` はフィルタ済み一覧を保持し、`VisibleButtons` を差分更新（insert/move/remove）する
@@ -306,6 +315,7 @@ README はユーザー向け要約、このガイドは実装仕様の正本で�
 - `Praxis.Tests/LaunchTargetResolverTests.cs` はフォールバック起動ターゲット解析を検証する。
   - HTTP(S) 判定
   - パス形式引数の判定
+  - 環境変数展開と引用符付きパスの扱い
   - 非対応スキーム / 空文字の扱い
 - `Praxis.Tests/CoreLogicPerformanceSafetyTests.cs` は回帰/安全性の検証を行う。
   - ボタン既定サイズ（`120x40`）と 10px グリッド整合

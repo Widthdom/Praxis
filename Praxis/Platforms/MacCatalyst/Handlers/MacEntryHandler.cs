@@ -27,6 +27,7 @@ public class MacEntryHandler : EntryHandler
         private readonly CAShapeLayer borderLayer = new();
         private readonly CAShapeLayer focusBorderLayer = new();
         private readonly CALayer focusBorderMaskLayer = new();
+        private bool pseudoFocused;
 
         public MacEntryTextField()
         {
@@ -101,7 +102,13 @@ public class MacEntryHandler : EntryHandler
             TintColor = dark ? UIColor.White : UIColor.Black;
             borderLayer.StrokeColor = borderColor;
             focusBorderLayer.StrokeColor = focusColor;
-            focusBorderLayer.Hidden = !IsFirstResponder;
+            focusBorderLayer.Hidden = !(IsFirstResponder || pseudoFocused);
+        }
+
+        public void SetPseudoFocus(bool enabled)
+        {
+            pseudoFocused = enabled;
+            ApplyFocusVisualState();
         }
     }
 }

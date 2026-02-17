@@ -89,6 +89,18 @@ public class AppDelegate : MauiUIApplicationDelegate
     private void HandleCommandSuggestionDown(UIKeyCommand command)
         => MainThread.BeginInvokeOnMainThread(() => App.RaiseCommandInputShortcut("Down"));
 
+    [Export("handleEditorTabNext:")]
+    private void HandleEditorTabNext(UIKeyCommand command)
+        => MainThread.BeginInvokeOnMainThread(() => App.RaiseEditorShortcut("TabNext"));
+
+    [Export("handleEditorTabPrevious:")]
+    private void HandleEditorTabPrevious(UIKeyCommand command)
+        => MainThread.BeginInvokeOnMainThread(() => App.RaiseEditorShortcut("TabPrevious"));
+
+    [Export("handleEditorPrimaryAction:")]
+    private void HandleEditorPrimaryAction(UIKeyCommand command)
+        => MainThread.BeginInvokeOnMainThread(() => App.RaiseEditorShortcut("PrimaryAction"));
+
     [Export("cancelOperation:")]
     private void CancelOperation(NSObject? sender)
         => MainThread.BeginInvokeOnMainThread(() => App.RaiseEditorShortcut("Cancel"));
