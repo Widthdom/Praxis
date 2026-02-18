@@ -116,6 +116,7 @@ README is user-facing summary; this guide is the implementation-level source of 
   - Suggestion refresh is debounced (`~120ms`) to reduce rapid recomputation during typing
   - Candidate row displays `Command`, `ButtonText`, `Tool Arguments` in `1:1:4` width ratio
   - `Up/Down` wraps at list edges, and `Enter` executes selected suggestion
+  - Suggestion click fills `CommandInput` and executes immediately.
   - Plain Enter execution from command box runs all exact command matches (trim-aware, case-insensitive)
   - Windows arrow key handling is attached in `MainPage.xaml.cs` (`MainCommandEntry_HandlerChanged` / native `KeyDown`)
   - macOS arrow key handling is attached in `Controls/CommandEntry` + `Platforms/MacCatalyst/Handlers/CommandEntryHandler.cs` (`PressesBegan`)
@@ -290,6 +291,7 @@ README はユーザー向け要約、このガイドは実装仕様の正本で�
   - 候補更新はデバウンス（約 `120ms`）して、連続入力時の再計算を抑える
   - 候補行は `Command`、`ButtonText`、`Tool Arguments` を `1:1:4` 比率で表示
   - `↑/↓` は候補端で循環し、`Enter` で選択候補を実行する
+  - 候補クリック時は `CommandInput` を埋めて即時実行する
   - コマンド欄で候補未選択の `Enter` 実行時は、`command` 完全一致（前後空白除去・大文字小文字非依存）の対象を全件実行する
   - Windows の方向キー上下は `MainPage.xaml.cs` の `MainCommandEntry_HandlerChanged` / ネイティブ `KeyDown` で処理
   - macOS の方向キー上下は `Controls/CommandEntry` + `Platforms/MacCatalyst/Handlers/CommandEntryHandler.cs` の `PressesBegan` で処理

@@ -128,56 +128,7 @@ public partial class MainViewModel : ObservableObject
 
         CloseCommandSuggestions();
 
-        if (string.IsNullOrWhiteSpace(cmd))
-        {
-            return;
-        }
-
-        var targets = CommandRecordMatcher.FindMatches(allButtons.Select(x => x.ToRecord()), cmd).ToList();
-        if (targets.Count == 0)
-        {
-            var singleTarget = await repository.GetByCommandAsync(cmd);
-            if (singleTarget is not null)
-            {
-                targets.Add(singleTarget);
-            }
-        }
-
-        if (targets.Count == 0)
-        {
-            SetStatus($"Command not found: {cmd}");
-            return;
-        }
-
-        if (targets.Count == 1)
-        {
-            await ExecuteRecordAsync(targets[0], false);
-            return;
-        }
-
-        var successCount = 0;
-        string? lastFailureMessage = null;
-
-        foreach (var target in targets)
-        {
-            var result = await ExecuteRecordAsync(target, false, updateStatus: false);
-            if (result.Success)
-            {
-                successCount++;
-            }
-            else
-            {
-                lastFailureMessage = result.Message;
-            }
-        }
-
-        if (successCount == targets.Count)
-        {
-            SetStatus($"Executed {targets.Count} commands.");
-            return;
-        }
-
-        SetStatus($"Executed {successCount}/{targets.Count}. Last error: {lastFailureMessage}");
+        await ExecuteCommandMatchesAsync(cmd);
     }
 
     [RelayCommand]
@@ -747,7 +698,7 @@ public partial class MainViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private void PickSuggestion(CommandSuggestionItemViewModel? item)
+    private async Task PickSuggestionAsync(CommandSuggestionItemViewModel? item)
     {
         if (item is null)
         {
@@ -758,6 +709,7 @@ public partial class MainViewModel : ObservableObject
         CommandInput = item.Command;
         suppressCommandSuggestionRefresh = false;
         CloseCommandSuggestions();
+        await ExecuteCommandMatchesAsync(item.Command);
     }
 
     [RelayCommand]
@@ -964,6 +916,61 @@ public partial class MainViewModel : ObservableObject
         }
 
         SelectedCommandSuggestion = CommandSuggestions[index];
+    }
+
+    private async Task ExecuteCommandMatchesAsync(string? commandText)
+    {
+        var cmd = commandText?.Trim() ?? string.Empty;
+        if (string.IsNullOrWhiteSpace(cmd))
+        {
+            return;
+        }
+
+        var targets = CommandRecordMatcher.FindMatches(allButtons.Select(x => x.ToRecord()), cmd).ToList();
+        if (targets.Count == 0)
+        {
+            var singleTarget = await repository.GetByCommandAsync(cmd);
+            if (singleTarget is not null)
+            {
+                targets.Add(singleTarget);
+            }
+        }
+
+        if (targets.Count == 0)
+        {
+            SetStatus($"Command not found: {cmd}");
+            return;
+        }
+
+        if (targets.Count == 1)
+        {
+            await ExecuteRecordAsync(targets[0], false);
+            return;
+        }
+
+        var successCount = 0;
+        string? lastFailureMessage = null;
+
+        foreach (var target in targets)
+        {
+            var result = await ExecuteRecordAsync(target, false, updateStatus: false);
+            if (result.Success)
+            {
+                successCount++;
+            }
+            else
+            {
+                lastFailureMessage = result.Message;
+            }
+        }
+
+        if (successCount == targets.Count)
+        {
+            SetStatus($"Executed {targets.Count} commands.");
+            return;
+        }
+
+        SetStatus($"Executed {successCount}/{targets.Count}. Last error: {lastFailureMessage}");
     }
 
     private async Task LoadButtonsFromRepositoryAsync(bool forceReload = false)

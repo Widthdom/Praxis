@@ -64,25 +64,19 @@
             </Border.Shadow>
             <CollectionView IsVisible="{OnPlatform WinUI=True, MacCatalyst=False}"
                             ItemsSource="{Binding CommandSuggestions}"
-                            SelectedItem="{Binding SelectedCommandSuggestion, Mode=TwoWay}"
-                            SelectionMode="Single">
+                            SelectionMode="None">
                 <CollectionView.ItemsLayout>
                     <LinearItemsLayout Orientation="Vertical" ItemSpacing="2" />
                 </CollectionView.ItemsLayout>
                 <CollectionView.ItemTemplate>
                     <DataTemplate>
                         <Grid ColumnDefinitions="1*,1*,4*" Padding="8,6" BackgroundColor="Transparent">
-                            <VisualStateManager.VisualStateGroups>
-                                <VisualStateGroup Name="CommonStates">
-                                    <VisualState Name="Normal" />
-                                    <VisualState Name="Selected">
-                                        <VisualState.Setters>
-                                            <Setter Property="BackgroundColor"
-                                                    Value="{AppThemeBinding Light=#E6E6E6, Dark=#3D3D3D}" />
-                                        </VisualState.Setters>
-                                    </VisualState>
-                                </VisualStateGroup>
-                            </VisualStateManager.VisualStateGroups>
+                            <Grid.Triggers>
+                                <DataTrigger TargetType="Grid" Binding="{Binding IsSelected}" Value="True">
+                                    <Setter Property="BackgroundColor"
+                                            Value="{AppThemeBinding Light=#E6E6E6, Dark=#3D3D3D}" />
+                                </DataTrigger>
+                            </Grid.Triggers>
                             <Grid.GestureRecognizers>
                                 <TapGestureRecognizer Command="{Binding Source={x:Reference RootPage}, Path=BindingContext.PickSuggestionCommand}"
                                                       CommandParameter="{Binding .}" />

@@ -23,6 +23,7 @@ It stores launcher buttons in SQLite and can execute tools with arguments.
 ## Behavior Notes
 - Suggestions are shown from partial `command` matches and can be selected by keyboard.
 - Suggestion keyboard behavior: `Up/Down` moves selection, wraps at edges, and `Enter` executes selected command.
+- Clicking a suggestion fills the command box and executes the suggestion immediately.
 - Enter from command box executes all buttons whose `command` exactly matches input (case-insensitive, trim-aware).
 - Editor modal keyboard behavior:
   - `Tab`/`Shift+Tab` stays inside modal controls and wraps at edges.
@@ -122,6 +123,7 @@ SQLite にボタン情報を保存し、ツールと引数を実行できます�
 ## 動作メモ
 - command 部分一致で候補を表示し、キーボードで選択実行できます。
 - 候補一覧のキーボード操作は `↑/↓` で移動、端で循環（先頭で↑→末尾、末尾で↓→先頭）、`Enter` で実行です。
+- 候補一覧をクリックすると、Command欄に自動入力した上でその候補を即時実行します。
 - コマンド欄で `Enter` 実行したとき、`command` 完全一致（前後空白除去・大文字小文字非依存）のボタンが複数あれば全件実行します。
 - 編集モーダルのキーボード操作:
   - `Tab` / `Shift+Tab` はモーダル内のみで循環し、端でラップします。

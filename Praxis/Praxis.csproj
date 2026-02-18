@@ -11,6 +11,7 @@
     <ApplicationId>com.companyname.praxis</ApplicationId>
     <ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
     <ApplicationVersion>1</ApplicationVersion>
+    <NuGetAudit>false</NuGetAudit>
     <WindowsPackageType Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">None</WindowsPackageType>
     <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">10.0.17763.0</SupportedOSPlatformVersion>
     <TargetPlatformMinVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">10.0.17763.0</TargetPlatformMinVersion>
@@ -27,6 +28,7 @@
     <MauiXamlInflator>XamlC</MauiXamlInflator>
     <_MauiForceXamlCForDebug>true</_MauiForceXamlCForDebug>
     <RuntimeIdentifier Condition="'$(RuntimeIdentifier)' == ''">maccatalyst-$([System.Runtime.InteropServices.RuntimeInformation]::ProcessArchitecture.ToString().ToLowerInvariant())</RuntimeIdentifier>
+    <NuGetAudit>false</NuGetAudit>
     <NoWarn>$(NoWarn);MAUI1001;XC0022;XC0025;NU1900</NoWarn>
   </PropertyGroup>
   <ItemGroup>
