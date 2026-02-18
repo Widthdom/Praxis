@@ -26,6 +26,27 @@ public class ModalEditorHeightResolverTests
     }
 
     [Fact]
+    public void ResolveHeight_ReturnsExpandedHeight_WhenTextUsesWindowsLineEndings()
+    {
+        var height = ModalEditorHeightResolver.ResolveHeight("line1\r\nline2\r\nline3");
+        Assert.Equal(88, height);
+    }
+
+    [Fact]
+    public void ResolveHeight_ReturnsExpandedHeight_WhenTextUsesCarriageReturnOnlyLineEndings()
+    {
+        var height = ModalEditorHeightResolver.ResolveHeight("line1\rline2\rline3");
+        Assert.Equal(88, height);
+    }
+
+    [Fact]
+    public void ResolveHeight_ReturnsExpandedHeight_WhenTextUsesMixedLineEndings()
+    {
+        var height = ModalEditorHeightResolver.ResolveHeight("line1\r\nline2\rline3\nline4");
+        Assert.Equal(112, height);
+    }
+
+    [Fact]
     public void ResolveHeight_ClampsAtMaxHeight_WhenTextHasManyLines()
     {
         var height = ModalEditorHeightResolver.ResolveHeight(string.Join('\n', Enumerable.Repeat("line", 20)));

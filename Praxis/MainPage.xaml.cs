@@ -456,7 +456,7 @@ public partial class MainPage : ContentPage
 #if MACCATALYST
         TryHandleMacEditorTabTextInsertion(sender, e);
 #endif
-        UpdateModalEditorHeights();
+        UpdateModalEditorHeights(noteTextOverride: e.NewTextValue);
     }
 
     private void ModalClipWordEditor_TextChanged(object? sender, TextChangedEventArgs e)
@@ -464,18 +464,20 @@ public partial class MainPage : ContentPage
 #if MACCATALYST
         TryHandleMacEditorTabTextInsertion(sender, e);
 #endif
-        UpdateModalEditorHeights();
+        UpdateModalEditorHeights(clipTextOverride: e.NewTextValue);
     }
 
-    private void UpdateModalEditorHeights()
+    private void UpdateModalEditorHeights(string? clipTextOverride = null, string? noteTextOverride = null)
     {
         if (!xamlLoaded || EditorFieldsScrollView is null)
         {
             return;
         }
 
-        var clipHeight = ModalEditorHeightResolver.ResolveHeight(viewModel.Editor.ClipText);
-        var noteHeight = ModalEditorHeightResolver.ResolveHeight(viewModel.Editor.Note);
+        var clipText = clipTextOverride ?? ModalClipWordEditor.Text ?? viewModel.Editor.ClipText;
+        var noteText = noteTextOverride ?? ModalNoteEditor.Text ?? viewModel.Editor.Note;
+        var clipHeight = ModalEditorHeightResolver.ResolveHeight(clipText);
+        var noteHeight = ModalEditorHeightResolver.ResolveHeight(noteText);
 
         UpdateEditorHeight(ModalClipWordEditor, ModalClipWordContainer, CopyClipWordButton, clipHeight);
         UpdateEditorHeight(ModalNoteEditor, ModalNoteContainer, CopyNoteButton, noteHeight);
@@ -1813,7 +1815,7 @@ public partial class MainPage : ContentPage
             return;
         }
 
-        Dispatcher.Dispatch(UpdateModalEditorHeights);
+        Dispatcher.Dispatch(() => UpdateModalEditorHeights());
     }
 
     private async void TriggerStatusFlash(string? message)
@@ -2606,6 +2608,9 @@ public partial class MainPage : ContentPage
         SyncWindowsTextBoxHooks(
             ref modalNoteTextBox,
             ModalNoteEditor.Handler?.PlatformView as Microsoft.UI.Xaml.Controls.TextBox);
+
+        ConfigureWindowsMultilineEditor(modalClipWordTextBox);
+        ConfigureWindowsMultilineEditor(modalNoteTextBox);
     }
 
     private void SyncWindowsTextBoxHooks(
@@ -2653,6 +2658,23 @@ public partial class MainPage : ContentPage
         {
             slot.PointerPressed += extraPointerPressed;
         }
+    }
+
+    private static void ConfigureWindowsMultilineEditor(Microsoft.UI.Xaml.Controls.TextBox? textBox)
+    {
+        if (textBox is null)
+        {
+            return;
+        }
+
+        textBox.AcceptsReturn = true;
+        textBox.TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap;
+        Microsoft.UI.Xaml.Controls.ScrollViewer.SetVerticalScrollBarVisibility(
+            textBox,
+            Microsoft.UI.Xaml.Controls.ScrollBarVisibility.Auto);
+        Microsoft.UI.Xaml.Controls.ScrollViewer.SetVerticalScrollMode(
+            textBox,
+            Microsoft.UI.Xaml.Controls.ScrollMode.Auto);
     }
 
 #endif
