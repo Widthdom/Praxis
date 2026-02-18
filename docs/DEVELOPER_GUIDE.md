@@ -128,6 +128,9 @@ README is user-facing summary; this guide is the implementation-level source of 
   - `Tab` / `Shift+Tab` traversal is confined to modal controls and wraps at edges.
   - `GUID` is selectable but not editable.
   - When pseudo-focus is on `Cancel` / `Save`, `Enter` executes the focused action.
+- Mac Catalyst AppDelegate selector safety:
+  - Do not export UIKit standard action selectors (`save:`, `cancel:`, `dismiss:`, `cancelOperation:`) from `Platforms/MacCatalyst/AppDelegate.cs`.
+  - Exporting these selectors can trigger launch-time `UINSApplicationDelegate` assertions and abort app startup (`SIGABRT`, `MSB3073` code 134 on `-t:Run`).
 - Placement-area rendering/performance:
   - `MainPage.xaml.cs` forwards viewport scroll/size to `MainViewModel.UpdateViewport(...)`
   - `MainViewModel` keeps filtered list and updates `VisibleButtons` via diff (insert/move/remove), not full clear+rebind
@@ -305,6 +308,9 @@ README はユーザー向け要約、このガイドは実装仕様の正本で�
   - `Tab` / `Shift+Tab` の遷移はモーダル内に閉じ、端で循環する。
   - `GUID` 欄は選択可能だが編集不可。
   - `Cancel` / `Save` の擬似フォーカス中は `Enter` で該当アクションを実行する。
+- Mac Catalyst の AppDelegate セレクタ安全性:
+  - `Platforms/MacCatalyst/AppDelegate.cs` で UIKit 標準アクションセレクタ（`save:`, `cancel:`, `dismiss:`, `cancelOperation:`）を `Export` しないこと。
+  - これらを `Export` すると、起動時に `UINSApplicationDelegate` のアサートが発生し、アプリ起動が `SIGABRT`（`-t:Run` では `MSB3073` code 134）で中断する場合がある。
 - 配置領域の描画/性能最適化:
   - `MainPage.xaml.cs` からスクロール位置と表示サイズを `MainViewModel.UpdateViewport(...)` に連携
   - `MainViewModel` はフィルタ済み一覧を保持し、`VisibleButtons` を差分更新（insert/move/remove）する

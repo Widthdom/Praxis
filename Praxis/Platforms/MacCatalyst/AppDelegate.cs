@@ -102,22 +102,6 @@ public class AppDelegate : MauiUIApplicationDelegate
     private void HandleEditorPrimaryAction(UIKeyCommand command)
         => MainThread.BeginInvokeOnMainThread(() => App.RaiseEditorShortcut("PrimaryAction"));
 
-    [Export("cancelOperation:")]
-    private void CancelOperation(NSObject? sender)
-        => MainThread.BeginInvokeOnMainThread(() => App.RaiseEditorShortcut("Cancel"));
-
-    [Export("cancel:")]
-    private void Cancel(NSObject? sender)
-        => MainThread.BeginInvokeOnMainThread(() => App.RaiseEditorShortcut("Cancel"));
-
-    [Export("dismiss:")]
-    private void Dismiss(NSObject? sender)
-        => MainThread.BeginInvokeOnMainThread(() => App.RaiseEditorShortcut("Cancel"));
-
-    [Export("save:")]
-    private void Save(NSObject? sender)
-        => MainThread.BeginInvokeOnMainThread(() => App.RaiseEditorShortcut("Save"));
-
     [Export("otherMouseDown:")]
     private void OtherMouseDown(NSObject? evt)
     {
