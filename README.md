@@ -30,6 +30,7 @@ It stores launcher buttons in SQLite and can execute tools with arguments.
   - `Tab`/`Shift+Tab` stays inside modal controls and wraps at edges.
   - On macOS, `Shift+Tab` from `GUID` stays in the modal focus ring (does not escape to main page).
   - On macOS, pressing `Tab`/`Shift+Tab` in `Clip Word`/`Note` moves focus to next/previous control (no literal tab insertion).
+  - On macOS, pressing `Esc` while focused in any modal field (including `Clip Word`/`Note`) closes the modal in a single press.
   - On macOS, modal editor key command registration is nullable-safe (`KeyCommands` override returns non-null).
   - On macOS, `GUID` remains read-only/selectable (not editable).
   - On macOS, when the editor modal opens, `Command` keeps caret at the end (no select-all on open).
@@ -156,6 +157,7 @@ SQLite にボタン情報を保存し、ツールと引数を実行できます�
   - `Tab` / `Shift+Tab` はモーダル内のみで循環し、端でラップします。
   - macOS では `GUID` 欄で `Shift+Tab` を押しても、メイン画面へは抜けずモーダル内フォーカス循環を維持します。
   - macOS では `Clip Word` / `Note` 欄で `Tab` / `Shift+Tab` を押すと、タブ文字は入力せず前後フォーカス遷移します。
+  - macOS ではモーダル内の任意入力欄（`Clip Word` / `Note` を含む）にフォーカス中でも、`Esc` 1 回でモーダルを閉じます。
   - macOS のモーダル編集キーコマンド登録は、`KeyCommands` オーバーライドを non-null 戻り値で実装して nullable 警告を回避しています。
   - Windows では `Tab`/`Shift+Tab` で遷移した入力欄のテキストを自動で全選択します（マウスフォーカス時は対象外）。
   - macOS では `GUID` 欄は選択可能ですが編集不可です。

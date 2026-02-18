@@ -5,6 +5,7 @@ using Foundation;
 using Microsoft.Maui.ApplicationModel;
 using Microsoft.Maui.Handlers;
 using Microsoft.Maui.Platform;
+using ObjCRuntime;
 using Praxis.Core.Logic;
 using UIKit;
 
@@ -40,6 +41,29 @@ public class MacEntryHandler : EntryHandler
         private readonly CAShapeLayer focusBorderLayer = new();
         private readonly CALayer focusBorderMaskLayer = new();
         private bool pseudoFocused;
+        private UIKeyCommand? cancelCommand;
+
+        public override UIKeyCommand[] KeyCommands
+        {
+            get
+            {
+                var baseCommands = base.KeyCommands ?? Array.Empty<UIKeyCommand>();
+                if (!EditorShortcutScopeResolver.IsEditorShortcutScopeActive(App.IsConflictDialogOpen, App.IsContextMenuOpen, App.IsEditorOpen))
+                {
+                    return baseCommands;
+                }
+
+                cancelCommand ??= CreateEntryKeyCommand(EscapeKeyInput, 0, "handleEntryCancel:");
+                var commands = new UIKeyCommand[baseCommands.Length + 1];
+                commands[0] = cancelCommand;
+                if (baseCommands.Length > 0)
+                {
+                    Array.Copy(baseCommands, 0, commands, 1, baseCommands.Length);
+                }
+
+                return commands;
+            }
+        }
 
         public MacEntryTextField()
         {
@@ -81,6 +105,12 @@ public class MacEntryHandler : EntryHandler
             }
 
             base.PressesBegan(presses, evt);
+        }
+
+        [Export("handleEntryCancel:")]
+        private void HandleEntryCancel(UIKeyCommand command)
+        {
+            TryDispatchCancelShortcut();
         }
 
         public override void LayoutSubviews()
@@ -205,8 +235,7 @@ public class MacEntryHandler : EntryHandler
 
                 if (IsKeyInput(key, EscapeKeyInput))
                 {
-                    MainThread.BeginInvokeOnMainThread(() => App.RaiseEditorShortcut("Cancel"));
-                    return true;
+                    return TryDispatchCancelShortcut();
                 }
 
                 if (App.IsEditorOpen && !App.IsConflictDialogOpen && commandDown && IsKeyInput(key, "s"))
@@ -224,6 +253,40 @@ public class MacEntryHandler : EntryHandler
             }
 
             return false;
+        }
+
+        private static bool TryDispatchCancelShortcut()
+        {
+            var scopeActive = EditorShortcutScopeResolver.IsEditorShortcutScopeActive(App.IsConflictDialogOpen, App.IsContextMenuOpen, App.IsEditorOpen);
+            if (!scopeActive)
+            {
+                return false;
+            }
+
+            var action = EditorShortcutActionResolver.ResolveCancelAction();
+            MainThread.BeginInvokeOnMainThread(() => App.RaiseEditorShortcut(action));
+            return true;
+        }
+
+        private static UIKeyCommand CreateEntryKeyCommand(string input, UIKeyModifierFlags modifiers, string selectorName)
+        {
+            var command = UIKeyCommand.Create(new NSString(input), modifiers, new Selector(selectorName));
+            TrySetKeyCommandPriorityOverSystem(command);
+            return command;
+        }
+
+        private static void TrySetKeyCommandPriorityOverSystem(UIKeyCommand command)
+        {
+            const System.Reflection.BindingFlags flags = System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance;
+            var prop = typeof(UIKeyCommand).GetProperty("WantsPriorityOverSystemBehavior", flags);
+            if (prop?.CanWrite == true)
+            {
+                prop.SetValue(command, true);
+                return;
+            }
+
+            var method = typeof(UIKeyCommand).GetMethod("SetWantsPriorityOverSystemBehavior", flags);
+            method?.Invoke(command, [true]);
         }
 
         private static bool IsKeyInput(UIKey key, string input)

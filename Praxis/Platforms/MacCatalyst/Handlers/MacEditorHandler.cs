@@ -12,6 +12,7 @@ namespace Praxis.Controls;
 public class MacEditorHandler : EditorHandler
 {
     private static readonly string TabKeyInput = ResolveKeyInput("InputTab", "\t");
+    private static readonly string EscapeKeyInput = ResolveKeyInput("InputEscape", "\u001B");
     private static readonly string LeftArrowKeyInput = ResolveKeyInput("InputLeftArrow", "\uF702");
     private static readonly string RightArrowKeyInput = ResolveKeyInput("InputRightArrow", "\uF703");
 
@@ -24,21 +25,24 @@ public class MacEditorHandler : EditorHandler
     {
         private UIKeyCommand? tabNextCommand;
         private UIKeyCommand? tabPreviousCommand;
+        private UIKeyCommand? cancelCommand;
 
         public override UIKeyCommand[] KeyCommands
         {
             get
             {
-                tabNextCommand ??= UIKeyCommand.Create(new NSString(TabKeyInput), 0, new Selector("handleEditorTabNext:"));
-                tabPreviousCommand ??= UIKeyCommand.Create(new NSString(TabKeyInput), UIKeyModifierFlags.Shift, new Selector("handleEditorTabPrevious:"));
+                tabNextCommand ??= CreateEditorKeyCommand(TabKeyInput, 0, "handleEditorTabNext:");
+                tabPreviousCommand ??= CreateEditorKeyCommand(TabKeyInput, UIKeyModifierFlags.Shift, "handleEditorTabPrevious:");
+                cancelCommand ??= CreateEditorKeyCommand(EscapeKeyInput, 0, "handleEditorCancel:");
 
                 var baseCommands = base.KeyCommands ?? Array.Empty<UIKeyCommand>();
-                var commands = new UIKeyCommand[baseCommands.Length + 2];
+                var commands = new UIKeyCommand[baseCommands.Length + 3];
                 commands[0] = tabNextCommand;
                 commands[1] = tabPreviousCommand;
+                commands[2] = cancelCommand;
                 if (baseCommands.Length > 0)
                 {
-                    Array.Copy(baseCommands, 0, commands, 2, baseCommands.Length);
+                    Array.Copy(baseCommands, 0, commands, 3, baseCommands.Length);
                 }
                 return commands;
             }
@@ -62,8 +66,19 @@ public class MacEditorHandler : EditorHandler
             }
         }
 
+        [Export("handleEditorCancel:")]
+        private void HandleEditorCancel(UIKeyCommand command)
+        {
+            TryDispatchCancelShortcut();
+        }
+
         public override void PressesBegan(NSSet<UIPress> presses, UIPressesEvent? evt)
         {
+            if (TryHandleEditorCancelShortcut(presses))
+            {
+                return;
+            }
+
             if (TryHandleConflictDialogArrowNavigation(presses))
             {
                 return;
@@ -112,6 +127,61 @@ public class MacEditorHandler : EditorHandler
             }
 
             return false;
+        }
+
+        private static bool TryHandleEditorCancelShortcut(NSSet<UIPress> presses)
+        {
+            foreach (var pressObject in presses)
+            {
+                if (pressObject is not UIPress press)
+                {
+                    continue;
+                }
+
+                var key = press.Key;
+                if (key is null || !IsKeyInput(key, EscapeKeyInput))
+                {
+                    continue;
+                }
+
+                return TryDispatchCancelShortcut();
+            }
+
+            return false;
+        }
+
+        private static bool TryDispatchCancelShortcut()
+        {
+            var scopeActive = EditorShortcutScopeResolver.IsEditorShortcutScopeActive(App.IsConflictDialogOpen, App.IsContextMenuOpen, App.IsEditorOpen);
+            if (!scopeActive)
+            {
+                return false;
+            }
+
+            var action = EditorShortcutActionResolver.ResolveCancelAction();
+            MainThread.BeginInvokeOnMainThread(() => App.RaiseEditorShortcut(action));
+            return true;
+        }
+
+        private static UIKeyCommand CreateEditorKeyCommand(string input, UIKeyModifierFlags modifiers, string selectorName)
+        {
+            var command = UIKeyCommand.Create(new NSString(input), modifiers, new Selector(selectorName));
+            TrySetKeyCommandPriorityOverSystem(command);
+            return command;
+        }
+
+        private static void TrySetKeyCommandPriorityOverSystem(UIKeyCommand command)
+        {
+            const System.Reflection.BindingFlags flags = System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance;
+            var prop = typeof(UIKeyCommand).GetProperty("WantsPriorityOverSystemBehavior", flags);
+            if (prop?.CanWrite == true)
+            {
+                prop.SetValue(command, true);
+                return;
+            }
+
+            var method = typeof(UIKeyCommand).GetMethod("SetWantsPriorityOverSystemBehavior", flags);
+            method?.Invoke(command, [true]);
         }
 
         private static bool TryDispatchTabNavigation(bool shiftDown)

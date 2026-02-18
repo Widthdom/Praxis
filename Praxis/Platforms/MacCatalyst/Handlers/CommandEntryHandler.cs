@@ -108,7 +108,8 @@ public class CommandEntryHandler : MacEntryHandler
                 if (IsKeyInput(key, EscapeKeyInput) &&
                     EditorShortcutScopeResolver.IsEditorShortcutScopeActive(App.IsConflictDialogOpen, App.IsContextMenuOpen, App.IsEditorOpen))
                 {
-                    MainThread.BeginInvokeOnMainThread(() => App.RaiseEditorShortcut("Cancel"));
+                    var action = EditorShortcutActionResolver.ResolveCancelAction();
+                    MainThread.BeginInvokeOnMainThread(() => App.RaiseEditorShortcut(action));
                     return true;
                 }
 

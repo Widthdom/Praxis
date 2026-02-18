@@ -5,6 +5,22 @@ namespace Praxis.Tests;
 public class EditorShortcutActionResolverTests
 {
     [Fact]
+    public void ResolveCancelAction_ReturnsCancel()
+    {
+        var action = EditorShortcutActionResolver.ResolveCancelAction();
+        Assert.Equal("Cancel", action);
+    }
+
+    [Fact]
+    public void ResolveCancelAction_ReturnsStableValue_OnRepeatedCalls()
+    {
+        var first = EditorShortcutActionResolver.ResolveCancelAction();
+        var second = EditorShortcutActionResolver.ResolveCancelAction();
+        Assert.Equal(first, second);
+        Assert.False(string.IsNullOrWhiteSpace(first));
+    }
+
+    [Fact]
     public void ResolveTabNavigationAction_ReturnsTabNext_WhenShiftIsNotPressed()
     {
         var action = EditorShortcutActionResolver.ResolveTabNavigationAction(shiftDown: false);

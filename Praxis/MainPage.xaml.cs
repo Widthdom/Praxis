@@ -2707,7 +2707,7 @@ public partial class MainPage : ContentPage
 
     private void OnEditorShortcutRequested(string action)
     {
-        Dispatcher.Dispatch(() =>
+        void HandleShortcut()
         {
             if (IsConflictDialogOpen())
             {
@@ -2855,11 +2855,20 @@ public partial class MainPage : ContentPage
 #if MACCATALYST
             ClearMacModalPseudoFocus();
 #endif
-            if (viewModel.CancelEditorCommand.CanExecute(null))
+            var canCancel = viewModel.CancelEditorCommand.CanExecute(null);
+            if (canCancel)
             {
                 viewModel.CancelEditorCommand.Execute(null);
             }
-        });
+        }
+
+        if (Dispatcher.IsDispatchRequired)
+        {
+            Dispatcher.Dispatch(HandleShortcut);
+            return;
+        }
+
+        HandleShortcut();
     }
 
     private void TryInvokeContextMenuPrimaryAction()

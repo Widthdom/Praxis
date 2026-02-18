@@ -2,6 +2,11 @@ namespace Praxis.Core.Logic;
 
 public static class EditorShortcutActionResolver
 {
+    public static string ResolveCancelAction()
+    {
+        return "Cancel";
+    }
+
     public static string ResolveTabNavigationAction(bool shiftDown)
     {
         return shiftDown ? "TabPrevious" : "TabNext";

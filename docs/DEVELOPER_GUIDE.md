@@ -133,6 +133,7 @@ README is user-facing summary; this guide is the implementation-level source of 
   - `Tab` / `Shift+Tab` traversal is confined to modal controls and wraps at edges.
   - `Shift+Tab` from `GUID` is intercepted by `MacEntryHandler` and kept inside the modal focus ring (does not move focus to main-page inputs).
   - In `Clip Word` / `Note`, `Tab` / `Shift+Tab` moves focus next/previous (no literal tab insertion).
+  - `Esc` in any modal field (including `Clip Word` / `Note`) dispatches cancel immediately instead of only resigning first responder.
   - If a tab character is injected by platform input path, fallback sanitization removes it and resolves focus direction via `EditorTabInsertionResolver`.
   - `MacEditorHandler.MacEditorTextView.KeyCommands` override returns non-null to match UIKit nullable contract and avoid CS8764 warnings.
   - `GUID` is selectable but not editable.
@@ -214,6 +215,7 @@ README is user-facing summary; this guide is the implementation-level source of 
   - shrink-back after prior expansion
   - negative-input safety clamp
 - `Praxis.Tests/EditorShortcutActionResolverTests.cs` covers editor tab action resolution:
+  - cancel action mapping (`Cancel`)
   - `Shift` off => `TabNext`
   - `Shift` on => `TabPrevious`
   - context menu arrows => `ContextMenuPrevious` / `ContextMenuNext`
@@ -376,6 +378,7 @@ README はユーザー向け要約、このガイドは実装仕様の正本で�
   - `Tab` / `Shift+Tab` の遷移はモーダル内に閉じ、端で循環する。
   - `GUID` 欄での `Shift+Tab` は `MacEntryHandler` で補足し、メイン画面側へ抜けずモーダル内循環を維持する。
   - `Clip Word` / `Note` では `Tab` / `Shift+Tab` 入力をフォーカス遷移として扱い、タブ文字は挿入しない。
+  - `Clip Word` / `Note` を含むモーダル入力欄での `Esc` は、フォーカス解除だけで終わらず即時にキャンセル動作へ中継する。
   - プラットフォーム入力経路でタブ文字が混入した場合は、`EditorTabInsertionResolver` で方向判定し、文字を除去してフォーカス遷移に補正する。
   - `MacEditorHandler.MacEditorTextView.KeyCommands` は non-null 戻り値でオーバーライドし、UIKit 側の nullable 契約に合わせて CS8764 警告を防止する。
   - `GUID` 欄は選択可能だが編集不可。
@@ -457,6 +460,7 @@ README はユーザー向け要約、このガイドは実装仕様の正本で�
   - 一度拡張後に縮小したときの復帰
   - 負値入力時の安全クランプ
 - `Praxis.Tests/EditorShortcutActionResolverTests.cs` は編集モーダルの Tab アクション解決を検証する。
+  - キャンセルアクションの解決（`Cancel`）
   - `Shift` なし => `TabNext`
   - `Shift` あり => `TabPrevious`
   - コンテキストメニュー矢印 => `ContextMenuPrevious` / `ContextMenuNext`
