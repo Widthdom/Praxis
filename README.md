@@ -44,6 +44,7 @@ It stores launcher buttons in SQLite and can execute tools with arguments.
 - Conflict dialog keyboard behavior (`Reload latest` / `Overwrite mine` / `Cancel`):
   - On open, initial focus is moved to `Cancel`.
   - `Cancel` focus is visually emphasized with a single custom border (no double focus ring on Windows).
+  - On Windows, conflict-action buttons keep a constant border width (transparent when unfocused) to prevent text-position jitter while moving focus.
   - `Left`/`Right` cycles dialog actions left-to-right (with wrap).
   - `Tab`/`Shift+Tab` cycles dialog actions left-to-right (with wrap) and keeps focus inside the dialog.
   - `Enter` executes the currently focused dialog action.
@@ -169,6 +170,7 @@ SQLite にボタン情報を保存し、ツールと引数を実行できます�
 - 競合ダイアログ（`Reload latest` / `Overwrite mine` / `Cancel`）のキーボード操作:
   - ダイアログ表示時は初期フォーカスを `Cancel` に移します。
   - `Cancel` のフォーカスは単一のカスタム枠線で強調表示します（Windows の二重フォーカス線は出しません）。
+  - Windows では競合アクションボタンの枠幅を常に一定にし（非フォーカス時は透明）、フォーカス移動時の文言の位置ズレを防ぎます。
   - `←` / `→` でアクションを左から右に循環（端でラップ）します。
   - `Tab` / `Shift+Tab` でアクションを左から右に循環（端でラップ）し、フォーカスはダイアログ内に留まります。
   - `Enter` で現在フォーカス中のダイアログアクションを実行します。

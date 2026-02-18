@@ -171,6 +171,7 @@ README is user-facing summary; this guide is the implementation-level source of 
   - Supports both Light and Dark themes.
   - On open, initial focus target is `Cancel`.
   - `Cancel` focus uses a single custom focus border (no Windows double focus ring).
+  - On Windows, conflict-action buttons keep a constant border width (transparent when unfocused) to avoid label-position jitter when focus changes.
   - `Left` / `Right` traverses conflict actions left-to-right with wrap (`Reload latest` / `Overwrite mine` / `Cancel`).
   - `Tab` / `Shift+Tab` traverses conflict actions left-to-right with wrap (`Reload latest` / `Overwrite mine` / `Cancel`).
   - `Enter` executes the currently focused conflict action.
@@ -198,8 +199,10 @@ README is user-facing summary; this guide is the implementation-level source of 
 - `Praxis.Tests/ModalEditorHeightResolverTests.cs` covers modal multiline-height resolution used by `Clip Word` / `Note` and their copy buttons:
   - single-line baseline (`40`)
   - multiline growth
+  - mixed line-ending handling (`CRLF` / `LF` / `CR`)
   - max-height clamp (`220`)
   - reset-to-baseline after previous max expansion
+- `Praxis.Tests/ButtonFocusVisualPolicyTests.cs` covers constant border-width policy and focused/unfocused border-color resolution used to avoid focus-time label jitter.
 - `Praxis.Tests/ModalEditorScrollHeightResolverTests.cs` covers modal field-scroll clamping:
   - within-max pass-through
   - clamp-at-max behavior
@@ -406,6 +409,7 @@ README はユーザー向け要約、このガイドは実装仕様の正本で�
   - ライト/ダーク両テーマに対応。
   - 表示時の初期フォーカスは `Cancel` とする。
   - `Cancel` は単一のカスタム枠線でフォーカス強調表示する（Windows の二重フォーカス線は出さない）。
+  - Windows では競合アクションボタンの枠幅を一定に保ち（非フォーカス時は透明）、フォーカス移動時のラベル位置のズレを防ぐ。
   - `←` / `→` で競合アクション（`Reload latest` / `Overwrite mine` / `Cancel`）を左から右へ循環（端でラップ）する。
   - `Tab` / `Shift+Tab` で競合アクション（`Reload latest` / `Overwrite mine` / `Cancel`）を左から右へ循環（端でラップ）する。
   - `Enter` で現在フォーカス中の競合アクションを実行する。
@@ -433,8 +437,10 @@ README はユーザー向け要約、このガイドは実装仕様の正本で�
 - `Praxis.Tests/ModalEditorHeightResolverTests.cs` は `Clip Word` / `Note` とコピーアイコンの高さ同期に使うモーダル複数行高さ解決を検証する。
   - 単一行の基準値（`40`）
   - 複数行での拡張
+  - 改行コード混在（`CRLF` / `LF` / `CR`）時の行数解決
   - 最大高さクランプ（`220`）
   - 最大拡張後に空欄化したときの基準高さ復帰
+- `Praxis.Tests/ButtonFocusVisualPolicyTests.cs` はフォーカス時のラベル位置ズレを防ぐための、一定枠幅ポリシーとフォーカス状態別の枠色解決を検証する。
 - `Praxis.Tests/ModalEditorScrollHeightResolverTests.cs` はモーダル項目スクロール高さのクランプを検証する。
   - 最大値以下の透過
   - 最大値でのクランプ

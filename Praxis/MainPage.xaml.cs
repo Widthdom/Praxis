@@ -2202,16 +2202,8 @@ public partial class MainPage : ContentPage
     private void ApplyButtonFocusVisual(Button button, bool focused)
     {
         var dark = Application.Current?.RequestedTheme == AppTheme.Dark;
-        var focusedBorderColor = dark ? Color.FromArgb("#F2F2F2") : Color.FromArgb("#1A1A1A");
-        if (focused)
-        {
-            button.BorderColor = focusedBorderColor;
-            button.BorderWidth = 1.5;
-            return;
-        }
-
-        button.BorderColor = Colors.Transparent;
-        button.BorderWidth = 0;
+        button.BorderColor = Color.FromArgb(ButtonFocusVisualPolicy.ResolveBorderColorHex(focused, dark));
+        button.BorderWidth = ButtonFocusVisualPolicy.ResolveBorderWidth();
     }
 
     private static bool IsButtonFocused(Button button)
