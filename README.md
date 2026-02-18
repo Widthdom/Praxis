@@ -34,6 +34,7 @@ It stores launcher buttons in SQLite and can execute tools with arguments.
   - On macOS, `GUID` remains read-only/selectable (not editable).
   - On macOS, when the editor modal opens, `Command` keeps caret at the end (no select-all on open).
   - On macOS, when pseudo-focus is on `Cancel`/`Save`, `Enter` triggers that action.
+  - Copy buttons are vertically centered with each field; for multiline `Clip Word`/`Note`, copy buttons expand to the same height as the field.
 - Context menu keyboard behavior:
   - `Up`/`Down` moves focus between `Edit` and `Delete` and wraps.
   - `Tab`/`Shift+Tab` moves focus between `Edit` and `Delete` and wraps.
@@ -154,6 +155,7 @@ SQLite にボタン情報を保存し、ツールと引数を実行できます�
   - macOS では `GUID` 欄は選択可能ですが編集不可です。
   - macOS では編集モーダル表示時、`Command` 欄は全選択せずキャレットを末尾に配置します。
   - macOS では `Cancel` / `Save` の擬似フォーカス時に `Enter` で該当アクションを実行します。
+  - コピーアイコンボタンは各入力欄に対して縦中央揃えにし、`Clip Word` / `Note` の複数行拡張時は入力欄と同じ高さに追従します。
 - コンテキストメニューのキーボード操作:
   - `↑` / `↓` で `Edit` と `Delete` 間を循環します。
   - `Tab` / `Shift+Tab` で `Edit` と `Delete` 間を循環します。

@@ -288,6 +288,7 @@
                             <Button x:Name="CopyGuidButton" Grid.Row="0" Grid.Column="2" Text="{OnPlatform WinUI='&#xE8C8;', MacCatalyst='⧉'}" FontFamily="{OnPlatform WinUI='Segoe MDL2 Assets', MacCatalyst=''}"
                                     Command="{Binding CopyFieldCommand}"
                                     CommandParameter="{Binding Editor.GuidText}" HeightRequest="40" WidthRequest="40" Padding="0"
+                                    VerticalOptions="Center"
                                     Clicked="CopyIconButton_Clicked" />
 
                             <Label Grid.Row="1" Grid.Column="0" Text="Command" VerticalTextAlignment="Center" HeightRequest="40" />
@@ -295,6 +296,7 @@
                             <Button x:Name="CopyCommandButton" Grid.Row="1" Grid.Column="2" Text="{OnPlatform WinUI='&#xE8C8;', MacCatalyst='⧉'}" FontFamily="{OnPlatform WinUI='Segoe MDL2 Assets', MacCatalyst=''}"
                                     Command="{Binding CopyFieldCommand}"
                                     CommandParameter="{Binding Editor.Command}" HeightRequest="40" WidthRequest="40" Padding="0"
+                                    VerticalOptions="Center"
                                     Clicked="CopyIconButton_Clicked" />
 
                             <Label Grid.Row="2" Grid.Column="0" Text="Button Text" VerticalTextAlignment="Center" HeightRequest="40" />
@@ -302,6 +304,7 @@
                             <Button x:Name="CopyButtonTextButton" Grid.Row="2" Grid.Column="2" Text="{OnPlatform WinUI='&#xE8C8;', MacCatalyst='⧉'}" FontFamily="{OnPlatform WinUI='Segoe MDL2 Assets', MacCatalyst=''}"
                                     Command="{Binding CopyFieldCommand}"
                                     CommandParameter="{Binding Editor.ButtonText}" HeightRequest="40" WidthRequest="40" Padding="0"
+                                    VerticalOptions="Center"
                                     Clicked="CopyIconButton_Clicked" />
 
                             <Label Grid.Row="3" Grid.Column="0" Text="Tool" VerticalTextAlignment="Center" HeightRequest="40" />
@@ -309,6 +312,7 @@
                             <Button x:Name="CopyToolButton" Grid.Row="3" Grid.Column="2" Text="{OnPlatform WinUI='&#xE8C8;', MacCatalyst='⧉'}" FontFamily="{OnPlatform WinUI='Segoe MDL2 Assets', MacCatalyst=''}"
                                     Command="{Binding CopyFieldCommand}"
                                     CommandParameter="{Binding Editor.Tool}" HeightRequest="40" WidthRequest="40" Padding="0"
+                                    VerticalOptions="Center"
                                     Clicked="CopyIconButton_Clicked" />
 
                             <Label Grid.Row="4" Grid.Column="0" Text="Arguments" VerticalTextAlignment="Center" HeightRequest="40" />
@@ -316,6 +320,7 @@
                             <Button x:Name="CopyArgumentsButton" Grid.Row="4" Grid.Column="2" Text="{OnPlatform WinUI='&#xE8C8;', MacCatalyst='⧉'}" FontFamily="{OnPlatform WinUI='Segoe MDL2 Assets', MacCatalyst=''}"
                                     Command="{Binding CopyFieldCommand}"
                                     CommandParameter="{Binding Editor.Arguments}" HeightRequest="40" WidthRequest="40" Padding="0"
+                                    VerticalOptions="Center"
                                     Clicked="CopyIconButton_Clicked" />
 
                             <Label Grid.Row="5" Grid.Column="0" Text="Clip Word" VerticalTextAlignment="Center" HeightRequest="40" />
@@ -353,7 +358,7 @@
                             </Border>
                             <Button x:Name="CopyClipWordButton" Grid.Row="5" Grid.Column="2" Text="{OnPlatform WinUI='&#xE8C8;', MacCatalyst='⧉'}" FontFamily="{OnPlatform WinUI='Segoe MDL2 Assets', MacCatalyst=''}"
                                     Command="{Binding CopyFieldCommand}"
-                                    CommandParameter="{Binding Editor.ClipText}" HeightRequest="40" WidthRequest="40" Padding="0" VerticalOptions="Start"
+                                    CommandParameter="{Binding Editor.ClipText}" HeightRequest="40" WidthRequest="40" Padding="0" VerticalOptions="Center"
                                     Clicked="CopyIconButton_Clicked" />
 
                             <Label Grid.Row="6" Grid.Column="0" Text="Note" VerticalTextAlignment="Center" HeightRequest="40" />
@@ -391,7 +396,7 @@
                             </Border>
                             <Button x:Name="CopyNoteButton" Grid.Row="6" Grid.Column="2" Text="{OnPlatform WinUI='&#xE8C8;', MacCatalyst='⧉'}" FontFamily="{OnPlatform WinUI='Segoe MDL2 Assets', MacCatalyst=''}"
                                     Command="{Binding CopyFieldCommand}"
-                                    CommandParameter="{Binding Editor.Note}" HeightRequest="40" WidthRequest="40" Padding="0" VerticalOptions="Start"
+                                    CommandParameter="{Binding Editor.Note}" HeightRequest="40" WidthRequest="40" Padding="0" VerticalOptions="Center"
                                     Clicked="CopyIconButton_Clicked" />
                         </Grid>
                     </ScrollView>

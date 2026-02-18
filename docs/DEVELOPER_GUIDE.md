@@ -160,6 +160,7 @@ README is user-facing summary; this guide is the implementation-level source of 
   - Starting create flow clears `SearchText` (top-bar create and empty-area right-click).
 - Editor modal field behavior:
   - `Clip Word` uses multiline `Editor` (same behavior class as `Note`).
+  - Copy icon buttons are vertically centered per row, and for multiline `Clip Word` / `Note` they follow the same dynamic height as the editor field.
 - Conflict resolution dialog:
   - Replaces native action sheet with in-app overlay dialog (`ConflictOverlay`) for visual consistency.
   - Supports both Light and Dark themes.
@@ -189,6 +190,10 @@ README is user-facing summary; this guide is the implementation-level source of 
 - `Praxis.Tests/TextCaretPositionResolverTests.cs` covers mac editor-open caret-tail policy:
   - null/empty input handling
   - ASCII/multibyte text tail offset handling
+- `Praxis.Tests/ModalEditorHeightResolverTests.cs` covers modal multiline-height resolution used by `Clip Word` / `Note` and their copy buttons:
+  - single-line baseline (`40`)
+  - multiline growth
+  - max-height clamp (`220`)
 - `Praxis.Tests/EditorShortcutActionResolverTests.cs` covers editor tab action resolution:
   - `Shift` off => `TabNext`
   - `Shift` on => `TabPrevious`
@@ -379,6 +384,7 @@ README はユーザー向け要約、このガイドは実装仕様の正本で�
   - 新規作成開始時（上部 Create / 空白右クリック）の両経路で `SearchText` をクリアする。
 - 編集モーダルの欄仕様:
   - `Clip Word` は `Note` と同様に複数行 `Editor` を使い、行数に応じて高さを調整する。
+  - コピーアイコンボタンは各行で縦中央揃えとし、`Clip Word` / `Note` の複数行拡張時は入力欄と同じ高さに追従する。
 - 競合解決ダイアログ:
   - OS 既定のアクションシートではなく、アプリ内オーバーレイ（`ConflictOverlay`）で表示してデザインを統一。
   - ライト/ダーク両テーマに対応。
@@ -408,6 +414,10 @@ README はユーザー向け要約、このガイドは実装仕様の正本で�
 - `Praxis.Tests/TextCaretPositionResolverTests.cs` は mac 編集モーダル初期フォーカス時のキャレット末尾配置ポリシーを検証する。
   - null / 空文字の扱い
   - ASCII / マルチバイト文字列の末尾オフセット扱い
+- `Praxis.Tests/ModalEditorHeightResolverTests.cs` は `Clip Word` / `Note` とコピーアイコンの高さ同期に使うモーダル複数行高さ解決を検証する。
+  - 単一行の基準値（`40`）
+  - 複数行での拡張
+  - 最大高さクランプ（`220`）
 - `Praxis.Tests/EditorShortcutActionResolverTests.cs` は編集モーダルの Tab アクション解決を検証する。
   - `Shift` なし => `TabNext`
   - `Shift` あり => `TabPrevious`

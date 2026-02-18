@@ -451,24 +451,20 @@ public partial class MainPage : ContentPage
             return;
         }
 
-        UpdateEditorHeight(ModalClipWordEditor, ModalClipWordContainer);
-        UpdateEditorHeight(ModalNoteEditor, ModalNoteContainer);
+        UpdateEditorHeight(ModalClipWordEditor, ModalClipWordContainer, CopyClipWordButton);
+        UpdateEditorHeight(ModalNoteEditor, ModalNoteContainer, CopyNoteButton);
     }
 
-    private static void UpdateEditorHeight(Editor editor, Border container)
+    private static void UpdateEditorHeight(Editor editor, Border container, Button? copyButton = null)
     {
-        const double singleLineHeight = 40;
-        const double maxHeight = 220;
-        const double perLineHeight = 24;
-        const double basePadding = 16;
-        var text = editor.Text ?? string.Empty;
-        var lineCount = Math.Max(1, text.Count(c => c == '\n') + 1);
-        var targetHeight = lineCount <= 1
-            ? singleLineHeight
-            : Math.Min(maxHeight, basePadding + (lineCount * perLineHeight));
+        var targetHeight = ModalEditorHeightResolver.ResolveHeight(editor.Text);
 
         editor.HeightRequest = targetHeight;
         container.HeightRequest = targetHeight;
+        if (copyButton is not null)
+        {
+            copyButton.HeightRequest = targetHeight;
+        }
     }
 
     private void Draggable_PanUpdated(object? sender, PanUpdatedEventArgs e)
