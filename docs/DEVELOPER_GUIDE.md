@@ -32,6 +32,7 @@ README is user-facing summary; this guide is the implementation-level source of 
   - On editor save, performs optimistic conflict check (`UpdatedAtUtc`) against latest DB value and resolves by `Reload latest` / `Overwrite mine` / `Cancel`
 - `Services/SqliteAppRepository.cs`
   - Tables: button definitions, logs, app settings
+  - Detailed table schema: `docs/DATABASE_SCHEMA.md`
   - Includes simple in-memory cache for button reads
   - Provides `ReloadButtonsAsync` for cross-window sync paths to force-refresh cache from SQLite
   - Provides `GetByIdAsync(id, forceReload: true)` for save-time conflict checks against latest persisted row
@@ -248,6 +249,7 @@ README はユーザー向け要約、このガイドは実装仕様の正本で�
   - 編集保存時に `UpdatedAtUtc` の楽観的競合チェックを実施し、`Reload latest` / `Overwrite mine` / `Cancel` で解決する
 - `Services/SqliteAppRepository.cs`
   - テーブル: ボタン定義、実行ログ、アプリ設定
+  - テーブル詳細設計: `docs/DATABASE_SCHEMA.md`
   - ボタン読み取り向けのシンプルなメモリキャッシュを含む
   - ウィンドウ間同期経路では `ReloadButtonsAsync` で SQLite から強制再読込し、キャッシュを更新する
   - 保存時競合チェック向けに `GetByIdAsync(id, forceReload: true)` で最新行を取得できる
