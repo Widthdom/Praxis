@@ -173,6 +173,11 @@ public partial class MainViewModel : ObservableObject
             return;
         }
 
+        if (CommandSuggestionVisibilityPolicy.ShouldCloseOnContextMenuOpen(IsCommandSuggestionOpen))
+        {
+            CloseCommandSuggestions();
+        }
+
         ContextMenuTarget = item;
         IsContextMenuOpen = true;
     }
