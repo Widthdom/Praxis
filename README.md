@@ -62,6 +62,7 @@ It stores launcher buttons in SQLite and can execute tools with arguments.
 - Theme shortcuts:
   - Windows: `Ctrl+Shift+L` / `Ctrl+Shift+D` / `Ctrl+Shift+H`
   - macOS: `Command+Shift+L` / `Command+Shift+D` / `Command+Shift+H`
+  - On macOS, theme shortcuts are handled at app level and remain available regardless of modal/context-menu state.
 - Cross-window sync includes button changes, dock order, command-suggestion refresh, and theme sync.
 - Save-time editor conflicts are resolved via an in-app dialog (`Reload latest` / `Overwrite mine` / `Cancel`).
 - Full implementation-level specification: `docs/DEVELOPER_GUIDE.md`.
@@ -195,6 +196,7 @@ SQLite にボタン情報を保存し、ツールと引数を実行できます�
 - テーマ切替ショートカット:
   - Windows: `Ctrl+Shift+L` / `Ctrl+Shift+D` / `Ctrl+Shift+H`
   - macOS: `Command+Shift+L` / `Command+Shift+D` / `Command+Shift+H`
+  - macOS ではアプリレベルで処理するため、モーダル/コンテキストメニュー表示状態に関係なく有効です。
 - ウィンドウ間同期はボタン変更、Dock順序、候補再計算、テーマ同期に対応します。
 - 編集保存時に競合があれば、アプリ内ダイアログで `Reload latest` / `Overwrite mine` / `Cancel` を選択します。
 - 実装仕様の正本は `docs/DEVELOPER_GUIDE.md` を参照してください。

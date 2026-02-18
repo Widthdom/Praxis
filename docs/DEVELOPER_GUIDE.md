@@ -115,6 +115,7 @@ README is user-facing summary; this guide is the implementation-level source of 
   - `Command+Shift+L` => Light
   - `Command+Shift+D` => Dark
   - `Command+Shift+H` => System
+  - App-level key commands keep theme switching active regardless of modal/context-menu state
 - Status bar is a rounded `Border` (`StatusBarBorder`) and flashes color briefly on `StatusText` change:
   - normal: green
   - error (`Failed`/`error`/`exception`): red
@@ -248,6 +249,7 @@ README is user-facing summary; this guide is the implementation-level source of 
   - expected button default constant values
   - record version conflict detection (`RecordVersionComparer`)
 - `Praxis.Tests/ThemeTextColorPolicyTests.cs` covers theme-aware editor text-color policy resolution (`Light`/`Dark`).
+- `Praxis.Tests/ThemeShortcutModeResolverTests.cs` covers mac theme-shortcut key mapping (`L`/`D`/`H` => `Light`/`Dark`/`System`).
 
 ## Release/License
 - Project license is MIT (`../LICENSE`)
@@ -372,6 +374,7 @@ README はユーザー向け要約、このガイドは実装仕様の正本で�
   - `Command+Shift+L` => ライト
   - `Command+Shift+D` => ダーク
   - `Command+Shift+H` => システム
+  - アプリレベルのキーコマンドとして登録し、モーダル/コンテキストメニュー表示状態に依存せず有効にする
 - ステータスバーは角丸 `Border`（`StatusBarBorder`）で構成し、`StatusText` 変更時に短時間の色フラッシュを行う。
   - 通常: 緑
   - エラー（`Failed` / `error` / `exception` 判定）: 赤
@@ -507,6 +510,7 @@ README はユーザー向け要約、このガイドは実装仕様の正本で�
   - ボタン既定定数の期待値
   - レコード版競合検知（`RecordVersionComparer`）
 - `Praxis.Tests/ThemeTextColorPolicyTests.cs` は、テーマ連動テキスト色ポリシー（ライト/ダーク）を検証する。
+- `Praxis.Tests/ThemeShortcutModeResolverTests.cs` は、mac のテーマショートカットキー割当（`L` / `D` / `H` => `Light` / `Dark` / `System`）を検証する。
 
 ## リリース / ライセンス
 - ライセンスは MIT（`../LICENSE`）
