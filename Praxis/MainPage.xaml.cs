@@ -44,6 +44,14 @@ public partial class MainPage : ContentPage
     private Microsoft.UI.Xaml.UIElement? capturedElement;
     private Microsoft.UI.Xaml.Controls.TextBox? commandTextBox;
     private Microsoft.UI.Xaml.Controls.TextBox? searchTextBox;
+    private Microsoft.UI.Xaml.Controls.TextBox? modalGuidTextBox;
+    private Microsoft.UI.Xaml.Controls.TextBox? modalCommandTextBox;
+    private Microsoft.UI.Xaml.Controls.TextBox? modalButtonTextTextBox;
+    private Microsoft.UI.Xaml.Controls.TextBox? modalToolTextBox;
+    private Microsoft.UI.Xaml.Controls.TextBox? modalArgumentsTextBox;
+    private Microsoft.UI.Xaml.Controls.TextBox? modalClipWordTextBox;
+    private Microsoft.UI.Xaml.Controls.TextBox? modalNoteTextBox;
+    private bool windowsSelectAllOnTabNavigationPending;
     private Microsoft.UI.Xaml.UIElement? pageNativeElement;
     private Microsoft.UI.Xaml.Input.KeyEventHandler? pageKeyDownHandler;
 #endif
@@ -313,6 +321,9 @@ public partial class MainPage : ContentPage
         ModalNoteFocusUnderline.IsVisible = ModalNoteEditor.IsFocused;
         ApplyMacEditorKeyCommands();
 #endif
+#if WINDOWS
+        EnsureWindowsTextBoxHooks();
+#endif
         UpdateModalEditorHeights();
     }
 
@@ -328,6 +339,9 @@ public partial class MainPage : ContentPage
         ApplyMacClipWordEditorVisualState();
         ModalClipWordFocusUnderline.IsVisible = ModalClipWordEditor.IsFocused;
         ApplyMacEditorKeyCommands();
+#endif
+#if WINDOWS
+        EnsureWindowsTextBoxHooks();
 #endif
         UpdateModalEditorHeights();
     }
@@ -366,6 +380,16 @@ public partial class MainPage : ContentPage
     {
 #if MACCATALYST
         EnsureMacGuidEntryReadOnlyBehavior();
+#endif
+#if WINDOWS
+        EnsureWindowsTextBoxHooks();
+#endif
+    }
+
+    private void ModalTextInput_HandlerChanged(object? sender, EventArgs e)
+    {
+#if WINDOWS
+        EnsureWindowsTextBoxHooks();
 #endif
     }
 
@@ -1829,6 +1853,11 @@ public partial class MainPage : ContentPage
 
     private void SearchTextBox_KeyDown(object sender, Microsoft.UI.Xaml.Input.KeyRoutedEventArgs e)
     {
+        if (e.Key == Windows.System.VirtualKey.Tab)
+        {
+            windowsSelectAllOnTabNavigationPending = true;
+        }
+
         if (TryHandleThemeShortcutFromKey(e))
         {
             e.Handled = true;
@@ -1837,10 +1866,38 @@ public partial class MainPage : ContentPage
 
     private void CommandTextBox_PointerPressed(object sender, Microsoft.UI.Xaml.Input.PointerRoutedEventArgs e)
     {
+        windowsSelectAllOnTabNavigationPending = false;
         if (viewModel.ReopenCommandSuggestionsCommand.CanExecute(null))
         {
             viewModel.ReopenCommandSuggestionsCommand.Execute(null);
         }
+    }
+
+    private void WindowsTextBox_KeyDown(object sender, Microsoft.UI.Xaml.Input.KeyRoutedEventArgs e)
+    {
+        if (e.Key == Windows.System.VirtualKey.Tab)
+        {
+            windowsSelectAllOnTabNavigationPending = true;
+        }
+    }
+
+    private void WindowsTextBox_GotFocus(object sender, Microsoft.UI.Xaml.RoutedEventArgs e)
+    {
+        if (!windowsSelectAllOnTabNavigationPending)
+        {
+            return;
+        }
+
+        windowsSelectAllOnTabNavigationPending = false;
+        if (sender is Microsoft.UI.Xaml.Controls.TextBox textBox)
+        {
+            textBox.SelectAll();
+        }
+    }
+
+    private void WindowsTextBox_PointerPressed(object sender, Microsoft.UI.Xaml.Input.PointerRoutedEventArgs e)
+    {
+        windowsSelectAllOnTabNavigationPending = false;
     }
 
     private void PageNativeElement_KeyDown(object sender, Microsoft.UI.Xaml.Input.KeyRoutedEventArgs e)
@@ -1934,36 +1991,84 @@ public partial class MainPage : ContentPage
 
     private void EnsureWindowsTextBoxHooks()
     {
-        var currentCommand = MainCommandEntry.Handler?.PlatformView as Microsoft.UI.Xaml.Controls.TextBox;
-        if (!ReferenceEquals(commandTextBox, currentCommand))
+        SyncWindowsTextBoxHooks(
+            ref commandTextBox,
+            MainCommandEntry.Handler?.PlatformView as Microsoft.UI.Xaml.Controls.TextBox,
+            CommandTextBox_KeyDown,
+            CommandTextBox_PointerPressed);
+
+        SyncWindowsTextBoxHooks(
+            ref searchTextBox,
+            MainSearchEntry.Handler?.PlatformView as Microsoft.UI.Xaml.Controls.TextBox,
+            SearchTextBox_KeyDown);
+
+        SyncWindowsTextBoxHooks(
+            ref modalGuidTextBox,
+            ModalGuidEntry.Handler?.PlatformView as Microsoft.UI.Xaml.Controls.TextBox);
+        SyncWindowsTextBoxHooks(
+            ref modalCommandTextBox,
+            ModalCommandEntry.Handler?.PlatformView as Microsoft.UI.Xaml.Controls.TextBox);
+        SyncWindowsTextBoxHooks(
+            ref modalButtonTextTextBox,
+            ModalButtonTextEntry.Handler?.PlatformView as Microsoft.UI.Xaml.Controls.TextBox);
+        SyncWindowsTextBoxHooks(
+            ref modalToolTextBox,
+            ModalToolEntry.Handler?.PlatformView as Microsoft.UI.Xaml.Controls.TextBox);
+        SyncWindowsTextBoxHooks(
+            ref modalArgumentsTextBox,
+            ModalArgumentsEntry.Handler?.PlatformView as Microsoft.UI.Xaml.Controls.TextBox);
+        SyncWindowsTextBoxHooks(
+            ref modalClipWordTextBox,
+            ModalClipWordEditor.Handler?.PlatformView as Microsoft.UI.Xaml.Controls.TextBox);
+        SyncWindowsTextBoxHooks(
+            ref modalNoteTextBox,
+            ModalNoteEditor.Handler?.PlatformView as Microsoft.UI.Xaml.Controls.TextBox);
+    }
+
+    private void SyncWindowsTextBoxHooks(
+        ref Microsoft.UI.Xaml.Controls.TextBox? slot,
+        Microsoft.UI.Xaml.Controls.TextBox? current,
+        Microsoft.UI.Xaml.Input.KeyEventHandler? extraKeyDown = null,
+        Microsoft.UI.Xaml.Input.PointerEventHandler? extraPointerPressed = null)
+    {
+        if (ReferenceEquals(slot, current))
         {
-            if (commandTextBox is not null)
+            return;
+        }
+
+        if (slot is not null)
+        {
+            slot.KeyDown -= WindowsTextBox_KeyDown;
+            slot.GotFocus -= WindowsTextBox_GotFocus;
+            slot.PointerPressed -= WindowsTextBox_PointerPressed;
+            if (extraKeyDown is not null)
             {
-                commandTextBox.KeyDown -= CommandTextBox_KeyDown;
-                commandTextBox.PointerPressed -= CommandTextBox_PointerPressed;
+                slot.KeyDown -= extraKeyDown;
             }
 
-            commandTextBox = currentCommand;
-            if (commandTextBox is not null)
+            if (extraPointerPressed is not null)
             {
-                commandTextBox.KeyDown += CommandTextBox_KeyDown;
-                commandTextBox.PointerPressed += CommandTextBox_PointerPressed;
+                slot.PointerPressed -= extraPointerPressed;
             }
         }
 
-        var currentSearch = MainSearchEntry.Handler?.PlatformView as Microsoft.UI.Xaml.Controls.TextBox;
-        if (!ReferenceEquals(searchTextBox, currentSearch))
+        slot = current;
+        if (slot is null)
         {
-            if (searchTextBox is not null)
-            {
-                searchTextBox.KeyDown -= SearchTextBox_KeyDown;
-            }
+            return;
+        }
 
-            searchTextBox = currentSearch;
-            if (searchTextBox is not null)
-            {
-                searchTextBox.KeyDown += SearchTextBox_KeyDown;
-            }
+        slot.KeyDown += WindowsTextBox_KeyDown;
+        slot.GotFocus += WindowsTextBox_GotFocus;
+        slot.PointerPressed += WindowsTextBox_PointerPressed;
+        if (extraKeyDown is not null)
+        {
+            slot.KeyDown += extraKeyDown;
+        }
+
+        if (extraPointerPressed is not null)
+        {
+            slot.PointerPressed += extraPointerPressed;
         }
     }
 

@@ -284,28 +284,28 @@
                                     Clicked="CopyIconButton_Clicked" />
 
                             <Label Grid.Row="1" Grid.Column="0" Text="Command" VerticalTextAlignment="Center" HeightRequest="40" />
-                            <Entry x:Name="ModalCommandEntry" Grid.Row="1" Grid.Column="1" Text="{Binding Editor.Command}" HeightRequest="40" />
+                            <Entry x:Name="ModalCommandEntry" Grid.Row="1" Grid.Column="1" Text="{Binding Editor.Command}" HeightRequest="40" HandlerChanged="ModalTextInput_HandlerChanged" />
                             <Button x:Name="CopyCommandButton" Grid.Row="1" Grid.Column="2" Text="{OnPlatform WinUI='&#xE8C8;', MacCatalyst='⧉'}" FontFamily="{OnPlatform WinUI='Segoe MDL2 Assets', MacCatalyst=''}"
                                     Command="{Binding CopyFieldCommand}"
                                     CommandParameter="{Binding Editor.Command}" HeightRequest="40" WidthRequest="40" Padding="0"
                                     Clicked="CopyIconButton_Clicked" />
 
                             <Label Grid.Row="2" Grid.Column="0" Text="Button Text" VerticalTextAlignment="Center" HeightRequest="40" />
-                            <Entry x:Name="ModalButtonTextEntry" Grid.Row="2" Grid.Column="1" Text="{Binding Editor.ButtonText}" HeightRequest="40" />
+                            <Entry x:Name="ModalButtonTextEntry" Grid.Row="2" Grid.Column="1" Text="{Binding Editor.ButtonText}" HeightRequest="40" HandlerChanged="ModalTextInput_HandlerChanged" />
                             <Button x:Name="CopyButtonTextButton" Grid.Row="2" Grid.Column="2" Text="{OnPlatform WinUI='&#xE8C8;', MacCatalyst='⧉'}" FontFamily="{OnPlatform WinUI='Segoe MDL2 Assets', MacCatalyst=''}"
                                     Command="{Binding CopyFieldCommand}"
                                     CommandParameter="{Binding Editor.ButtonText}" HeightRequest="40" WidthRequest="40" Padding="0"
                                     Clicked="CopyIconButton_Clicked" />
 
                             <Label Grid.Row="3" Grid.Column="0" Text="Tool" VerticalTextAlignment="Center" HeightRequest="40" />
-                            <Entry x:Name="ModalToolEntry" Grid.Row="3" Grid.Column="1" Text="{Binding Editor.Tool}" HeightRequest="40" />
+                            <Entry x:Name="ModalToolEntry" Grid.Row="3" Grid.Column="1" Text="{Binding Editor.Tool}" HeightRequest="40" HandlerChanged="ModalTextInput_HandlerChanged" />
                             <Button x:Name="CopyToolButton" Grid.Row="3" Grid.Column="2" Text="{OnPlatform WinUI='&#xE8C8;', MacCatalyst='⧉'}" FontFamily="{OnPlatform WinUI='Segoe MDL2 Assets', MacCatalyst=''}"
                                     Command="{Binding CopyFieldCommand}"
                                     CommandParameter="{Binding Editor.Tool}" HeightRequest="40" WidthRequest="40" Padding="0"
                                     Clicked="CopyIconButton_Clicked" />
 
                             <Label Grid.Row="4" Grid.Column="0" Text="Arguments" VerticalTextAlignment="Center" HeightRequest="40" />
-                            <Entry x:Name="ModalArgumentsEntry" Grid.Row="4" Grid.Column="1" Text="{Binding Editor.Arguments}" HeightRequest="40" />
+                            <Entry x:Name="ModalArgumentsEntry" Grid.Row="4" Grid.Column="1" Text="{Binding Editor.Arguments}" HeightRequest="40" HandlerChanged="ModalTextInput_HandlerChanged" />
                             <Button x:Name="CopyArgumentsButton" Grid.Row="4" Grid.Column="2" Text="{OnPlatform WinUI='&#xE8C8;', MacCatalyst='⧉'}" FontFamily="{OnPlatform WinUI='Segoe MDL2 Assets', MacCatalyst=''}"
                                     Command="{Binding CopyFieldCommand}"
                                     CommandParameter="{Binding Editor.Arguments}" HeightRequest="40" WidthRequest="40" Padding="0"
