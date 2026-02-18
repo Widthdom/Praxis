@@ -31,4 +31,14 @@ public class ModalEditorHeightResolverTests
         var height = ModalEditorHeightResolver.ResolveHeight(string.Join('\n', Enumerable.Repeat("line", 20)));
         Assert.Equal(220, height);
     }
+
+    [Fact]
+    public void ResolveHeight_ReturnsSingleLineHeight_AfterPreviouslyMaxHeightTextIsCleared()
+    {
+        var expanded = ModalEditorHeightResolver.ResolveHeight(string.Join('\n', Enumerable.Repeat("line", 20)));
+        var collapsed = ModalEditorHeightResolver.ResolveHeight(string.Empty);
+
+        Assert.Equal(220, expanded);
+        Assert.Equal(40, collapsed);
+    }
 }

@@ -280,8 +280,10 @@
                     <Shadow Brush="{AppThemeBinding Light=#66000000, Dark=#AA000000}" Opacity="0.22" Offset="0,10" Radius="22" />
                 </Border.Shadow>
 
-                <Grid RowDefinitions="*,Auto" RowSpacing="12">
-                    <ScrollView Grid.Row="0">
+                <Grid RowDefinitions="Auto,Auto" RowSpacing="12">
+                    <ScrollView x:Name="EditorFieldsScrollView"
+                                Grid.Row="0"
+                                VerticalOptions="Start">
                         <Grid ColumnDefinitions="140,*,44" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto" ColumnSpacing="8" RowSpacing="8">
                             <Label Grid.Row="0" Grid.Column="0" Text="GUID" VerticalTextAlignment="Center" HeightRequest="40" />
                             <Entry x:Name="ModalGuidEntry" Grid.Row="0" Grid.Column="1" Text="{Binding Editor.GuidText}" IsReadOnly="{OnPlatform Default=True, MacCatalyst=False}" HeightRequest="40" HandlerChanged="ModalGuidEntry_HandlerChanged" />

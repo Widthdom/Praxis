@@ -16,6 +16,13 @@ namespace Praxis;
 public partial class MainPage : ContentPage
 {
     private readonly MainViewModel viewModel;
+    private ButtonEditorViewModel? observedEditorViewModel;
+    private const double ModalSingleLineRowHeight = 40;
+    private const double ModalRowSpacing = 8;
+    private const int ModalTotalRows = 7;
+    private const int ModalStaticRows = 5;
+    private const double ModalScrollMaxHeightFallback = 460;
+    private const double ModalScrollVerticalReserve = 260;
     private bool xamlLoaded;
     private bool initialized;
     private CancellationTokenSource? copyNoticeCts;
@@ -152,6 +159,7 @@ public partial class MainPage : ContentPage
 
         this.viewModel.ResolveEditorConflictAsync = ResolveEditorConflictAsync;
         App.SetEditorOpenState(this.viewModel.IsEditorOpen);
+        AttachEditorPropertyChanged(this.viewModel.Editor);
         this.viewModel.PropertyChanged += ViewModelOnPropertyChanged;
         this.viewModel.CommandSuggestions.CollectionChanged += CommandSuggestionsOnCollectionChanged;
         App.ThemeShortcutRequested += OnThemeShortcutRequested;
@@ -172,6 +180,7 @@ public partial class MainPage : ContentPage
         SizeChanged += (_, _) =>
         {
             UpdateCommandSuggestionPopupPlacement();
+            UpdateModalEditorHeights();
 #if MACCATALYST
             ApplyMacContentScale();
 #endif
@@ -210,6 +219,8 @@ public partial class MainPage : ContentPage
         {
             return;
         }
+
+        AttachEditorPropertyChanged(viewModel.Editor);
 
         if (initialized)
         {
@@ -255,6 +266,7 @@ public partial class MainPage : ContentPage
     protected override void OnDisappearing()
     {
         base.OnDisappearing();
+        DetachEditorPropertyChanged();
         App.SetEditorOpenState(false);
         App.SetContextMenuOpenState(false);
         App.SetConflictDialogOpenState(false);
@@ -446,25 +458,54 @@ public partial class MainPage : ContentPage
 
     private void UpdateModalEditorHeights()
     {
-        if (!xamlLoaded)
+        if (!xamlLoaded || EditorFieldsScrollView is null)
         {
             return;
         }
 
-        UpdateEditorHeight(ModalClipWordEditor, ModalClipWordContainer, CopyClipWordButton);
-        UpdateEditorHeight(ModalNoteEditor, ModalNoteContainer, CopyNoteButton);
+        var clipHeight = ModalEditorHeightResolver.ResolveHeight(viewModel.Editor.ClipText);
+        var noteHeight = ModalEditorHeightResolver.ResolveHeight(viewModel.Editor.Note);
+
+        UpdateEditorHeight(ModalClipWordEditor, ModalClipWordContainer, CopyClipWordButton, clipHeight);
+        UpdateEditorHeight(ModalNoteEditor, ModalNoteContainer, CopyNoteButton, noteHeight);
+
+        var contentHeight = ResolveModalEditorScrollContentHeight(clipHeight, noteHeight);
+        var maxHeight = ResolveModalEditorScrollMaxHeight();
+        EditorFieldsScrollView.HeightRequest = ModalEditorScrollHeightResolver.Resolve(contentHeight, maxHeight);
+        EditorFieldsScrollView.InvalidateMeasure();
+
+        ModalClipWordContainer.InvalidateMeasure();
+        ModalNoteContainer.InvalidateMeasure();
+        EditorOverlay.InvalidateMeasure();
     }
 
-    private static void UpdateEditorHeight(Editor editor, Border container, Button? copyButton = null)
+    private static void UpdateEditorHeight(Editor editor, Border container, Button? copyButton, double targetHeight)
     {
-        var targetHeight = ModalEditorHeightResolver.ResolveHeight(editor.Text);
-
         editor.HeightRequest = targetHeight;
         container.HeightRequest = targetHeight;
         if (copyButton is not null)
         {
             copyButton.HeightRequest = targetHeight;
         }
+    }
+
+    private static double ResolveModalEditorScrollContentHeight(double clipHeight, double noteHeight)
+    {
+        var dynamicHeight = clipHeight + noteHeight;
+        var staticRowsHeight = ModalStaticRows * ModalSingleLineRowHeight;
+        var totalSpacing = (ModalTotalRows - 1) * ModalRowSpacing;
+        return staticRowsHeight + dynamicHeight + totalSpacing;
+    }
+
+    private double ResolveModalEditorScrollMaxHeight()
+    {
+        var hostHeight = RootGrid.Height > 0 ? RootGrid.Height : Height;
+        if (hostHeight <= 0)
+        {
+            return ModalScrollMaxHeightFallback;
+        }
+
+        return Math.Max(180, hostHeight - ModalScrollVerticalReserve);
     }
 
     private void Draggable_PanUpdated(object? sender, PanUpdatedEventArgs e)
@@ -1617,6 +1658,13 @@ public partial class MainPage : ContentPage
 
     private void ViewModelOnPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
+        if (e.PropertyName == nameof(MainViewModel.Editor))
+        {
+            AttachEditorPropertyChanged(viewModel.Editor);
+            UpdateModalEditorHeights();
+            return;
+        }
+
         if (e.PropertyName == nameof(MainViewModel.SelectedTheme))
         {
             ApplyNeutralStatusBackground();
@@ -1715,6 +1763,46 @@ public partial class MainPage : ContentPage
             Dispatcher.DispatchDelayed(TimeSpan.FromMilliseconds(220), ApplyMacEditorKeyCommands);
 #endif
         });
+    }
+
+    private void AttachEditorPropertyChanged(ButtonEditorViewModel? editorViewModel)
+    {
+        if (ReferenceEquals(observedEditorViewModel, editorViewModel))
+        {
+            return;
+        }
+
+        if (observedEditorViewModel is not null)
+        {
+            observedEditorViewModel.PropertyChanged -= EditorViewModelOnPropertyChanged;
+        }
+
+        observedEditorViewModel = editorViewModel;
+        if (observedEditorViewModel is not null)
+        {
+            observedEditorViewModel.PropertyChanged += EditorViewModelOnPropertyChanged;
+        }
+    }
+
+    private void DetachEditorPropertyChanged()
+    {
+        if (observedEditorViewModel is null)
+        {
+            return;
+        }
+
+        observedEditorViewModel.PropertyChanged -= EditorViewModelOnPropertyChanged;
+        observedEditorViewModel = null;
+    }
+
+    private void EditorViewModelOnPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName is not (nameof(ButtonEditorViewModel.ClipText) or nameof(ButtonEditorViewModel.Note) or ""))
+        {
+            return;
+        }
+
+        Dispatcher.Dispatch(UpdateModalEditorHeights);
     }
 
     private async void TriggerStatusFlash(string? message)

@@ -161,6 +161,8 @@ README is user-facing summary; this guide is the implementation-level source of 
 - Editor modal field behavior:
   - `Clip Word` uses multiline `Editor` (same behavior class as `Note`).
   - Copy icon buttons are vertically centered per row, and for multiline `Clip Word` / `Note` they follow the same dynamic height as the editor field.
+  - Height recalculation also follows programmatic `Editor.ClipText` / `Editor.Note` updates so a once-expanded modal shrinks back when content is cleared.
+  - The modal field section uses `Auto` row sizing (not `*`) so cleared multiline content releases extra whitespace immediately.
 - Conflict resolution dialog:
   - Replaces native action sheet with in-app overlay dialog (`ConflictOverlay`) for visual consistency.
   - Supports both Light and Dark themes.
@@ -194,6 +196,12 @@ README is user-facing summary; this guide is the implementation-level source of 
   - single-line baseline (`40`)
   - multiline growth
   - max-height clamp (`220`)
+  - reset-to-baseline after previous max expansion
+- `Praxis.Tests/ModalEditorScrollHeightResolverTests.cs` covers modal field-scroll clamping:
+  - within-max pass-through
+  - clamp-at-max behavior
+  - shrink-back after prior expansion
+  - negative-input safety clamp
 - `Praxis.Tests/EditorShortcutActionResolverTests.cs` covers editor tab action resolution:
   - `Shift` off => `TabNext`
   - `Shift` on => `TabPrevious`
@@ -385,6 +393,8 @@ README はユーザー向け要約、このガイドは実装仕様の正本で�
 - 編集モーダルの欄仕様:
   - `Clip Word` は `Note` と同様に複数行 `Editor` を使い、行数に応じて高さを調整する。
   - コピーアイコンボタンは各行で縦中央揃えとし、`Clip Word` / `Note` の複数行拡張時は入力欄と同じ高さに追従する。
+  - `Editor.ClipText` / `Editor.Note` のプログラム更新時も高さ再計算を行い、一度最大まで拡張した後に空欄化した場合でもモーダル高さが縮む。
+  - モーダル項目領域は `*` ではなく `Auto` 行サイズで構成し、複数行入力を消した際に余白を即時解放する。
 - 競合解決ダイアログ:
   - OS 既定のアクションシートではなく、アプリ内オーバーレイ（`ConflictOverlay`）で表示してデザインを統一。
   - ライト/ダーク両テーマに対応。
@@ -418,6 +428,12 @@ README はユーザー向け要約、このガイドは実装仕様の正本で�
   - 単一行の基準値（`40`）
   - 複数行での拡張
   - 最大高さクランプ（`220`）
+  - 最大拡張後に空欄化したときの基準高さ復帰
+- `Praxis.Tests/ModalEditorScrollHeightResolverTests.cs` はモーダル項目スクロール高さのクランプを検証する。
+  - 最大値以下の透過
+  - 最大値でのクランプ
+  - 一度拡張後に縮小したときの復帰
+  - 負値入力時の安全クランプ
 - `Praxis.Tests/EditorShortcutActionResolverTests.cs` は編集モーダルの Tab アクション解決を検証する。
   - `Shift` なし => `TabNext`
   - `Shift` あり => `TabPrevious`
