@@ -38,4 +38,32 @@ public class FocusRingNavigatorTests
         var index = FocusRingNavigator.GetNextIndex(currentIndex: 0, itemCount: 2, forward: false);
         Assert.Equal(1, index);
     }
+
+    [Fact]
+    public void GetNextIndex_ReturnsZero_WhenCurrentIndexIsTooLarge_AndForward()
+    {
+        var index = FocusRingNavigator.GetNextIndex(currentIndex: 9, itemCount: 2, forward: true);
+        Assert.Equal(0, index);
+    }
+
+    [Fact]
+    public void GetNextIndex_ReturnsLast_WhenCurrentIndexIsTooLarge_AndBackward()
+    {
+        var index = FocusRingNavigator.GetNextIndex(currentIndex: 9, itemCount: 2, forward: false);
+        Assert.Equal(1, index);
+    }
+
+    [Fact]
+    public void GetNextIndex_StaysAtZero_WhenOnlyOneItemExists_AndForward()
+    {
+        var index = FocusRingNavigator.GetNextIndex(currentIndex: 0, itemCount: 1, forward: true);
+        Assert.Equal(0, index);
+    }
+
+    [Fact]
+    public void GetNextIndex_StaysAtZero_WhenOnlyOneItemExists_AndBackward()
+    {
+        var index = FocusRingNavigator.GetNextIndex(currentIndex: 0, itemCount: 1, forward: false);
+        Assert.Equal(0, index);
+    }
 }

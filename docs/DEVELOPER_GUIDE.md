@@ -118,8 +118,10 @@ README is user-facing summary; this guide is the implementation-level source of 
   - `Up/Down` wraps at list edges, and `Enter` executes selected suggestion
   - Suggestion click fills `CommandInput` and executes immediately.
   - Plain Enter execution from command box runs all exact command matches (trim-aware, case-insensitive)
+  - Opening context menu from right click closes suggestions, resigns command-input first responder, and moves focus target to `Edit`
   - Windows arrow key handling is attached in `MainPage.xaml.cs` (`MainCommandEntry_HandlerChanged` / native `KeyDown`)
   - macOS arrow key handling is attached in `Controls/CommandEntry` + `Platforms/MacCatalyst/Handlers/CommandEntryHandler.cs` (`PressesBegan`)
+  - macOS `Tab`/`Shift+Tab`/`Escape`/`Enter` keyboard shortcuts for context menu and editor modal are also dispatched from `CommandEntryHandler` via `App.RaiseEditorShortcut(...)`
   - macOS `Entry` visual/focus behavior is handled by `Platforms/MacCatalyst/Handlers/MacEntryHandler.cs`:
     - suppresses default blue focus ring
     - uses bottom-edge emphasis that respects corner radius
@@ -128,6 +130,9 @@ README is user-facing summary; this guide is the implementation-level source of 
   - `Tab` / `Shift+Tab` traversal is confined to modal controls and wraps at edges.
   - `GUID` is selectable but not editable.
   - When pseudo-focus is on `Cancel` / `Save`, `Enter` executes the focused action.
+- macOS context menu keyboard behavior:
+  - `Tab` / `Shift+Tab` cycles between `Edit` and `Delete`.
+  - `Enter` executes the focused context action (`Edit` / `Delete`).
 - Mac Catalyst AppDelegate selector safety:
   - Do not export UIKit standard action selectors (`save:`, `cancel:`, `dismiss:`, `cancelOperation:`) from `Platforms/MacCatalyst/AppDelegate.cs`.
   - Exporting these selectors can trigger launch-time `UINSApplicationDelegate` assertions and abort app startup (`SIGABRT`, `MSB3073` code 134 on `-t:Run`).
@@ -297,9 +302,11 @@ README はユーザー向け要約、このガイドは実装仕様の正本で�
   - `↑/↓` は候補端で循環し、`Enter` で選択候補を実行する
   - 候補クリック時は `CommandInput` を埋めて即時実行する
   - コマンド欄で候補未選択の `Enter` 実行時は、`command` 完全一致（前後空白除去・大文字小文字非依存）の対象を全件実行する
+  - 右クリックでコンテキストメニューを開いたときは、候補を閉じ、Command 入力の first responder を解除して `Edit` をフォーカス対象にする
   - Windows の方向キー上下は `MainPage.xaml.cs` の `MainCommandEntry_HandlerChanged` / ネイティブ `KeyDown` で処理
   - Windows の `Tab`/`Shift+Tab` 遷移時は、遷移先 `TextBox` で `SelectAll()` を適用（ポインターフォーカス時は適用しない）
   - macOS の方向キー上下は `Controls/CommandEntry` + `Platforms/MacCatalyst/Handlers/CommandEntryHandler.cs` の `PressesBegan` で処理
+  - macOS の `Tab`/`Shift+Tab`/`Escape`/`Enter` は、`CommandEntryHandler` から `App.RaiseEditorShortcut(...)` でコンテキストメニュー/編集モーダルに中継する
   - macOS の `Entry` 見た目/フォーカス挙動は `Platforms/MacCatalyst/Handlers/MacEntryHandler.cs` で制御する。
     - 標準の青いフォーカスリングを抑制
     - 角丸に沿った下辺強調を適用
@@ -308,6 +315,9 @@ README はユーザー向け要約、このガイドは実装仕様の正本で�
   - `Tab` / `Shift+Tab` の遷移はモーダル内に閉じ、端で循環する。
   - `GUID` 欄は選択可能だが編集不可。
   - `Cancel` / `Save` の擬似フォーカス中は `Enter` で該当アクションを実行する。
+- macOS のコンテキストメニューのキーボード挙動:
+  - `Tab` / `Shift+Tab` で `Edit` と `Delete` を循環する。
+  - `Enter` でフォーカス中のコンテキストアクション（`Edit` / `Delete`）を実行する。
 - Mac Catalyst の AppDelegate セレクタ安全性:
   - `Platforms/MacCatalyst/AppDelegate.cs` で UIKit 標準アクションセレクタ（`save:`, `cancel:`, `dismiss:`, `cancelOperation:`）を `Export` しないこと。
   - これらを `Export` すると、起動時に `UINSApplicationDelegate` のアサートが発生し、アプリ起動が `SIGABRT`（`-t:Run` では `MSB3073` code 134）で中断する場合がある。

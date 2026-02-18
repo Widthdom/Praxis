@@ -70,6 +70,12 @@ public partial class MainPage : ContentPage
         SaveButton,
     }
 
+    private enum ContextMenuFocusTarget
+    {
+        Edit,
+        Delete,
+    }
+
     private static readonly ModalFocusTarget[] ModalFocusOrder =
     [
         ModalFocusTarget.Guid,
@@ -101,6 +107,8 @@ public partial class MainPage : ContentPage
     private bool macMiddleButtonWasDown;
     private bool macInitialCommandFocusApplied;
     private ModalFocusTarget? macPseudoFocusedModalTarget;
+    private ContextMenuFocusTarget? macPseudoFocusedContextMenuTarget;
+    private static readonly bool macDynamicKeyCommandRegistrationEnabled = false;
     private readonly UITextFieldDelegate macGuidReadOnlyDelegate = new MacGuidReadOnlyTextFieldDelegate();
     private UITextField? macGuidNativeTextField;
     private string macGuidLockedText = string.Empty;
@@ -1600,16 +1608,46 @@ public partial class MainPage : ContentPage
         if (e.PropertyName == nameof(MainViewModel.IsContextMenuOpen))
         {
             App.SetContextMenuOpenState(viewModel.IsContextMenuOpen);
-            ApplyTabPolicy();
-            ApplyContextActionButtonFocusVisuals();
             if (viewModel.IsContextMenuOpen)
             {
+                CloseCommandSuggestionPopup();
+#if MACCATALYST
+                ResignMainInputFirstResponder();
+#endif
+            }
+            ApplyTabPolicy();
+            if (viewModel.IsContextMenuOpen)
+            {
+#if MACCATALYST
+                SetMacContextMenuPseudoFocus(ContextMenuFocusTarget.Edit);
+#endif
                 Dispatcher.DispatchDelayed(TimeSpan.FromMilliseconds(40), () =>
                 {
-                    ContextEditButton.Focus();
+                    FocusContextActionButton(ContextEditButton);
+#if MACCATALYST
+                    EnsureMacFirstResponder();
+#endif
+                    ApplyContextActionButtonFocusVisuals();
+                });
+                Dispatcher.DispatchDelayed(TimeSpan.FromMilliseconds(140), () =>
+                {
+                    if (!viewModel.IsContextMenuOpen || IsButtonFocused(ContextEditButton))
+                    {
+                        return;
+                    }
+
+                    FocusContextActionButton(ContextEditButton);
                     ApplyContextActionButtonFocusVisuals();
                 });
             }
+            else
+            {
+#if MACCATALYST
+                ClearMacContextMenuPseudoFocus();
+#endif
+            }
+
+            ApplyContextActionButtonFocusVisuals();
 
             return;
         }
@@ -1750,6 +1788,12 @@ public partial class MainPage : ContentPage
 
     private void ContextActionButton_Focused(object? sender, FocusEventArgs e)
     {
+#if MACCATALYST
+        if (sender is Button focusedButton)
+        {
+            SyncMacContextMenuPseudoFocusFromButton(focusedButton);
+        }
+#endif
         ApplyContextActionButtonFocusVisuals();
     }
 
@@ -1761,7 +1805,34 @@ public partial class MainPage : ContentPage
 
     private void ContextActionButton_Unfocused(object? sender, FocusEventArgs e)
     {
+#if MACCATALYST
+        if (sender is Button unfocusedButton)
+        {
+            var target = GetContextMenuTarget(unfocusedButton);
+            if (target is not null && macPseudoFocusedContextMenuTarget == target)
+            {
+                ClearMacContextMenuPseudoFocus();
+            }
+        }
+#endif
         ApplyContextActionButtonFocusVisuals();
+    }
+
+    private void FocusContextActionButton(Button button)
+    {
+#if MACCATALYST
+        ResignMainInputFirstResponder();
+#endif
+        button.Focus();
+#if MACCATALYST
+        if (button.Handler?.PlatformView is UIResponder responder &&
+            responder.CanBecomeFirstResponder &&
+            !responder.IsFirstResponder)
+        {
+            responder.BecomeFirstResponder();
+        }
+        SyncMacContextMenuPseudoFocusFromButton(button);
+#endif
     }
 
     private void MoveContextMenuFocus(bool forward)
@@ -1775,7 +1846,7 @@ public partial class MainPage : ContentPage
         var currentIndex = GetCurrentContextMenuFocusIndex(order);
         if (currentIndex < 0)
         {
-            order[0].Focus();
+            FocusContextActionButton(order[0]);
             ApplyContextActionButtonFocusVisuals();
             return;
         }
@@ -1786,12 +1857,19 @@ public partial class MainPage : ContentPage
             return;
         }
 
-        order[nextIndex].Focus();
+        FocusContextActionButton(order[nextIndex]);
         ApplyContextActionButtonFocusVisuals();
     }
 
-    private static int GetCurrentContextMenuFocusIndex(Button[] buttons)
+    private int GetCurrentContextMenuFocusIndex(Button[] buttons)
     {
+#if MACCATALYST
+        if (macPseudoFocusedContextMenuTarget is ContextMenuFocusTarget pseudoTarget)
+        {
+            return pseudoTarget == ContextMenuFocusTarget.Edit ? 0 : 1;
+        }
+#endif
+
         for (var i = 0; i < buttons.Length; i++)
         {
             if (IsButtonFocused(buttons[i]))
@@ -1812,9 +1890,56 @@ public partial class MainPage : ContentPage
             return;
         }
 
+#if MACCATALYST
+        if (macPseudoFocusedContextMenuTarget is ContextMenuFocusTarget pseudoTarget)
+        {
+            ApplyButtonFocusVisual(ContextEditButton, pseudoTarget == ContextMenuFocusTarget.Edit);
+            ApplyButtonFocusVisual(ContextDeleteButton, pseudoTarget == ContextMenuFocusTarget.Delete);
+            return;
+        }
+#endif
+
         ApplyButtonFocusVisual(ContextEditButton, IsButtonFocused(ContextEditButton));
         ApplyButtonFocusVisual(ContextDeleteButton, IsButtonFocused(ContextDeleteButton));
     }
+
+#if MACCATALYST
+    private void SyncMacContextMenuPseudoFocusFromButton(Button button)
+    {
+        var target = GetContextMenuTarget(button);
+        if (target is null)
+        {
+            return;
+        }
+
+        SetMacContextMenuPseudoFocus(target.Value);
+    }
+
+    private ContextMenuFocusTarget? GetContextMenuTarget(Button button)
+    {
+        if (ReferenceEquals(button, ContextEditButton))
+        {
+            return ContextMenuFocusTarget.Edit;
+        }
+
+        if (ReferenceEquals(button, ContextDeleteButton))
+        {
+            return ContextMenuFocusTarget.Delete;
+        }
+
+        return null;
+    }
+
+    private void SetMacContextMenuPseudoFocus(ContextMenuFocusTarget target)
+    {
+        macPseudoFocusedContextMenuTarget = target;
+    }
+
+    private void ClearMacContextMenuPseudoFocus()
+    {
+        macPseudoFocusedContextMenuTarget = null;
+    }
+#endif
 
     private void ApplyContextActionButtonPlatformFocusSettings()
     {
@@ -2297,6 +2422,12 @@ public partial class MainPage : ContentPage
                     }
                     return;
                 }
+
+                if (string.Equals(action, "PrimaryAction", StringComparison.OrdinalIgnoreCase))
+                {
+                    TryInvokeContextMenuPrimaryAction();
+                    return;
+                }
             }
 
             if (!viewModel.IsEditorOpen)
@@ -2369,6 +2500,48 @@ public partial class MainPage : ContentPage
                 viewModel.CancelEditorCommand.Execute(null);
             }
         });
+    }
+
+    private void TryInvokeContextMenuPrimaryAction()
+    {
+        if (!viewModel.IsContextMenuOpen)
+        {
+            return;
+        }
+
+#if MACCATALYST
+        if (macPseudoFocusedContextMenuTarget == ContextMenuFocusTarget.Delete)
+        {
+            if (viewModel.ContextDeleteCommand.CanExecute(null))
+            {
+                viewModel.ContextDeleteCommand.Execute(null);
+            }
+            return;
+        }
+
+        if (macPseudoFocusedContextMenuTarget == ContextMenuFocusTarget.Edit)
+        {
+            if (viewModel.ContextEditCommand.CanExecute(null))
+            {
+                viewModel.ContextEditCommand.Execute(null);
+            }
+            return;
+        }
+#endif
+
+        if (IsButtonFocused(ContextDeleteButton))
+        {
+            if (viewModel.ContextDeleteCommand.CanExecute(null))
+            {
+                viewModel.ContextDeleteCommand.Execute(null);
+            }
+            return;
+        }
+
+        if (viewModel.ContextEditCommand.CanExecute(null))
+        {
+            viewModel.ContextEditCommand.Execute(null);
+        }
     }
 
     private void OnCommandInputShortcutRequested(string action)
@@ -3025,7 +3198,7 @@ public partial class MainPage : ContentPage
 
     private void ApplyMacInitialCommandFocus()
     {
-        if (macInitialCommandFocusApplied || !xamlLoaded || viewModel.IsEditorOpen)
+        if (macInitialCommandFocusApplied || !xamlLoaded || viewModel.IsEditorOpen || !IsMacAppForegroundActive())
         {
             return;
         }
@@ -3034,6 +3207,11 @@ public partial class MainPage : ContentPage
         Dispatcher.Dispatch(() => MainCommandEntry.Focus());
         Dispatcher.DispatchDelayed(TimeSpan.FromMilliseconds(140), () =>
         {
+            if (!IsMacAppForegroundActive())
+            {
+                return;
+            }
+
             if (!MainCommandEntry.IsFocused)
             {
                 MainCommandEntry.Focus();
@@ -3074,6 +3252,11 @@ public partial class MainPage : ContentPage
 
     private void ApplyMacEditorKeyCommands()
     {
+        if (!macDynamicKeyCommandRegistrationEnabled)
+        {
+            return;
+        }
+
         modalEscapeKeyCommand ??= CreateMacEscapeKeyCommand();
         modalSaveKeyCommand ??= UIKeyCommand.Create(new NSString("s"), UIKeyModifierFlags.Command, new Selector("handleEditorSave:"));
         modalTabNextKeyCommand ??= TryCreateMacEditorKeyCommand(macTabKeyInput, 0, "handleEditorTabNext:");
@@ -3131,6 +3314,11 @@ public partial class MainPage : ContentPage
 
     private void ApplyMacCommandSuggestionKeyCommands()
     {
+        if (!macDynamicKeyCommandRegistrationEnabled)
+        {
+            return;
+        }
+
         commandSuggestionUpKeyCommand ??= CreateMacCommandSuggestionKeyCommand(macUpArrowKeyInput, "handleCommandSuggestionUp:");
         commandSuggestionDownKeyCommand ??= CreateMacCommandSuggestionKeyCommand(macDownArrowKeyInput, "handleCommandSuggestionDown:");
 
@@ -3310,22 +3498,34 @@ public partial class MainPage : ContentPage
 
     private void EnsureMacFirstResponder()
     {
+        if (!IsMacAppForegroundActive())
+        {
+            return;
+        }
+
         if (Window?.Handler?.PlatformView is UIWindow nativeWindow && !nativeWindow.IsKeyWindow)
         {
             nativeWindow.MakeKeyAndVisible();
         }
+    }
 
-        if (UIApplication.SharedApplication.Delegate is UIResponder appDelegate && appDelegate.CanBecomeFirstResponder)
+    private static bool IsMacAppForegroundActive()
+    {
+        var app = UIApplication.SharedApplication;
+        if (app.ApplicationState != UIApplicationState.Active)
         {
-            appDelegate.BecomeFirstResponder();
+            return false;
         }
 
-        if (Window?.Handler?.PlatformView is UIWindow activeWindow &&
-            activeWindow.RootViewController is UIResponder controllerResponder &&
-            controllerResponder.CanBecomeFirstResponder)
+        foreach (var scene in app.ConnectedScenes)
         {
-            controllerResponder.BecomeFirstResponder();
+            if (scene is UIScene uiScene && uiScene.ActivationState == UISceneActivationState.ForegroundActive)
+            {
+                return true;
+            }
         }
+
+        return app.ConnectedScenes is null || app.ConnectedScenes.Count == 0;
     }
 
     private void ApplyMacContentScale()
@@ -3546,6 +3746,22 @@ public partial class MainPage : ContentPage
 
         ModalClipWordFocusUnderline.IsVisible = false;
         ModalNoteFocusUnderline.IsVisible = false;
+    }
+
+    private void ResignMainInputFirstResponder()
+    {
+        MainCommandEntry.Unfocus();
+        MainSearchEntry.Unfocus();
+
+        if (MainCommandEntry.Handler?.PlatformView is UITextField commandField && commandField.IsFirstResponder)
+        {
+            commandField.ResignFirstResponder();
+        }
+
+        if (MainSearchEntry.Handler?.PlatformView is UITextField searchField && searchField.IsFirstResponder)
+        {
+            searchField.ResignFirstResponder();
+        }
     }
 
     private sealed class MacGuidReadOnlyTextFieldDelegate : UITextFieldDelegate
