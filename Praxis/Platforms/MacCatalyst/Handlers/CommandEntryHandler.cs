@@ -1,6 +1,7 @@
 #if MACCATALYST
 using Foundation;
 using Microsoft.Maui.ApplicationModel;
+using Praxis.Core.Logic;
 using UIKit;
 
 namespace Praxis.Controls;
@@ -62,7 +63,7 @@ public class CommandEntryHandler : MacEntryHandler
 
                 if (IsKeyInput(key, TabKeyInput) && (App.IsConflictDialogOpen || App.IsContextMenuOpen || App.IsEditorOpen))
                 {
-                    var action = shiftDown ? "TabPrevious" : "TabNext";
+                    var action = EditorShortcutActionResolver.ResolveTabNavigationAction(shiftDown);
                     MainThread.BeginInvokeOnMainThread(() => App.RaiseEditorShortcut(action));
                     return true;
                 }

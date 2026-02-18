@@ -28,6 +28,8 @@ It stores launcher buttons in SQLite and can execute tools with arguments.
 - Enter from command box executes all buttons whose `command` exactly matches input (case-insensitive, trim-aware).
 - Editor modal keyboard behavior:
   - `Tab`/`Shift+Tab` stays inside modal controls and wraps at edges.
+  - On macOS, pressing `Tab`/`Shift+Tab` in `Clip Word`/`Note` moves focus to next/previous control (no literal tab insertion).
+  - On macOS, modal editor key command registration is nullable-safe (`KeyCommands` override returns non-null).
   - On macOS, `GUID` remains read-only/selectable (not editable).
   - On macOS, when the editor modal opens, `Command` keeps caret at the end (no select-all on open).
   - On macOS, when pseudo-focus is on `Cancel`/`Save`, `Enter` triggers that action.
@@ -142,6 +144,8 @@ SQLite にボタン情報を保存し、ツールと引数を実行できます�
 - コマンド欄で `Enter` 実行したとき、`command` 完全一致（前後空白除去・大文字小文字非依存）のボタンが複数あれば全件実行します。
 - 編集モーダルのキーボード操作:
   - `Tab` / `Shift+Tab` はモーダル内のみで循環し、端でラップします。
+  - macOS では `Clip Word` / `Note` 欄で `Tab` / `Shift+Tab` を押すと、タブ文字は入力せず前後フォーカス遷移します。
+  - macOS のモーダル編集キーコマンド登録は、`KeyCommands` オーバーライドを non-null 戻り値で実装して nullable 警告を回避しています。
   - Windows では `Tab`/`Shift+Tab` で遷移した入力欄のテキストを自動で全選択します（マウスフォーカス時は対象外）。
   - macOS では `GUID` 欄は選択可能ですが編集不可です。
   - macOS では編集モーダル表示時、`Command` 欄は全選択せずキャレットを末尾に配置します。

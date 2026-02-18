@@ -121,13 +121,18 @@ README is user-facing summary; this guide is the implementation-level source of 
   - Opening context menu from right click closes suggestions, resigns command-input first responder, and moves focus target to `Edit`
   - Windows arrow key handling is attached in `MainPage.xaml.cs` (`MainCommandEntry_HandlerChanged` / native `KeyDown`)
   - macOS arrow key handling is attached in `Controls/CommandEntry` + `Platforms/MacCatalyst/Handlers/CommandEntryHandler.cs` (`PressesBegan`)
-  - macOS `Tab`/`Shift+Tab`/`Escape`/`Enter` keyboard shortcuts for context menu, editor modal, and conflict dialog are dispatched from `CommandEntryHandler` via `App.RaiseEditorShortcut(...)`
+  - macOS `Tab`/`Shift+Tab`/`Escape`/`Enter` keyboard shortcuts for context menu, editor modal, and conflict dialog are dispatched via `App.RaiseEditorShortcut(...)` from:
+    - `CommandEntryHandler` (command input)
+    - `MacEditorHandler` (`Clip Word` / `Note` editors via `TabNavigatingEditor`)
   - macOS `Entry` visual/focus behavior is handled by `Platforms/MacCatalyst/Handlers/MacEntryHandler.cs`:
     - suppresses default blue focus ring
     - uses bottom-edge emphasis that respects corner radius
     - sets caret color by theme (Light=black, Dark=white)
 - macOS editor modal keyboard behavior:
   - `Tab` / `Shift+Tab` traversal is confined to modal controls and wraps at edges.
+  - In `Clip Word` / `Note`, `Tab` / `Shift+Tab` moves focus next/previous (no literal tab insertion).
+  - If a tab character is injected by platform input path, fallback sanitization removes it and resolves focus direction via `EditorTabInsertionResolver`.
+  - `MacEditorHandler.MacEditorTextView.KeyCommands` override returns non-null to match UIKit nullable contract and avoid CS8764 warnings.
   - `GUID` is selectable but not editable.
   - On editor-open focus, `Command` places caret at tail and avoids select-all.
   - When pseudo-focus is on `Cancel` / `Save`, `Enter` executes the focused action.
@@ -180,6 +185,14 @@ README is user-facing summary; this guide is the implementation-level source of 
 - `Praxis.Tests/TextCaretPositionResolverTests.cs` covers mac editor-open caret-tail policy:
   - null/empty input handling
   - ASCII/multibyte text tail offset handling
+- `Praxis.Tests/EditorShortcutActionResolverTests.cs` covers editor tab action resolution:
+  - `Shift` off => `TabNext`
+  - `Shift` on => `TabPrevious`
+- `Praxis.Tests/EditorTabInsertionResolverTests.cs` covers editor tab-character fallback resolution:
+  - single-char insertion detection
+  - forward/backward tab mapping (`TabNext` / `TabPrevious`)
+  - non-tab and non-single-insert rejection
+  - overload parity (`out action` only) behavior
 - `Praxis.Tests/CoreLogicPerformanceSafetyTests.cs` covers regression/safety checks for:
   - button layout defaults (`120x40`) and 10px-grid alignment
   - parser/builder/snapper safety edge cases
@@ -318,13 +331,18 @@ README はユーザー向け要約、このガイドは実装仕様の正本で�
   - Windows の方向キー上下は `MainPage.xaml.cs` の `MainCommandEntry_HandlerChanged` / ネイティブ `KeyDown` で処理
   - Windows の `Tab`/`Shift+Tab` 遷移時は、遷移先 `TextBox` で `SelectAll()` を適用（ポインターフォーカス時は適用しない）
   - macOS の方向キー上下は `Controls/CommandEntry` + `Platforms/MacCatalyst/Handlers/CommandEntryHandler.cs` の `PressesBegan` で処理
-  - macOS の `Tab`/`Shift+Tab`/`Escape`/`Enter` は、`CommandEntryHandler` から `App.RaiseEditorShortcut(...)` でコンテキストメニュー/編集モーダル/競合ダイアログに中継する
+  - macOS の `Tab`/`Shift+Tab`/`Escape`/`Enter` は、`App.RaiseEditorShortcut(...)` を通して以下からコンテキストメニュー/編集モーダル/競合ダイアログへ中継する。
+    - `CommandEntryHandler`（command 入力欄）
+    - `MacEditorHandler`（`TabNavigatingEditor` を使う `Clip Word` / `Note` の `Editor`）
   - macOS の `Entry` 見た目/フォーカス挙動は `Platforms/MacCatalyst/Handlers/MacEntryHandler.cs` で制御する。
     - 標準の青いフォーカスリングを抑制
     - 角丸に沿った下辺強調を適用
     - キャレット色をテーマ連動（Light=黒、Dark=白）
 - macOS の編集モーダルのキーボード挙動:
   - `Tab` / `Shift+Tab` の遷移はモーダル内に閉じ、端で循環する。
+  - `Clip Word` / `Note` では `Tab` / `Shift+Tab` 入力をフォーカス遷移として扱い、タブ文字は挿入しない。
+  - プラットフォーム入力経路でタブ文字が混入した場合は、`EditorTabInsertionResolver` で方向判定し、文字を除去してフォーカス遷移に補正する。
+  - `MacEditorHandler.MacEditorTextView.KeyCommands` は non-null 戻り値でオーバーライドし、UIKit 側の nullable 契約に合わせて CS8764 警告を防止する。
   - `GUID` 欄は選択可能だが編集不可。
   - モーダル表示時に `Command` 欄へフォーカスする際は、全選択せずキャレットを末尾に置く。
   - `Cancel` / `Save` の擬似フォーカス中は `Enter` で該当アクションを実行する。
@@ -377,6 +395,14 @@ README はユーザー向け要約、このガイドは実装仕様の正本で�
 - `Praxis.Tests/TextCaretPositionResolverTests.cs` は mac 編集モーダル初期フォーカス時のキャレット末尾配置ポリシーを検証する。
   - null / 空文字の扱い
   - ASCII / マルチバイト文字列の末尾オフセット扱い
+- `Praxis.Tests/EditorShortcutActionResolverTests.cs` は編集モーダルの Tab アクション解決を検証する。
+  - `Shift` なし => `TabNext`
+  - `Shift` あり => `TabPrevious`
+- `Praxis.Tests/EditorTabInsertionResolverTests.cs` は編集モーダルのタブ文字フォールバック解決を検証する。
+  - 1文字挿入の差分検知
+  - 前進/後退タブのアクション解決（`TabNext` / `TabPrevious`）
+  - タブ以外 / 1文字挿入以外の差分を棄却
+  - `out action` オーバーロードの整合
 - `Praxis.Tests/CoreLogicPerformanceSafetyTests.cs` は回帰/安全性の検証を行う。
   - ボタン既定サイズ（`120x40`）と 10px グリッド整合
   - 各種パーサ/ビルダ/スナッパの境界系

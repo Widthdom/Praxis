@@ -121,6 +121,7 @@ public partial class MainPage : ContentPage
     private UITextField? macGuidNativeTextField;
     private string macGuidLockedText = string.Empty;
     private bool macApplyingGuidTextLock;
+    private bool macSuppressEditorTabFallback;
 #endif
 
     public MainPage(MainViewModel viewModel)
@@ -429,11 +430,17 @@ public partial class MainPage : ContentPage
 
     private void ModalNoteEditor_TextChanged(object? sender, TextChangedEventArgs e)
     {
+#if MACCATALYST
+        TryHandleMacEditorTabTextInsertion(sender, e);
+#endif
         UpdateModalEditorHeights();
     }
 
     private void ModalClipWordEditor_TextChanged(object? sender, TextChangedEventArgs e)
     {
+#if MACCATALYST
+        TryHandleMacEditorTabTextInsertion(sender, e);
+#endif
         UpdateModalEditorHeights();
     }
 
@@ -3611,6 +3618,33 @@ public partial class MainPage : ContentPage
 
         var dark = Application.Current?.RequestedTheme == AppTheme.Dark;
         textView.TintColor = dark ? UIColor.White : UIColor.Black;
+    }
+
+    private void TryHandleMacEditorTabTextInsertion(object? sender, TextChangedEventArgs e)
+    {
+        if (macSuppressEditorTabFallback || !viewModel.IsEditorOpen || sender is not Editor editor || !editor.IsFocused)
+        {
+            return;
+        }
+
+        if (!EditorTabInsertionResolver.TryResolveNavigationAction(e.OldTextValue, e.NewTextValue, out var action, out var insertedIndex))
+        {
+            return;
+        }
+
+        var newText = e.NewTextValue ?? string.Empty;
+        var sanitizedText = newText.Remove(insertedIndex, 1);
+        try
+        {
+            macSuppressEditorTabFallback = true;
+            editor.Text = sanitizedText;
+        }
+        finally
+        {
+            macSuppressEditorTabFallback = false;
+        }
+
+        MoveModalFocus(forward: string.Equals(action, "TabNext", StringComparison.Ordinal));
     }
 
     private bool IsMainCommandEntryReadyForSuggestionNavigation()

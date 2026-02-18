@@ -22,6 +22,7 @@ public static class MauiProgram
         builder.ConfigureMauiHandlers(handlers =>
         {
             handlers.AddHandler(typeof(Entry), typeof(MacEntryHandler));
+            handlers.AddHandler(typeof(TabNavigatingEditor), typeof(MacEditorHandler));
             handlers.AddHandler(typeof(CommandEntry), typeof(CommandEntryHandler));
         });
 #endif
