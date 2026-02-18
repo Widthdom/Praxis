@@ -1,14 +1,22 @@
 #if MACCATALYST
 using CoreAnimation;
 using CoreGraphics;
+using Foundation;
+using Microsoft.Maui.ApplicationModel;
 using Microsoft.Maui.Handlers;
 using Microsoft.Maui.Platform;
+using Praxis.Core.Logic;
 using UIKit;
 
 namespace Praxis.Controls;
 
 public class MacEntryHandler : EntryHandler
 {
+    private static readonly string TabKeyInput = ResolveKeyInput("InputTab", "\t");
+    private static readonly string EscapeKeyInput = ResolveKeyInput("InputEscape", "\u001B");
+    private static readonly string ReturnKeyInput = ResolveKeyInput("InputReturn", "\r");
+    private static readonly string? EnterKeyInput = TryResolveKeyInput("InputEnter");
+
     protected override MauiTextField CreatePlatformView()
     {
         return new MacEntryTextField();
@@ -55,6 +63,21 @@ public class MacEntryHandler : EntryHandler
 
         public override CGRect PlaceholderRect(CGRect forBounds)
             => forBounds.Inset(HorizontalInset, 0);
+
+        public override void PressesBegan(NSSet<UIPress> presses, UIPressesEvent? evt)
+        {
+            if (TryHandleEditorShortcuts(presses))
+            {
+                return;
+            }
+
+            if (evt is null)
+            {
+                return;
+            }
+
+            base.PressesBegan(presses, evt);
+        }
 
         public override void LayoutSubviews()
         {
@@ -110,6 +133,98 @@ public class MacEntryHandler : EntryHandler
             pseudoFocused = enabled;
             ApplyFocusVisualState();
         }
+
+        private static bool TryHandleEditorShortcuts(NSSet<UIPress> presses)
+        {
+            if (!EditorShortcutScopeResolver.IsEditorShortcutScopeActive(App.IsConflictDialogOpen, App.IsContextMenuOpen, App.IsEditorOpen))
+            {
+                return false;
+            }
+
+            foreach (var pressObject in presses)
+            {
+                if (pressObject is not UIPress press)
+                {
+                    continue;
+                }
+
+                var key = press.Key;
+                if (key is null)
+                {
+                    continue;
+                }
+
+                var modifiers = key.ModifierFlags;
+                var shiftDown = (modifiers & UIKeyModifierFlags.Shift) != 0;
+                var commandDown = (modifiers & UIKeyModifierFlags.Command) != 0;
+
+                if (IsKeyInput(key, TabKeyInput))
+                {
+                    var action = EditorShortcutActionResolver.ResolveTabNavigationAction(shiftDown);
+                    MainThread.BeginInvokeOnMainThread(() => App.RaiseEditorShortcut(action));
+                    return true;
+                }
+
+                if (IsKeyInput(key, EscapeKeyInput))
+                {
+                    MainThread.BeginInvokeOnMainThread(() => App.RaiseEditorShortcut("Cancel"));
+                    return true;
+                }
+
+                if (App.IsEditorOpen && !App.IsConflictDialogOpen && commandDown && IsKeyInput(key, "s"))
+                {
+                    MainThread.BeginInvokeOnMainThread(() => App.RaiseEditorShortcut("Save"));
+                    return true;
+                }
+
+                if (IsKeyInput(key, ReturnKeyInput) ||
+                    (!string.IsNullOrEmpty(EnterKeyInput) && IsKeyInput(key, EnterKeyInput!)))
+                {
+                    MainThread.BeginInvokeOnMainThread(() => App.RaiseEditorShortcut("PrimaryAction"));
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static bool IsKeyInput(UIKey key, string input)
+        {
+            return string.Equals(key.CharactersIgnoringModifiers, input, StringComparison.Ordinal) ||
+                   string.Equals(key.Characters, input, StringComparison.Ordinal);
+        }
+    }
+
+    private static string ResolveKeyInput(string inputName, string fallback)
+    {
+        return TryResolveKeyInput(inputName) ?? fallback;
+    }
+
+    private static string? TryResolveKeyInput(string inputName)
+    {
+        var keyInputProperty = typeof(UIKeyCommand).GetProperty(inputName, System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
+        if (keyInputProperty?.GetValue(null) is NSString nsInput)
+        {
+            return nsInput.ToString();
+        }
+
+        if (keyInputProperty?.GetValue(null) is string inputText && !string.IsNullOrEmpty(inputText))
+        {
+            return inputText;
+        }
+
+        var keyInputField = typeof(UIKeyCommand).GetField(inputName, System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
+        if (keyInputField?.GetValue(null) is NSString nsInputField)
+        {
+            return nsInputField.ToString();
+        }
+
+        if (keyInputField?.GetValue(null) is string inputFieldText && !string.IsNullOrEmpty(inputFieldText))
+        {
+            return inputFieldText;
+        }
+
+        return null;
     }
 }
 #endif

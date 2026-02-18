@@ -130,6 +130,7 @@ README is user-facing summary; this guide is the implementation-level source of 
     - sets caret color by theme (Light=black, Dark=white)
 - macOS editor modal keyboard behavior:
   - `Tab` / `Shift+Tab` traversal is confined to modal controls and wraps at edges.
+  - `Shift+Tab` from `GUID` is intercepted by `MacEntryHandler` and kept inside the modal focus ring (does not move focus to main-page inputs).
   - In `Clip Word` / `Note`, `Tab` / `Shift+Tab` moves focus next/previous (no literal tab insertion).
   - If a tab character is injected by platform input path, fallback sanitization removes it and resolves focus direction via `EditorTabInsertionResolver`.
   - `MacEditorHandler.MacEditorTextView.KeyCommands` override returns non-null to match UIKit nullable contract and avoid CS8764 warnings.
@@ -188,6 +189,9 @@ README is user-facing summary; this guide is the implementation-level source of 
 - `Praxis.Tests/EditorShortcutActionResolverTests.cs` covers editor tab action resolution:
   - `Shift` off => `TabNext`
   - `Shift` on => `TabPrevious`
+- `Praxis.Tests/EditorShortcutScopeResolverTests.cs` covers shortcut scope activation:
+  - no overlay open => inactive
+  - conflict/context/editor overlay open => active
 - `Praxis.Tests/EditorTabInsertionResolverTests.cs` covers editor tab-character fallback resolution:
   - single-char insertion detection
   - forward/backward tab mapping (`TabNext` / `TabPrevious`)
@@ -340,6 +344,7 @@ README はユーザー向け要約、このガイドは実装仕様の正本で�
     - キャレット色をテーマ連動（Light=黒、Dark=白）
 - macOS の編集モーダルのキーボード挙動:
   - `Tab` / `Shift+Tab` の遷移はモーダル内に閉じ、端で循環する。
+  - `GUID` 欄での `Shift+Tab` は `MacEntryHandler` で補足し、メイン画面側へ抜けずモーダル内循環を維持する。
   - `Clip Word` / `Note` では `Tab` / `Shift+Tab` 入力をフォーカス遷移として扱い、タブ文字は挿入しない。
   - プラットフォーム入力経路でタブ文字が混入した場合は、`EditorTabInsertionResolver` で方向判定し、文字を除去してフォーカス遷移に補正する。
   - `MacEditorHandler.MacEditorTextView.KeyCommands` は non-null 戻り値でオーバーライドし、UIKit 側の nullable 契約に合わせて CS8764 警告を防止する。
@@ -398,6 +403,9 @@ README はユーザー向け要約、このガイドは実装仕様の正本で�
 - `Praxis.Tests/EditorShortcutActionResolverTests.cs` は編集モーダルの Tab アクション解決を検証する。
   - `Shift` なし => `TabNext`
   - `Shift` あり => `TabPrevious`
+- `Praxis.Tests/EditorShortcutScopeResolverTests.cs` はショートカット有効スコープ判定を検証する。
+  - オーバーレイなし => 無効
+  - 競合/コンテキスト/編集オーバーレイ表示中 => 有効
 - `Praxis.Tests/EditorTabInsertionResolverTests.cs` は編集モーダルのタブ文字フォールバック解決を検証する。
   - 1文字挿入の差分検知
   - 前進/後退タブのアクション解決（`TabNext` / `TabPrevious`）

@@ -109,7 +109,7 @@ public class MacEditorHandler : EditorHandler
 
         private static bool TryDispatchTabNavigation(bool shiftDown)
         {
-            if (!App.IsConflictDialogOpen && !App.IsContextMenuOpen && !App.IsEditorOpen)
+            if (!EditorShortcutScopeResolver.IsEditorShortcutScopeActive(App.IsConflictDialogOpen, App.IsContextMenuOpen, App.IsEditorOpen))
             {
                 return false;
             }

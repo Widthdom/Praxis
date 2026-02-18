@@ -61,14 +61,16 @@ public class CommandEntryHandler : MacEntryHandler
                 var shiftDown = (modifiers & UIKeyModifierFlags.Shift) != 0;
                 var commandDown = (modifiers & UIKeyModifierFlags.Command) != 0;
 
-                if (IsKeyInput(key, TabKeyInput) && (App.IsConflictDialogOpen || App.IsContextMenuOpen || App.IsEditorOpen))
+                if (IsKeyInput(key, TabKeyInput) &&
+                    EditorShortcutScopeResolver.IsEditorShortcutScopeActive(App.IsConflictDialogOpen, App.IsContextMenuOpen, App.IsEditorOpen))
                 {
                     var action = EditorShortcutActionResolver.ResolveTabNavigationAction(shiftDown);
                     MainThread.BeginInvokeOnMainThread(() => App.RaiseEditorShortcut(action));
                     return true;
                 }
 
-                if (IsKeyInput(key, EscapeKeyInput) && (App.IsConflictDialogOpen || App.IsContextMenuOpen || App.IsEditorOpen))
+                if (IsKeyInput(key, EscapeKeyInput) &&
+                    EditorShortcutScopeResolver.IsEditorShortcutScopeActive(App.IsConflictDialogOpen, App.IsContextMenuOpen, App.IsEditorOpen))
                 {
                     MainThread.BeginInvokeOnMainThread(() => App.RaiseEditorShortcut("Cancel"));
                     return true;
@@ -80,7 +82,7 @@ public class CommandEntryHandler : MacEntryHandler
                     return true;
                 }
 
-                if ((App.IsConflictDialogOpen || App.IsEditorOpen || App.IsContextMenuOpen) &&
+                if (EditorShortcutScopeResolver.IsEditorShortcutScopeActive(App.IsConflictDialogOpen, App.IsContextMenuOpen, App.IsEditorOpen) &&
                     (IsKeyInput(key, ReturnKeyInput) ||
                      (!string.IsNullOrEmpty(EnterKeyInput) && IsKeyInput(key, EnterKeyInput!))))
                 {
