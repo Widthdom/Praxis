@@ -49,6 +49,7 @@ It stores launcher buttons in SQLite and can execute tools with arguments.
   - `Enter` executes the currently focused dialog action.
   - While conflict dialog is open, focus does not move to the underlying button-editor modal.
 - In editor modal, `Clip Word` is multiline like `Note`.
+- In Windows Dark theme, `Clip Word` / `Note` text color follows theme-aware modal text color (same readable contrast policy as other editor inputs).
 - Empty-space right-click on the placement area opens create modal at cursor position.
 - Starting a new button (top create button or empty-area right-click) clears search box.
 - Dragging uses 10px snap; multi-select is supported with rectangle and modifier click.
@@ -171,6 +172,7 @@ SQLite にボタン情報を保存し、ツールと引数を実行できます�
   - `Enter` で現在フォーカス中のダイアログアクションを実行します。
   - 競合ダイアログ表示中は、背面のボタン編集モーダルへフォーカスが移りません。
 - 編集モーダルの `Clip Word` は `Note` と同様に複数行入力に対応しています。
+- Windows のダークテーマでは、`Clip Word` / `Note` の文字色も他の編集入力欄と同じ可読性ポリシーでテーマ連動します。
 - 配置領域の空白右クリックで、その座標に新規作成モーダルを開きます。
 - 新規作成開始時（上部 Create ボタン / 配置領域の空白右クリック）に検索欄はクリアされます。
 - ドラッグは 10px スナップ、矩形選択と修飾キー選択に対応しています。

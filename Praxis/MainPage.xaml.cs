@@ -194,6 +194,7 @@ public partial class MainPage : ContentPage
             {
                 ApplyNeutralStatusBackground();
                 ApplyContextActionButtonFocusVisuals();
+                ApplyModalEditorThemeTextColors();
 #if MACCATALYST
                 ApplyMacVisualTuning();
                 ApplyMacNoteEditorVisualState();
@@ -345,6 +346,7 @@ public partial class MainPage : ContentPage
 
     private void ModalNoteEditor_HandlerChanged(object? sender, EventArgs e)
     {
+        ApplyModalEditorThemeTextColors();
 #if MACCATALYST
         if (ModalNoteEditor.Handler?.PlatformView is UITextView textView)
         {
@@ -364,6 +366,7 @@ public partial class MainPage : ContentPage
 
     private void ModalClipWordEditor_HandlerChanged(object? sender, EventArgs e)
     {
+        ApplyModalEditorThemeTextColors();
 #if MACCATALYST
         if (ModalClipWordEditor.Handler?.PlatformView is UITextView textView)
         {
@@ -426,6 +429,14 @@ public partial class MainPage : ContentPage
 #if WINDOWS
         EnsureWindowsTextBoxHooks();
 #endif
+    }
+
+    private void ApplyModalEditorThemeTextColors()
+    {
+        var dark = Application.Current?.RequestedTheme == AppTheme.Dark;
+        var textColor = Color.FromArgb(ThemeTextColorPolicy.ResolveTextColorHex(dark));
+        ModalClipWordEditor.TextColor = textColor;
+        ModalNoteEditor.TextColor = textColor;
     }
 
     private void ModalEditorField_Focused(object? sender, FocusEventArgs e)

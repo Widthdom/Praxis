@@ -163,6 +163,7 @@ README is user-facing summary; this guide is the implementation-level source of 
   - Copy icon buttons are vertically centered per row, and for multiline `Clip Word` / `Note` they follow the same dynamic height as the editor field.
   - Height recalculation also follows programmatic `Editor.ClipText` / `Editor.Note` updates so a once-expanded modal shrinks back when content is cleared.
   - The modal field section uses `Auto` row sizing (not `*`) so cleared multiline content releases extra whitespace immediately.
+  - On Windows Dark theme, `Clip Word` / `Note` text color is explicitly synchronized to theme-aware modal input text color to keep contrast readable.
 - Conflict resolution dialog:
   - Replaces native action sheet with in-app overlay dialog (`ConflictOverlay`) for visual consistency.
   - Supports both Light and Dark themes.
@@ -395,6 +396,7 @@ README はユーザー向け要約、このガイドは実装仕様の正本で�
   - コピーアイコンボタンは各行で縦中央揃えとし、`Clip Word` / `Note` の複数行拡張時は入力欄と同じ高さに追従する。
   - `Editor.ClipText` / `Editor.Note` のプログラム更新時も高さ再計算を行い、一度最大まで拡張した後に空欄化した場合でもモーダル高さが縮む。
   - モーダル項目領域は `*` ではなく `Auto` 行サイズで構成し、複数行入力を消した際に余白を即時解放する。
+  - Windows ダークテーマでは、`Clip Word` / `Note` の文字色をテーマ連動のモーダル入力文字色に明示同期し、コントラストを維持する。
 - 競合解決ダイアログ:
   - OS 既定のアクションシートではなく、アプリ内オーバーレイ（`ConflictOverlay`）で表示してデザインを統一。
   - ライト/ダーク両テーマに対応。
