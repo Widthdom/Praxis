@@ -250,9 +250,15 @@
                 <VerticalStackLayout Spacing="8">
                     <Button x:Name="ContextEditButton"
                             Text="Edit"
+                            HandlerChanged="ContextActionButton_HandlerChanged"
+                            Focused="ContextActionButton_Focused"
+                            Unfocused="ContextActionButton_Unfocused"
                             Command="{Binding ContextEditCommand}" />
                     <Button x:Name="ContextDeleteButton"
                             Text="Delete"
+                            HandlerChanged="ContextActionButton_HandlerChanged"
+                            Focused="ContextActionButton_Focused"
+                            Unfocused="ContextActionButton_Unfocused"
                             Command="{Binding ContextDeleteCommand}" />
                 </VerticalStackLayout>
             </Border>

@@ -29,6 +29,9 @@ It stores launcher buttons in SQLite and can execute tools with arguments.
   - `Tab`/`Shift+Tab` stays inside modal controls and wraps at edges.
   - On macOS, `GUID` remains read-only/selectable (not editable).
   - On macOS, when pseudo-focus is on `Cancel`/`Save`, `Enter` triggers that action.
+- Context menu keyboard behavior:
+  - `Tab`/`Shift+Tab` moves focus between `Edit` and `Delete` and wraps.
+  - Focus visual is rendered as a single custom border (no double focus ring on Windows).
 - In editor modal, `Clip Word` is multiline like `Note`.
 - Empty-space right-click on the placement area opens create modal at cursor position.
 - Starting a new button (top create button or empty-area right-click) clears search box.
@@ -131,6 +134,9 @@ SQLite にボタン情報を保存し、ツールと引数を実行できます�
   - Windows では `Tab`/`Shift+Tab` で遷移した入力欄のテキストを自動で全選択します（マウスフォーカス時は対象外）。
   - macOS では `GUID` 欄は選択可能ですが編集不可です。
   - macOS では `Cancel` / `Save` の擬似フォーカス時に `Enter` で該当アクションを実行します。
+- コンテキストメニューのキーボード操作:
+  - `Tab` / `Shift+Tab` で `Edit` と `Delete` 間を循環します。
+  - フォーカス表示は単一のカスタム枠線で表示し、Windows の二重フォーカス線は出しません。
 - 編集モーダルの `Clip Word` は `Note` と同様に複数行入力に対応しています。
 - 配置領域の空白右クリックで、その座標に新規作成モーダルを開きます。
 - 新規作成開始時（上部 Create ボタン / 配置領域の空白右クリック）に検索欄はクリアされます。

@@ -11,6 +11,7 @@ public partial class App : Application
     private readonly IServiceProvider services;
     private Page? rootPage;
     private static volatile bool isEditorOpen;
+    private static volatile bool isContextMenuOpen;
     public static event Action<string>? ThemeShortcutRequested;
     public static event Action<string>? EditorShortcutRequested;
     public static event Action<string>? CommandInputShortcutRequested;
@@ -184,10 +185,16 @@ public partial class App : Application
     }
 
     public static bool IsEditorOpen => isEditorOpen;
+    public static bool IsContextMenuOpen => isContextMenuOpen;
 
     public static void SetEditorOpenState(bool isOpen)
     {
         isEditorOpen = isOpen;
+    }
+
+    public static void SetContextMenuOpenState(bool isOpen)
+    {
+        isContextMenuOpen = isOpen;
     }
 
 #if MACCATALYST

@@ -9,6 +9,7 @@ namespace Praxis;
 public class AppDelegate : MauiUIApplicationDelegate
 {
     private static readonly string EscapeKeyInput = ResolveKeyInput("InputEscape", "\u001B");
+    private static readonly string TabKeyInput = ResolveKeyInput("InputTab", "\t");
     private static readonly string UpArrowKeyInput = ResolveKeyInput("InputUpArrow", "\uF700");
     private static readonly string DownArrowKeyInput = ResolveKeyInput("InputDownArrow", "\uF701");
     private static readonly UIKeyCommand EscapeCommand = CreateEscapeCommand();
@@ -142,6 +143,11 @@ public class AppDelegate : MauiUIApplicationDelegate
             return;
         }
 
+        if (TryHandleTabPress(presses))
+        {
+            return;
+        }
+
         if (TryHandleEscapePress(presses))
         {
             return;
@@ -240,6 +246,34 @@ public class AppDelegate : MauiUIApplicationDelegate
         return false;
     }
 
+    private static bool TryHandleTabPress(NSSet<UIPress> presses)
+    {
+        if (!App.IsEditorOpen && !App.IsContextMenuOpen)
+        {
+            return false;
+        }
+
+        foreach (var pressObject in presses)
+        {
+            if (pressObject is not UIPress press)
+            {
+                continue;
+            }
+
+            if (!IsTabPress(press))
+            {
+                continue;
+            }
+
+            var isShiftDown = (press.Key?.ModifierFlags ?? 0).HasFlag(UIKeyModifierFlags.Shift);
+            MainThread.BeginInvokeOnMainThread(() =>
+                App.RaiseEditorShortcut(isShiftDown ? "TabPrevious" : "TabNext"));
+            return true;
+        }
+
+        return false;
+    }
+
     private static bool IsEscapePress(UIPress press)
     {
         var key = press.Key;
@@ -268,6 +302,36 @@ public class AppDelegate : MauiUIApplicationDelegate
         }
 
         return int.TryParse(keyCodeText, out var numericCode) && numericCode == 41;
+    }
+
+    private static bool IsTabPress(UIPress press)
+    {
+        var key = press.Key;
+        if (key is null)
+        {
+            return false;
+        }
+
+        if (string.Equals(key.CharactersIgnoringModifiers, TabKeyInput, StringComparison.Ordinal) ||
+            string.Equals(key.Characters, TabKeyInput, StringComparison.Ordinal))
+        {
+            return true;
+        }
+
+        var keyCodeProp = key.GetType().GetProperty("KeyCode");
+        var keyCodeValue = keyCodeProp?.GetValue(key);
+        if (keyCodeValue is null)
+        {
+            return false;
+        }
+
+        var keyCodeText = keyCodeValue.ToString() ?? string.Empty;
+        if (keyCodeText.Contains("Tab", StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        return int.TryParse(keyCodeText, out var numericCode) && numericCode == 43;
     }
 
     private static string ResolveEscapeKeyInput()

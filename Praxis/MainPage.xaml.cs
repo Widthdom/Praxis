@@ -1,3 +1,4 @@
+using Praxis.Core.Logic;
 using Praxis.ViewModels;
 using System.Collections.Specialized;
 using System.ComponentModel;
@@ -166,6 +167,7 @@ public partial class MainPage : ContentPage
             Application.Current.RequestedThemeChanged += (_, _) => Dispatcher.Dispatch(() =>
             {
                 ApplyNeutralStatusBackground();
+                ApplyContextActionButtonFocusVisuals();
 #if MACCATALYST
                 ApplyMacVisualTuning();
                 ApplyMacNoteEditorVisualState();
@@ -202,6 +204,7 @@ public partial class MainPage : ContentPage
         {
             await viewModel.InitializeAsync();
             ApplyTabPolicy();
+            App.SetContextMenuOpenState(viewModel.IsContextMenuOpen);
 #if WINDOWS
             EnsureWindowsKeyHooks();
             EnsureWindowsTextBoxHooks();
@@ -236,6 +239,7 @@ public partial class MainPage : ContentPage
     {
         base.OnDisappearing();
         App.SetEditorOpenState(false);
+        App.SetContextMenuOpenState(false);
 #if MACCATALYST
         DetachMacGuidEntryReadOnlyBehavior();
         macGuidLockedText = string.Empty;
@@ -1595,10 +1599,16 @@ public partial class MainPage : ContentPage
 
         if (e.PropertyName == nameof(MainViewModel.IsContextMenuOpen))
         {
+            App.SetContextMenuOpenState(viewModel.IsContextMenuOpen);
             ApplyTabPolicy();
+            ApplyContextActionButtonFocusVisuals();
             if (viewModel.IsContextMenuOpen)
             {
-                Dispatcher.DispatchDelayed(TimeSpan.FromMilliseconds(40), () => ContextEditButton.Focus());
+                Dispatcher.DispatchDelayed(TimeSpan.FromMilliseconds(40), () =>
+                {
+                    ContextEditButton.Focus();
+                    ApplyContextActionButtonFocusVisuals();
+                });
             }
 
             return;
@@ -1736,6 +1746,137 @@ public partial class MainPage : ContentPage
     private void ResetStatusBarBackgroundToThemeBinding()
     {
         StatusBarBorder.ClearValue(VisualElement.BackgroundColorProperty);
+    }
+
+    private void ContextActionButton_Focused(object? sender, FocusEventArgs e)
+    {
+        ApplyContextActionButtonFocusVisuals();
+    }
+
+    private void ContextActionButton_HandlerChanged(object? sender, EventArgs e)
+    {
+        ApplyContextActionButtonPlatformFocusSettings();
+        ApplyContextActionButtonFocusVisuals();
+    }
+
+    private void ContextActionButton_Unfocused(object? sender, FocusEventArgs e)
+    {
+        ApplyContextActionButtonFocusVisuals();
+    }
+
+    private void MoveContextMenuFocus(bool forward)
+    {
+        if (!viewModel.IsContextMenuOpen)
+        {
+            return;
+        }
+
+        var order = new[] { ContextEditButton, ContextDeleteButton };
+        var currentIndex = GetCurrentContextMenuFocusIndex(order);
+        if (currentIndex < 0)
+        {
+            order[0].Focus();
+            ApplyContextActionButtonFocusVisuals();
+            return;
+        }
+
+        var nextIndex = FocusRingNavigator.GetNextIndex(currentIndex, order.Length, forward);
+        if (nextIndex < 0)
+        {
+            return;
+        }
+
+        order[nextIndex].Focus();
+        ApplyContextActionButtonFocusVisuals();
+    }
+
+    private static int GetCurrentContextMenuFocusIndex(Button[] buttons)
+    {
+        for (var i = 0; i < buttons.Length; i++)
+        {
+            if (IsButtonFocused(buttons[i]))
+            {
+                return i;
+            }
+        }
+
+        return -1;
+    }
+
+    private void ApplyContextActionButtonFocusVisuals()
+    {
+        if (!viewModel.IsContextMenuOpen)
+        {
+            ApplyButtonFocusVisual(ContextEditButton, false);
+            ApplyButtonFocusVisual(ContextDeleteButton, false);
+            return;
+        }
+
+        ApplyButtonFocusVisual(ContextEditButton, IsButtonFocused(ContextEditButton));
+        ApplyButtonFocusVisual(ContextDeleteButton, IsButtonFocused(ContextDeleteButton));
+    }
+
+    private void ApplyContextActionButtonPlatformFocusSettings()
+    {
+#if WINDOWS
+        DisableWindowsSystemFocusVisual(ContextEditButton);
+        DisableWindowsSystemFocusVisual(ContextDeleteButton);
+#endif
+    }
+
+#if WINDOWS
+    private static void DisableWindowsSystemFocusVisual(Button button)
+    {
+        if (button.Handler?.PlatformView is not Microsoft.UI.Xaml.Controls.Control control)
+        {
+            return;
+        }
+
+        var prop = control.GetType().GetProperty("UseSystemFocusVisuals", BindingFlags.Public | BindingFlags.Instance);
+        if (prop?.CanWrite == true)
+        {
+            prop.SetValue(control, false);
+        }
+    }
+#endif
+
+    private void ApplyButtonFocusVisual(Button button, bool focused)
+    {
+        var dark = Application.Current?.RequestedTheme == AppTheme.Dark;
+        var focusedBorderColor = dark ? Color.FromArgb("#F2F2F2") : Color.FromArgb("#1A1A1A");
+        if (focused)
+        {
+            button.BorderColor = focusedBorderColor;
+            button.BorderWidth = 1.5;
+            return;
+        }
+
+        button.BorderColor = Colors.Transparent;
+        button.BorderWidth = 0;
+    }
+
+    private static bool IsButtonFocused(Button button)
+    {
+        if (button.IsFocused)
+        {
+            return true;
+        }
+
+#if WINDOWS
+        if (button.Handler?.PlatformView is Microsoft.UI.Xaml.Controls.Control control)
+        {
+            return control.FocusState != Microsoft.UI.Xaml.FocusState.Unfocused;
+        }
+#endif
+
+#if MACCATALYST
+        if (button.Handler?.PlatformView is UIResponder responder)
+        {
+            return responder.IsFirstResponder;
+        }
+#endif
+
+        return false;
     }
 
     private void ApplyTabPolicy()
@@ -1910,6 +2051,28 @@ public partial class MainPage : ContentPage
 
         var ctrlDown = Microsoft.UI.Input.InputKeyboardSource.GetKeyStateForCurrentThread(Windows.System.VirtualKey.Control)
             .HasFlag(Windows.UI.Core.CoreVirtualKeyStates.Down);
+        var shiftDown = Microsoft.UI.Input.InputKeyboardSource.GetKeyStateForCurrentThread(Windows.System.VirtualKey.Shift)
+            .HasFlag(Windows.UI.Core.CoreVirtualKeyStates.Down);
+
+        if (viewModel.IsContextMenuOpen)
+        {
+            if (e.Key == Windows.System.VirtualKey.Tab)
+            {
+                MoveContextMenuFocus(forward: !shiftDown);
+                e.Handled = true;
+                return;
+            }
+
+            if (e.Key == Windows.System.VirtualKey.Escape)
+            {
+                if (viewModel.CloseContextMenuCommand.CanExecute(null))
+                {
+                    viewModel.CloseContextMenuCommand.Execute(null);
+                    e.Handled = true;
+                }
+                return;
+            }
+        }
 
         if (!viewModel.IsEditorOpen)
         {
@@ -2112,6 +2275,30 @@ public partial class MainPage : ContentPage
     {
         Dispatcher.Dispatch(() =>
         {
+            if (viewModel.IsContextMenuOpen)
+            {
+                if (string.Equals(action, "TabNext", StringComparison.OrdinalIgnoreCase))
+                {
+                    MoveContextMenuFocus(forward: true);
+                    return;
+                }
+
+                if (string.Equals(action, "TabPrevious", StringComparison.OrdinalIgnoreCase))
+                {
+                    MoveContextMenuFocus(forward: false);
+                    return;
+                }
+
+                if (string.Equals(action, "Cancel", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (viewModel.CloseContextMenuCommand.CanExecute(null))
+                    {
+                        viewModel.CloseContextMenuCommand.Execute(null);
+                    }
+                    return;
+                }
+            }
+
             if (!viewModel.IsEditorOpen)
             {
                 return;
