@@ -16,7 +16,7 @@ public class AppStoragePathLayoutResolverTests
             isWindows: true);
 
         Assert.Equal(
-            NormalizeSeparators(@"C:\Users\tester\AppData\Local\praxis.db3"),
+            NormalizeSeparators(@"C:\Users\tester\AppData\Local\Praxis\praxis.db3"),
             NormalizeSeparators(path));
     }
 

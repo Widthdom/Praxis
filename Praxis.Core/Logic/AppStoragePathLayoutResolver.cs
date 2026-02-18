@@ -32,7 +32,7 @@ public static class AppStoragePathLayoutResolver
     {
         if (isWindows)
         {
-            return windowsLocalAppDataRoot;
+            return Path.Combine(windowsLocalAppDataRoot, AppDataFolderName);
         }
 
         return Path.Combine(nonWindowsBasePath, AppDataFolderName);

@@ -13,7 +13,7 @@ Authoritative implementation points:
 - Logical path source: `Praxis/Services/AppStoragePaths.cs`
 - Current file name: `praxis.db3`
 - Current resolved locations:
-  - Windows: `%USERPROFILE%/AppData/Local/praxis.db3`
+  - Windows: `%USERPROFILE%/AppData/Local/Praxis/praxis.db3`
   - macOS (Mac Catalyst): `~/Library/Application Support/Praxis/praxis.db3`
 
 Notes:
@@ -148,7 +148,7 @@ Praxis が使う SQLite テーブル設計を明文化します。
 - パス定義: `Praxis/Services/AppStoragePaths.cs`
 - ファイル名: `praxis.db3`
 - 現在の実解決先:
-  - Windows: `%USERPROFILE%/AppData/Local/praxis.db3`
+  - Windows: `%USERPROFILE%/AppData/Local/Praxis/praxis.db3`
   - macOS（Mac Catalyst）: `~/Library/Application Support/Praxis/praxis.db3`
 
 補足:

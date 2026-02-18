@@ -51,7 +51,7 @@ README is user-facing summary; this guide is the implementation-level source of 
 - `Services/AppStoragePaths.cs`
   - Centralizes shared local-storage constants/paths (DB, sync signal)
   - DB path policy:
-    - Windows: `%USERPROFILE%/AppData/Local/praxis.db3`
+    - Windows: `%USERPROFILE%/AppData/Local/Praxis/praxis.db3`
     - macOS (Mac Catalyst): `~/Library/Application Support/Praxis/praxis.db3`
   - Sync signal path policy:
     - Windows: `%USERPROFILE%/AppData/Local/Praxis/buttons.sync`
@@ -195,7 +195,7 @@ README is user-facing summary; this guide is the implementation-level source of 
   - blank/no-match handling
 - `Praxis.Tests/CommandSuggestionVisibilityPolicyTests.cs` covers suggestion close-policy decisions when context menu opens.
 - `Praxis.Tests/AppStoragePathLayoutResolverTests.cs` covers platform-specific storage layout rules:
-  - Windows DB path (`%USERPROFILE%/AppData/Local/praxis.db3`)
+  - Windows DB path (`%USERPROFILE%/AppData/Local/Praxis/praxis.db3`)
   - Mac Catalyst DB path (`.../Application Support/Praxis/praxis.db3`)
   - sync-signal path layout for Windows/macOS
 - `Praxis.Tests/CoreLogicEdgeCaseTests.cs` covers edge cases for:
@@ -310,7 +310,7 @@ README はユーザー向け要約、このガイドは実装仕様の正本で�
 - `Services/AppStoragePaths.cs`
   - ローカル保存先の共通定数/パス（DB、同期シグナル）を集約
   - DB パス方針:
-    - Windows: `%USERPROFILE%/AppData/Local/praxis.db3`
+    - Windows: `%USERPROFILE%/AppData/Local/Praxis/praxis.db3`
     - macOS（Mac Catalyst）: `~/Library/Application Support/Praxis/praxis.db3`
   - 同期シグナルのパス方針:
     - Windows: `%USERPROFILE%/AppData/Local/Praxis/buttons.sync`
@@ -456,7 +456,7 @@ README はユーザー向け要約、このガイドは実装仕様の正本で�
   - 空入力 / 非一致時の扱い
 - `Praxis.Tests/CommandSuggestionVisibilityPolicyTests.cs` は、コンテキストメニュー表示時に候補一覧を閉じる判定ポリシーを検証する。
 - `Praxis.Tests/AppStoragePathLayoutResolverTests.cs` は、プラットフォーム別ストレージ配置ルールを検証する。
-  - Windows DB パス（`%USERPROFILE%/AppData/Local/praxis.db3`）
+  - Windows DB パス（`%USERPROFILE%/AppData/Local/Praxis/praxis.db3`）
   - Mac Catalyst DB パス（`.../Application Support/Praxis/praxis.db3`）
   - Windows/macOS の同期シグナル配置
 - `Praxis.Tests/CoreLogicEdgeCaseTests.cs` は次の境界系を検証する。
