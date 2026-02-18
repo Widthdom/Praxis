@@ -129,6 +129,7 @@ README is user-facing summary; this guide is the implementation-level source of 
 - macOS editor modal keyboard behavior:
   - `Tab` / `Shift+Tab` traversal is confined to modal controls and wraps at edges.
   - `GUID` is selectable but not editable.
+  - On editor-open focus, `Command` places caret at tail and avoids select-all.
   - When pseudo-focus is on `Cancel` / `Save`, `Enter` executes the focused action.
 - macOS context menu keyboard behavior:
   - `Tab` / `Shift+Tab` cycles between `Edit` and `Delete`.
@@ -176,6 +177,9 @@ README is user-facing summary; this guide is the implementation-level source of 
   - path-like argument detection
   - environment-variable expansion and quoted path handling
   - unsupported scheme/blank handling
+- `Praxis.Tests/TextCaretPositionResolverTests.cs` covers mac editor-open caret-tail policy:
+  - null/empty input handling
+  - ASCII/multibyte text tail offset handling
 - `Praxis.Tests/CoreLogicPerformanceSafetyTests.cs` covers regression/safety checks for:
   - button layout defaults (`120x40`) and 10px-grid alignment
   - parser/builder/snapper safety edge cases
@@ -322,6 +326,7 @@ README はユーザー向け要約、このガイドは実装仕様の正本で�
 - macOS の編集モーダルのキーボード挙動:
   - `Tab` / `Shift+Tab` の遷移はモーダル内に閉じ、端で循環する。
   - `GUID` 欄は選択可能だが編集不可。
+  - モーダル表示時に `Command` 欄へフォーカスする際は、全選択せずキャレットを末尾に置く。
   - `Cancel` / `Save` の擬似フォーカス中は `Enter` で該当アクションを実行する。
 - macOS のコンテキストメニューのキーボード挙動:
   - `Tab` / `Shift+Tab` で `Edit` と `Delete` を循環する。
@@ -369,6 +374,9 @@ README はユーザー向け要約、このガイドは実装仕様の正本で�
   - パス形式引数の判定
   - 環境変数展開と引用符付きパスの扱い
   - 非対応スキーム / 空文字の扱い
+- `Praxis.Tests/TextCaretPositionResolverTests.cs` は mac 編集モーダル初期フォーカス時のキャレット末尾配置ポリシーを検証する。
+  - null / 空文字の扱い
+  - ASCII / マルチバイト文字列の末尾オフセット扱い
 - `Praxis.Tests/CoreLogicPerformanceSafetyTests.cs` は回帰/安全性の検証を行う。
   - ボタン既定サイズ（`120x40`）と 10px グリッド整合
   - 各種パーサ/ビルダ/スナッパの境界系

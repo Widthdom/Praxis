@@ -29,6 +29,7 @@ It stores launcher buttons in SQLite and can execute tools with arguments.
 - Editor modal keyboard behavior:
   - `Tab`/`Shift+Tab` stays inside modal controls and wraps at edges.
   - On macOS, `GUID` remains read-only/selectable (not editable).
+  - On macOS, when the editor modal opens, `Command` keeps caret at the end (no select-all on open).
   - On macOS, when pseudo-focus is on `Cancel`/`Save`, `Enter` triggers that action.
 - Context menu keyboard behavior:
   - `Tab`/`Shift+Tab` moves focus between `Edit` and `Delete` and wraps.
@@ -143,6 +144,7 @@ SQLite にボタン情報を保存し、ツールと引数を実行できます�
   - `Tab` / `Shift+Tab` はモーダル内のみで循環し、端でラップします。
   - Windows では `Tab`/`Shift+Tab` で遷移した入力欄のテキストを自動で全選択します（マウスフォーカス時は対象外）。
   - macOS では `GUID` 欄は選択可能ですが編集不可です。
+  - macOS では編集モーダル表示時、`Command` 欄は全選択せずキャレットを末尾に配置します。
   - macOS では `Cancel` / `Save` の擬似フォーカス時に `Enter` で該当アクションを実行します。
 - コンテキストメニューのキーボード操作:
   - `Tab` / `Shift+Tab` で `Edit` と `Delete` 間を循環します。

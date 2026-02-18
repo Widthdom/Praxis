@@ -1531,7 +1531,24 @@ public partial class MainPage : ContentPage
     private async Task OpenCreateEditorFromCanvasPointAsync(Point canvasPoint)
     {
         await viewModel.OpenCreateEditorAtAsync(canvasPoint.X, canvasPoint.Y, useClipboardForArguments: true);
-        Dispatcher.DispatchDelayed(TimeSpan.FromMilliseconds(60), () => ModalCommandEntry.Focus());
+        Dispatcher.DispatchDelayed(TimeSpan.FromMilliseconds(60), FocusModalCommandEntryForOpen);
+    }
+
+    private void FocusModalCommandEntryForOpen()
+    {
+        ModalCommandEntry.Focus();
+#if MACCATALYST
+        PlaceMacEntryCaretAtEnd(ModalCommandEntry);
+        Dispatcher.DispatchDelayed(TimeSpan.FromMilliseconds(40), () =>
+        {
+            if (!viewModel.IsEditorOpen)
+            {
+                return;
+            }
+
+            PlaceMacEntryCaretAtEnd(ModalCommandEntry);
+        });
+#endif
     }
 
     private async void Draggable_Tapped(object? sender, TappedEventArgs e)
@@ -1688,7 +1705,7 @@ public partial class MainPage : ContentPage
 #endif
         Dispatcher.DispatchDelayed(TimeSpan.FromMilliseconds(60), () =>
         {
-            ModalCommandEntry.Focus();
+            FocusModalCommandEntryForOpen();
 #if MACCATALYST
             EnsureMacFirstResponder();
             ApplyMacEditorKeyCommands();
@@ -3253,7 +3270,7 @@ public partial class MainPage : ContentPage
         var currentIndex = GetCurrentModalFocusIndex();
         if (currentIndex < 0)
         {
-            FocusModalTarget(ModalCommandEntry);
+            TryFocusModalCommandTarget();
             return;
         }
 
@@ -3334,7 +3351,7 @@ public partial class MainPage : ContentPage
             case ModalFocusTarget.Guid:
                 return TryFocusModalGuidTarget();
             case ModalFocusTarget.Command:
-                return TryFocusModalVisual(ModalCommandEntry);
+                return TryFocusModalCommandTarget();
             case ModalFocusTarget.ButtonText:
                 return TryFocusModalVisual(ModalButtonTextEntry);
             case ModalFocusTarget.Tool:
@@ -3386,6 +3403,43 @@ public partial class MainPage : ContentPage
         ClearMacModalPseudoFocus();
         FocusModalTarget(target);
         return IsModalFocusTargetActive(target);
+    }
+
+    private bool TryFocusModalCommandTarget()
+    {
+        if (!TryFocusModalVisual(ModalCommandEntry))
+        {
+            return false;
+        }
+
+        PlaceMacEntryCaretAtEnd(ModalCommandEntry);
+        return IsModalFocusTargetActive(ModalCommandEntry);
+    }
+
+    private static void PlaceMacEntryCaretAtEnd(Entry entry)
+    {
+        if (entry.Handler?.PlatformView is not UITextField textField)
+        {
+            return;
+        }
+
+        if (!textField.IsFirstResponder && textField.CanBecomeFirstResponder)
+        {
+            textField.BecomeFirstResponder();
+        }
+
+        var caretOffset = TextCaretPositionResolver.ResolveTailOffset(textField.Text);
+        var caretPosition = textField.GetPosition(textField.BeginningOfDocument, caretOffset) ?? textField.EndOfDocument;
+        if (caretPosition is null)
+        {
+            return;
+        }
+
+        var caretRange = textField.GetTextRange(caretPosition, caretPosition);
+        if (caretRange is not null)
+        {
+            textField.SelectedTextRange = caretRange;
+        }
     }
 
     private void SetMacModalPseudoFocus(ModalFocusTarget target)
