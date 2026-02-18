@@ -290,6 +290,7 @@ README はユーザー向け要約、このガイドは実装仕様の正本で�
   - `MainViewModel` で `LauncherButtonItemViewModel.Command` の部分一致候補 (`CommandSuggestions`) を構築
   - 候補更新はデバウンス（約 `120ms`）して、連続入力時の再計算を抑える
   - 候補行は `Command`、`ButtonText`、`Tool Arguments` を `1:1:4` 比率で表示
+  - 候補ポップアップの行描画は Windows / macOS で同一の構築処理（`MainPage.xaml.cs` の `RebuildCommandSuggestionStack`）に統一
   - `↑/↓` は候補端で循環し、`Enter` で選択候補を実行する
   - 候補クリック時は `CommandInput` を埋めて即時実行する
   - コマンド欄で候補未選択の `Enter` 実行時は、`command` 完全一致（前後空白除去・大文字小文字非依存）の対象を全件実行する

@@ -62,7 +62,7 @@
             <Border.Shadow>
                 <Shadow Brush="{AppThemeBinding Light=#55000000, Dark=#AA000000}" Opacity="0.22" Offset="0,8" Radius="18" />
             </Border.Shadow>
-            <CollectionView IsVisible="{OnPlatform WinUI=True, MacCatalyst=False}"
+            <CollectionView IsVisible="False"
                             ItemsSource="{Binding CommandSuggestions}"
                             SelectionMode="None">
                 <CollectionView.ItemsLayout>
@@ -95,7 +95,7 @@
                 </CollectionView.ItemTemplate>
             </CollectionView>
 
-            <ScrollView IsVisible="{OnPlatform WinUI=False, MacCatalyst=True}"
+            <ScrollView IsVisible="True"
                         Orientation="Vertical">
                 <VerticalStackLayout x:Name="CommandSuggestionStack"
                                      Spacing="2"

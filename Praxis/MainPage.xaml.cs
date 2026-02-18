@@ -23,11 +23,15 @@ public partial class MainPage : ContentPage
     private Point pointerStart = Point.Zero;
     private double pointerLastDx;
     private double pointerLastDy;
+#if !WINDOWS
     private double panDragLastDx;
     private double panDragLastDy;
     private object? panDragItem;
+#endif
     private bool selectionDragging;
+#if MACCATALYST
     private bool selectionPanPrimed;
+#endif
     private Guid? suppressTapExecuteForItemId;
     private bool suppressNextRootSuggestionClose;
     private Point selectionStartCanvas;
@@ -160,8 +164,8 @@ public partial class MainPage : ContentPage
 #endif
             });
         }
-#if MACCATALYST
         RebuildCommandSuggestionStack();
+#if MACCATALYST
         ModalGuidEntry.Focused += ModalEditorField_Focused;
         ModalCommandEntry.Focused += ModalEditorField_Focused;
         ModalButtonTextEntry.Focused += ModalEditorField_Focused;
@@ -1983,19 +1987,15 @@ public partial class MainPage : ContentPage
             }
         }
 
-#if MACCATALYST
         Dispatcher.Dispatch(RebuildCommandSuggestionStack);
-#endif
     }
 
     private void CommandSuggestionItemOnPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
-#if MACCATALYST
         if (e.PropertyName == nameof(CommandSuggestionItemViewModel.IsSelected))
         {
             Dispatcher.Dispatch(RebuildCommandSuggestionStack);
         }
-#endif
     }
 
     private void OnThemeShortcutRequested(string mode)
@@ -2373,6 +2373,81 @@ public partial class MainPage : ContentPage
         }
     }
 
+#if !MACCATALYST
+    private void RebuildCommandSuggestionStack()
+    {
+        if (!xamlLoaded)
+        {
+            return;
+        }
+
+        CommandSuggestionStack.Children.Clear();
+        foreach (var item in viewModel.CommandSuggestions)
+        {
+            var row = new Grid
+            {
+                ColumnDefinitions = new ColumnDefinitionCollection
+                {
+                    new ColumnDefinition(new GridLength(1, GridUnitType.Star)),
+                    new ColumnDefinition(new GridLength(1, GridUnitType.Star)),
+                    new ColumnDefinition(new GridLength(4, GridUnitType.Star)),
+                },
+                ColumnSpacing = 10,
+                Padding = new Thickness(8, 6),
+                MinimumHeightRequest = 34,
+                HorizontalOptions = LayoutOptions.Fill,
+                BackgroundColor = item.IsSelected
+                    ? (Application.Current?.RequestedTheme == AppTheme.Dark ? Color.FromArgb("#3D3D3D") : Color.FromArgb("#E6E6E6"))
+                    : Colors.Transparent,
+            };
+
+            var tap = new TapGestureRecognizer();
+            tap.Tapped += (_, _) =>
+            {
+                if (viewModel.PickSuggestionCommand.CanExecute(item))
+                {
+                    viewModel.PickSuggestionCommand.Execute(item);
+                }
+            };
+            row.GestureRecognizers.Add(tap);
+
+            var commandLabel = new Label
+            {
+                Text = item.Command,
+                LineBreakMode = LineBreakMode.TailTruncation,
+                TextColor = Application.Current?.RequestedTheme == AppTheme.Dark
+                    ? Color.FromArgb("#F2F2F2")
+                    : Color.FromArgb("#111111"),
+            };
+            row.Children.Add(commandLabel);
+
+            var buttonTextLabel = new Label
+            {
+                Text = item.ButtonText,
+                LineBreakMode = LineBreakMode.TailTruncation,
+                TextColor = Application.Current?.RequestedTheme == AppTheme.Dark
+                    ? Color.FromArgb("#F2F2F2")
+                    : Color.FromArgb("#111111"),
+            };
+            row.SetColumn(buttonTextLabel, 1);
+            row.Children.Add(buttonTextLabel);
+
+            var toolArgsLabel = new Label
+            {
+                Text = item.ToolArguments,
+                LineBreakMode = LineBreakMode.TailTruncation,
+                TextColor = Application.Current?.RequestedTheme == AppTheme.Dark
+                    ? Color.FromArgb("#F2F2F2")
+                    : Color.FromArgb("#111111"),
+            };
+            row.SetColumn(toolArgsLabel, 2);
+            row.Children.Add(toolArgsLabel);
+
+            CommandSuggestionStack.Children.Add(row);
+        }
+    }
+#endif
+
 #if MACCATALYST
     private void MoveModalFocus(bool forward)
     {
@@ -2602,6 +2677,9 @@ public partial class MainPage : ContentPage
             {
                 Text = item.Command,
                 LineBreakMode = LineBreakMode.TailTruncation,
+                TextColor = Application.Current?.RequestedTheme == AppTheme.Dark
+                    ? Color.FromArgb("#F2F2F2")
+                    : Color.FromArgb("#111111"),
             };
             row.Children.Add(commandLabel);
 
@@ -2609,6 +2687,9 @@ public partial class MainPage : ContentPage
             {
                 Text = item.ButtonText,
                 LineBreakMode = LineBreakMode.TailTruncation,
+                TextColor = Application.Current?.RequestedTheme == AppTheme.Dark
+                    ? Color.FromArgb("#F2F2F2")
+                    : Color.FromArgb("#111111"),
             };
             row.SetColumn(buttonTextLabel, 1);
             row.Children.Add(buttonTextLabel);
@@ -2617,6 +2698,9 @@ public partial class MainPage : ContentPage
             {
                 Text = item.ToolArguments,
                 LineBreakMode = LineBreakMode.TailTruncation,
+                TextColor = Application.Current?.RequestedTheme == AppTheme.Dark
+                    ? Color.FromArgb("#F2F2F2")
+                    : Color.FromArgb("#111111"),
             };
             row.SetColumn(toolArgsLabel, 2);
             row.Children.Add(toolArgsLabel);
