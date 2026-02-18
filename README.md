@@ -3,7 +3,7 @@
 License: MIT (see `LICENSE`).
 
 ## Overview
-Praxis is a desktop launcher app built with .NET MAUI and strict MVVM.
+Praxis is a desktop launcher app built with .NET MAUI and an MVVM-centered architecture.
 It stores launcher buttons in SQLite and can execute tools with arguments.
 
 ## Features (User)
@@ -129,7 +129,7 @@ Current app targets in this workspace:
 ライセンス: MIT（`LICENSE` を参照）。
 
 ## 概要
-Praxis は .NET MAUI と厳格な MVVM で構築したデスクトップ向けランチャーアプリです。
+Praxis は .NET MAUI と MVVM ベースの構成で実装したデスクトップ向けランチャーアプリです。
 SQLite にボタン情報を保存し、ツールと引数を実行できます。
 
 ## 主な機能（ユーザー向け）

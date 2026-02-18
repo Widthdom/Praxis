@@ -16,9 +16,9 @@ README is user-facing summary; this guide is the implementation-level source of 
 - macOS (Mac Catalyst): `net10.0-maccatalyst`
 
 ## Architecture Rules
-- Strict MVVM in app layer
-- No feature logic in code-behind
-- Keep business logic in `Praxis.Core` when possible
+- MVVM-centered architecture in app layer
+- UI orchestration (focus, keyboard routing, platform-specific event handling) may live in code-behind/handlers
+- Keep business logic and reusable policies in `Praxis.Core` when possible
 - UI services (clipboard/theme/process) stay in `Praxis/Services`
 
 ## Main Components
@@ -58,7 +58,7 @@ README is user-facing summary; this guide is the implementation-level source of 
 ## Development Workflow
 1. Implement/modify pure logic in `Praxis.Core` first.
 2. Add/adjust unit tests in `Praxis.Tests`.
-3. Wire app behavior in `Praxis` ViewModel/Services.
+3. Wire app behavior in `Praxis` ViewModel/Services and UI orchestration points (`MainPage.xaml.cs`, platform handlers) as needed.
 4. Verify with:
    - `dotnet test Praxis.slnx`
 
@@ -185,6 +185,7 @@ README is user-facing summary; this guide is the implementation-level source of 
   - exact command match selection for command-box Enter execution
   - trim/case-insensitive match behavior
   - blank/no-match handling
+- `Praxis.Tests/CommandSuggestionVisibilityPolicyTests.cs` covers suggestion close-policy decisions when context menu opens.
 - `Praxis.Tests/CoreLogicEdgeCaseTests.cs` covers edge cases for:
   - command-line normalization
   - grid snapping/clamping boundaries
@@ -204,6 +205,7 @@ README is user-facing summary; this guide is the implementation-level source of 
   - mixed line-ending handling (`CRLF` / `LF` / `CR`)
   - max-height clamp (`220`)
   - reset-to-baseline after previous max expansion
+- `Praxis.Tests/FocusRingNavigatorTests.cs` covers wrap-around focus-index traversal used by context menu and conflict dialog keyboard navigation.
 - `Praxis.Tests/ButtonFocusVisualPolicyTests.cs` covers constant border-width policy and focused/unfocused border-color resolution used to avoid focus-time label jitter.
 - `Praxis.Tests/ConflictDialogFocusRestorePolicyTests.cs` covers focus-restore condition used after conflict dialog close:
   - restore only when editor remains open and conflict overlay is closed
@@ -234,6 +236,7 @@ README is user-facing summary; this guide is the implementation-level source of 
   - retention lower-bound handling
   - expected button default constant values
   - record version conflict detection (`RecordVersionComparer`)
+- `Praxis.Tests/ThemeTextColorPolicyTests.cs` covers theme-aware editor text-color policy resolution (`Light`/`Dark`).
 
 ## Release/License
 - Project license is MIT (`../LICENSE`)
@@ -259,9 +262,9 @@ README はユーザー向け要約、このガイドは実装仕様の正本で�
 - macOS（Mac Catalyst）: `net10.0-maccatalyst`
 
 ## アーキテクチャ方針
-- アプリ層は厳格に MVVM を適用
-- 機能ロジックをコードビハインドに書かない
-- ビジネスロジックは可能な限り `Praxis.Core` に置く
+- アプリ層は MVVM ベースで構成する
+- フォーカス制御・キー入力ルーティング・プラットフォーム依存イベントなどの UI 調停はコードビハインド/ハンドラで扱ってよい
+- ビジネスロジックと再利用可能なポリシーは可能な限り `Praxis.Core` に置く
 - クリップボード / テーマ / プロセスなどの UI 依存処理は `Praxis/Services` に置く
 
 ## 主要コンポーネント
@@ -301,7 +304,7 @@ README はユーザー向け要約、このガイドは実装仕様の正本で�
 ## 開発ワークフロー
 1. まず `Praxis.Core` に純粋ロジックを実装 / 修正する
 2. `Praxis.Tests` に単体テストを追加 / 調整する
-3. `Praxis` の ViewModel / Services にアプリ動作を接続する
+3. `Praxis` の ViewModel / Services と UI 調停ポイント（`MainPage.xaml.cs`、プラットフォームハンドラ）にアプリ動作を接続する
 4. 次のコマンドで確認する
    - `dotnet test Praxis.slnx`
 
@@ -430,6 +433,7 @@ README はユーザー向け要約、このガイドは実装仕様の正本で�
   - コマンド欄 Enter 実行で使う command 完全一致選択
   - 前後空白除去 / 大文字小文字非依存の一致挙動
   - 空入力 / 非一致時の扱い
+- `Praxis.Tests/CommandSuggestionVisibilityPolicyTests.cs` は、コンテキストメニュー表示時に候補一覧を閉じる判定ポリシーを検証する。
 - `Praxis.Tests/CoreLogicEdgeCaseTests.cs` は次の境界系を検証する。
   - コマンドライン文字列正規化
   - グリッドスナップ / 領域クランプ境界
@@ -449,6 +453,7 @@ README はユーザー向け要約、このガイドは実装仕様の正本で�
   - 改行コード混在（`CRLF` / `LF` / `CR`）時の行数解決
   - 最大高さクランプ（`220`）
   - 最大拡張後に空欄化したときの基準高さ復帰
+- `Praxis.Tests/FocusRingNavigatorTests.cs` は、コンテキストメニュー/競合ダイアログで使う循環フォーカスインデックス遷移（ラップあり）を検証する。
 - `Praxis.Tests/ButtonFocusVisualPolicyTests.cs` はフォーカス時のラベル位置ズレを防ぐための、一定枠幅ポリシーとフォーカス状態別の枠色解決を検証する。
 - `Praxis.Tests/ConflictDialogFocusRestorePolicyTests.cs` は競合ダイアログ閉鎖後のフォーカス復帰条件を検証する。
   - 編集モーダル継続表示かつ競合ダイアログ非表示で復帰
@@ -479,6 +484,7 @@ README はユーザー向け要約、このガイドは実装仕様の正本で�
   - 保持日数の下限補正
   - ボタン既定定数の期待値
   - レコード版競合検知（`RecordVersionComparer`）
+- `Praxis.Tests/ThemeTextColorPolicyTests.cs` は、テーマ連動テキスト色ポリシー（ライト/ダーク）を検証する。
 
 ## リリース / ライセンス
 - ライセンスは MIT（`../LICENSE`）

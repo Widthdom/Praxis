@@ -16,6 +16,7 @@ Authoritative implementation points:
 Notes:
 - `SqliteAppRepository.InitializeAsync` creates tables with `CreateTableAsync<T>()` if missing.
 - There is no explicit schema migration framework yet.
+- `DateTime` columns are mapped by `sqlite-net-pcl` with provider default settings used by `SQLiteAsyncConnection(dbPath)`.
 
 ## Table List
 - `LauncherButtonEntity`
@@ -37,8 +38,8 @@ erDiagram
         float Y
         float Width
         float Height
-        bigint CreatedAtUtc
-        bigint UpdatedAtUtc
+        datetime CreatedAtUtc
+        datetime UpdatedAtUtc
     }
 
     LaunchLogEntity {
@@ -49,7 +50,7 @@ erDiagram
         varchar Arguments
         integer Succeeded
         varchar Message
-        bigint TimestampUtc
+        datetime TimestampUtc
     }
 
     AppSettingEntity {
@@ -76,8 +77,8 @@ Purpose: launcher button master records (placement, command, metadata).
 | `Y` | `float` | Yes | No | Canvas Y position |
 | `Width` | `float` | Yes | No | Button width |
 | `Height` | `float` | Yes | No | Button height |
-| `CreatedAtUtc` | `bigint` | Yes | No | Created timestamp (UTC) |
-| `UpdatedAtUtc` | `bigint` | Yes | No | Last updated timestamp (UTC) |
+| `CreatedAtUtc` | `datetime` | Yes | No | Created timestamp (UTC) |
+| `UpdatedAtUtc` | `datetime` | Yes | No | Last updated timestamp (UTC) |
 
 Application-level behavior:
 - `UpdatedAtUtc` is overwritten on save (`UpsertButtonAsync`) for optimistic conflict checks.
@@ -95,7 +96,7 @@ Purpose: execution history logs.
 | `Arguments` | `varchar` | Yes | No | Executed arguments |
 | `Succeeded` | `integer` | Yes | No | Success flag (bool mapped to integer) |
 | `Message` | `varchar` | Yes | No | Execution message / error text |
-| `TimestampUtc` | `bigint` | Yes | No | Execution timestamp (UTC) |
+| `TimestampUtc` | `datetime` | Yes | No | Execution timestamp (UTC) |
 
 Application-level behavior:
 - Retention cleanup is executed by:
@@ -144,6 +145,7 @@ Praxis が使う SQLite テーブル設計を明文化します。
 補足:
 - `InitializeAsync` で `CreateTableAsync<T>()` を実行し、未作成テーブルを作成します。
 - 現在は専用マイグレーション機構を持っていません。
+- `DateTime` 列は `SQLiteAsyncConnection(dbPath)` の既定設定に従って `sqlite-net-pcl` 側でマップされます。
 
 ## テーブル一覧
 - `LauncherButtonEntity`: ボタン定義のマスタ
