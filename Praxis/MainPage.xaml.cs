@@ -2329,6 +2329,20 @@ public partial class MainPage : ContentPage
 
         if (IsConflictDialogOpen())
         {
+            if (e.Key == Windows.System.VirtualKey.Left)
+            {
+                MoveConflictDialogFocus(forward: false);
+                e.Handled = true;
+                return;
+            }
+
+            if (e.Key == Windows.System.VirtualKey.Right)
+            {
+                MoveConflictDialogFocus(forward: true);
+                e.Handled = true;
+                return;
+            }
+
             if (e.Key == Windows.System.VirtualKey.Tab)
             {
                 MoveConflictDialogFocus(forward: !shiftDown);
@@ -2353,6 +2367,20 @@ public partial class MainPage : ContentPage
 
         if (viewModel.IsContextMenuOpen)
         {
+            if (e.Key == Windows.System.VirtualKey.Up)
+            {
+                MoveContextMenuFocus(forward: false);
+                e.Handled = true;
+                return;
+            }
+
+            if (e.Key == Windows.System.VirtualKey.Down)
+            {
+                MoveContextMenuFocus(forward: true);
+                e.Handled = true;
+                return;
+            }
+
             if (e.Key == Windows.System.VirtualKey.Tab)
             {
                 MoveContextMenuFocus(forward: !shiftDown);
@@ -2574,6 +2602,18 @@ public partial class MainPage : ContentPage
         {
             if (IsConflictDialogOpen())
             {
+                if (string.Equals(action, "ConflictDialogNext", StringComparison.OrdinalIgnoreCase))
+                {
+                    MoveConflictDialogFocus(forward: true);
+                    return;
+                }
+
+                if (string.Equals(action, "ConflictDialogPrevious", StringComparison.OrdinalIgnoreCase))
+                {
+                    MoveConflictDialogFocus(forward: false);
+                    return;
+                }
+
                 if (string.Equals(action, "TabNext", StringComparison.OrdinalIgnoreCase))
                 {
                     MoveConflictDialogFocus(forward: true);
@@ -2601,6 +2641,18 @@ public partial class MainPage : ContentPage
 
             if (viewModel.IsContextMenuOpen)
             {
+                if (string.Equals(action, "ContextMenuNext", StringComparison.OrdinalIgnoreCase))
+                {
+                    MoveContextMenuFocus(forward: true);
+                    return;
+                }
+
+                if (string.Equals(action, "ContextMenuPrevious", StringComparison.OrdinalIgnoreCase))
+                {
+                    MoveContextMenuFocus(forward: false);
+                    return;
+                }
+
                 if (string.Equals(action, "TabNext", StringComparison.OrdinalIgnoreCase))
                 {
                     MoveContextMenuFocus(forward: true);

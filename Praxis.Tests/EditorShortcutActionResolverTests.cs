@@ -17,4 +17,32 @@ public class EditorShortcutActionResolverTests
         var action = EditorShortcutActionResolver.ResolveTabNavigationAction(shiftDown: true);
         Assert.Equal("TabPrevious", action);
     }
+
+    [Fact]
+    public void ResolveContextMenuArrowNavigationAction_ReturnsContextMenuPrevious_WhenUpArrow()
+    {
+        var action = EditorShortcutActionResolver.ResolveContextMenuArrowNavigationAction(downArrow: false);
+        Assert.Equal("ContextMenuPrevious", action);
+    }
+
+    [Fact]
+    public void ResolveContextMenuArrowNavigationAction_ReturnsContextMenuNext_WhenDownArrow()
+    {
+        var action = EditorShortcutActionResolver.ResolveContextMenuArrowNavigationAction(downArrow: true);
+        Assert.Equal("ContextMenuNext", action);
+    }
+
+    [Fact]
+    public void ResolveConflictDialogArrowNavigationAction_ReturnsConflictDialogPrevious_WhenLeftArrow()
+    {
+        var action = EditorShortcutActionResolver.ResolveConflictDialogArrowNavigationAction(rightArrow: false);
+        Assert.Equal("ConflictDialogPrevious", action);
+    }
+
+    [Fact]
+    public void ResolveConflictDialogArrowNavigationAction_ReturnsConflictDialogNext_WhenRightArrow()
+    {
+        var action = EditorShortcutActionResolver.ResolveConflictDialogArrowNavigationAction(rightArrow: true);
+        Assert.Equal("ConflictDialogNext", action);
+    }
 }

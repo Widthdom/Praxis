@@ -121,7 +121,7 @@ README is user-facing summary; this guide is the implementation-level source of 
   - Opening context menu from right click closes suggestions, resigns command-input first responder, and moves focus target to `Edit`
   - Windows arrow key handling is attached in `MainPage.xaml.cs` (`MainCommandEntry_HandlerChanged` / native `KeyDown`)
   - macOS arrow key handling is attached in `Controls/CommandEntry` + `Platforms/MacCatalyst/Handlers/CommandEntryHandler.cs` (`PressesBegan`)
-  - macOS `Tab`/`Shift+Tab`/`Escape`/`Enter` keyboard shortcuts for context menu, editor modal, and conflict dialog are dispatched via `App.RaiseEditorShortcut(...)` from:
+  - macOS `Tab`/`Shift+Tab`/`Escape`/`Enter`/arrow keyboard shortcuts for context menu, editor modal, and conflict dialog are dispatched via `App.RaiseEditorShortcut(...)` from:
     - `CommandEntryHandler` (command input)
     - `MacEditorHandler` (`Clip Word` / `Note` editors via `TabNavigatingEditor`)
   - macOS `Entry` visual/focus behavior is handled by `Platforms/MacCatalyst/Handlers/MacEntryHandler.cs`:
@@ -138,6 +138,7 @@ README is user-facing summary; this guide is the implementation-level source of 
   - On editor-open focus, `Command` places caret at tail and avoids select-all.
   - When pseudo-focus is on `Cancel` / `Save`, `Enter` executes the focused action.
 - macOS context menu keyboard behavior:
+  - `Up` / `Down` cycles between `Edit` and `Delete`.
   - `Tab` / `Shift+Tab` cycles between `Edit` and `Delete`.
   - `Enter` executes the focused context action (`Edit` / `Delete`).
 - Mac Catalyst AppDelegate selector safety:
@@ -163,6 +164,7 @@ README is user-facing summary; this guide is the implementation-level source of 
   - Supports both Light and Dark themes.
   - On open, initial focus target is `Cancel`.
   - `Cancel` focus uses a single custom focus border (no Windows double focus ring).
+  - `Left` / `Right` traverses conflict actions left-to-right with wrap (`Reload latest` / `Overwrite mine` / `Cancel`).
   - `Tab` / `Shift+Tab` traverses conflict actions left-to-right with wrap (`Reload latest` / `Overwrite mine` / `Cancel`).
   - `Enter` executes the currently focused conflict action.
   - While conflict dialog is open, focus is constrained to the conflict dialog and does not move to the underlying editor modal.
@@ -189,6 +191,8 @@ README is user-facing summary; this guide is the implementation-level source of 
 - `Praxis.Tests/EditorShortcutActionResolverTests.cs` covers editor tab action resolution:
   - `Shift` off => `TabNext`
   - `Shift` on => `TabPrevious`
+  - context menu arrows => `ContextMenuPrevious` / `ContextMenuNext`
+  - conflict dialog arrows => `ConflictDialogPrevious` / `ConflictDialogNext`
 - `Praxis.Tests/EditorShortcutScopeResolverTests.cs` covers shortcut scope activation:
   - no overlay open => inactive
   - conflict/context/editor overlay open => active
@@ -335,7 +339,7 @@ README はユーザー向け要約、このガイドは実装仕様の正本で�
   - Windows の方向キー上下は `MainPage.xaml.cs` の `MainCommandEntry_HandlerChanged` / ネイティブ `KeyDown` で処理
   - Windows の `Tab`/`Shift+Tab` 遷移時は、遷移先 `TextBox` で `SelectAll()` を適用（ポインターフォーカス時は適用しない）
   - macOS の方向キー上下は `Controls/CommandEntry` + `Platforms/MacCatalyst/Handlers/CommandEntryHandler.cs` の `PressesBegan` で処理
-  - macOS の `Tab`/`Shift+Tab`/`Escape`/`Enter` は、`App.RaiseEditorShortcut(...)` を通して以下からコンテキストメニュー/編集モーダル/競合ダイアログへ中継する。
+  - macOS の `Tab`/`Shift+Tab`/`Escape`/`Enter`/方向キー は、`App.RaiseEditorShortcut(...)` を通して以下からコンテキストメニュー/編集モーダル/競合ダイアログへ中継する。
     - `CommandEntryHandler`（command 入力欄）
     - `MacEditorHandler`（`TabNavigatingEditor` を使う `Clip Word` / `Note` の `Editor`）
   - macOS の `Entry` 見た目/フォーカス挙動は `Platforms/MacCatalyst/Handlers/MacEntryHandler.cs` で制御する。
@@ -352,6 +356,7 @@ README はユーザー向け要約、このガイドは実装仕様の正本で�
   - モーダル表示時に `Command` 欄へフォーカスする際は、全選択せずキャレットを末尾に置く。
   - `Cancel` / `Save` の擬似フォーカス中は `Enter` で該当アクションを実行する。
 - macOS のコンテキストメニューのキーボード挙動:
+  - `↑` / `↓` で `Edit` と `Delete` を循環する。
   - `Tab` / `Shift+Tab` で `Edit` と `Delete` を循環する。
   - `Enter` でフォーカス中のコンテキストアクション（`Edit` / `Delete`）を実行する。
 - Mac Catalyst の AppDelegate セレクタ安全性:
@@ -377,6 +382,7 @@ README はユーザー向け要約、このガイドは実装仕様の正本で�
   - ライト/ダーク両テーマに対応。
   - 表示時の初期フォーカスは `Cancel` とする。
   - `Cancel` は単一のカスタム枠線でフォーカス強調表示する（Windows の二重フォーカス線は出さない）。
+  - `←` / `→` で競合アクション（`Reload latest` / `Overwrite mine` / `Cancel`）を左から右へ循環（端でラップ）する。
   - `Tab` / `Shift+Tab` で競合アクション（`Reload latest` / `Overwrite mine` / `Cancel`）を左から右へ循環（端でラップ）する。
   - `Enter` で現在フォーカス中の競合アクションを実行する。
   - 競合ダイアログ表示中は、フォーカスを競合ダイアログ内に閉じ、背面の編集モーダルには移動させない。
@@ -403,6 +409,8 @@ README はユーザー向け要約、このガイドは実装仕様の正本で�
 - `Praxis.Tests/EditorShortcutActionResolverTests.cs` は編集モーダルの Tab アクション解決を検証する。
   - `Shift` なし => `TabNext`
   - `Shift` あり => `TabPrevious`
+  - コンテキストメニュー矢印 => `ContextMenuPrevious` / `ContextMenuNext`
+  - 競合ダイアログ矢印 => `ConflictDialogPrevious` / `ConflictDialogNext`
 - `Praxis.Tests/EditorShortcutScopeResolverTests.cs` はショートカット有効スコープ判定を検証する。
   - オーバーレイなし => 無効
   - 競合/コンテキスト/編集オーバーレイ表示中 => 有効

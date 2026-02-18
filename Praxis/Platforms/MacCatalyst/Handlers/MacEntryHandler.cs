@@ -16,6 +16,10 @@ public class MacEntryHandler : EntryHandler
     private static readonly string EscapeKeyInput = ResolveKeyInput("InputEscape", "\u001B");
     private static readonly string ReturnKeyInput = ResolveKeyInput("InputReturn", "\r");
     private static readonly string? EnterKeyInput = TryResolveKeyInput("InputEnter");
+    private static readonly string UpArrowKeyInput = ResolveKeyInput("InputUpArrow", "\uF700");
+    private static readonly string DownArrowKeyInput = ResolveKeyInput("InputDownArrow", "\uF701");
+    private static readonly string LeftArrowKeyInput = ResolveKeyInput("InputLeftArrow", "\uF702");
+    private static readonly string RightArrowKeyInput = ResolveKeyInput("InputRightArrow", "\uF703");
 
     protected override MauiTextField CreatePlatformView()
     {
@@ -158,6 +162,40 @@ public class MacEntryHandler : EntryHandler
                 var shiftDown = (modifiers & UIKeyModifierFlags.Shift) != 0;
                 var commandDown = (modifiers & UIKeyModifierFlags.Command) != 0;
 
+                if (App.IsContextMenuOpen)
+                {
+                    if (IsArrowPress(key, UpArrowKeyInput, "UpArrow", 82))
+                    {
+                        var action = EditorShortcutActionResolver.ResolveContextMenuArrowNavigationAction(downArrow: false);
+                        MainThread.BeginInvokeOnMainThread(() => App.RaiseEditorShortcut(action));
+                        return true;
+                    }
+
+                    if (IsArrowPress(key, DownArrowKeyInput, "DownArrow", 81))
+                    {
+                        var action = EditorShortcutActionResolver.ResolveContextMenuArrowNavigationAction(downArrow: true);
+                        MainThread.BeginInvokeOnMainThread(() => App.RaiseEditorShortcut(action));
+                        return true;
+                    }
+                }
+
+                if (App.IsConflictDialogOpen)
+                {
+                    if (IsArrowPress(key, LeftArrowKeyInput, "LeftArrow", 80))
+                    {
+                        var action = EditorShortcutActionResolver.ResolveConflictDialogArrowNavigationAction(rightArrow: false);
+                        MainThread.BeginInvokeOnMainThread(() => App.RaiseEditorShortcut(action));
+                        return true;
+                    }
+
+                    if (IsArrowPress(key, RightArrowKeyInput, "RightArrow", 79))
+                    {
+                        var action = EditorShortcutActionResolver.ResolveConflictDialogArrowNavigationAction(rightArrow: true);
+                        MainThread.BeginInvokeOnMainThread(() => App.RaiseEditorShortcut(action));
+                        return true;
+                    }
+                }
+
                 if (IsKeyInput(key, TabKeyInput))
                 {
                     var action = EditorShortcutActionResolver.ResolveTabNavigationAction(shiftDown);
@@ -192,6 +230,29 @@ public class MacEntryHandler : EntryHandler
         {
             return string.Equals(key.CharactersIgnoringModifiers, input, StringComparison.Ordinal) ||
                    string.Equals(key.Characters, input, StringComparison.Ordinal);
+        }
+
+        private static bool IsArrowPress(UIKey key, string keyInput, string keyCodeName, int keyCodeNumeric)
+        {
+            if (IsKeyInput(key, keyInput))
+            {
+                return true;
+            }
+
+            var keyCodeProp = key.GetType().GetProperty("KeyCode");
+            var keyCodeValue = keyCodeProp?.GetValue(key);
+            if (keyCodeValue is null)
+            {
+                return false;
+            }
+
+            var keyCodeText = keyCodeValue.ToString() ?? string.Empty;
+            if (keyCodeText.Contains(keyCodeName, StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+
+            return int.TryParse(keyCodeText, out var numericCode) && numericCode == keyCodeNumeric;
         }
     }
 

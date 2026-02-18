@@ -35,12 +35,14 @@ It stores launcher buttons in SQLite and can execute tools with arguments.
   - On macOS, when the editor modal opens, `Command` keeps caret at the end (no select-all on open).
   - On macOS, when pseudo-focus is on `Cancel`/`Save`, `Enter` triggers that action.
 - Context menu keyboard behavior:
+  - `Up`/`Down` moves focus between `Edit` and `Delete` and wraps.
   - `Tab`/`Shift+Tab` moves focus between `Edit` and `Delete` and wraps.
   - `Enter` executes the currently focused action (`Edit` or `Delete`).
   - Focus visual is rendered as a single custom border (no double focus ring on Windows).
 - Conflict dialog keyboard behavior (`Reload latest` / `Overwrite mine` / `Cancel`):
   - On open, initial focus is moved to `Cancel`.
   - `Cancel` focus is visually emphasized with a single custom border (no double focus ring on Windows).
+  - `Left`/`Right` cycles dialog actions left-to-right (with wrap).
   - `Tab`/`Shift+Tab` cycles dialog actions left-to-right (with wrap) and keeps focus inside the dialog.
   - `Enter` executes the currently focused dialog action.
   - While conflict dialog is open, focus does not move to the underlying button-editor modal.
@@ -153,12 +155,14 @@ SQLite にボタン情報を保存し、ツールと引数を実行できます�
   - macOS では編集モーダル表示時、`Command` 欄は全選択せずキャレットを末尾に配置します。
   - macOS では `Cancel` / `Save` の擬似フォーカス時に `Enter` で該当アクションを実行します。
 - コンテキストメニューのキーボード操作:
+  - `↑` / `↓` で `Edit` と `Delete` 間を循環します。
   - `Tab` / `Shift+Tab` で `Edit` と `Delete` 間を循環します。
   - `Enter` で現在フォーカス中のアクション（`Edit` または `Delete`）を実行します。
   - フォーカス表示は単一のカスタム枠線で表示し、Windows の二重フォーカス線は出しません。
 - 競合ダイアログ（`Reload latest` / `Overwrite mine` / `Cancel`）のキーボード操作:
   - ダイアログ表示時は初期フォーカスを `Cancel` に移します。
   - `Cancel` のフォーカスは単一のカスタム枠線で強調表示します（Windows の二重フォーカス線は出しません）。
+  - `←` / `→` でアクションを左から右に循環（端でラップ）します。
   - `Tab` / `Shift+Tab` でアクションを左から右に循環（端でラップ）し、フォーカスはダイアログ内に留まります。
   - `Enter` で現在フォーカス中のダイアログアクションを実行します。
   - 競合ダイアログ表示中は、背面のボタン編集モーダルへフォーカスが移りません。

@@ -6,4 +6,14 @@ public static class EditorShortcutActionResolver
     {
         return shiftDown ? "TabPrevious" : "TabNext";
     }
+
+    public static string ResolveContextMenuArrowNavigationAction(bool downArrow)
+    {
+        return downArrow ? "ContextMenuNext" : "ContextMenuPrevious";
+    }
+
+    public static string ResolveConflictDialogArrowNavigationAction(bool rightArrow)
+    {
+        return rightArrow ? "ConflictDialogNext" : "ConflictDialogPrevious";
+    }
 }

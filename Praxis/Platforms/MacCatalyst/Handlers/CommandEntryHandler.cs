@@ -10,6 +10,8 @@ public class CommandEntryHandler : MacEntryHandler
 {
     private static readonly string UpArrowKeyInput = ResolveKeyInput("InputUpArrow", "\uF700");
     private static readonly string DownArrowKeyInput = ResolveKeyInput("InputDownArrow", "\uF701");
+    private static readonly string LeftArrowKeyInput = ResolveKeyInput("InputLeftArrow", "\uF702");
+    private static readonly string RightArrowKeyInput = ResolveKeyInput("InputRightArrow", "\uF703");
     private static readonly string TabKeyInput = ResolveKeyInput("InputTab", "\t");
     private static readonly string EscapeKeyInput = ResolveKeyInput("InputEscape", "\u001B");
     private static readonly string ReturnKeyInput = ResolveKeyInput("InputReturn", "\r");
@@ -60,6 +62,40 @@ public class CommandEntryHandler : MacEntryHandler
                 var modifiers = key.ModifierFlags;
                 var shiftDown = (modifiers & UIKeyModifierFlags.Shift) != 0;
                 var commandDown = (modifiers & UIKeyModifierFlags.Command) != 0;
+
+                if (App.IsContextMenuOpen)
+                {
+                    if (IsArrowPress(press, UpArrowKeyInput, "UpArrow", 82))
+                    {
+                        var action = EditorShortcutActionResolver.ResolveContextMenuArrowNavigationAction(downArrow: false);
+                        MainThread.BeginInvokeOnMainThread(() => App.RaiseEditorShortcut(action));
+                        return true;
+                    }
+
+                    if (IsArrowPress(press, DownArrowKeyInput, "DownArrow", 81))
+                    {
+                        var action = EditorShortcutActionResolver.ResolveContextMenuArrowNavigationAction(downArrow: true);
+                        MainThread.BeginInvokeOnMainThread(() => App.RaiseEditorShortcut(action));
+                        return true;
+                    }
+                }
+
+                if (App.IsConflictDialogOpen)
+                {
+                    if (IsArrowPress(press, LeftArrowKeyInput, "LeftArrow", 80))
+                    {
+                        var action = EditorShortcutActionResolver.ResolveConflictDialogArrowNavigationAction(rightArrow: false);
+                        MainThread.BeginInvokeOnMainThread(() => App.RaiseEditorShortcut(action));
+                        return true;
+                    }
+
+                    if (IsArrowPress(press, RightArrowKeyInput, "RightArrow", 79))
+                    {
+                        var action = EditorShortcutActionResolver.ResolveConflictDialogArrowNavigationAction(rightArrow: true);
+                        MainThread.BeginInvokeOnMainThread(() => App.RaiseEditorShortcut(action));
+                        return true;
+                    }
+                }
 
                 if (IsKeyInput(key, TabKeyInput) &&
                     EditorShortcutScopeResolver.IsEditorShortcutScopeActive(App.IsConflictDialogOpen, App.IsContextMenuOpen, App.IsEditorOpen))

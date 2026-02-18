@@ -12,6 +12,8 @@ namespace Praxis.Controls;
 public class MacEditorHandler : EditorHandler
 {
     private static readonly string TabKeyInput = ResolveKeyInput("InputTab", "\t");
+    private static readonly string LeftArrowKeyInput = ResolveKeyInput("InputLeftArrow", "\uF702");
+    private static readonly string RightArrowKeyInput = ResolveKeyInput("InputRightArrow", "\uF703");
 
     protected override MauiTextView CreatePlatformView()
     {
@@ -62,6 +64,11 @@ public class MacEditorHandler : EditorHandler
 
         public override void PressesBegan(NSSet<UIPress> presses, UIPressesEvent? evt)
         {
+            if (TryHandleConflictDialogArrowNavigation(presses))
+            {
+                return;
+            }
+
             if (TryHandleEditorTabNavigation(presses))
             {
                 return;
@@ -119,10 +126,71 @@ public class MacEditorHandler : EditorHandler
             return true;
         }
 
+        private static bool TryHandleConflictDialogArrowNavigation(NSSet<UIPress> presses)
+        {
+            if (!App.IsConflictDialogOpen)
+            {
+                return false;
+            }
+
+            foreach (var pressObject in presses)
+            {
+                if (pressObject is not UIPress press)
+                {
+                    continue;
+                }
+
+                var key = press.Key;
+                if (key is null)
+                {
+                    continue;
+                }
+
+                if (IsArrowPress(key, LeftArrowKeyInput, "LeftArrow", 80))
+                {
+                    var action = EditorShortcutActionResolver.ResolveConflictDialogArrowNavigationAction(rightArrow: false);
+                    MainThread.BeginInvokeOnMainThread(() => App.RaiseEditorShortcut(action));
+                    return true;
+                }
+
+                if (IsArrowPress(key, RightArrowKeyInput, "RightArrow", 79))
+                {
+                    var action = EditorShortcutActionResolver.ResolveConflictDialogArrowNavigationAction(rightArrow: true);
+                    MainThread.BeginInvokeOnMainThread(() => App.RaiseEditorShortcut(action));
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         private static bool IsKeyInput(UIKey key, string input)
         {
             return string.Equals(key.CharactersIgnoringModifiers, input, StringComparison.Ordinal) ||
                    string.Equals(key.Characters, input, StringComparison.Ordinal);
+        }
+
+        private static bool IsArrowPress(UIKey key, string keyInput, string keyCodeName, int keyCodeNumeric)
+        {
+            if (IsKeyInput(key, keyInput))
+            {
+                return true;
+            }
+
+            var keyCodeProp = key.GetType().GetProperty("KeyCode");
+            var keyCodeValue = keyCodeProp?.GetValue(key);
+            if (keyCodeValue is null)
+            {
+                return false;
+            }
+
+            var keyCodeText = keyCodeValue.ToString() ?? string.Empty;
+            if (keyCodeText.Contains(keyCodeName, StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+
+            return int.TryParse(keyCodeText, out var numericCode) && numericCode == keyCodeNumeric;
         }
     }
 
