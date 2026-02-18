@@ -48,6 +48,7 @@ It stores launcher buttons in SQLite and can execute tools with arguments.
   - `Left`/`Right` cycles dialog actions left-to-right (with wrap).
   - `Tab`/`Shift+Tab` cycles dialog actions left-to-right (with wrap) and keeps focus inside the dialog.
   - `Enter` executes the currently focused dialog action.
+  - On close (for example `Cancel` / `Reload latest`), focus returns to editor `Command` so `Esc` / `Ctrl+S` remain active on Windows.
   - While conflict dialog is open, focus does not move to the underlying button-editor modal.
 - In editor modal, `Clip Word` is multiline like `Note`.
 - In Windows, pressing `Enter` in `Clip Word` / `Note` expands each field height line-by-line (including `CRLF` line endings).
@@ -174,6 +175,7 @@ SQLite にボタン情報を保存し、ツールと引数を実行できます�
   - `←` / `→` でアクションを左から右に循環（端でラップ）します。
   - `Tab` / `Shift+Tab` でアクションを左から右に循環（端でラップ）し、フォーカスはダイアログ内に留まります。
   - `Enter` で現在フォーカス中のダイアログアクションを実行します。
+  - `Cancel` / `Reload latest` などで閉じた直後は、編集モーダルの `Command` にフォーカスを戻し、Windows でも `Esc` / `Ctrl+S` を継続して有効にします。
   - 競合ダイアログ表示中は、背面のボタン編集モーダルへフォーカスが移りません。
 - 編集モーダルの `Clip Word` は `Note` と同様に複数行入力に対応しています。
 - Windows では `Clip Word` / `Note` で `Enter` 改行すると、行数に応じて入力欄高さが順次拡張されます（`CRLF` 改行を含む）。

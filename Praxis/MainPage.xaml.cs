@@ -3015,6 +3015,7 @@ public partial class MainPage : ContentPage
         ApplyTabPolicy();
         ApplyConflictActionButtonFocusVisuals();
         tcs.TrySetResult(resolution);
+        RestoreEditorFocusAfterConflictDialogClose();
     }
 
     private void ConflictReloadButton_Clicked(object? sender, EventArgs e)
@@ -3040,6 +3041,22 @@ public partial class MainPage : ContentPage
         }
 
         return editorConflictTcs is not null && ConflictOverlay.IsVisible;
+    }
+
+    private void RestoreEditorFocusAfterConflictDialogClose()
+    {
+        Dispatcher.DispatchDelayed(TimeSpan.FromMilliseconds(40), () =>
+        {
+            if (!ConflictDialogFocusRestorePolicy.ShouldRestoreEditorFocus(viewModel.IsEditorOpen, IsConflictDialogOpen()))
+            {
+                return;
+            }
+
+            ModalCommandEntry.Focus();
+#if WINDOWS
+            EnsureWindowsKeyHooks();
+#endif
+        });
     }
 
     private void UpdateConflictDialogModalState(bool isOpen)

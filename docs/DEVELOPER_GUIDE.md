@@ -175,6 +175,7 @@ README is user-facing summary; this guide is the implementation-level source of 
   - `Left` / `Right` traverses conflict actions left-to-right with wrap (`Reload latest` / `Overwrite mine` / `Cancel`).
   - `Tab` / `Shift+Tab` traverses conflict actions left-to-right with wrap (`Reload latest` / `Overwrite mine` / `Cancel`).
   - `Enter` executes the currently focused conflict action.
+  - On close, editor focus is restored to modal `Command` when editor remains open; this keeps `Esc` / `Ctrl+S` active on Windows immediately after returning from conflict dialog.
   - While conflict dialog is open, focus is constrained to the conflict dialog and does not move to the underlying editor modal.
 
 ## Test Coverage Notes
@@ -203,6 +204,10 @@ README is user-facing summary; this guide is the implementation-level source of 
   - max-height clamp (`220`)
   - reset-to-baseline after previous max expansion
 - `Praxis.Tests/ButtonFocusVisualPolicyTests.cs` covers constant border-width policy and focused/unfocused border-color resolution used to avoid focus-time label jitter.
+- `Praxis.Tests/ConflictDialogFocusRestorePolicyTests.cs` covers focus-restore condition used after conflict dialog close:
+  - restore only when editor remains open and conflict overlay is closed
+  - do not restore when editor is closed
+  - do not restore while conflict overlay is still open
 - `Praxis.Tests/ModalEditorScrollHeightResolverTests.cs` covers modal field-scroll clamping:
   - within-max pass-through
   - clamp-at-max behavior
@@ -413,6 +418,7 @@ README はユーザー向け要約、このガイドは実装仕様の正本で�
   - `←` / `→` で競合アクション（`Reload latest` / `Overwrite mine` / `Cancel`）を左から右へ循環（端でラップ）する。
   - `Tab` / `Shift+Tab` で競合アクション（`Reload latest` / `Overwrite mine` / `Cancel`）を左から右へ循環（端でラップ）する。
   - `Enter` で現在フォーカス中の競合アクションを実行する。
+  - クローズ後に編集モーダルが継続表示される場合は `Command` へフォーカスを戻し、Windows でも復帰直後から `Esc` / `Ctrl+S` を有効に保つ。
   - 競合ダイアログ表示中は、フォーカスを競合ダイアログ内に閉じ、背面の編集モーダルには移動させない。
 
 ## テストカバレッジメモ
@@ -441,6 +447,10 @@ README はユーザー向け要約、このガイドは実装仕様の正本で�
   - 最大高さクランプ（`220`）
   - 最大拡張後に空欄化したときの基準高さ復帰
 - `Praxis.Tests/ButtonFocusVisualPolicyTests.cs` はフォーカス時のラベル位置ズレを防ぐための、一定枠幅ポリシーとフォーカス状態別の枠色解決を検証する。
+- `Praxis.Tests/ConflictDialogFocusRestorePolicyTests.cs` は競合ダイアログ閉鎖後のフォーカス復帰条件を検証する。
+  - 編集モーダル継続表示かつ競合ダイアログ非表示で復帰
+  - 編集モーダル非表示では復帰しない
+  - 競合ダイアログ表示中は復帰しない
 - `Praxis.Tests/ModalEditorScrollHeightResolverTests.cs` はモーダル項目スクロール高さのクランプを検証する。
   - 最大値以下の透過
   - 最大値でのクランプ
