@@ -121,7 +121,7 @@ README is user-facing summary; this guide is the implementation-level source of 
   - Opening context menu from right click closes suggestions, resigns command-input first responder, and moves focus target to `Edit`
   - Windows arrow key handling is attached in `MainPage.xaml.cs` (`MainCommandEntry_HandlerChanged` / native `KeyDown`)
   - macOS arrow key handling is attached in `Controls/CommandEntry` + `Platforms/MacCatalyst/Handlers/CommandEntryHandler.cs` (`PressesBegan`)
-  - macOS `Tab`/`Shift+Tab`/`Escape`/`Enter` keyboard shortcuts for context menu and editor modal are also dispatched from `CommandEntryHandler` via `App.RaiseEditorShortcut(...)`
+  - macOS `Tab`/`Shift+Tab`/`Escape`/`Enter` keyboard shortcuts for context menu, editor modal, and conflict dialog are dispatched from `CommandEntryHandler` via `App.RaiseEditorShortcut(...)`
   - macOS `Entry` visual/focus behavior is handled by `Platforms/MacCatalyst/Handlers/MacEntryHandler.cs`:
     - suppresses default blue focus ring
     - uses bottom-edge emphasis that respects corner radius
@@ -136,6 +136,9 @@ README is user-facing summary; this guide is the implementation-level source of 
 - Mac Catalyst AppDelegate selector safety:
   - Do not export UIKit standard action selectors (`save:`, `cancel:`, `dismiss:`, `cancelOperation:`) from `Platforms/MacCatalyst/AppDelegate.cs`.
   - Exporting these selectors can trigger launch-time `UINSApplicationDelegate` assertions and abort app startup (`SIGABRT`, `MSB3073` code 134 on `-t:Run`).
+- Mac Catalyst launch safety:
+  - In some environments, direct app-binary launch can fail initial scene creation with `Client is not a UIKit application`.
+  - `Platforms/MacCatalyst/Program.cs` detects direct launch and relays to LaunchServices (`open`) to stabilize startup.
 - Placement-area rendering/performance:
   - `MainPage.xaml.cs` forwards viewport scroll/size to `MainViewModel.UpdateViewport(...)`
   - `MainViewModel` keeps filtered list and updates `VisibleButtons` via diff (insert/move/remove), not full clear+rebind
@@ -151,6 +154,11 @@ README is user-facing summary; this guide is the implementation-level source of 
 - Conflict resolution dialog:
   - Replaces native action sheet with in-app overlay dialog (`ConflictOverlay`) for visual consistency.
   - Supports both Light and Dark themes.
+  - On open, initial focus target is `Cancel`.
+  - `Cancel` focus uses a single custom focus border (no Windows double focus ring).
+  - `Tab` / `Shift+Tab` traverses conflict actions left-to-right with wrap (`Reload latest` / `Overwrite mine` / `Cancel`).
+  - `Enter` executes the currently focused conflict action.
+  - While conflict dialog is open, focus is constrained to the conflict dialog and does not move to the underlying editor modal.
 
 ## Test Coverage Notes
 - `Praxis.Tests/UnitTest1.cs` (`CoreLogicTests` class) covers baseline behavior.
@@ -306,7 +314,7 @@ README はユーザー向け要約、このガイドは実装仕様の正本で�
   - Windows の方向キー上下は `MainPage.xaml.cs` の `MainCommandEntry_HandlerChanged` / ネイティブ `KeyDown` で処理
   - Windows の `Tab`/`Shift+Tab` 遷移時は、遷移先 `TextBox` で `SelectAll()` を適用（ポインターフォーカス時は適用しない）
   - macOS の方向キー上下は `Controls/CommandEntry` + `Platforms/MacCatalyst/Handlers/CommandEntryHandler.cs` の `PressesBegan` で処理
-  - macOS の `Tab`/`Shift+Tab`/`Escape`/`Enter` は、`CommandEntryHandler` から `App.RaiseEditorShortcut(...)` でコンテキストメニュー/編集モーダルに中継する
+  - macOS の `Tab`/`Shift+Tab`/`Escape`/`Enter` は、`CommandEntryHandler` から `App.RaiseEditorShortcut(...)` でコンテキストメニュー/編集モーダル/競合ダイアログに中継する
   - macOS の `Entry` 見た目/フォーカス挙動は `Platforms/MacCatalyst/Handlers/MacEntryHandler.cs` で制御する。
     - 標準の青いフォーカスリングを抑制
     - 角丸に沿った下辺強調を適用
@@ -321,6 +329,9 @@ README はユーザー向け要約、このガイドは実装仕様の正本で�
 - Mac Catalyst の AppDelegate セレクタ安全性:
   - `Platforms/MacCatalyst/AppDelegate.cs` で UIKit 標準アクションセレクタ（`save:`, `cancel:`, `dismiss:`, `cancelOperation:`）を `Export` しないこと。
   - これらを `Export` すると、起動時に `UINSApplicationDelegate` のアサートが発生し、アプリ起動が `SIGABRT`（`-t:Run` では `MSB3073` code 134）で中断する場合がある。
+- Mac Catalyst の起動安定化:
+  - 環境によってはアプリ本体の直実行で `Client is not a UIKit application` として初期シーン生成が失敗する場合がある。
+  - `Platforms/MacCatalyst/Program.cs` で直実行を検出したら LaunchServices（`open`）経由にリレーして起動を安定化する。
 - 配置領域の描画/性能最適化:
   - `MainPage.xaml.cs` からスクロール位置と表示サイズを `MainViewModel.UpdateViewport(...)` に連携
   - `MainViewModel` はフィルタ済み一覧を保持し、`VisibleButtons` を差分更新（insert/move/remove）する
@@ -336,6 +347,11 @@ README はユーザー向け要約、このガイドは実装仕様の正本で�
 - 競合解決ダイアログ:
   - OS 既定のアクションシートではなく、アプリ内オーバーレイ（`ConflictOverlay`）で表示してデザインを統一。
   - ライト/ダーク両テーマに対応。
+  - 表示時の初期フォーカスは `Cancel` とする。
+  - `Cancel` は単一のカスタム枠線でフォーカス強調表示する（Windows の二重フォーカス線は出さない）。
+  - `Tab` / `Shift+Tab` で競合アクション（`Reload latest` / `Overwrite mine` / `Cancel`）を左から右へ循環（端でラップ）する。
+  - `Enter` で現在フォーカス中の競合アクションを実行する。
+  - 競合ダイアログ表示中は、フォーカスを競合ダイアログ内に閉じ、背面の編集モーダルには移動させない。
 
 ## テストカバレッジメモ
 - `Praxis.Tests/UnitTest1.cs`（`CoreLogicTests` クラス）は基本動作を検証する。

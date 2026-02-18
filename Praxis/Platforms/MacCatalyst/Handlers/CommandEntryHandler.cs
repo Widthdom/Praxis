@@ -60,26 +60,26 @@ public class CommandEntryHandler : MacEntryHandler
                 var shiftDown = (modifiers & UIKeyModifierFlags.Shift) != 0;
                 var commandDown = (modifiers & UIKeyModifierFlags.Command) != 0;
 
-                if (IsKeyInput(key, TabKeyInput) && (App.IsContextMenuOpen || App.IsEditorOpen))
+                if (IsKeyInput(key, TabKeyInput) && (App.IsConflictDialogOpen || App.IsContextMenuOpen || App.IsEditorOpen))
                 {
                     var action = shiftDown ? "TabPrevious" : "TabNext";
                     MainThread.BeginInvokeOnMainThread(() => App.RaiseEditorShortcut(action));
                     return true;
                 }
 
-                if (IsKeyInput(key, EscapeKeyInput) && (App.IsContextMenuOpen || App.IsEditorOpen))
+                if (IsKeyInput(key, EscapeKeyInput) && (App.IsConflictDialogOpen || App.IsContextMenuOpen || App.IsEditorOpen))
                 {
                     MainThread.BeginInvokeOnMainThread(() => App.RaiseEditorShortcut("Cancel"));
                     return true;
                 }
 
-                if (App.IsEditorOpen && commandDown && IsKeyInput(key, "s"))
+                if (App.IsEditorOpen && !App.IsConflictDialogOpen && commandDown && IsKeyInput(key, "s"))
                 {
                     MainThread.BeginInvokeOnMainThread(() => App.RaiseEditorShortcut("Save"));
                     return true;
                 }
 
-                if ((App.IsEditorOpen || App.IsContextMenuOpen) &&
+                if ((App.IsConflictDialogOpen || App.IsEditorOpen || App.IsContextMenuOpen) &&
                     (IsKeyInput(key, ReturnKeyInput) ||
                      (!string.IsNullOrEmpty(EnterKeyInput) && IsKeyInput(key, EnterKeyInput!))))
                 {

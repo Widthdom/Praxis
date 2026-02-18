@@ -56,6 +56,14 @@ public partial class MainPage : ContentPage
     private Microsoft.UI.Xaml.UIElement? pageNativeElement;
     private Microsoft.UI.Xaml.Input.KeyEventHandler? pageKeyDownHandler;
 #endif
+    private enum ConflictDialogFocusTarget
+    {
+        Reload,
+        Overwrite,
+        Cancel,
+    }
+
+    private ConflictDialogFocusTarget? conflictDialogPseudoFocusedTarget;
 #if MACCATALYST
     private enum ModalFocusTarget
     {
@@ -248,6 +256,8 @@ public partial class MainPage : ContentPage
         base.OnDisappearing();
         App.SetEditorOpenState(false);
         App.SetContextMenuOpenState(false);
+        App.SetConflictDialogOpenState(false);
+        UpdateConflictDialogModalState(isOpen: false);
 #if MACCATALYST
         DetachMacGuidEntryReadOnlyBehavior();
         macGuidLockedText = string.Empty;
@@ -1949,6 +1959,109 @@ public partial class MainPage : ContentPage
 #endif
     }
 
+    private void ConflictActionButton_Focused(object? sender, FocusEventArgs e)
+    {
+        if (sender is Button focusedButton)
+        {
+            SyncConflictDialogPseudoFocusFromButton(focusedButton);
+        }
+
+        ApplyConflictActionButtonFocusVisuals();
+    }
+
+    private void ConflictActionButton_HandlerChanged(object? sender, EventArgs e)
+    {
+        ApplyConflictActionButtonPlatformFocusSettings();
+        ApplyConflictActionButtonFocusVisuals();
+    }
+
+    private void ConflictActionButton_Unfocused(object? sender, FocusEventArgs e)
+    {
+        if (sender is Button unfocusedButton)
+        {
+            var target = GetConflictDialogTarget(unfocusedButton);
+            if (target is not null && conflictDialogPseudoFocusedTarget == target)
+            {
+                ClearConflictDialogPseudoFocus();
+            }
+        }
+
+        ApplyConflictActionButtonFocusVisuals();
+    }
+
+    private void ApplyConflictActionButtonPlatformFocusSettings()
+    {
+#if WINDOWS
+        DisableWindowsSystemFocusVisual(ConflictReloadButton);
+        DisableWindowsSystemFocusVisual(ConflictOverwriteButton);
+        DisableWindowsSystemFocusVisual(ConflictCancelButton);
+#endif
+    }
+
+    private void ApplyConflictActionButtonFocusVisuals()
+    {
+        if (!IsConflictDialogOpen())
+        {
+            ApplyButtonFocusVisual(ConflictReloadButton, false);
+            ApplyButtonFocusVisual(ConflictOverwriteButton, false);
+            ApplyButtonFocusVisual(ConflictCancelButton, false);
+            return;
+        }
+
+        if (conflictDialogPseudoFocusedTarget is ConflictDialogFocusTarget pseudoTarget)
+        {
+            ApplyButtonFocusVisual(ConflictReloadButton, pseudoTarget == ConflictDialogFocusTarget.Reload);
+            ApplyButtonFocusVisual(ConflictOverwriteButton, pseudoTarget == ConflictDialogFocusTarget.Overwrite);
+            ApplyButtonFocusVisual(ConflictCancelButton, pseudoTarget == ConflictDialogFocusTarget.Cancel);
+            return;
+        }
+
+        ApplyButtonFocusVisual(ConflictReloadButton, IsButtonFocused(ConflictReloadButton));
+        ApplyButtonFocusVisual(ConflictOverwriteButton, IsButtonFocused(ConflictOverwriteButton));
+        ApplyButtonFocusVisual(ConflictCancelButton, IsButtonFocused(ConflictCancelButton));
+    }
+
+    private void SyncConflictDialogPseudoFocusFromButton(Button button)
+    {
+        var target = GetConflictDialogTarget(button);
+        if (target is null)
+        {
+            return;
+        }
+
+        SetConflictDialogPseudoFocus(target.Value);
+    }
+
+    private ConflictDialogFocusTarget? GetConflictDialogTarget(Button button)
+    {
+        if (ReferenceEquals(button, ConflictReloadButton))
+        {
+            return ConflictDialogFocusTarget.Reload;
+        }
+
+        if (ReferenceEquals(button, ConflictOverwriteButton))
+        {
+            return ConflictDialogFocusTarget.Overwrite;
+        }
+
+        if (ReferenceEquals(button, ConflictCancelButton))
+        {
+            return ConflictDialogFocusTarget.Cancel;
+        }
+
+        return null;
+    }
+
+    private void SetConflictDialogPseudoFocus(ConflictDialogFocusTarget target)
+    {
+        conflictDialogPseudoFocusedTarget = target;
+    }
+
+    private void ClearConflictDialogPseudoFocus()
+    {
+        conflictDialogPseudoFocusedTarget = null;
+    }
+
 #if WINDOWS
     private static void DisableWindowsSystemFocusVisual(Button button)
     {
@@ -2009,7 +2122,10 @@ public partial class MainPage : ContentPage
 #if WINDOWS
         var editorOpen = viewModel.IsEditorOpen;
         var contextOpen = viewModel.IsContextMenuOpen;
-        var mainEnabled = !editorOpen && !contextOpen;
+        var conflictOpen = IsConflictDialogOpen();
+        var mainEnabled = !editorOpen && !contextOpen && !conflictOpen;
+        var contextEnabled = contextOpen && !conflictOpen;
+        var editorEnabled = editorOpen && !conflictOpen;
 
         // Main area: only Command and Search are tabbable when modal is closed.
         SetTabStop(MainCommandEntry, mainEnabled);
@@ -2017,19 +2133,24 @@ public partial class MainPage : ContentPage
         SetTabStop(CreateButton, false);
 
         // Context menu area: loop only Edit/Delete.
-        SetTabStop(ContextEditButton, contextOpen);
-        SetTabStop(ContextDeleteButton, contextOpen);
+        SetTabStop(ContextEditButton, contextEnabled);
+        SetTabStop(ContextDeleteButton, contextEnabled);
 
         // Modal editor area: keep tab navigation inside modal when open.
-        SetTabStop(ModalGuidEntry, editorOpen);
-        SetTabStop(ModalCommandEntry, editorOpen);
-        SetTabStop(ModalButtonTextEntry, editorOpen);
-        SetTabStop(ModalToolEntry, editorOpen);
-        SetTabStop(ModalArgumentsEntry, editorOpen);
-        SetTabStop(ModalClipWordEditor, editorOpen);
-        SetTabStop(ModalNoteEditor, editorOpen);
-        SetTabStop(ModalCancelButton, editorOpen);
-        SetTabStop(ModalSaveButton, editorOpen);
+        SetTabStop(ModalGuidEntry, editorEnabled);
+        SetTabStop(ModalCommandEntry, editorEnabled);
+        SetTabStop(ModalButtonTextEntry, editorEnabled);
+        SetTabStop(ModalToolEntry, editorEnabled);
+        SetTabStop(ModalArgumentsEntry, editorEnabled);
+        SetTabStop(ModalClipWordEditor, editorEnabled);
+        SetTabStop(ModalNoteEditor, editorEnabled);
+        SetTabStop(ModalCancelButton, editorEnabled);
+        SetTabStop(ModalSaveButton, editorEnabled);
+
+        // Conflict dialog area: keep tab focus only within conflict action buttons.
+        SetTabStop(ConflictReloadButton, conflictOpen);
+        SetTabStop(ConflictOverwriteButton, conflictOpen);
+        SetTabStop(ConflictCancelButton, conflictOpen);
 
         // Copy buttons are clickable, but excluded from tab traversal.
         SetTabStop(CopyGuidButton, false);
@@ -2039,6 +2160,9 @@ public partial class MainPage : ContentPage
         SetTabStop(CopyArgumentsButton, false);
         SetTabStop(CopyClipWordButton, false);
         SetTabStop(CopyNoteButton, false);
+
+        ApplyContextActionButtonFocusVisuals();
+        ApplyConflictActionButtonFocusVisuals();
 #endif
     }
 
@@ -2178,6 +2302,30 @@ public partial class MainPage : ContentPage
             .HasFlag(Windows.UI.Core.CoreVirtualKeyStates.Down);
         var shiftDown = Microsoft.UI.Input.InputKeyboardSource.GetKeyStateForCurrentThread(Windows.System.VirtualKey.Shift)
             .HasFlag(Windows.UI.Core.CoreVirtualKeyStates.Down);
+
+        if (IsConflictDialogOpen())
+        {
+            if (e.Key == Windows.System.VirtualKey.Tab)
+            {
+                MoveConflictDialogFocus(forward: !shiftDown);
+                e.Handled = true;
+                return;
+            }
+
+            if (e.Key == Windows.System.VirtualKey.Enter)
+            {
+                TryInvokeConflictDialogPrimaryAction();
+                e.Handled = true;
+                return;
+            }
+
+            if (e.Key == Windows.System.VirtualKey.Escape)
+            {
+                TryInvokeConflictDialogCancelAction();
+                e.Handled = true;
+                return;
+            }
+        }
 
         if (viewModel.IsContextMenuOpen)
         {
@@ -2400,6 +2548,33 @@ public partial class MainPage : ContentPage
     {
         Dispatcher.Dispatch(() =>
         {
+            if (IsConflictDialogOpen())
+            {
+                if (string.Equals(action, "TabNext", StringComparison.OrdinalIgnoreCase))
+                {
+                    MoveConflictDialogFocus(forward: true);
+                    return;
+                }
+
+                if (string.Equals(action, "TabPrevious", StringComparison.OrdinalIgnoreCase))
+                {
+                    MoveConflictDialogFocus(forward: false);
+                    return;
+                }
+
+                if (string.Equals(action, "Cancel", StringComparison.OrdinalIgnoreCase))
+                {
+                    TryInvokeConflictDialogCancelAction();
+                    return;
+                }
+
+                if (string.Equals(action, "PrimaryAction", StringComparison.OrdinalIgnoreCase))
+                {
+                    TryInvokeConflictDialogPrimaryAction();
+                    return;
+                }
+            }
+
             if (viewModel.IsContextMenuOpen)
             {
                 if (string.Equals(action, "TabNext", StringComparison.OrdinalIgnoreCase))
@@ -2617,8 +2792,23 @@ public partial class MainPage : ContentPage
         {
             ConflictTitleLabel.Text = title;
             ConflictMessageLabel.Text = message;
+            SetConflictDialogPseudoFocus(ConflictDialogFocusTarget.Cancel);
             ConflictOverlay.IsVisible = true;
-            ConflictReloadButton.Focus();
+            App.SetConflictDialogOpenState(true);
+            UpdateConflictDialogModalState(isOpen: true);
+            CloseCommandSuggestionPopup();
+            ApplyTabPolicy();
+            ApplyConflictActionButtonFocusVisuals();
+            FocusConflictDialogActionButton(ConflictCancelButton, ConflictDialogFocusTarget.Cancel);
+            Dispatcher.DispatchDelayed(TimeSpan.FromMilliseconds(120), () =>
+            {
+                if (!IsConflictDialogOpen() || IsButtonFocused(ConflictCancelButton))
+                {
+                    return;
+                }
+
+                FocusConflictDialogActionButton(ConflictCancelButton, ConflictDialogFocusTarget.Cancel);
+            });
         });
 
         return tcs.Task;
@@ -2634,6 +2824,11 @@ public partial class MainPage : ContentPage
         var tcs = editorConflictTcs;
         editorConflictTcs = null;
         ConflictOverlay.IsVisible = false;
+        ClearConflictDialogPseudoFocus();
+        App.SetConflictDialogOpenState(false);
+        UpdateConflictDialogModalState(isOpen: false);
+        ApplyTabPolicy();
+        ApplyConflictActionButtonFocusVisuals();
         tcs.TrySetResult(resolution);
     }
 
@@ -2649,6 +2844,140 @@ public partial class MainPage : ContentPage
 
     private void ConflictCancelButton_Clicked(object? sender, EventArgs e)
     {
+        CloseEditorConflictDialog(EditorConflictResolution.Cancel);
+    }
+
+    private bool IsConflictDialogOpen()
+    {
+        if (!xamlLoaded)
+        {
+            return false;
+        }
+
+        return editorConflictTcs is not null && ConflictOverlay.IsVisible;
+    }
+
+    private void UpdateConflictDialogModalState(bool isOpen)
+    {
+        if (!xamlLoaded)
+        {
+            return;
+        }
+
+        EditorOverlay.InputTransparent = isOpen;
+        EditorOverlay.IsEnabled = !isOpen;
+#if MACCATALYST
+        if (isOpen)
+        {
+            ResignModalInputFirstResponder();
+            ResignMainInputFirstResponder();
+        }
+#endif
+    }
+
+    private void FocusConflictDialogActionButton(Button button, ConflictDialogFocusTarget target)
+    {
+        SetConflictDialogPseudoFocus(target);
+#if MACCATALYST
+        ResignModalInputFirstResponder();
+        ResignMainInputFirstResponder();
+#endif
+        ApplyConflictActionButtonFocusVisuals();
+        button.Focus();
+#if MACCATALYST
+        if (button.Handler?.PlatformView is UIResponder responder &&
+            responder.CanBecomeFirstResponder &&
+            !responder.IsFirstResponder)
+        {
+            responder.BecomeFirstResponder();
+        }
+#endif
+        ApplyConflictActionButtonFocusVisuals();
+    }
+
+    private int GetCurrentConflictDialogFocusIndex(Button[] buttons)
+    {
+        for (var i = 0; i < buttons.Length; i++)
+        {
+            if (IsButtonFocused(buttons[i]))
+            {
+                return i;
+            }
+        }
+
+        return conflictDialogPseudoFocusedTarget switch
+        {
+            ConflictDialogFocusTarget.Reload => 0,
+            ConflictDialogFocusTarget.Overwrite => 1,
+            ConflictDialogFocusTarget.Cancel => 2,
+            _ => -1,
+        };
+    }
+
+    private void MoveConflictDialogFocus(bool forward)
+    {
+        if (!IsConflictDialogOpen())
+        {
+            return;
+        }
+
+        var order = new[]
+        {
+            (Button: ConflictReloadButton, Target: ConflictDialogFocusTarget.Reload),
+            (Button: ConflictOverwriteButton, Target: ConflictDialogFocusTarget.Overwrite),
+            (Button: ConflictCancelButton, Target: ConflictDialogFocusTarget.Cancel),
+        };
+
+        var buttons = new[] { ConflictReloadButton, ConflictOverwriteButton, ConflictCancelButton };
+        var currentIndex = GetCurrentConflictDialogFocusIndex(buttons);
+        if (currentIndex < 0)
+        {
+            FocusConflictDialogActionButton(ConflictCancelButton, ConflictDialogFocusTarget.Cancel);
+            return;
+        }
+
+        var nextIndex = FocusRingNavigator.GetNextIndex(currentIndex, order.Length, forward);
+        if (nextIndex < 0)
+        {
+            return;
+        }
+
+        FocusConflictDialogActionButton(order[nextIndex].Button, order[nextIndex].Target);
+    }
+
+    private void TryInvokeConflictDialogPrimaryAction()
+    {
+        if (!IsConflictDialogOpen())
+        {
+            return;
+        }
+
+        var order = new[] { ConflictReloadButton, ConflictOverwriteButton, ConflictCancelButton };
+        var currentIndex = GetCurrentConflictDialogFocusIndex(order);
+        switch (currentIndex)
+        {
+            case 0:
+                CloseEditorConflictDialog(EditorConflictResolution.Reload);
+                return;
+            case 1:
+                CloseEditorConflictDialog(EditorConflictResolution.Overwrite);
+                return;
+            case 2:
+                CloseEditorConflictDialog(EditorConflictResolution.Cancel);
+                return;
+            default:
+                CloseEditorConflictDialog(EditorConflictResolution.Cancel);
+                return;
+        }
+    }
+
+    private void TryInvokeConflictDialogCancelAction()
+    {
+        if (!IsConflictDialogOpen())
+        {
+            return;
+        }
+
         CloseEditorConflictDialog(EditorConflictResolution.Cancel);
     }
 
@@ -3232,7 +3561,7 @@ public partial class MainPage : ContentPage
 
     private bool IsMainCommandEntryReadyForSuggestionNavigation()
     {
-        if (!xamlLoaded || viewModel.IsEditorOpen || viewModel.IsContextMenuOpen)
+        if (!xamlLoaded || viewModel.IsEditorOpen || viewModel.IsContextMenuOpen || IsConflictDialogOpen())
         {
             return false;
         }

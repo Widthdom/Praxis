@@ -264,7 +264,8 @@
             </Border>
         </Grid>
 
-        <Grid Grid.RowSpan="4"
+        <Grid x:Name="EditorOverlay"
+              Grid.RowSpan="4"
               IsVisible="{Binding IsEditorOpen}"
               BackgroundColor="Transparent">
             <Border HorizontalOptions="Center"
@@ -432,14 +433,23 @@
                         <Button x:Name="ConflictReloadButton"
                                 Text="Reload latest"
                                 WidthRequest="132"
+                                HandlerChanged="ConflictActionButton_HandlerChanged"
+                                Focused="ConflictActionButton_Focused"
+                                Unfocused="ConflictActionButton_Unfocused"
                                 Clicked="ConflictReloadButton_Clicked" />
                         <Button x:Name="ConflictOverwriteButton"
                                 Text="Overwrite mine"
                                 WidthRequest="132"
+                                HandlerChanged="ConflictActionButton_HandlerChanged"
+                                Focused="ConflictActionButton_Focused"
+                                Unfocused="ConflictActionButton_Unfocused"
                                 Clicked="ConflictOverwriteButton_Clicked" />
                         <Button x:Name="ConflictCancelButton"
                                 Text="Cancel"
                                 WidthRequest="132"
+                                HandlerChanged="ConflictActionButton_HandlerChanged"
+                                Focused="ConflictActionButton_Focused"
+                                Unfocused="ConflictActionButton_Unfocused"
                                 Clicked="ConflictCancelButton_Clicked" />
                     </HorizontalStackLayout>
                 </VerticalStackLayout>

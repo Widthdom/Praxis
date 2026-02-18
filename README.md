@@ -34,6 +34,12 @@ It stores launcher buttons in SQLite and can execute tools with arguments.
   - `Tab`/`Shift+Tab` moves focus between `Edit` and `Delete` and wraps.
   - `Enter` executes the currently focused action (`Edit` or `Delete`).
   - Focus visual is rendered as a single custom border (no double focus ring on Windows).
+- Conflict dialog keyboard behavior (`Reload latest` / `Overwrite mine` / `Cancel`):
+  - On open, initial focus is moved to `Cancel`.
+  - `Cancel` focus is visually emphasized with a single custom border (no double focus ring on Windows).
+  - `Tab`/`Shift+Tab` cycles dialog actions left-to-right (with wrap) and keeps focus inside the dialog.
+  - `Enter` executes the currently focused dialog action.
+  - While conflict dialog is open, focus does not move to the underlying button-editor modal.
 - In editor modal, `Clip Word` is multiline like `Note`.
 - Empty-space right-click on the placement area opens create modal at cursor position.
 - Starting a new button (top create button or empty-area right-click) clears search box.
@@ -95,6 +101,7 @@ If `-t:Run` fails at launch on macOS, use this fallback:
 dotnet build Praxis/Praxis.csproj -f net10.0-maccatalyst -r maccatalyst-arm64
 open Praxis/bin/Debug/net10.0-maccatalyst/maccatalyst-arm64/Praxis.app
 ```
+In some environments, direct app-binary launch can fail initial scene creation; the app relays direct launch to `open` internally.
 
 ## Notes
 Current app targets in this workspace:
@@ -141,6 +148,12 @@ SQLite にボタン情報を保存し、ツールと引数を実行できます�
   - `Tab` / `Shift+Tab` で `Edit` と `Delete` 間を循環します。
   - `Enter` で現在フォーカス中のアクション（`Edit` または `Delete`）を実行します。
   - フォーカス表示は単一のカスタム枠線で表示し、Windows の二重フォーカス線は出しません。
+- 競合ダイアログ（`Reload latest` / `Overwrite mine` / `Cancel`）のキーボード操作:
+  - ダイアログ表示時は初期フォーカスを `Cancel` に移します。
+  - `Cancel` のフォーカスは単一のカスタム枠線で強調表示します（Windows の二重フォーカス線は出しません）。
+  - `Tab` / `Shift+Tab` でアクションを左から右に循環（端でラップ）し、フォーカスはダイアログ内に留まります。
+  - `Enter` で現在フォーカス中のダイアログアクションを実行します。
+  - 競合ダイアログ表示中は、背面のボタン編集モーダルへフォーカスが移りません。
 - 編集モーダルの `Clip Word` は `Note` と同様に複数行入力に対応しています。
 - 配置領域の空白右クリックで、その座標に新規作成モーダルを開きます。
 - 新規作成開始時（上部 Create ボタン / 配置領域の空白右クリック）に検索欄はクリアされます。
@@ -202,6 +215,7 @@ dotnet build Praxis/Praxis.csproj -t:Run -f net10.0-maccatalyst -r maccatalyst-a
 dotnet build Praxis/Praxis.csproj -f net10.0-maccatalyst -r maccatalyst-arm64
 open Praxis/bin/Debug/net10.0-maccatalyst/maccatalyst-arm64/Praxis.app
 ```
+環境によってはアプリ本体の直実行で初期シーン生成に失敗するため、アプリ側で直実行を検出した場合は内部的に `open` 経由へリレーします。
 
 ## 補足
 このワークスペースでは現在、以下のターゲットで構成しています。
