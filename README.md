@@ -122,6 +122,11 @@ Current app targets in this workspace:
 - Windows (`net10.0-windows10.0.19041.0`)
 - macOS via Mac Catalyst (`net10.0-maccatalyst`)
 
+Storage paths:
+- Windows DB: `%USERPROFILE%/AppData/Local/praxis.db3`
+- macOS (Mac Catalyst) DB: `~/Library/Application Support/Praxis/praxis.db3`
+- Sync signal: `~/Library/Application Support/Praxis/buttons.sync` (Windows: `%USERPROFILE%/AppData/Local/Praxis/buttons.sync`)
+
 ---
 
 # Praxis（日本語）
@@ -249,3 +254,8 @@ open Praxis/bin/Debug/net10.0-maccatalyst/maccatalyst-arm64/Praxis.app
 このワークスペースでは現在、以下のターゲットで構成しています。
 - Windows（`net10.0-windows10.0.19041.0`）
 - macOS（Mac Catalyst: `net10.0-maccatalyst`）
+
+ストレージパス:
+- Windows の DB: `%USERPROFILE%/AppData/Local/praxis.db3`
+- macOS（Mac Catalyst）の DB: `~/Library/Application Support/Praxis/praxis.db3`
+- 同期シグナル: `~/Library/Application Support/Praxis/buttons.sync`（Windows: `%USERPROFILE%/AppData/Local/Praxis/buttons.sync`）

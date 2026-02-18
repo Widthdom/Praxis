@@ -50,6 +50,13 @@ README is user-facing summary; this guide is the implementation-level source of 
   - Payload includes instance id and timestamp; self-origin events are ignored
 - `Services/AppStoragePaths.cs`
   - Centralizes shared local-storage constants/paths (DB, sync signal)
+  - DB path policy:
+    - Windows: `%USERPROFILE%/AppData/Local/praxis.db3`
+    - macOS (Mac Catalyst): `~/Library/Application Support/Praxis/praxis.db3`
+  - Sync signal path policy:
+    - Windows: `%USERPROFILE%/AppData/Local/Praxis/buttons.sync`
+    - macOS (Mac Catalyst): `~/Library/Application Support/Praxis/buttons.sync`
+  - On startup, prepares target directories and migrates DB only from safe legacy locations (skips `Documents` paths on macOS to avoid permission prompts)
 - `Controls/CommandEntry.cs` / `Platforms/MacCatalyst/Handlers/CommandEntryHandler.cs`
   - macOS command input uses a dedicated control/handler so `Up/Down` suggestion navigation is handled reliably at native `UITextField` level
 - `Praxis.Core/Logic/*.cs`
@@ -186,6 +193,10 @@ README is user-facing summary; this guide is the implementation-level source of 
   - trim/case-insensitive match behavior
   - blank/no-match handling
 - `Praxis.Tests/CommandSuggestionVisibilityPolicyTests.cs` covers suggestion close-policy decisions when context menu opens.
+- `Praxis.Tests/AppStoragePathLayoutResolverTests.cs` covers platform-specific storage layout rules:
+  - Windows DB path (`%USERPROFILE%/AppData/Local/praxis.db3`)
+  - Mac Catalyst DB path (`.../Application Support/Praxis/praxis.db3`)
+  - sync-signal path layout for Windows/macOS
 - `Praxis.Tests/CoreLogicEdgeCaseTests.cs` covers edge cases for:
   - command-line normalization
   - grid snapping/clamping boundaries
@@ -296,6 +307,13 @@ README はユーザー向け要約、このガイドは実装仕様の正本で�
   - ペイロードのインスタンスID/時刻で自己通知を除外
 - `Services/AppStoragePaths.cs`
   - ローカル保存先の共通定数/パス（DB、同期シグナル）を集約
+  - DB パス方針:
+    - Windows: `%USERPROFILE%/AppData/Local/praxis.db3`
+    - macOS（Mac Catalyst）: `~/Library/Application Support/Praxis/praxis.db3`
+  - 同期シグナルのパス方針:
+    - Windows: `%USERPROFILE%/AppData/Local/Praxis/buttons.sync`
+    - macOS（Mac Catalyst）: `~/Library/Application Support/Praxis/buttons.sync`
+  - 起動時に保存先ディレクトリを準備し、安全な旧パスのみ DB 移行を試行する（macOS の `Documents` は権限ダイアログ回避のため移行元探索から除外）
 - `Controls/CommandEntry.cs` / `Platforms/MacCatalyst/Handlers/CommandEntryHandler.cs`
   - macOS の command 入力は専用コントロール/ハンドラを使い、候補 `↑/↓` をネイティブ `UITextField` レベルで安定処理する
 - `Praxis.Core/Logic/*.cs`
@@ -434,6 +452,10 @@ README はユーザー向け要約、このガイドは実装仕様の正本で�
   - 前後空白除去 / 大文字小文字非依存の一致挙動
   - 空入力 / 非一致時の扱い
 - `Praxis.Tests/CommandSuggestionVisibilityPolicyTests.cs` は、コンテキストメニュー表示時に候補一覧を閉じる判定ポリシーを検証する。
+- `Praxis.Tests/AppStoragePathLayoutResolverTests.cs` は、プラットフォーム別ストレージ配置ルールを検証する。
+  - Windows DB パス（`%USERPROFILE%/AppData/Local/praxis.db3`）
+  - Mac Catalyst DB パス（`.../Application Support/Praxis/praxis.db3`）
+  - Windows/macOS の同期シグナル配置
 - `Praxis.Tests/CoreLogicEdgeCaseTests.cs` は次の境界系を検証する。
   - コマンドライン文字列正規化
   - グリッドスナップ / 領域クランプ境界

@@ -12,11 +12,17 @@ Authoritative implementation points:
 ## Database File Location
 - Logical path source: `Praxis/Services/AppStoragePaths.cs`
 - Current file name: `praxis.db3`
+- Current resolved locations:
+  - Windows: `%USERPROFILE%/AppData/Local/praxis.db3`
+  - macOS (Mac Catalyst): `~/Library/Application Support/Praxis/praxis.db3`
 
 Notes:
 - `SqliteAppRepository.InitializeAsync` creates tables with `CreateTableAsync<T>()` if missing.
 - There is no explicit schema migration framework yet.
 - `DateTime` columns are mapped by `sqlite-net-pcl` with provider default settings used by `SQLiteAsyncConnection(dbPath)`.
+- `buttons.sync` is stored separately for multi-window signaling:
+  - Windows: `%USERPROFILE%/AppData/Local/Praxis/buttons.sync`
+  - macOS (Mac Catalyst): `~/Library/Application Support/Praxis/buttons.sync`
 
 ## Table List
 - `LauncherButtonEntity`
@@ -141,11 +147,17 @@ Praxis が使う SQLite テーブル設計を明文化します。
 ## DB ファイル
 - パス定義: `Praxis/Services/AppStoragePaths.cs`
 - ファイル名: `praxis.db3`
+- 現在の実解決先:
+  - Windows: `%USERPROFILE%/AppData/Local/praxis.db3`
+  - macOS（Mac Catalyst）: `~/Library/Application Support/Praxis/praxis.db3`
 
 補足:
 - `InitializeAsync` で `CreateTableAsync<T>()` を実行し、未作成テーブルを作成します。
 - 現在は専用マイグレーション機構を持っていません。
 - `DateTime` 列は `SQLiteAsyncConnection(dbPath)` の既定設定に従って `sqlite-net-pcl` 側でマップされます。
+- `buttons.sync` は複数ウィンドウ通知用の別ファイルとして保存します。
+  - Windows: `%USERPROFILE%/AppData/Local/Praxis/buttons.sync`
+  - macOS（Mac Catalyst）: `~/Library/Application Support/Praxis/buttons.sync`
 
 ## テーブル一覧
 - `LauncherButtonEntity`: ボタン定義のマスタ

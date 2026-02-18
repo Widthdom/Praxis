@@ -17,6 +17,7 @@ public sealed class SqliteAppRepository : IAppRepository
 
     public SqliteAppRepository()
     {
+        AppStoragePaths.PrepareStorage();
         dbPath = AppStoragePaths.DatabasePath;
     }
 
@@ -292,5 +293,4 @@ public sealed class SqliteAppRepository : IAppRepository
         }
     }
 }
-
 
