@@ -97,7 +97,7 @@ Purpose: execution history logs.
 |---|---|---|---|---|
 | `Id` | `varchar` | No | Yes | GUID string (`LaunchLogEntry.Id`) |
 | `ButtonId` | `varchar` | Yes | No | Related launcher button id (optional) |
-| `Source` | `varchar` | Yes | No | Trigger source (command/dock/etc.) |
+| `Source` | `varchar` | Yes | No | Trigger source (current implementation: `button` / `command`) |
 | `Tool` | `varchar` | Yes | No | Executed tool |
 | `Arguments` | `varchar` | Yes | No | Executed arguments |
 | `Succeeded` | `integer` | Yes | No | Success flag (bool mapped to integer) |
@@ -169,6 +169,7 @@ Praxis が使う SQLite テーブル設計を明文化します。
 
 ## 主要仕様
 - `LauncherButtonEntity.UpdatedAtUtc` は保存時に更新し、編集競合判定に使います。
+- `LaunchLogEntity.Source` の現行値は `button` / `command` です。
 - `LaunchLogEntity` は保持期間超過分を `TimestampUtc` 条件で一括削除します。
 - `AppSettingEntity` の既知キー:
   - `theme`（`Light` / `Dark` / `System`）

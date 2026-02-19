@@ -11,7 +11,7 @@ It stores launcher buttons in SQLite and can execute tools with arguments.
 - Search and filter launcher buttons quickly
 - Drag, multi-select, edit, and delete buttons in the placement area
 - Dock history for recently clicked buttons (restored on next launch)
-- Create new buttons from top-bar create icon or right-click in empty placement area
+- Create new buttons from top-bar create icon or right-click in an empty region of the button placement area
 - Keyboard-friendly operation (arrow/enter in suggestions, modal save/cancel shortcuts)
 - Theme switching shortcuts (Light / Dark / System) with persisted setting
 - Status bar feedback and modal copy notification
@@ -32,6 +32,7 @@ It stores launcher buttons in SQLite and can execute tools with arguments.
   - On macOS, pressing `Tab`/`Shift+Tab` in `Clip Word`/`Note` moves focus to next/previous control (no literal tab insertion).
   - On macOS, pressing `Esc` while focused in any modal field (including `Clip Word`/`Note`) closes the modal in a single press.
   - On macOS, modal editor key command registration is nullable-safe (`KeyCommands` override returns non-null).
+  - On Windows, `Tab`/`Shift+Tab` navigation into modal text inputs automatically selects all text (pointer-focus does not trigger this).
   - On macOS, `GUID` remains read-only/selectable (not editable).
   - On macOS, when the editor modal opens, `Command` keeps caret at the end (no select-all on open).
   - On macOS, when pseudo-focus is on `Cancel`/`Save`, `Enter` triggers that action.
@@ -41,13 +42,12 @@ It stores launcher buttons in SQLite and can execute tools with arguments.
   - `Up`/`Down` moves focus between `Edit` and `Delete` and wraps.
   - `Tab`/`Shift+Tab` moves focus between `Edit` and `Delete` and wraps.
   - `Enter` executes the currently focused action (`Edit` or `Delete`).
-  - Focus visual is rendered as a single custom border (no double focus ring on Windows).
+  - Focus visual is rendered as a single custom border.
 - Conflict dialog keyboard behavior (`Reload latest` / `Overwrite mine` / `Cancel`):
   - On open, initial focus is moved to `Cancel`.
-  - `Cancel` focus is visually emphasized with a single custom border (no double focus ring on Windows).
-  - On Windows, conflict-action buttons keep a constant border width (transparent when unfocused) to prevent text-position jitter while moving focus.
-  - `Left`/`Right` cycles dialog actions left-to-right (with wrap).
-  - `Tab`/`Shift+Tab` cycles dialog actions left-to-right (with wrap) and keeps focus inside the dialog.
+  - `Cancel` focus is visually emphasized with a single custom border.
+  - `Left` moves to the previous action and `Right` moves to the next action (with wrap).
+  - `Tab` moves actions left-to-right, `Shift+Tab` moves right-to-left (both with wrap), and focus stays inside the dialog.
   - `Enter` executes the currently focused dialog action.
   - On close (for example `Cancel` / `Reload latest`), focus returns to editor `Command` so `Esc` / `Ctrl+S` remain active on Windows.
   - While conflict dialog is open, focus does not move to the underlying button-editor modal.
@@ -55,8 +55,8 @@ It stores launcher buttons in SQLite and can execute tools with arguments.
 - In Windows, pressing `Enter` in `Clip Word` / `Note` expands each field height line-by-line (including `CRLF` line endings).
 - In Windows Dark theme, `Clip Word` / `Note` text color follows theme-aware modal text color (same readable contrast policy as other editor inputs).
 - On Windows, `Clip Word` / `Note` also enables vertical scrolling with `Auto` scrollbars at multiline overflow.
-- Empty-space right-click on the placement area opens create modal at cursor position.
-- Starting a new button (top create button or empty-area right-click) clears search box.
+- Right-clicking an empty region in the button placement area opens the create modal at cursor position.
+- Starting a new button (top create button or right-click in empty button placement area) clears search box.
 - Dragging uses 10px snap; multi-select is supported with rectangle and modifier click.
 - If `tool` is empty, `Arguments` falls back to URL/path launch behavior.
 - Theme shortcuts:
@@ -143,13 +143,13 @@ SQLite にボタン情報を保存し、ツールと引数を実行できます�
 - 検索でボタンを素早く絞り込み
 - ボタン配置領域でドラッグ・複数選択・編集・削除
 - クリック履歴を Dock に表示し、次回起動時に復元
-- 上部 Create アイコンと空白右クリックから新規ボタン作成
+- 上部 Create アイコンとボタン配置領域の空きスペース右クリックから新規ボタン作成
 - 候補一覧の上下キー選択やモーダル保存ショートカットなどのキーボード操作
 - テーマ切替（ライト / ダーク / システム）と起動時復元
 - ステータス表示とコピー通知
 - アイコン表示はプラットフォーム別フォールバック対応（Windows は Segoe MDL2、macOS は互換シンボル）
 - `tool` が空でも、`Arguments` が HTTP(S) URL ならブラウザ起動、ファイルパスなら既定関連付けアプリ（例: `.pdf`）、フォルダパスなら Finder/Explorer 起動
-- 複数ウィンドウ同期: ボタンの追加/削除/更新（座標変更を含む）と DOCK 並び変更が、開いている他ウィンドウにも反映される
+- 複数ウィンドウ同期: ボタンの追加/削除/更新（座標変更を含む）と Dock 並び変更が、開いている他ウィンドウにも反映される
 - 複数ウィンドウ同期で、テーマ変更（ライト / ダーク / システム）も他ウィンドウへ反映される
 
 ## 動作メモ
@@ -175,13 +175,12 @@ SQLite にボタン情報を保存し、ツールと引数を実行できます�
   - `↑` / `↓` で `Edit` と `Delete` 間を循環します。
   - `Tab` / `Shift+Tab` で `Edit` と `Delete` 間を循環します。
   - `Enter` で現在フォーカス中のアクション（`Edit` または `Delete`）を実行します。
-  - フォーカス表示は単一のカスタム枠線で表示し、Windows の二重フォーカス線は出しません。
+  - フォーカス表示は単一のカスタム枠線で表示します。
 - 競合ダイアログ（`Reload latest` / `Overwrite mine` / `Cancel`）のキーボード操作:
   - ダイアログ表示時は初期フォーカスを `Cancel` に移します。
-  - `Cancel` のフォーカスは単一のカスタム枠線で強調表示します（Windows の二重フォーカス線は出しません）。
-  - Windows では競合アクションボタンの枠幅を常に一定にし（非フォーカス時は透明）、フォーカス移動時の文言の位置ズレを防ぎます。
-  - `←` / `→` でアクションを左から右に循環（端でラップ）します。
-  - `Tab` / `Shift+Tab` でアクションを左から右に循環（端でラップ）し、フォーカスはダイアログ内に留まります。
+  - `Cancel` のフォーカスは単一のカスタム枠線で強調表示します。
+  - `←` は前のアクション、`→` は次のアクションへ移動（どちらも端でラップ）します。
+  - `Tab` は左から右、`Shift+Tab` は右から左に循環（どちらも端でラップ）し、フォーカスはダイアログ内に留まります。
   - `Enter` で現在フォーカス中のダイアログアクションを実行します。
   - `Cancel` / `Reload latest` などで閉じた直後は、編集モーダルの `Command` にフォーカスを戻し、Windows でも `Esc` / `Ctrl+S` を継続して有効にします。
   - 競合ダイアログ表示中は、背面のボタン編集モーダルへフォーカスが移りません。
@@ -189,8 +188,8 @@ SQLite にボタン情報を保存し、ツールと引数を実行できます�
 - Windows では `Clip Word` / `Note` で `Enter` 改行すると、行数に応じて入力欄高さが順次拡張されます（`CRLF` 改行を含む）。
 - Windows のダークテーマでは、`Clip Word` / `Note` の文字色も他の編集入力欄と同じ可読性ポリシーでテーマ連動します。
 - Windows では `Clip Word` / `Note` の複数行あふれ時に、縦スクロール（`Auto` スクロールバー）を有効化しています。
-- 配置領域の空白右クリックで、その座標に新規作成モーダルを開きます。
-- 新規作成開始時（上部 Create ボタン / 配置領域の空白右クリック）に検索欄はクリアされます。
+- ボタン配置領域の空きスペース右クリックで、その座標に新規作成モーダルを開きます。
+- 新規作成開始時（上部 Create ボタン / ボタン配置領域の空きスペース右クリック）に検索欄はクリアされます。
 - ドラッグは 10px スナップ、矩形選択と修飾キー選択に対応しています。
 - `tool` が空の場合は `Arguments` を URL/パスとしてフォールバック起動します。
 - テーマ切替ショートカット:

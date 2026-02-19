@@ -97,7 +97,7 @@ README is user-facing summary; this guide is the implementation-level source of 
 - Icon glyphs are platform-mapped (`OnPlatform`): WinUI uses `Segoe MDL2 Assets`, macOS uses fallback symbols.
 - Modal footer action buttons (`Cancel`/`Save`) are centered and use equal width for visual balance.
 - Dock item visuals are intentionally matched to placement-area button visuals.
-- Middle click edit is implemented via `Behaviors/MiddleClickBehavior.cs` plus macOS fallbacks in `MainPage.xaml.cs` / `Platforms/MacCatalyst/AppDelegate.cs`.
+- Middle click edit is implemented via `Behaviors/MiddleClickBehavior.cs` plus macOS fallbacks in `MainPage.xaml.cs` (pointer detection + polling).
 - Tab focus policy is applied in `MainPage.xaml.cs` (`ApplyTabPolicy`) by toggling native `IsTabStop`.
 - Selection rectangle is rendered as `SelectionRect` in `MainPage.xaml` with gray stroke/fill.
 - Selection toggle modifier handling is centralized in `MainPage.xaml.cs`:
@@ -127,11 +127,12 @@ README is user-facing summary; this guide is the implementation-level source of 
   - `Up/Down` wraps at list edges, and `Enter` executes selected suggestion
   - Suggestion click fills `CommandInput` and executes immediately.
   - Plain Enter execution from command box runs all exact command matches (trim-aware, case-insensitive)
-  - Opening context menu from right click closes suggestions, resigns command-input first responder, and moves focus target to `Edit`
+  - Opening context menu from right click closes suggestions and moves focus target to `Edit` (on macOS, command-input first responder is also resigned)
   - Windows arrow key handling is attached in `MainPage.xaml.cs` (`MainCommandEntry_HandlerChanged` / native `KeyDown`)
   - macOS arrow key handling is attached in `Controls/CommandEntry` + `Platforms/MacCatalyst/Handlers/CommandEntryHandler.cs` (`PressesBegan`)
   - macOS `Tab`/`Shift+Tab`/`Escape`/`Enter`/arrow keyboard shortcuts for context menu, editor modal, and conflict dialog are dispatched via `App.RaiseEditorShortcut(...)` from:
     - `CommandEntryHandler` (command input)
+    - `MacEntryHandler` (`Entry` fields such as `GUID` / `Command` / `Arguments`)
     - `MacEditorHandler` (`Clip Word` / `Note` editors via `TabNavigatingEditor`)
   - macOS `Entry` visual/focus behavior is handled by `Platforms/MacCatalyst/Handlers/MacEntryHandler.cs`:
     - suppresses default blue focus ring
@@ -164,7 +165,7 @@ README is user-facing summary; this guide is the implementation-level source of 
   - Drag updates throttle `UpdateCanvasSize()` during move and force final update on completion
 - Create flows:
   - Top-bar create icon button uses `CreateNewCommand` and does not consume clipboard.
-  - Right-click on empty placement area is handled in `Selection_PointerPressed` and opens create editor at clicked canvas coordinates.
+  - Right-click on empty placement area opens create editor at clicked canvas coordinates (`Selection_PointerPressed` and `PlacementCanvas_SecondaryTapped` paths).
   - Right-click create flow seeds editor `Arguments` from clipboard.
   - Starting create flow clears `SearchText` (top-bar create and empty-area right-click).
 - Editor modal field behavior:
@@ -181,8 +182,8 @@ README is user-facing summary; this guide is the implementation-level source of 
   - On open, initial focus target is `Cancel`.
   - `Cancel` focus uses a single custom focus border (no Windows double focus ring).
   - On Windows, conflict-action buttons keep a constant border width (transparent when unfocused) to avoid label-position jitter when focus changes.
-  - `Left` / `Right` traverses conflict actions left-to-right with wrap (`Reload latest` / `Overwrite mine` / `Cancel`).
-  - `Tab` / `Shift+Tab` traverses conflict actions left-to-right with wrap (`Reload latest` / `Overwrite mine` / `Cancel`).
+  - `Left` moves to previous and `Right` moves to next conflict action (both with wrap: `Reload latest` / `Overwrite mine` / `Cancel`).
+  - `Tab` traverses left-to-right, and `Shift+Tab` traverses right-to-left (both with wrap).
   - `Enter` executes the currently focused conflict action.
   - On close, editor focus is restored to modal `Command` when editor remains open; this keeps `Esc` / `Ctrl+S` active on Windows immediately after returning from conflict dialog.
   - While conflict dialog is open, focus is constrained to the conflict dialog and does not move to the underlying editor modal.
@@ -196,7 +197,7 @@ README is user-facing summary; this guide is the implementation-level source of 
 - `Praxis.Tests/CommandSuggestionVisibilityPolicyTests.cs` covers suggestion close-policy decisions when context menu opens.
 - `Praxis.Tests/AppStoragePathLayoutResolverTests.cs` covers platform-specific storage layout rules:
   - Windows DB path (`%USERPROFILE%/AppData/Local/Praxis/praxis.db3`)
-  - Mac Catalyst DB path (`.../Application Support/Praxis/praxis.db3`)
+  - Mac Catalyst DB path (`~/Library/Application Support/Praxis/praxis.db3`)
   - sync-signal path layout for Windows/macOS
 - `Praxis.Tests/CoreLogicEdgeCaseTests.cs` covers edge cases for:
   - command-line normalization
@@ -284,7 +285,7 @@ README はユーザー向け要約、このガイドは実装仕様の正本で�
 - `ViewModels/MainViewModel.cs`
   - コマンド実行、検索、編集モーダル、ドラッグ保存、Dock、テーマ適用を統括
   - Dock 更新時にリポジトリ経由で順序を永続化
-  - 外部通知時にボタン/DOCK変更を差分再読込してウィンドウ間同期する
+  - 外部通知時にボタン/Dock 変更を差分再読込してウィンドウ間同期する
   - 外部通知受信時に保存済みテーマを再読込して、ウィンドウ間でテーマ同期する
   - command 入力中は外部同期時に候補一覧を再計算する
   - 編集モーダル表示中は同期反映を保留し、閉じた後に反映する
@@ -356,7 +357,7 @@ README はユーザー向け要約、このガイドは実装仕様の正本で�
 - アイコングリフは `OnPlatform` で出し分ける（Windows は `Segoe MDL2 Assets`、macOS は互換シンボル）。
 - モーダル下部のアクションボタン（`Cancel` / `Save`）は中央寄せ・同一幅で揃えている。
 - Dock ボタンの見た目は、配置領域のボタンと意図的に揃えている。
-- ホイールクリック編集は `Behaviors/MiddleClickBehavior.cs` に加え、macOS 向けフォールバックを `MainPage.xaml.cs` / `Platforms/MacCatalyst/AppDelegate.cs` で実装している。
+- ホイールクリック編集は `Behaviors/MiddleClickBehavior.cs` に加え、macOS 向けフォールバックを `MainPage.xaml.cs`（ポインター判定 + ポーリング）で実装している。
 - Tab フォーカス制御は `MainPage.xaml.cs` の `ApplyTabPolicy` でネイティブ `IsTabStop` を切り替えて実現している。
 - 矩形選択は `MainPage.xaml` の `SelectionRect`（グレーストローク/グレー透過塗り）で描画している。
 - 選択トグル修飾キー判定は `MainPage.xaml.cs` に集約している。
@@ -387,12 +388,13 @@ README はユーザー向け要約、このガイドは実装仕様の正本で�
   - `↑/↓` は候補端で循環し、`Enter` で選択候補を実行する
   - 候補クリック時は `CommandInput` を埋めて即時実行する
   - コマンド欄で候補未選択の `Enter` 実行時は、`command` 完全一致（前後空白除去・大文字小文字非依存）の対象を全件実行する
-  - 右クリックでコンテキストメニューを開いたときは、候補を閉じ、Command 入力の first responder を解除して `Edit` をフォーカス対象にする
+  - 右クリックでコンテキストメニューを開いたときは、候補を閉じて `Edit` をフォーカス対象にする（macOS では Command 入力の first responder も解除する）
   - Windows の方向キー上下は `MainPage.xaml.cs` の `MainCommandEntry_HandlerChanged` / ネイティブ `KeyDown` で処理
   - Windows の `Tab`/`Shift+Tab` 遷移時は、遷移先 `TextBox` で `SelectAll()` を適用（ポインターフォーカス時は適用しない）
   - macOS の方向キー上下は `Controls/CommandEntry` + `Platforms/MacCatalyst/Handlers/CommandEntryHandler.cs` の `PressesBegan` で処理
   - macOS の `Tab`/`Shift+Tab`/`Escape`/`Enter`/方向キー は、`App.RaiseEditorShortcut(...)` を通して以下からコンテキストメニュー/編集モーダル/競合ダイアログへ中継する。
     - `CommandEntryHandler`（command 入力欄）
+    - `MacEntryHandler`（`GUID` / `Command` / `Arguments` などの `Entry`）
     - `MacEditorHandler`（`TabNavigatingEditor` を使う `Clip Word` / `Note` の `Editor`）
   - macOS の `Entry` 見た目/フォーカス挙動は `Platforms/MacCatalyst/Handlers/MacEntryHandler.cs` で制御する。
     - 標準の青いフォーカスリングを抑制
@@ -425,9 +427,9 @@ README はユーザー向け要約、このガイドは実装仕様の正本で�
   - ドラッグ中の `UpdateCanvasSize()` は間引き、完了時に最終更新を保証
 - Create 作成フロー:
   - 上部の Create アイコンボタンは `CreateNewCommand` を実行し、クリップボードは参照しない。
-  - 配置領域の空白右クリックは `Selection_PointerPressed` で処理し、クリックしたキャンバス座標で新規作成モーダルを開く。
-  - 空白右クリック作成時のみ、エディタの `Arguments` にクリップボード値を初期設定する。
-  - 新規作成開始時（上部 Create / 空白右クリック）の両経路で `SearchText` をクリアする。
+  - ボタン配置領域の空きスペース右クリックは、クリックしたキャンバス座標で新規作成モーダルを開く（`Selection_PointerPressed` と `PlacementCanvas_SecondaryTapped` の両経路）。
+  - ボタン配置領域の空きスペース右クリック作成時のみ、エディタの `Arguments` にクリップボード値を初期設定する。
+  - 新規作成開始時（上部 Create / ボタン配置領域の空きスペース右クリック）の両経路で `SearchText` をクリアする。
 - 編集モーダルの欄仕様:
   - `Clip Word` は `Note` と同様に複数行 `Editor` を使い、行数に応じて高さを調整する。
   - コピーアイコンボタンは各行で縦中央揃えとし、`Clip Word` / `Note` の複数行拡張時は入力欄と同じ高さに追従する。
@@ -442,8 +444,8 @@ README はユーザー向け要約、このガイドは実装仕様の正本で�
   - 表示時の初期フォーカスは `Cancel` とする。
   - `Cancel` は単一のカスタム枠線でフォーカス強調表示する（Windows の二重フォーカス線は出さない）。
   - Windows では競合アクションボタンの枠幅を一定に保ち（非フォーカス時は透明）、フォーカス移動時のラベル位置のズレを防ぐ。
-  - `←` / `→` で競合アクション（`Reload latest` / `Overwrite mine` / `Cancel`）を左から右へ循環（端でラップ）する。
-  - `Tab` / `Shift+Tab` で競合アクション（`Reload latest` / `Overwrite mine` / `Cancel`）を左から右へ循環（端でラップ）する。
+  - `←` は前の競合アクション、`→` は次の競合アクションへ移動（どちらも端でラップ）する（`Reload latest` / `Overwrite mine` / `Cancel`）。
+  - `Tab` は左から右、`Shift+Tab` は右から左へ循環（どちらも端でラップ）する。
   - `Enter` で現在フォーカス中の競合アクションを実行する。
   - クローズ後に編集モーダルが継続表示される場合は `Command` へフォーカスを戻し、Windows でも復帰直後から `Esc` / `Ctrl+S` を有効に保つ。
   - 競合ダイアログ表示中は、フォーカスを競合ダイアログ内に閉じ、背面の編集モーダルには移動させない。
@@ -457,7 +459,7 @@ README はユーザー向け要約、このガイドは実装仕様の正本で�
 - `Praxis.Tests/CommandSuggestionVisibilityPolicyTests.cs` は、コンテキストメニュー表示時に候補一覧を閉じる判定ポリシーを検証する。
 - `Praxis.Tests/AppStoragePathLayoutResolverTests.cs` は、プラットフォーム別ストレージ配置ルールを検証する。
   - Windows DB パス（`%USERPROFILE%/AppData/Local/Praxis/praxis.db3`）
-  - Mac Catalyst DB パス（`.../Application Support/Praxis/praxis.db3`）
+  - Mac Catalyst DB パス（`~/Library/Application Support/Praxis/praxis.db3`）
   - Windows/macOS の同期シグナル配置
 - `Praxis.Tests/CoreLogicEdgeCaseTests.cs` は次の境界系を検証する。
   - コマンドライン文字列正規化
