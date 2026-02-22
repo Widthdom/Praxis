@@ -26,6 +26,7 @@ public class MacEditorHandler : EditorHandler
         private UIKeyCommand? tabNextCommand;
         private UIKeyCommand? tabPreviousCommand;
         private UIKeyCommand? cancelCommand;
+        private UIKeyCommand? saveCommand;
 
         public override UIKeyCommand[] KeyCommands
         {
@@ -34,15 +35,17 @@ public class MacEditorHandler : EditorHandler
                 tabNextCommand ??= CreateEditorKeyCommand(TabKeyInput, 0, "handleEditorTabNext:");
                 tabPreviousCommand ??= CreateEditorKeyCommand(TabKeyInput, UIKeyModifierFlags.Shift, "handleEditorTabPrevious:");
                 cancelCommand ??= CreateEditorKeyCommand(EscapeKeyInput, 0, "handleEditorCancel:");
+                saveCommand ??= CreateEditorKeyCommand("s", UIKeyModifierFlags.Command, "handleEditorSave:");
 
                 var baseCommands = base.KeyCommands ?? Array.Empty<UIKeyCommand>();
-                var commands = new UIKeyCommand[baseCommands.Length + 3];
+                var commands = new UIKeyCommand[baseCommands.Length + 4];
                 commands[0] = tabNextCommand;
                 commands[1] = tabPreviousCommand;
                 commands[2] = cancelCommand;
+                commands[3] = saveCommand;
                 if (baseCommands.Length > 0)
                 {
-                    Array.Copy(baseCommands, 0, commands, 3, baseCommands.Length);
+                    Array.Copy(baseCommands, 0, commands, 4, baseCommands.Length);
                 }
                 return commands;
             }
@@ -72,8 +75,19 @@ public class MacEditorHandler : EditorHandler
             TryDispatchCancelShortcut();
         }
 
+        [Export("handleEditorSave:")]
+        private void HandleEditorSave(UIKeyCommand command)
+        {
+            TryDispatchSaveShortcut();
+        }
+
         public override void PressesBegan(NSSet<UIPress> presses, UIPressesEvent? evt)
         {
+            if (TryHandleEditorSaveShortcut(presses))
+            {
+                return;
+            }
+
             if (TryHandleEditorCancelShortcut(presses))
             {
                 return;
@@ -150,6 +164,31 @@ public class MacEditorHandler : EditorHandler
             return false;
         }
 
+        private static bool TryHandleEditorSaveShortcut(NSSet<UIPress> presses)
+        {
+            foreach (var pressObject in presses)
+            {
+                if (pressObject is not UIPress press)
+                {
+                    continue;
+                }
+
+                var key = press.Key;
+                if (key is null)
+                {
+                    continue;
+                }
+
+                var commandDown = (key.ModifierFlags & UIKeyModifierFlags.Command) != 0;
+                if (commandDown && IsKeyInput(key, "s"))
+                {
+                    return TryDispatchSaveShortcut();
+                }
+            }
+
+            return false;
+        }
+
         private static bool TryDispatchCancelShortcut()
         {
             var scopeActive = EditorShortcutScopeResolver.IsEditorShortcutScopeActive(App.IsConflictDialogOpen, App.IsContextMenuOpen, App.IsEditorOpen);
@@ -160,6 +199,17 @@ public class MacEditorHandler : EditorHandler
 
             var action = EditorShortcutActionResolver.ResolveCancelAction();
             MainThread.BeginInvokeOnMainThread(() => App.RaiseEditorShortcut(action));
+            return true;
+        }
+
+        private static bool TryDispatchSaveShortcut()
+        {
+            if (!App.IsEditorOpen || App.IsConflictDialogOpen)
+            {
+                return false;
+            }
+
+            MainThread.BeginInvokeOnMainThread(() => App.RaiseEditorShortcut("Save"));
             return true;
         }
 
