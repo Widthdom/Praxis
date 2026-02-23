@@ -143,6 +143,12 @@ public partial class MainViewModel : ObservableObject
     private void OpenEditor(LauncherButtonItemViewModel? item)
     {
         if (item is null) return;
+#if MACCATALYST
+        if (!global::Praxis.App.IsMacApplicationActive())
+        {
+            return;
+        }
+#endif
         Editor = ButtonEditorViewModel.FromRecord(item.ToRecord(), isExistingRecord: true);
         IsEditorOpen = true;
         IsContextMenuOpen = false;

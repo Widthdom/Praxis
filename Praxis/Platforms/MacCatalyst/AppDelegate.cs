@@ -31,9 +31,24 @@ public class AppDelegate : MauiUIApplicationDelegate
         return result;
     }
 
+    public override void OnResignActivation(UIApplication application)
+    {
+        base.OnResignActivation(application);
+        App.SetMacApplicationActive(false);
+        App.RaiseMacApplicationDeactivating();
+    }
+
+    public override void WillEnterForeground(UIApplication application)
+    {
+        base.WillEnterForeground(application);
+        App.RecordActivation();
+    }
+
     public override void OnActivated(UIApplication application)
     {
         base.OnActivated(application);
+        App.RecordActivation();
+        App.SetMacApplicationActive(true);
         if (CanBecomeFirstResponder)
         {
             BecomeFirstResponder();

@@ -41,6 +41,7 @@ public partial class MainPage : ContentPage
     private bool selectionPanPrimed;
 #endif
     private Guid? suppressTapExecuteForItemId;
+    private bool middlePointerPressReceived;
     private bool suppressNextRootSuggestionClose;
     private Point selectionStartCanvas;
     private Point selectionStartViewport;
@@ -166,6 +167,9 @@ public partial class MainPage : ContentPage
         App.EditorShortcutRequested += OnEditorShortcutRequested;
         App.CommandInputShortcutRequested += OnCommandInputShortcutRequested;
         App.MiddleMouseClickRequested += OnMiddleMouseClickRequested;
+#if MACCATALYST
+        App.MacApplicationDeactivating += OnMacApplicationDeactivating;
+#endif
         HandlerChanged += (_, _) =>
         {
             ApplyTabPolicy();
@@ -579,6 +583,12 @@ public partial class MainPage : ContentPage
 #if MACCATALYST
         if (IsOtherMouseFromPlatformArgs(e.PlatformArgs) && bindable.BindingContext is LauncherButtonItemViewModel otherMouseItem)
         {
+            if (!App.IsMacApplicationActive() || App.IsActivationSuppressionActive())
+            {
+                return;
+            }
+
+            middlePointerPressReceived = true;
             suppressTapExecuteForItemId = otherMouseItem.Id;
             pointerDragging = false;
             ReleaseCapturedPointer();
@@ -592,6 +602,14 @@ public partial class MainPage : ContentPage
 
         if (IsMiddlePointerPressed(e) && bindable.BindingContext is LauncherButtonItemViewModel middleItem)
         {
+#if MACCATALYST
+            if (!App.IsMacApplicationActive() || App.IsActivationSuppressionActive())
+            {
+                return;
+            }
+#endif
+
+            middlePointerPressReceived = true;
             suppressTapExecuteForItemId = middleItem.Id;
             pointerDragging = false;
             ReleaseCapturedPointer();
@@ -685,6 +703,14 @@ public partial class MainPage : ContentPage
             IsMiddlePointerPressed(e) &&
             bindableForMiddle.BindingContext is LauncherButtonItemViewModel middleItem)
         {
+            var wasPressed = middlePointerPressReceived;
+            middlePointerPressReceived = false;
+
+            if (!wasPressed)
+            {
+                return;
+            }
+
             suppressTapExecuteForItemId = middleItem.Id;
             pointerDragging = false;
             ReleaseCapturedPointer();
@@ -718,6 +744,11 @@ public partial class MainPage : ContentPage
 #if MACCATALYST
         if (IsOtherMouseFromPlatformArgs(e.PlatformArgs))
         {
+            if (!App.IsMacApplicationActive() || App.IsActivationSuppressionActive())
+            {
+                return;
+            }
+
             if (viewModel.OpenEditorCommand.CanExecute(item))
             {
                 viewModel.OpenEditorCommand.Execute(item);
@@ -728,6 +759,13 @@ public partial class MainPage : ContentPage
 
         if (IsMiddlePointerPressed(e))
         {
+#if MACCATALYST
+            if (!App.IsMacApplicationActive() || App.IsActivationSuppressionActive())
+            {
+                return;
+            }
+#endif
+
             if (viewModel.OpenEditorCommand.CanExecute(item))
             {
                 viewModel.OpenEditorCommand.Execute(item);
@@ -2957,6 +2995,13 @@ public partial class MainPage : ContentPage
 #endif
     }
 
+#if MACCATALYST
+    private void OnMacApplicationDeactivating()
+    {
+        lastPointerOnRoot = null;
+    }
+#endif
+
     private void ApplyThemeShortcut(string mode)
     {
         if (viewModel.SetThemeCommand.CanExecute(mode))
@@ -3246,6 +3291,11 @@ public partial class MainPage : ContentPage
 #if MACCATALYST
     private bool HandleMacMiddleClick(Point rootPoint)
     {
+        if (!App.IsMacApplicationActive() || App.IsActivationSuppressionActive())
+        {
+            return false;
+        }
+
         if (viewModel.IsEditorOpen || viewModel.IsContextMenuOpen)
         {
             return false;

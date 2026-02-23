@@ -13,6 +13,19 @@ public partial class App : Application
     public static event Action<string>? EditorShortcutRequested;
     public static event Action<string>? CommandInputShortcutRequested;
     public static event Action? MiddleMouseClickRequested;
+#if MACCATALYST
+    public static event Action? MacApplicationDeactivating;
+    private static long lastActivatedAt;
+    private static volatile bool isMacApplicationActive = true;
+    public static void RecordActivation() => lastActivatedAt = Environment.TickCount64;
+    public static bool IsActivationSuppressionActive() => Environment.TickCount64 - lastActivatedAt < 500;
+    public static bool IsMacApplicationActive() => isMacApplicationActive;
+    public static void SetMacApplicationActive(bool value) => isMacApplicationActive = value;
+    public static void RaiseMacApplicationDeactivating()
+    {
+        try { MacApplicationDeactivating?.Invoke(); } catch { }
+    }
+#endif
 #if WINDOWS
     private static readonly Microsoft.UI.Xaml.Input.KeyEventHandler WindowRootKeyDownHandler = NativeRootOnKeyDown;
 #endif

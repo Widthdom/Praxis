@@ -18,6 +18,7 @@ public sealed class MiddleClickBehavior : Behavior<View>
     private readonly PointerGestureRecognizer pointer = new();
     private View? attachedView;
     private bool executedForCurrentPress;
+    private bool pressReceivedForCurrentGesture;
 #if MACCATALYST
     private UIView? attachedNativeView;
     private UILongPressGestureRecognizer? middlePressMask2Recognizer;
@@ -62,15 +63,22 @@ public sealed class MiddleClickBehavior : Behavior<View>
     private void OnPointerPressed(object? sender, PointerEventArgs e)
     {
         executedForCurrentPress = ExecuteIfMiddleClick(e);
+#if MACCATALYST
+        pressReceivedForCurrentGesture = executedForCurrentPress ||
+            (IsMiddlePointerPressed(e) && global::Praxis.App.IsMacApplicationActive());
+#else
+        pressReceivedForCurrentGesture = executedForCurrentPress || IsMiddlePointerPressed(e);
+#endif
     }
 
     private void OnPointerReleased(object? sender, PointerEventArgs e)
     {
-        if (!executedForCurrentPress)
+        if (pressReceivedForCurrentGesture && !executedForCurrentPress)
         {
             _ = ExecuteIfMiddleClick(e);
         }
 
+        pressReceivedForCurrentGesture = false;
         executedForCurrentPress = false;
     }
 
@@ -85,6 +93,13 @@ public sealed class MiddleClickBehavior : Behavior<View>
         {
             return false;
         }
+
+#if MACCATALYST
+        if (!global::Praxis.App.IsMacApplicationActive() || global::Praxis.App.IsActivationSuppressionActive())
+        {
+            return false;
+        }
+#endif
 
         var param = attachedView.BindingContext;
         if (Command.CanExecute(param))
@@ -233,6 +248,13 @@ public sealed class MiddleClickBehavior : Behavior<View>
         {
             return;
         }
+
+#if MACCATALYST
+        if (!global::Praxis.App.IsMacApplicationActive() || global::Praxis.App.IsActivationSuppressionActive())
+        {
+            return;
+        }
+#endif
 
         var param = attachedView.BindingContext;
         if (Command.CanExecute(param))

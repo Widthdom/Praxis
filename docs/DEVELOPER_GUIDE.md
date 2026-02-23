@@ -98,6 +98,7 @@ README is user-facing summary; this guide is the implementation-level source of 
 - Modal footer action buttons (`Cancel`/`Save`) are centered and use equal width for visual balance.
 - Dock item visuals are intentionally matched to placement-area button visuals.
 - Middle click edit is implemented via `Behaviors/MiddleClickBehavior.cs` plus macOS fallbacks in `MainPage.xaml.cs` (pointer detection + polling).
+  - **Mac click-through quirk**: macOS delivers non-primary mouse clicks to whichever window is under the cursor regardless of focus. The polling timer uses `CGEventSource.GetButtonState` (global HID state), so it can fire for middle-clicks in other apps. `lastPointerOnRoot` is cleared to `null` in `OnMacApplicationDeactivating` (triggered by `OnResignActivation`) so stale cursor positions from a previous focus session cannot trigger the editor when the app is inactive. Additional guards: `IsMacApplicationActive()` (explicit volatile bool set by `OnResignActivation`/`OnActivated`), `IsActivationSuppressionActive()` (500 ms after re-activation), and a ViewModel-level `IsMacApplicationActive()` check in `OpenEditor`.
 - Tab focus policy is applied in `MainPage.xaml.cs` (`ApplyTabPolicy`) by toggling native `IsTabStop`.
 - Selection rectangle is rendered as `SelectionRect` in `MainPage.xaml` with gray stroke/fill.
 - Selection toggle modifier handling is centralized in `MainPage.xaml.cs`:
@@ -359,6 +360,7 @@ README はユーザー向け要約、このガイドは実装仕様の正本で�
 - モーダル下部のアクションボタン（`Cancel` / `Save`）は中央寄せ・同一幅で揃えている。
 - Dock ボタンの見た目は、配置領域のボタンと意図的に揃えている。
 - ホイールクリック編集は `Behaviors/MiddleClickBehavior.cs` に加え、macOS 向けフォールバックを `MainPage.xaml.cs`（ポインター判定 + ポーリング）で実装している。
+  - **macOS クリックスルー問題**: macOS はフォーカスに関わらず、カーソル下のウィンドウへ非プライマリクリックを配送する。ポーリングタイマーは `CGEventSource.GetButtonState`（グローバル HID 状態）を参照するため、他アプリ上のホイールクリックでも発火する。`lastPointerOnRoot` は `OnMacApplicationDeactivating`（`OnResignActivation` から呼ばれる）で `null` にリセットし、前回フォーカス時の古いカーソル位置が非アクティブ中にエディターを開かないようにする。追加ガード: `IsMacApplicationActive()`（`OnResignActivation`/`OnActivated` で更新する volatile bool）、`IsActivationSuppressionActive()`（再アクティブ化後 500ms）、ViewModel の `OpenEditor` にも `IsMacApplicationActive()` チェックを配置。
 - Tab フォーカス制御は `MainPage.xaml.cs` の `ApplyTabPolicy` でネイティブ `IsTabStop` を切り替えて実現している。
 - 矩形選択は `MainPage.xaml` の `SelectionRect`（グレーストローク/グレー透過塗り）で描画している。
 - 選択トグル修飾キー判定は `MainPage.xaml.cs` に集約している。
