@@ -15,6 +15,7 @@ public partial class App : Application
     public static event Action? MiddleMouseClickRequested;
 #if MACCATALYST
     public static event Action? MacApplicationDeactivating;
+    public static event Action? MacApplicationActivated;
     private static long lastActivatedAt;
     private static volatile bool isMacApplicationActive = true;
     public static void RecordActivation() => lastActivatedAt = Environment.TickCount64;
@@ -24,6 +25,11 @@ public partial class App : Application
     public static void RaiseMacApplicationDeactivating()
     {
         try { MacApplicationDeactivating?.Invoke(); } catch { }
+    }
+
+    public static void RaiseMacApplicationActivated()
+    {
+        try { MacApplicationActivated?.Invoke(); } catch { }
     }
 #endif
 #if WINDOWS

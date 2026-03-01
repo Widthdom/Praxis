@@ -15,6 +15,10 @@ namespace Praxis;
 
 public partial class MainPage : ContentPage
 {
+#if MACCATALYST
+    private static WeakReference<MainPage>? macLastActivePage;
+#endif
+
     private readonly MainViewModel viewModel;
     private ButtonEditorViewModel? observedEditorViewModel;
     private const double ModalSingleLineRowHeight = 40;
@@ -31,6 +35,7 @@ public partial class MainPage : ContentPage
     private Point pointerStart = Point.Zero;
     private double pointerLastDx;
     private double pointerLastDy;
+    private Window? attachedWindow;
 #if !WINDOWS
     private double panDragLastDx;
     private double panDragLastDy;
@@ -49,6 +54,20 @@ public partial class MainPage : ContentPage
     private Point selectionLastViewport;
     private Point? lastPointerOnRoot;
     private TaskCompletionSource<EditorConflictResolution>? editorConflictTcs;
+#if MACCATALYST
+    private static readonly TimeSpan macActivationFocusWindow = TimeSpan.FromMilliseconds(900);
+    private static readonly TimeSpan macActivationFocusRequestCoalesceDelay = TimeSpan.FromMilliseconds(45);
+    private static readonly TimeSpan macSearchFocusUserIntentWindow = TimeSpan.FromMilliseconds(800);
+    private long macActivationFocusRequestId;
+    private DateTimeOffset macActivationFocusSessionUntilUtc;
+    private DateTimeOffset macSearchFocusUserIntentUntilUtc;
+    private NSObject? macDidBecomeActiveObserver;
+    private NSObject? macWillEnterForegroundObserver;
+    private NSObject? macSceneDidActivateObserver;
+    private NSObject? macSceneWillEnterForegroundObserver;
+    private NSObject? macWindowDidBecomeKeyObserver;
+    private NSObject? macWillResignActiveObserver;
+#endif
 #if WINDOWS
     private Microsoft.UI.Xaml.UIElement? capturedElement;
     private Microsoft.UI.Xaml.Controls.TextBox? commandTextBox;
@@ -130,6 +149,7 @@ public partial class MainPage : ContentPage
     private string macGuidLockedText = string.Empty;
     private bool macApplyingGuidTextLock;
     private bool macSuppressEditorTabFallback;
+
 #endif
 
     public MainPage(MainViewModel viewModel)
@@ -169,6 +189,7 @@ public partial class MainPage : ContentPage
         App.MiddleMouseClickRequested += OnMiddleMouseClickRequested;
 #if MACCATALYST
         App.MacApplicationDeactivating += OnMacApplicationDeactivating;
+        App.MacApplicationActivated += OnMacApplicationActivated;
 #endif
         HandlerChanged += (_, _) =>
         {
@@ -219,16 +240,25 @@ public partial class MainPage : ContentPage
     protected override async void OnAppearing()
     {
         base.OnAppearing();
+#if MACCATALYST
+        macLastActivePage = new WeakReference<MainPage>(this);
+#endif
 
         if (!xamlLoaded)
         {
             return;
         }
 
+        AttachWindowActivationHook();
         AttachEditorPropertyChanged(viewModel.Editor);
 
         if (initialized)
         {
+#if MACCATALYST
+            ScheduleMainCommandFocusAfterActivation("MainPage.OnAppearing");
+#else
+            Dispatcher.Dispatch(RequestMainCommandFocusAfterActivation);
+#endif
             return;
         }
 
@@ -283,6 +313,74 @@ public partial class MainPage : ContentPage
 #endif
     }
 
+#if MACCATALYST
+    public static void RequestMacCommandFocusFromNativeActivation(string source)
+    {
+        if (macLastActivePage is null || !macLastActivePage.TryGetTarget(out var page))
+        {
+            return;
+        }
+
+        var dispatcher = page.Dispatcher;
+        if (dispatcher is null)
+        {
+            return;
+        }
+
+        dispatcher.Dispatch(() =>
+        {
+            page.AttachWindowActivationHook();
+            page.ScheduleMainCommandFocusAfterActivation($"native:{source}");
+        });
+    }
+
+    public static void MarkMacSearchFocusUserIntentFromKeyboard(string source)
+    {
+        if (macLastActivePage is null || !macLastActivePage.TryGetTarget(out var page))
+        {
+            return;
+        }
+
+        var dispatcher = page.Dispatcher;
+        if (dispatcher is null)
+        {
+            return;
+        }
+
+        dispatcher.Dispatch(() => page.MarkMacSearchFocusUserIntent(source));
+    }
+
+    public static void FocusMacSearchEntryFromCommandTab(string source)
+    {
+        if (macLastActivePage is null || !macLastActivePage.TryGetTarget(out var page))
+        {
+            return;
+        }
+
+        var dispatcher = page.Dispatcher;
+        if (dispatcher is null)
+        {
+            return;
+        }
+
+        dispatcher.Dispatch(() =>
+        {
+            page.MarkMacSearchFocusUserIntent(source);
+            page.FocusMainSearchEntryFromCommandTabCore();
+        });
+    }
+
+    public static bool ShouldAllowMacSearchEntryFocus()
+    {
+        if (macLastActivePage is null || !macLastActivePage.TryGetTarget(out var page))
+        {
+            return true;
+        }
+
+        return page.ShouldAllowMacSearchEntryFocusCore();
+    }
+#endif
+
     private void PlacementArea_SizeChanged(object? sender, EventArgs e)
     {
         if (sender is not VisualElement view)
@@ -302,6 +400,152 @@ public partial class MainPage : ContentPage
         }
 
         SyncViewportToViewModel();
+    }
+
+    private void AttachWindowActivationHook()
+    {
+        var currentWindow = Window;
+        if (currentWindow is null || ReferenceEquals(attachedWindow, currentWindow))
+        {
+            return;
+        }
+
+        DetachWindowActivationHook();
+        attachedWindow = currentWindow;
+        attachedWindow.Activated += OnWindowActivated;
+        attachedWindow.Resumed += OnWindowResumed;
+#if MACCATALYST
+        AttachMacActivationObservers();
+#endif
+    }
+
+    private void DetachWindowActivationHook()
+    {
+        if (attachedWindow is null)
+        {
+            return;
+        }
+
+        attachedWindow.Activated -= OnWindowActivated;
+        attachedWindow.Resumed -= OnWindowResumed;
+        attachedWindow = null;
+    }
+
+    private void OnWindowActivated(object? sender, EventArgs e)
+    {
+        ScheduleMainCommandFocusAfterActivation("Window.Activated");
+    }
+
+    private void OnWindowResumed(object? sender, EventArgs e)
+    {
+        ScheduleMainCommandFocusAfterActivation("Window.Resumed");
+    }
+
+#if MACCATALYST
+    private void ScheduleMainCommandFocusAfterActivation(string _)
+    {
+        var requestId = ++macActivationFocusRequestId;
+        Dispatcher.DispatchDelayed(macActivationFocusRequestCoalesceDelay, () =>
+        {
+            if (requestId != macActivationFocusRequestId)
+            {
+                return;
+            }
+
+            RequestMainCommandFocusAfterActivation();
+        });
+    }
+#else
+    private void ScheduleMainCommandFocusAfterActivation(string _)
+    {
+        Dispatcher.Dispatch(RequestMainCommandFocusAfterActivation);
+    }
+#endif
+
+    private void RequestMainCommandFocusAfterActivation()
+    {
+#if MACCATALYST
+        BeginMacActivationFocusSession();
+        Dispatcher.DispatchDelayed(TimeSpan.FromMilliseconds(20), ApplyMacActivationCommandFocus);
+        Dispatcher.DispatchDelayed(TimeSpan.FromMilliseconds(160), ApplyMacActivationCommandFocus);
+        Dispatcher.DispatchDelayed(TimeSpan.FromMilliseconds(420), ApplyMacActivationCommandFocus);
+#else
+        FocusMainCommandAfterWindowActivation();
+#endif
+    }
+
+#if MACCATALYST
+    private void ApplyMacActivationCommandFocus()
+    {
+        if (!ShouldFocusMainCommandAfterWindowActivation())
+        {
+            return;
+        }
+
+        FocusMainCommandAfterWindowActivation();
+    }
+
+    private void BeginMacActivationFocusSession()
+    {
+        macActivationFocusSessionUntilUtc = DateTimeOffset.UtcNow + macActivationFocusWindow;
+    }
+#endif
+
+    private void FocusMainCommandAfterWindowActivation()
+    {
+        if (!ShouldFocusMainCommandAfterWindowActivation())
+        {
+            return;
+        }
+
+#if WINDOWS
+        EnsureWindowsTextBoxHooks();
+        windowsSelectAllOnTabNavigationPending = true;
+#endif
+
+#if !MACCATALYST
+        MainCommandEntry.Focus();
+#endif
+
+#if WINDOWS
+        if (commandTextBox is not null)
+        {
+            commandTextBox.SelectAll();
+            windowsSelectAllOnTabNavigationPending = false;
+        }
+#endif
+
+#if MACCATALYST
+        ForceMacCommandFirstResponder();
+        var commandFocused = IsMainCommandEntryActive();
+        var searchFocused = IsMainSearchEntryActive();
+        var selectAllSatisfied = IsMainCommandSelectAllSatisfied(out _, out _);
+        if (!commandFocused || searchFocused || !selectAllSatisfied)
+        {
+            Dispatcher.DispatchDelayed(TimeSpan.FromMilliseconds(100), () =>
+            {
+                if (!ShouldFocusMainCommandAfterWindowActivation() ||
+                    !IsMacAppForegroundActive())
+                {
+                    return;
+                }
+
+                ForceMacCommandFirstResponder();
+            });
+        }
+#endif
+    }
+
+    private bool ShouldFocusMainCommandAfterWindowActivation()
+    {
+        if (!xamlLoaded || !initialized)
+        {
+            return false;
+        }
+
+        return WindowActivationCommandFocusPolicy.ShouldFocusMainCommand(
+            isEditorOpen: viewModel.IsEditorOpen,
+            isConflictDialogOpen: IsConflictDialogOpen());
     }
 
     private void PlacementScroll_Scrolled(object? sender, ScrolledEventArgs e)
@@ -2268,6 +2512,66 @@ public partial class MainPage : ContentPage
         return false;
     }
 
+    private bool IsMainCommandEntryActive()
+    {
+#if MACCATALYST
+        if (MainCommandEntry.Handler?.PlatformView is UIResponder responder)
+        {
+            var firstResponder = GetCurrentMacFirstResponder();
+            if (firstResponder is not null)
+            {
+                if (ReferenceEquals(firstResponder, responder))
+                {
+                    return true;
+                }
+
+                if (firstResponder is UIView firstResponderView &&
+                    responder is UIView responderView &&
+                    firstResponderView.IsDescendantOfView(responderView))
+                {
+                    return true;
+                }
+            }
+
+            return responder.IsFirstResponder;
+        }
+#else
+        if (MainCommandEntry.IsFocused)
+        {
+            return true;
+        }
+#endif
+
+        return false;
+    }
+
+    private bool IsMainSearchEntryActive()
+    {
+#if MACCATALYST
+        if (MainSearchEntry.Handler?.PlatformView is UIResponder responder)
+        {
+            var firstResponder = GetCurrentMacFirstResponder();
+            if (firstResponder is not null)
+            {
+                if (ReferenceEquals(firstResponder, responder))
+                {
+                    return true;
+                }
+
+                if (firstResponder is UIView firstResponderView &&
+                    responder is UIView responderView &&
+                    firstResponderView.IsDescendantOfView(responderView))
+                {
+                    return true;
+                }
+            }
+
+            return responder.IsFirstResponder;
+        }
+#endif
+        return MainSearchEntry.IsFocused;
+    }
+
     private void ApplyTabPolicy()
     {
 #if WINDOWS
@@ -2347,6 +2651,20 @@ public partial class MainPage : ContentPage
     private void MainSearchEntry_Focused(object? sender, FocusEventArgs e)
     {
         CloseCommandSuggestionPopup();
+    }
+
+    private void MainSearchEntry_PointerPressed(object? sender, PointerEventArgs e)
+    {
+#if MACCATALYST
+        MarkMacSearchFocusUserIntent("MainSearchEntry.PointerPressed");
+#endif
+    }
+
+    private void MainSearchEntry_Tapped(object? sender, TappedEventArgs e)
+    {
+#if MACCATALYST
+        MarkMacSearchFocusUserIntent("MainSearchEntry.Tapped");
+#endif
     }
 
     private void MainSearchEntry_HandlerChanged(object? sender, EventArgs e)
@@ -2996,9 +3314,137 @@ public partial class MainPage : ContentPage
     }
 
 #if MACCATALYST
+    private void OnMacApplicationActivated()
+    {
+        if (!xamlLoaded)
+        {
+            return;
+        }
+
+        ScheduleMainCommandFocusAfterActivation("App.MacApplicationActivated");
+    }
+
     private void OnMacApplicationDeactivating()
     {
         lastPointerOnRoot = null;
+        macSearchFocusUserIntentUntilUtc = DateTimeOffset.MinValue;
+    }
+
+    private void AttachMacActivationObservers()
+    {
+        if (macDidBecomeActiveObserver is not null)
+        {
+            return;
+        }
+
+        var center = NSNotificationCenter.DefaultCenter;
+        macDidBecomeActiveObserver = center.AddObserver(UIApplication.DidBecomeActiveNotification, _ =>
+        {
+            App.RecordActivation();
+            App.SetMacApplicationActive(true);
+            ScheduleMainCommandFocusAfterActivation("UIApplication.DidBecomeActiveNotification");
+        });
+        macWillEnterForegroundObserver = center.AddObserver(UIApplication.WillEnterForegroundNotification, _ =>
+        {
+            App.RecordActivation();
+            App.SetMacApplicationActive(true);
+            ScheduleMainCommandFocusAfterActivation("UIApplication.WillEnterForegroundNotification");
+        });
+        macSceneWillEnterForegroundObserver = center.AddObserver(UIScene.WillEnterForegroundNotification, _ =>
+        {
+            App.RecordActivation();
+            App.SetMacApplicationActive(true);
+            ScheduleMainCommandFocusAfterActivation("UIScene.WillEnterForegroundNotification");
+        });
+        macSceneDidActivateObserver = center.AddObserver(UIScene.DidActivateNotification, _ =>
+        {
+            App.RecordActivation();
+            App.SetMacApplicationActive(true);
+            ScheduleMainCommandFocusAfterActivation("UIScene.DidActivateNotification");
+        });
+        macWindowDidBecomeKeyObserver = center.AddObserver(UIWindow.DidBecomeKeyNotification, _ =>
+        {
+            App.RecordActivation();
+            App.SetMacApplicationActive(true);
+            ScheduleMainCommandFocusAfterActivation("UIWindow.DidBecomeKeyNotification");
+        });
+        macWillResignActiveObserver = center.AddObserver(UIApplication.WillResignActiveNotification, _ =>
+        {
+            App.SetMacApplicationActive(false);
+        });
+    }
+
+    private void DetachMacActivationObservers()
+    {
+        if (macDidBecomeActiveObserver is null &&
+            macWillEnterForegroundObserver is null &&
+            macSceneDidActivateObserver is null &&
+            macSceneWillEnterForegroundObserver is null &&
+            macWindowDidBecomeKeyObserver is null &&
+            macWillResignActiveObserver is null)
+        {
+            return;
+        }
+
+        var center = NSNotificationCenter.DefaultCenter;
+        DisposeMacObserver(center, ref macDidBecomeActiveObserver);
+        DisposeMacObserver(center, ref macWillEnterForegroundObserver);
+        DisposeMacObserver(center, ref macSceneDidActivateObserver);
+        DisposeMacObserver(center, ref macSceneWillEnterForegroundObserver);
+        DisposeMacObserver(center, ref macWindowDidBecomeKeyObserver);
+        DisposeMacObserver(center, ref macWillResignActiveObserver);
+    }
+
+    private static void DisposeMacObserver(NSNotificationCenter center, ref NSObject? observer)
+    {
+        if (observer is null)
+        {
+            return;
+        }
+
+        center.RemoveObserver(observer);
+        observer.Dispose();
+        observer = null;
+    }
+
+    private bool IsMacSearchFocusUserInitiated()
+    {
+        return DateTimeOffset.UtcNow <= macSearchFocusUserIntentUntilUtc;
+    }
+
+    private bool IsMacActivationFocusSessionInProgress()
+    {
+        return DateTimeOffset.UtcNow <= macActivationFocusSessionUntilUtc;
+    }
+
+    private bool ShouldAllowMacSearchEntryFocusCore()
+    {
+        var shouldFocusMainCommand = ShouldFocusMainCommandAfterWindowActivation() && IsMacActivationFocusSessionInProgress();
+        var isForeground = IsMacAppForegroundActive();
+        var userInitiated = IsMacSearchFocusUserInitiated();
+        return SearchFocusGuardPolicy.ShouldAllowSearchFocus(
+            shouldFocusMainCommand: shouldFocusMainCommand,
+            isAppForeground: isForeground,
+            isUserInitiated: userInitiated);
+    }
+
+    private void MarkMacSearchFocusUserIntent(string _)
+    {
+        macSearchFocusUserIntentUntilUtc = DateTimeOffset.UtcNow + macSearchFocusUserIntentWindow;
+    }
+
+    private void FocusMainSearchEntryFromCommandTabCore()
+    {
+        if (!xamlLoaded || !initialized || viewModel.IsEditorOpen || IsConflictDialogOpen())
+        {
+            return;
+        }
+
+        MainSearchEntry.Focus();
+        if (MainSearchEntry.Handler?.PlatformView is UITextField searchField && searchField.CanBecomeFirstResponder)
+        {
+            searchField.BecomeFirstResponder();
+        }
     }
 #endif
 
@@ -3686,6 +4132,221 @@ public partial class MainPage : ContentPage
         }
     }
 
+    private static void SelectAllMacEntryText(Entry entry)
+    {
+        if (entry.Handler?.PlatformView is not UITextField textField)
+        {
+            return;
+        }
+
+        if (!textField.IsFirstResponder && textField.CanBecomeFirstResponder)
+        {
+            textField.BecomeFirstResponder();
+        }
+
+        var allTextRange = textField.GetTextRange(textField.BeginningOfDocument, textField.EndOfDocument);
+        if (allTextRange is not null)
+        {
+            textField.SelectedTextRange = allTextRange;
+        }
+    }
+
+    private void ForceMacCommandFirstResponder()
+    {
+        if (MainCommandEntry.Handler?.PlatformView is not UITextField commandField)
+        {
+            return;
+        }
+
+        var commandWindow = commandField.Window ?? Window?.Handler?.PlatformView as UIWindow;
+        if (commandWindow is not null && !commandWindow.IsKeyWindow)
+        {
+            commandWindow.MakeKeyAndVisible();
+        }
+
+        var firstResponder = GetCurrentMacFirstResponder();
+        var commandAlreadyFirst = ReferenceEquals(firstResponder, commandField) || commandField.IsFirstResponder;
+        if (commandAlreadyFirst)
+        {
+            SelectAllMacTextField(commandField);
+            return;
+        }
+
+        MainCommandEntry.Focus();
+
+        firstResponder = GetCurrentMacFirstResponder();
+        if (firstResponder is not null &&
+            !ReferenceEquals(firstResponder, commandField) &&
+            firstResponder.CanResignFirstResponder)
+        {
+            firstResponder.ResignFirstResponder();
+        }
+
+        if (commandField.CanBecomeFirstResponder)
+        {
+            commandField.BecomeFirstResponder();
+        }
+
+        SelectAllMacTextField(commandField);
+    }
+
+    private static void SelectAllMacTextField(UITextField textField)
+    {
+        var allTextRange = textField.GetTextRange(textField.BeginningOfDocument, textField.EndOfDocument);
+        if (allTextRange is not null)
+        {
+            textField.SelectedTextRange = allTextRange;
+        }
+
+        var selectAllSelector = new Selector("selectAll:");
+        if (textField.RespondsToSelector(selectAllSelector))
+        {
+            textField.PerformSelector(selectAllSelector, null, 0);
+        }
+    }
+
+    private static int GetSelectedLength(UITextField textField)
+    {
+        var selectedRange = textField.SelectedTextRange;
+        if (selectedRange is null)
+        {
+            return 0;
+        }
+
+        return (int)textField.GetOffsetFromPosition(selectedRange.Start, selectedRange.End);
+    }
+
+    private bool IsMainCommandSelectAllSatisfied(out int textLength, out int selectedLength)
+    {
+        if (MainCommandEntry.Handler?.PlatformView is UITextField commandField)
+        {
+            textLength = commandField.Text?.Length ?? 0;
+            selectedLength = GetSelectedLength(commandField);
+            return textLength <= 0 || selectedLength >= textLength;
+        }
+
+        textLength = MainCommandEntry.Text?.Length ?? 0;
+        selectedLength = MainCommandEntry.SelectionLength;
+        return textLength <= 0 || selectedLength >= textLength;
+    }
+
+    private static UIResponder? GetCurrentMacFirstResponder()
+    {
+        var keyWindow = GetMacKeyWindow();
+        if (keyWindow is not null)
+        {
+            var keyWindowFirstResponder = FindFirstResponderInWindow(keyWindow);
+            if (keyWindowFirstResponder is not null)
+            {
+                return keyWindowFirstResponder;
+            }
+        }
+
+        foreach (var window in EnumerateMacWindows())
+        {
+            var responder = FindFirstResponderInWindow(window);
+            if (responder is not null)
+            {
+                return responder;
+            }
+        }
+
+        return null;
+    }
+
+    private static UIWindow? GetMacKeyWindow()
+    {
+        foreach (var window in EnumerateMacWindows())
+        {
+            if (window.IsKeyWindow)
+            {
+                return window;
+            }
+        }
+
+        return null;
+    }
+
+    private static IEnumerable<UIWindow> EnumerateMacWindows()
+    {
+        var app = UIApplication.SharedApplication;
+        if (app is null)
+        {
+            yield break;
+        }
+
+        var seenWindows = new HashSet<nint>();
+        if (app.ConnectedScenes is not null)
+        {
+            foreach (var scene in app.ConnectedScenes)
+            {
+                if (scene is not UIWindowScene windowScene)
+                {
+                    continue;
+                }
+
+                foreach (var window in windowScene.Windows)
+                {
+                    if (window is null || !seenWindows.Add(window.Handle))
+                    {
+                        continue;
+                    }
+
+                    yield return window;
+                }
+            }
+        }
+
+    }
+
+    private static UIResponder? FindFirstResponderInWindow(UIWindow window)
+    {
+        if (window.IsFirstResponder)
+        {
+            return window;
+        }
+
+        foreach (var subview in window.Subviews)
+        {
+            if (subview is null)
+            {
+                continue;
+            }
+
+            var responder = FindFirstResponderInView(subview);
+            if (responder is not null)
+            {
+                return responder;
+            }
+        }
+
+        return null;
+    }
+
+    private static UIResponder? FindFirstResponderInView(UIView view)
+    {
+        if (view.IsFirstResponder)
+        {
+            return view;
+        }
+
+        foreach (var subview in view.Subviews)
+        {
+            if (subview is null)
+            {
+                continue;
+            }
+
+            var responder = FindFirstResponderInView(subview);
+            if (responder is not null)
+            {
+                return responder;
+            }
+        }
+
+        return null;
+    }
+
     private void SetMacModalPseudoFocus(ModalFocusTarget target)
     {
         ResignModalInputFirstResponder();
@@ -4166,7 +4827,12 @@ public partial class MainPage : ContentPage
     private static bool IsMacAppForegroundActive()
     {
         var app = UIApplication.SharedApplication;
-        if (app.ApplicationState != UIApplicationState.Active)
+        if (app.ApplicationState == UIApplicationState.Active)
+        {
+            return true;
+        }
+
+        if (app.ApplicationState == UIApplicationState.Background)
         {
             return false;
         }
@@ -4176,6 +4842,17 @@ public partial class MainPage : ContentPage
             if (scene is UIScene uiScene && uiScene.ActivationState == UISceneActivationState.ForegroundActive)
             {
                 return true;
+            }
+        }
+
+        if (app.ApplicationState == UIApplicationState.Inactive)
+        {
+            foreach (var scene in app.ConnectedScenes)
+            {
+                if (scene is UIScene uiScene && uiScene.ActivationState == UISceneActivationState.ForegroundInactive)
+                {
+                    return true;
+                }
             }
         }
 

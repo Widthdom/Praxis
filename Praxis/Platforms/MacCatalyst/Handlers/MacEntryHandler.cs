@@ -101,6 +101,7 @@ public class MacEntryHandler : EntryHandler
 
             if (evt is null)
             {
+                TryInsertTextFromNullEventPresses(presses);
                 return;
             }
 
@@ -166,6 +167,56 @@ public class MacEntryHandler : EntryHandler
         {
             pseudoFocused = enabled;
             ApplyFocusVisualState();
+        }
+
+        protected bool TryInsertTextFromNullEventPresses(NSSet<UIPress> presses)
+        {
+            var inserted = false;
+            foreach (var pressObject in presses)
+            {
+                if (pressObject is not UIPress press)
+                {
+                    continue;
+                }
+
+                var key = press.Key;
+                if (key is null)
+                {
+                    continue;
+                }
+
+                var modifiers = key.ModifierFlags;
+                if ((modifiers & (UIKeyModifierFlags.Command | UIKeyModifierFlags.Control | UIKeyModifierFlags.Alternate)) != 0)
+                {
+                    continue;
+                }
+
+                var text = key.Characters;
+                if (string.IsNullOrEmpty(text))
+                {
+                    continue;
+                }
+
+                if (string.Equals(text, "\u007F", StringComparison.Ordinal) ||
+                    string.Equals(text, "\b", StringComparison.Ordinal))
+                {
+                    DeleteBackward();
+                    inserted = true;
+                    continue;
+                }
+
+                if (string.Equals(text, "\r", StringComparison.Ordinal) ||
+                    string.Equals(text, "\n", StringComparison.Ordinal) ||
+                    string.Equals(text, "\t", StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                InsertText(text);
+                inserted = true;
+            }
+
+            return inserted;
         }
 
         private static bool TryHandleEditorShortcuts(NSSet<UIPress> presses)

@@ -26,6 +26,8 @@ It stores launcher buttons in SQLite and can execute tools with arguments.
 - Clicking a suggestion fills the command box and executes the suggestion immediately.
 - Right-clicking a launcher button to open the context menu closes the command suggestion popup, removes focus from the command input, and moves target focus to `Edit`.
 - Enter from command box executes all buttons whose `command` exactly matches input (case-insensitive, trim-aware).
+- When the app window becomes active, if editor modal and conflict dialog are both closed, focus moves to command box and its text is selected (Windows/macOS).
+- On macOS, Search input uses a focus guard: non-user-initiated focus attempts are rejected so activation-time focus stays on command input.
 - Editor modal keyboard behavior:
   - `Tab`/`Shift+Tab` stays inside modal controls and wraps at edges.
   - On macOS, `Shift+Tab` from `GUID` stays in the modal focus ring (does not escape to main page).
@@ -159,6 +161,8 @@ SQLite にボタン情報を保存し、ツールと引数を実行できます�
 - ボタンを右クリックしてコンテキストメニューを開いたときは、Command 候補一覧を閉じ、Command 欄からフォーカスを外して `Edit` にフォーカスを移します。
 - 候補一覧の描画は Windows / macOS で同一の行レイアウト（3列: `Command` / `ButtonText` / `Tool Arguments`）を使用します。
 - コマンド欄で `Enter` 実行したとき、`command` 完全一致（前後空白除去・大文字小文字非依存）のボタンが複数あれば全件実行します。
+- アプリウィンドウがアクティブになったとき、編集モーダルと競合ダイアログが閉じていれば Command 欄へフォーカスし、既存文字列を全選択します（Windows/macOS）。
+- macOS の Search 欄にはフォーカスガードがあり、ユーザー起点でないフォーカス遷移は拒否して、アクティブ化直後の Command フォーカス維持を優先します。
 - 編集モーダルのキーボード操作:
   - `Tab` / `Shift+Tab` はモーダル内のみで循環し、端でラップします。
   - macOS では `GUID` 欄で `Shift+Tab` を押しても、メイン画面へは抜けずモーダル内フォーカス循環を維持します。

@@ -16,6 +16,21 @@ public class CommandEntryHandler : MacEntryHandler
     private static readonly string EscapeKeyInput = ResolveKeyInput("InputEscape", "\u001B");
     private static readonly string ReturnKeyInput = ResolveKeyInput("InputReturn", "\r");
     private static readonly string? EnterKeyInput = TryResolveKeyInput("InputEnter");
+    private static WeakReference<CommandEntryTextField>? lastCommandField;
+
+    public static void RequestNativeActivationFocus(string source)
+    {
+        MainThread.BeginInvokeOnMainThread(() =>
+        {
+            if (lastCommandField is null || !lastCommandField.TryGetTarget(out var field))
+            {
+                return;
+            }
+
+            field.TryApplyNativeActivationFocus();
+            NSTimer.CreateScheduledTimer(0.12, _ => field.TryApplyNativeActivationFocus());
+        });
+    }
 
     protected override MacEntryTextField CreatePlatformView()
     {
@@ -24,6 +39,9 @@ public class CommandEntryHandler : MacEntryHandler
 
     private sealed class CommandEntryTextField : MacEntryTextField
     {
+        private NSObject? windowDidBecomeKeyObserver;
+        private NSObject? didBecomeActiveObserver;
+
         public override void PressesBegan(NSSet<UIPress> presses, UIPressesEvent? evt)
         {
             if (TryHandleEditorShortcuts(presses))
@@ -36,12 +54,40 @@ public class CommandEntryHandler : MacEntryHandler
                 return;
             }
 
-            if (evt is null)
+            if (TryHandleSearchFocusTabNavigation(presses))
             {
                 return;
             }
 
             base.PressesBegan(presses, evt);
+        }
+
+        public override void MovedToWindow()
+        {
+            base.MovedToWindow();
+            if (Window is not null)
+            {
+                lastCommandField = new WeakReference<CommandEntryTextField>(this);
+            }
+
+            AttachWindowDidBecomeKeyObserver();
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                DetachWindowDidBecomeKeyObserver();
+                DetachDidBecomeActiveObserver();
+                if (lastCommandField is not null &&
+                    lastCommandField.TryGetTarget(out var activeField) &&
+                    ReferenceEquals(activeField, this))
+                {
+                    lastCommandField = null;
+                }
+            }
+
+            base.Dispose(disposing);
         }
 
         private static bool TryHandleEditorShortcuts(NSSet<UIPress> presses)
@@ -154,6 +200,148 @@ public class CommandEntryHandler : MacEntryHandler
             }
 
             return false;
+        }
+
+        private static bool TryHandleSearchFocusTabNavigation(NSSet<UIPress> presses)
+        {
+            if (EditorShortcutScopeResolver.IsEditorShortcutScopeActive(
+                    App.IsConflictDialogOpen,
+                    App.IsContextMenuOpen,
+                    App.IsEditorOpen))
+            {
+                return false;
+            }
+
+            foreach (var pressObject in presses)
+            {
+                if (pressObject is not UIPress press)
+                {
+                    continue;
+                }
+
+                var key = press.Key;
+                if (key is null || !IsKeyInput(key, TabKeyInput))
+                {
+                    continue;
+                }
+
+                var modifiers = key.ModifierFlags;
+                if ((modifiers & UIKeyModifierFlags.Shift) != 0)
+                {
+                    continue;
+                }
+
+                if ((modifiers & (UIKeyModifierFlags.Command | UIKeyModifierFlags.Control | UIKeyModifierFlags.Alternate)) != 0)
+                {
+                    continue;
+                }
+
+                MainThread.BeginInvokeOnMainThread(() =>
+                    MainPage.FocusMacSearchEntryFromCommandTab("CommandEntry.Tab"));
+                return true;
+            }
+
+            return false;
+        }
+
+        private void AttachWindowDidBecomeKeyObserver()
+        {
+            DetachWindowDidBecomeKeyObserver();
+            var currentWindow = Window;
+            if (currentWindow is null)
+            {
+                return;
+            }
+
+            windowDidBecomeKeyObserver = NSNotificationCenter.DefaultCenter.AddObserver(
+                UIWindow.DidBecomeKeyNotification,
+                notification => OnWindowDidBecomeKey(notification));
+            AttachDidBecomeActiveObserver();
+        }
+
+        private void DetachWindowDidBecomeKeyObserver()
+        {
+            if (windowDidBecomeKeyObserver is null)
+            {
+                return;
+            }
+
+            NSNotificationCenter.DefaultCenter.RemoveObserver(windowDidBecomeKeyObserver);
+            windowDidBecomeKeyObserver.Dispose();
+            windowDidBecomeKeyObserver = null;
+        }
+
+        private void AttachDidBecomeActiveObserver()
+        {
+            DetachDidBecomeActiveObserver();
+            didBecomeActiveObserver = NSNotificationCenter.DefaultCenter.AddObserver(
+                UIApplication.DidBecomeActiveNotification,
+                _ => OnDidBecomeActive());
+        }
+
+        private void DetachDidBecomeActiveObserver()
+        {
+            if (didBecomeActiveObserver is null)
+            {
+                return;
+            }
+
+            NSNotificationCenter.DefaultCenter.RemoveObserver(didBecomeActiveObserver);
+            didBecomeActiveObserver.Dispose();
+            didBecomeActiveObserver = null;
+        }
+
+        private void OnWindowDidBecomeKey(NSNotification _)
+        {
+            MainThread.BeginInvokeOnMainThread(() =>
+            {
+                TryApplyNativeActivationFocus();
+                NSTimer.CreateScheduledTimer(0.12, _ => TryApplyNativeActivationFocus());
+            });
+        }
+
+        private void OnDidBecomeActive()
+        {
+            MainThread.BeginInvokeOnMainThread(() =>
+            {
+                TryApplyNativeActivationFocus();
+                NSTimer.CreateScheduledTimer(0.12, _ => TryApplyNativeActivationFocus());
+            });
+        }
+
+        internal void TryApplyNativeActivationFocus()
+        {
+            var currentWindow = Window;
+            if (currentWindow is null)
+            {
+                return;
+            }
+
+            if (!currentWindow.IsKeyWindow)
+            {
+                return;
+            }
+
+            if (App.IsEditorOpen || App.IsConflictDialogOpen)
+            {
+                return;
+            }
+
+            if (!IsFirstResponder && CanBecomeFirstResponder)
+            {
+                BecomeFirstResponder();
+            }
+
+            SelectAllText();
+        }
+
+        private void SelectAllText()
+        {
+            var allTextRange = GetTextRange(BeginningOfDocument, EndOfDocument);
+            if (allTextRange is not null)
+            {
+                SelectedTextRange = allTextRange;
+            }
         }
 
         private static bool IsArrowPress(UIPress press, string keyInput, string keyCodeName, int keyCodeNumeric)

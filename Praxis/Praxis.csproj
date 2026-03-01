@@ -23,10 +23,12 @@
   <PropertyGroup Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'maccatalyst' and '$(Configuration)' == 'Debug'">
     <EnableCodeSigning>false</EnableCodeSigning>
     <CodesignRequireProvisioningProfile>false</CodesignRequireProvisioningProfile>
+    <MtouchLink>None</MtouchLink>
+    <EnableAssemblyILStripping>false</EnableAssemblyILStripping>
   </PropertyGroup>
   <PropertyGroup Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'maccatalyst'">
-    <MauiXamlInflator>XamlC</MauiXamlInflator>
-    <_MauiForceXamlCForDebug>true</_MauiForceXamlCForDebug>
+    <MauiXamlInflator>Runtime</MauiXamlInflator>
+    <ValidateXcodeVersion>false</ValidateXcodeVersion>
     <RuntimeIdentifier Condition="'$(RuntimeIdentifier)' == ''">maccatalyst-$([System.Runtime.InteropServices.RuntimeInformation]::ProcessArchitecture.ToString().ToLowerInvariant())</RuntimeIdentifier>
     <NuGetAudit>false</NuGetAudit>
     <NoWarn>$(NoWarn);MAUI1001;XC0022;XC0025;NU1900</NoWarn>
@@ -49,10 +51,44 @@
   <ItemGroup>
     <ProjectReference Include="..\Praxis.Core\Praxis.Core.csproj" />
   </ItemGroup>
-  <Target Name="AdhocSignSqliteDylibForMacCatalystRun"
+  <Target Name="AdhocSignSqliteDylibForMacCatalyst"
+          AfterTargets="_CreateAppBundle;Build"
           BeforeTargets="Run"
-          Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'maccatalyst' and Exists('$(OutputPath)$(AssemblyName).app/Contents/MonoBundle/libe_sqlite3.dylib')">
-    <Exec Command="codesign --force --sign - &quot;$(OutputPath)$(AssemblyName).app/Contents/MonoBundle/libe_sqlite3.dylib&quot;" />
+          Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'maccatalyst'">
+    <Exec Condition="Exists('$(OutputPath)libe_sqlite3.dylib')"
+          Command="codesign --force --sign - --timestamp=none &quot;$(OutputPath)libe_sqlite3.dylib&quot;" />
+    <Exec Condition="Exists('$(OutputPath)$(AssemblyName).app/Contents/MonoBundle/libe_sqlite3.dylib')"
+          Command="codesign --force --sign - --timestamp=none &quot;$(OutputPath)$(AssemblyName).app/Contents/MonoBundle/libe_sqlite3.dylib&quot;" />
+  </Target>
+
+  <Target Name="EnsureMacCatalystXamlEmbeddedResources"
+          AfterTargets="_MauiAddXamlEmbeddedResources"
+          BeforeTargets="CoreCompile"
+          Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'maccatalyst'">
+    <ItemGroup>
+      <EmbeddedResource Remove="App.xaml;MainPage.xaml;Resources/Styles/Colors.xaml;Resources/Styles/Styles.xaml" />
+      <EmbeddedResource Include="App.xaml" LogicalName="Praxis.App.xaml" />
+      <EmbeddedResource Include="MainPage.xaml" LogicalName="Praxis.MainPage.xaml" />
+      <EmbeddedResource Include="Resources/Styles/Colors.xaml" LogicalName="Praxis.Resources.Styles.Colors.xaml" />
+      <EmbeddedResource Include="Resources/Styles/Styles.xaml" LogicalName="Praxis.Resources.Styles.Styles.xaml" />
+    </ItemGroup>
+  </Target>
+
+  <Target Name="ForceMacCatalystCoreCompileForXamlStability"
+          BeforeTargets="CoreCompile"
+          Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'maccatalyst' and '$(Configuration)' == 'Debug'">
+    <Delete Files="$(IntermediateOutputPath)$(MSBuildProjectFile).CoreCompileInputs.cache" />
+    <Delete Files="$(IntermediateOutputPath)$(TargetFileName)" />
+    <Delete Files="$(OutputPath)$(TargetFileName)" />
+  </Target>
+
+  <Target Name="UseCompiledManagedAssemblyInMacCatalystAppBundle"
+          AfterTargets="_CreateAppBundle;Build"
+          BeforeTargets="Run"
+          Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'maccatalyst' and Exists('$(OutputPath)$(TargetFileName)') and Exists('$(OutputPath)$(AssemblyName).app/Contents/MonoBundle/$(TargetFileName)')">
+    <Copy SourceFiles="$(OutputPath)$(TargetFileName)"
+          DestinationFiles="$(OutputPath)$(AssemblyName).app/Contents/MonoBundle/$(TargetFileName)"
+          OverwriteReadOnlyFiles="true" />
   </Target>
 
   <Target Name="EnsureBuildBeforeMacCatalystRun"

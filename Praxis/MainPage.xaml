@@ -37,11 +37,16 @@
                     HeightRequest="40"
                     Padding="0"
                     Command="{Binding CreateNewCommand}" />
-            <Entry x:Name="MainSearchEntry" Grid.Column="2"
-                   Placeholder="Search"
-                   Text="{Binding SearchText}"
-                   Focused="MainSearchEntry_Focused"
-                   HandlerChanged="MainSearchEntry_HandlerChanged" />
+            <controls:SearchEntry x:Name="MainSearchEntry" Grid.Column="2"
+                                  Placeholder="Search"
+                                  Text="{Binding SearchText}"
+                                  Focused="MainSearchEntry_Focused"
+                                  HandlerChanged="MainSearchEntry_HandlerChanged">
+                <controls:SearchEntry.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="MainSearchEntry_Tapped" />
+                    <PointerGestureRecognizer PointerPressed="MainSearchEntry_PointerPressed" />
+                </controls:SearchEntry.GestureRecognizers>
+            </controls:SearchEntry>
         </Grid>
 
         <Border x:Name="CommandSuggestionPopup"

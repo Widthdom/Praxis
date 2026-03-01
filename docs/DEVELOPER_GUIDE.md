@@ -128,6 +128,8 @@ README is user-facing summary; this guide is the implementation-level source of 
   - `Up/Down` wraps at list edges, and `Enter` executes selected suggestion
   - Suggestion click fills `CommandInput` and executes immediately.
   - Plain Enter execution from command box runs all exact command matches (trim-aware, case-insensitive)
+  - When window activation is detected and editor/conflict overlays are closed, `MainCommandEntry` is refocused and text is selected for immediate overwrite input (Windows/macOS)
+  - On macOS, `MainSearchEntry` uses `SearchFocusGuardPolicy`: non-user-initiated search focus is rejected so activation-time command focus is preserved
   - Opening context menu from right click closes suggestions and moves focus target to `Edit` (on macOS, command-input first responder is also resigned)
   - Windows arrow key handling is attached in `MainPage.xaml.cs` (`MainCommandEntry_HandlerChanged` / native `KeyDown`)
   - macOS arrow key handling is attached in `Controls/CommandEntry` + `Platforms/MacCatalyst/Handlers/CommandEntryHandler.cs` (`PressesBegan`)
@@ -197,6 +199,12 @@ README is user-facing summary; this guide is the implementation-level source of 
   - trim/case-insensitive match behavior
   - blank/no-match handling
 - `Praxis.Tests/CommandSuggestionVisibilityPolicyTests.cs` covers suggestion close-policy decisions when context menu opens.
+- `Praxis.Tests/WindowActivationCommandFocusPolicyTests.cs` covers command-input refocus eligibility on window activation:
+  - focus when editor/conflict overlays are both closed
+  - suppress focus while editor modal or conflict dialog is open
+- `Praxis.Tests/SearchFocusGuardPolicyTests.cs` covers macOS search-focus guard behavior:
+  - reject non-user-initiated search focus while activation-time command focus policy is active in foreground
+  - allow search focus when user initiated, app is backgrounded, or command-focus policy is inactive
 - `Praxis.Tests/AppStoragePathLayoutResolverTests.cs` covers platform-specific storage layout rules:
   - Windows DB path (`%USERPROFILE%/AppData/Local/Praxis/praxis.db3`)
   - Mac Catalyst DB path (`~/Library/Application Support/Praxis/praxis.db3`)
@@ -391,6 +399,7 @@ README はユーザー向け要約、このガイドは実装仕様の正本で�
   - `↑/↓` は候補端で循環し、`Enter` で選択候補を実行する
   - 候補クリック時は `CommandInput` を埋めて即時実行する
   - コマンド欄で候補未選択の `Enter` 実行時は、`command` 完全一致（前後空白除去・大文字小文字非依存）の対象を全件実行する
+  - ウィンドウ再アクティブ時に、編集モーダル/競合ダイアログが閉じていれば `MainCommandEntry` を再フォーカスし、入力文字列を全選択して即入力上書きしやすくする（Windows/macOS）
   - 右クリックでコンテキストメニューを開いたときは、候補を閉じて `Edit` をフォーカス対象にする（macOS では Command 入力の first responder も解除する）
   - Windows の方向キー上下は `MainPage.xaml.cs` の `MainCommandEntry_HandlerChanged` / ネイティブ `KeyDown` で処理
   - Windows の `Tab`/`Shift+Tab` 遷移時は、遷移先 `TextBox` で `SelectAll()` を適用（ポインターフォーカス時は適用しない）
@@ -461,6 +470,12 @@ README はユーザー向け要約、このガイドは実装仕様の正本で�
   - 前後空白除去 / 大文字小文字非依存の一致挙動
   - 空入力 / 非一致時の扱い
 - `Praxis.Tests/CommandSuggestionVisibilityPolicyTests.cs` は、コンテキストメニュー表示時に候補一覧を閉じる判定ポリシーを検証する。
+- `Praxis.Tests/WindowActivationCommandFocusPolicyTests.cs` は、ウィンドウ再アクティブ時の command 再フォーカス可否ポリシーを検証する。
+  - 編集モーダル/競合ダイアログがともに閉じているときはフォーカス許可
+  - いずれかが開いているときはフォーカス抑止
+- `Praxis.Tests/SearchFocusGuardPolicyTests.cs` は、macOS の Search フォーカスガード挙動を検証する。
+  - フォアグラウンドで command 再フォーカスポリシーが有効な間は、ユーザー起点でない Search フォーカスを拒否
+  - ユーザー起点、バックグラウンド状態、または command 再フォーカスポリシー非適用時は Search フォーカスを許可
 - `Praxis.Tests/AppStoragePathLayoutResolverTests.cs` は、プラットフォーム別ストレージ配置ルールを検証する。
   - Windows DB パス（`%USERPROFILE%/AppData/Local/Praxis/praxis.db3`）
   - Mac Catalyst DB パス（`~/Library/Application Support/Praxis/praxis.db3`）

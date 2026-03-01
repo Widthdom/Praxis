@@ -1,6 +1,7 @@
 using Foundation;
 using ObjCRuntime;
 using UIKit;
+using Praxis.Controls;
 using Praxis.Core.Logic;
 
 namespace Praxis;
@@ -11,6 +12,9 @@ public class AppDelegate : MauiUIApplicationDelegate
     private static readonly UIKeyCommand ThemeDarkCommand = CreateThemeKeyCommand("d", "handleThemeDark:");
     private static readonly UIKeyCommand ThemeLightCommand = CreateThemeKeyCommand("l", "handleThemeLight:");
     private static readonly UIKeyCommand ThemeSystemCommand = CreateThemeKeyCommand("h", "handleThemeSystem:");
+    private NSObject? didBecomeActiveObserver;
+    private NSObject? willEnterForegroundObserver;
+    private NSObject? windowDidBecomeKeyObserver;
 
     protected override MauiApp CreateMauiApp() => MauiProgram.CreateMauiApp();
 
@@ -21,13 +25,7 @@ public class AppDelegate : MauiUIApplicationDelegate
     public override bool FinishedLaunching(UIApplication application, NSDictionary? launchOptions)
     {
         var result = base.FinishedLaunching(application, launchOptions);
-        MainThread.BeginInvokeOnMainThread(() =>
-        {
-            if (CanBecomeFirstResponder)
-            {
-                BecomeFirstResponder();
-            }
-        });
+        AttachActivationObservers();
         return result;
     }
 
@@ -42,6 +40,10 @@ public class AppDelegate : MauiUIApplicationDelegate
     {
         base.WillEnterForeground(application);
         App.RecordActivation();
+        App.SetMacApplicationActive(true);
+        App.RaiseMacApplicationActivated();
+        CommandEntryHandler.RequestNativeActivationFocus("AppDelegate.WillEnterForeground");
+        MainThread.BeginInvokeOnMainThread(() => MainPage.RequestMacCommandFocusFromNativeActivation("AppDelegate.WillEnterForeground"));
     }
 
     public override void OnActivated(UIApplication application)
@@ -49,10 +51,9 @@ public class AppDelegate : MauiUIApplicationDelegate
         base.OnActivated(application);
         App.RecordActivation();
         App.SetMacApplicationActive(true);
-        if (CanBecomeFirstResponder)
-        {
-            BecomeFirstResponder();
-        }
+        App.RaiseMacApplicationActivated();
+        CommandEntryHandler.RequestNativeActivationFocus("AppDelegate.OnActivated");
+        MainThread.BeginInvokeOnMainThread(() => MainPage.RequestMacCommandFocusFromNativeActivation("AppDelegate.OnActivated"));
     }
 
     [Export("handleThemeDark:")]
@@ -102,5 +103,39 @@ public class AppDelegate : MauiUIApplicationDelegate
 
         var method = typeof(UIKeyCommand).GetMethod("SetWantsPriorityOverSystemBehavior", flags);
         method?.Invoke(command, [true]);
+    }
+
+    private void AttachActivationObservers()
+    {
+        if (didBecomeActiveObserver is not null)
+        {
+            return;
+        }
+
+        var center = NSNotificationCenter.DefaultCenter;
+        didBecomeActiveObserver = center.AddObserver(UIApplication.DidBecomeActiveNotification, _ =>
+        {
+            App.RecordActivation();
+            App.SetMacApplicationActive(true);
+            App.RaiseMacApplicationActivated();
+            CommandEntryHandler.RequestNativeActivationFocus("Observer.DidBecomeActive");
+            MainThread.BeginInvokeOnMainThread(() => MainPage.RequestMacCommandFocusFromNativeActivation("Observer.DidBecomeActive"));
+        });
+        willEnterForegroundObserver = center.AddObserver(UIApplication.WillEnterForegroundNotification, _ =>
+        {
+            App.RecordActivation();
+            App.SetMacApplicationActive(true);
+            App.RaiseMacApplicationActivated();
+            CommandEntryHandler.RequestNativeActivationFocus("Observer.WillEnterForeground");
+            MainThread.BeginInvokeOnMainThread(() => MainPage.RequestMacCommandFocusFromNativeActivation("Observer.WillEnterForeground"));
+        });
+        windowDidBecomeKeyObserver = center.AddObserver(UIWindow.DidBecomeKeyNotification, _ =>
+        {
+            App.RecordActivation();
+            App.SetMacApplicationActive(true);
+            App.RaiseMacApplicationActivated();
+            CommandEntryHandler.RequestNativeActivationFocus("Observer.WindowDidBecomeKey");
+            MainThread.BeginInvokeOnMainThread(() => MainPage.RequestMacCommandFocusFromNativeActivation("Observer.WindowDidBecomeKey"));
+        });
     }
 }
