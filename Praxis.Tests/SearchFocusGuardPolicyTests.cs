@@ -16,7 +16,7 @@ public class SearchFocusGuardPolicyTests
     }
 
     [Fact]
-    public void ShouldAllowSearchFocus_ReturnsTrue_WhenUserInitiated()
+    public void ShouldAllowSearchFocus_ReturnsTrue_WhenUserInitiatedByClearButtonTap()
     {
         var allowed = SearchFocusGuardPolicy.ShouldAllowSearchFocus(
             shouldFocusMainCommand: true,

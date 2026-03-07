@@ -2704,6 +2704,40 @@ public partial class MainPage : ContentPage
 #endif
     }
 
+    private void CommandClearButton_Tapped(object? sender, TappedEventArgs e)
+    {
+        if (viewModel.ClearCommandInputCommand.CanExecute(null))
+        {
+            viewModel.ClearCommandInputCommand.Execute(null);
+        }
+
+        FocusEntryAfterClearButtonTap(MainCommandEntry);
+    }
+
+    private void SearchClearButton_Tapped(object? sender, TappedEventArgs e)
+    {
+#if MACCATALYST
+        MarkMacSearchFocusUserIntent("SearchClearButton.Tapped");
+#endif
+        if (viewModel.ClearSearchTextCommand.CanExecute(null))
+        {
+            viewModel.ClearSearchTextCommand.Execute(null);
+        }
+
+        FocusEntryAfterClearButtonTap(MainSearchEntry);
+    }
+
+    private void FocusEntryAfterClearButtonTap(Entry entry)
+    {
+        Dispatcher.Dispatch(() =>
+        {
+            entry.Focus();
+#if MACCATALYST
+            PlaceMacEntryCaretAtEnd(entry);
+#endif
+        });
+    }
+
     private void ClearButton_PointerEntered(object? sender, PointerEventArgs e)
     {
         SetClearButtonHandCursor(sender, useHandCursor: true);

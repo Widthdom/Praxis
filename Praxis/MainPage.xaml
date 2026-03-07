@@ -53,7 +53,7 @@
                         </DataTrigger>
                     </Border.Triggers>
                     <Border.GestureRecognizers>
-                        <TapGestureRecognizer Command="{Binding ClearCommandInputCommand}" />
+                        <TapGestureRecognizer Tapped="CommandClearButton_Tapped" />
                         <PointerGestureRecognizer PointerEntered="ClearButton_PointerEntered"
                                                   PointerExited="ClearButton_PointerExited" />
                     </Border.GestureRecognizers>
@@ -116,7 +116,7 @@
                         </DataTrigger>
                     </Border.Triggers>
                     <Border.GestureRecognizers>
-                        <TapGestureRecognizer Command="{Binding ClearSearchTextCommand}" />
+                        <TapGestureRecognizer Tapped="SearchClearButton_Tapped" />
                         <PointerGestureRecognizer PointerEntered="ClearButton_PointerEntered"
                                                   PointerExited="ClearButton_PointerExited" />
                     </Border.GestureRecognizers>
