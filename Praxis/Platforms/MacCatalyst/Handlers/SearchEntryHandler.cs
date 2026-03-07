@@ -1,4 +1,5 @@
 #if MACCATALYST
+using CoreGraphics;
 using Praxis.Controls;
 
 namespace Praxis.Controls;
@@ -12,6 +13,8 @@ public class SearchEntryHandler : MacEntryHandler
 
     private sealed class SearchEntryTextField : MacEntryTextField
     {
+        protected override nfloat TextInsetRight => 40;
+
         public override bool BecomeFirstResponder()
         {
             if (!MainPage.ShouldAllowMacSearchEntryFocus())

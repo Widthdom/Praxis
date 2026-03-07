@@ -18,18 +18,64 @@
                                       PointerMoved="RootGrid_PointerMoved" />
         </Grid.GestureRecognizers>
         <Grid x:Name="TopBarGrid" ColumnDefinitions="2*,Auto,2*" ColumnSpacing="8">
-            <controls:CommandEntry x:Name="MainCommandEntry" Grid.Column="0"
-                                   Placeholder="Command"
-                                   Text="{Binding CommandInput}"
-                                   ReturnType="Go"
-                                   ReturnCommand="{Binding ExecuteCommandInputCommand}"
-                                   Focused="MainCommandEntry_Focused"
-                                   HandlerChanged="MainCommandEntry_HandlerChanged">
-                <controls:CommandEntry.GestureRecognizers>
-                    <TapGestureRecognizer Tapped="MainCommandEntry_Tapped" />
-                    <PointerGestureRecognizer PointerPressed="MainCommandEntry_PointerPressed" />
-                </controls:CommandEntry.GestureRecognizers>
-            </controls:CommandEntry>
+            <Grid Grid.Column="0">
+                <controls:CommandEntry x:Name="MainCommandEntry"
+                                       Placeholder="Command"
+                                       Text="{Binding CommandInput}"
+                                       ReturnType="Go"
+                                       ReturnCommand="{Binding ExecuteCommandInputCommand}"
+                                       Focused="MainCommandEntry_Focused"
+                                       HandlerChanged="MainCommandEntry_HandlerChanged">
+                    <controls:CommandEntry.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="MainCommandEntry_Tapped" />
+                        <PointerGestureRecognizer PointerPressed="MainCommandEntry_PointerPressed" />
+                    </controls:CommandEntry.GestureRecognizers>
+                </controls:CommandEntry>
+                <Border HorizontalOptions="End"
+                        VerticalOptions="Center"
+                        Margin="0,0,6,0"
+                        TranslationX="-8"
+                        WidthRequest="18"
+                        HeightRequest="18"
+                        Padding="0"
+                        StrokeThickness="0"
+                        BackgroundColor="{AppThemeBinding Light=#8A8A8A, Dark=#6E6E6E}"
+                        Opacity="0"
+                        InputTransparent="True"
+                        StrokeShape="RoundRectangle 9"
+                        ZIndex="2">
+                    <Border.Triggers>
+                        <DataTrigger TargetType="Border"
+                                     Binding="{Binding IsCommandInputClearVisible}"
+                                     Value="True">
+                            <Setter Property="Opacity" Value="1" />
+                            <Setter Property="InputTransparent" Value="False" />
+                        </DataTrigger>
+                    </Border.Triggers>
+                    <Border.GestureRecognizers>
+                        <TapGestureRecognizer Command="{Binding ClearCommandInputCommand}" />
+                        <PointerGestureRecognizer PointerEntered="ClearButton_PointerEntered"
+                                                  PointerExited="ClearButton_PointerExited" />
+                    </Border.GestureRecognizers>
+                    <Grid WidthRequest="9" HeightRequest="9"
+                          HorizontalOptions="Center"
+                          VerticalOptions="Center"
+                          InputTransparent="True">
+                        <BoxView WidthRequest="9"
+                                 HeightRequest="1.6"
+                                 Color="{AppThemeBinding Light=#F8F8F8, Dark=#F2F2F2}"
+                                 Rotation="45"
+                                 HorizontalOptions="Center"
+                                 VerticalOptions="Center" />
+                        <BoxView WidthRequest="9"
+                                 HeightRequest="1.6"
+                                 Color="{AppThemeBinding Light=#F8F8F8, Dark=#F2F2F2}"
+                                 Rotation="-45"
+                                 HorizontalOptions="Center"
+                                 VerticalOptions="Center" />
+                    </Grid>
+                </Border>
+            </Grid>
             <Button x:Name="CreateButton" Grid.Column="1"
                     Text="{OnPlatform WinUI='&#xE710;', MacCatalyst='+'}"
                     FontFamily="{OnPlatform WinUI='Segoe MDL2 Assets', MacCatalyst=''}"
@@ -37,16 +83,62 @@
                     HeightRequest="40"
                     Padding="0"
                     Command="{Binding CreateNewCommand}" />
-            <controls:SearchEntry x:Name="MainSearchEntry" Grid.Column="2"
-                                  Placeholder="Search"
-                                  Text="{Binding SearchText}"
-                                  Focused="MainSearchEntry_Focused"
-                                  HandlerChanged="MainSearchEntry_HandlerChanged">
-                <controls:SearchEntry.GestureRecognizers>
-                    <TapGestureRecognizer Tapped="MainSearchEntry_Tapped" />
-                    <PointerGestureRecognizer PointerPressed="MainSearchEntry_PointerPressed" />
-                </controls:SearchEntry.GestureRecognizers>
-            </controls:SearchEntry>
+            <Grid Grid.Column="2">
+                <controls:SearchEntry x:Name="MainSearchEntry"
+                                      Placeholder="Search"
+                                      Text="{Binding SearchText}"
+                                      Focused="MainSearchEntry_Focused"
+                                      HandlerChanged="MainSearchEntry_HandlerChanged">
+                    <controls:SearchEntry.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="MainSearchEntry_Tapped" />
+                        <PointerGestureRecognizer PointerPressed="MainSearchEntry_PointerPressed" />
+                    </controls:SearchEntry.GestureRecognizers>
+                </controls:SearchEntry>
+                <Border HorizontalOptions="End"
+                        VerticalOptions="Center"
+                        Margin="0,0,6,0"
+                        TranslationX="-8"
+                        WidthRequest="18"
+                        HeightRequest="18"
+                        Padding="0"
+                        StrokeThickness="0"
+                        BackgroundColor="{AppThemeBinding Light=#8A8A8A, Dark=#6E6E6E}"
+                        Opacity="0"
+                        InputTransparent="True"
+                        StrokeShape="RoundRectangle 9"
+                        ZIndex="2">
+                    <Border.Triggers>
+                        <DataTrigger TargetType="Border"
+                                     Binding="{Binding IsSearchTextClearVisible}"
+                                     Value="True">
+                            <Setter Property="Opacity" Value="1" />
+                            <Setter Property="InputTransparent" Value="False" />
+                        </DataTrigger>
+                    </Border.Triggers>
+                    <Border.GestureRecognizers>
+                        <TapGestureRecognizer Command="{Binding ClearSearchTextCommand}" />
+                        <PointerGestureRecognizer PointerEntered="ClearButton_PointerEntered"
+                                                  PointerExited="ClearButton_PointerExited" />
+                    </Border.GestureRecognizers>
+                    <Grid WidthRequest="9" HeightRequest="9"
+                          HorizontalOptions="Center"
+                          VerticalOptions="Center"
+                          InputTransparent="True">
+                        <BoxView WidthRequest="9"
+                                 HeightRequest="1.6"
+                                 Color="{AppThemeBinding Light=#F8F8F8, Dark=#F2F2F2}"
+                                 Rotation="45"
+                                 HorizontalOptions="Center"
+                                 VerticalOptions="Center" />
+                        <BoxView WidthRequest="9"
+                                 HeightRequest="1.6"
+                                 Color="{AppThemeBinding Light=#F8F8F8, Dark=#F2F2F2}"
+                                 Rotation="-45"
+                                 HorizontalOptions="Center"
+                                 VerticalOptions="Center" />
+                    </Grid>
+                </Border>
+            </Grid>
         </Grid>
 
         <Border x:Name="CommandSuggestionPopup"

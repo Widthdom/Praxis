@@ -1,4 +1,5 @@
 #if MACCATALYST
+using CoreGraphics;
 using Foundation;
 using Microsoft.Maui.ApplicationModel;
 using Praxis.Core.Logic;
@@ -39,6 +40,7 @@ public class CommandEntryHandler : MacEntryHandler
 
     private sealed class CommandEntryTextField : MacEntryTextField
     {
+        protected override nfloat TextInsetRight => 40;
         private NSObject? windowDidBecomeKeyObserver;
         private NSObject? didBecomeActiveObserver;
 

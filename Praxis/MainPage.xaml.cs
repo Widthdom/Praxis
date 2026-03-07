@@ -4,6 +4,7 @@ using Praxis.ViewModels;
 using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using Praxis.Behaviors;
 #if MACCATALYST
 using Foundation;
@@ -18,6 +19,10 @@ public partial class MainPage : ContentPage
 {
 #if MACCATALYST
     private static WeakReference<MainPage>? macLastActivePage;
+    private static readonly IntPtr nsCursorClass = ObjcGetClass("NSCursor");
+    private static readonly IntPtr pointingHandCursorSelector = SelRegisterName("pointingHandCursor");
+    private static readonly IntPtr arrowCursorSelector = SelRegisterName("arrowCursor");
+    private static readonly IntPtr setCursorSelector = SelRegisterName("set");
 #endif
 
     private readonly MainViewModel viewModel;
@@ -2698,6 +2703,57 @@ public partial class MainPage : ContentPage
         EnsureWindowsTextBoxHooks();
 #endif
     }
+
+    private void ClearButton_PointerEntered(object? sender, PointerEventArgs e)
+    {
+        SetClearButtonHandCursor(sender, useHandCursor: true);
+    }
+
+    private void ClearButton_PointerExited(object? sender, PointerEventArgs e)
+    {
+        SetClearButtonHandCursor(sender, useHandCursor: false);
+    }
+
+    private static void SetClearButtonHandCursor(object? sender, bool useHandCursor)
+    {
+#if WINDOWS
+        if (sender is VisualElement element &&
+            element.Handler?.PlatformView is Microsoft.UI.Xaml.FrameworkElement frameworkElement)
+        {
+            frameworkElement.ProtectedCursor = useHandCursor
+                ? Microsoft.UI.Input.InputSystemCursor.Create(Microsoft.UI.Input.InputSystemCursorShape.Hand)
+                : null;
+        }
+#endif
+
+#if MACCATALYST
+        if (nsCursorClass == IntPtr.Zero)
+        {
+            return;
+        }
+
+        var cursorSelector = useHandCursor ? pointingHandCursorSelector : arrowCursorSelector;
+        var cursor = ObjcMsgSendIntPtr(nsCursorClass, cursorSelector);
+        if (cursor != IntPtr.Zero)
+        {
+            ObjcMsgSendVoid(cursor, setCursorSelector);
+        }
+#endif
+    }
+
+#if MACCATALYST
+    [DllImport("/usr/lib/libobjc.A.dylib", EntryPoint = "objc_getClass")]
+    private static extern IntPtr ObjcGetClass(string name);
+
+    [DllImport("/usr/lib/libobjc.A.dylib", EntryPoint = "sel_registerName")]
+    private static extern IntPtr SelRegisterName(string name);
+
+    [DllImport("/usr/lib/libobjc.A.dylib", EntryPoint = "objc_msgSend")]
+    private static extern IntPtr ObjcMsgSendIntPtr(IntPtr receiver, IntPtr selector);
+
+    [DllImport("/usr/lib/libobjc.A.dylib", EntryPoint = "objc_msgSend")]
+    private static extern void ObjcMsgSendVoid(IntPtr receiver, IntPtr selector);
+#endif
 
 #if WINDOWS
     private void CommandTextBox_KeyDown(object sender, Microsoft.UI.Xaml.Input.KeyRoutedEventArgs e)

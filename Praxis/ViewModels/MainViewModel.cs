@@ -59,6 +59,8 @@ public partial class MainViewModel : ObservableObject
     public ObservableCollection<LauncherButtonItemViewModel> VisibleButtons { get; } = [];
     public ObservableCollection<LauncherButtonItemViewModel> DockButtons { get; } = [];
     public ObservableCollection<CommandSuggestionItemViewModel> CommandSuggestions { get; } = [];
+    public bool IsCommandInputClearVisible => InputClearButtonVisibilityPolicy.ShouldShow(CommandInput);
+    public bool IsSearchTextClearVisible => InputClearButtonVisibilityPolicy.ShouldShow(SearchText);
 
     public MainViewModel(
         IAppRepository repository,
@@ -100,12 +102,14 @@ public partial class MainViewModel : ObservableObject
 
     partial void OnSearchTextChanged(string value)
     {
+        OnPropertyChanged(nameof(IsSearchTextClearVisible));
         ClearSelectionState();
         ApplyFilter();
     }
 
     partial void OnCommandInputChanged(string value)
     {
+        OnPropertyChanged(nameof(IsCommandInputClearVisible));
         if (suppressCommandSuggestionRefresh)
         {
             return;
@@ -129,6 +133,31 @@ public partial class MainViewModel : ObservableObject
         CloseCommandSuggestions();
 
         await ExecuteCommandMatchesAsync(cmd);
+    }
+
+    [RelayCommand]
+    private void ClearCommandInput()
+    {
+        if (string.IsNullOrEmpty(CommandInput))
+        {
+            return;
+        }
+
+        suppressCommandSuggestionRefresh = true;
+        CommandInput = string.Empty;
+        suppressCommandSuggestionRefresh = false;
+        CloseCommandSuggestions();
+    }
+
+    [RelayCommand]
+    private void ClearSearchText()
+    {
+        if (string.IsNullOrEmpty(SearchText))
+        {
+            return;
+        }
+
+        SearchText = string.Empty;
     }
 
     [RelayCommand]

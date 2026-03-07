@@ -84,14 +84,23 @@ public class MacEntryHandler : EntryHandler
             Layer.AddSublayer(focusBorderLayer);
         }
 
+        protected virtual nfloat TextInsetLeft => HorizontalInset;
+        protected virtual nfloat TextInsetRight => HorizontalInset;
+
+        private CGRect InsetTextBounds(CGRect forBounds)
+        {
+            var width = Math.Max(0, forBounds.Width - (TextInsetLeft + TextInsetRight));
+            return new CGRect(forBounds.X + TextInsetLeft, forBounds.Y, width, forBounds.Height);
+        }
+
         public override CGRect TextRect(CGRect forBounds)
-            => forBounds.Inset(HorizontalInset, 0);
+            => InsetTextBounds(forBounds);
 
         public override CGRect EditingRect(CGRect forBounds)
-            => forBounds.Inset(HorizontalInset, 0);
+            => InsetTextBounds(forBounds);
 
         public override CGRect PlaceholderRect(CGRect forBounds)
-            => forBounds.Inset(HorizontalInset, 0);
+            => InsetTextBounds(forBounds);
 
         public override void PressesBegan(NSSet<UIPress> presses, UIPressesEvent? evt)
         {
