@@ -2720,9 +2720,10 @@ public partial class MainPage : ContentPage
         if (sender is VisualElement element &&
             element.Handler?.PlatformView is Microsoft.UI.Xaml.FrameworkElement frameworkElement)
         {
-            frameworkElement.ProtectedCursor = useHandCursor
+            var cursor = useHandCursor
                 ? Microsoft.UI.Input.InputSystemCursor.Create(Microsoft.UI.Input.InputSystemCursorShape.Hand)
                 : null;
+            NonPublicPropertySetter.TrySet(frameworkElement, "ProtectedCursor", cursor);
         }
 #endif
 
