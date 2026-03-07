@@ -1,20 +1,21 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <svg width="456" height="456" viewBox="0 0 456 456" version="1.1" xmlns="http://www.w3.org/2000/svg">
   <defs>
-    <linearGradient id="outerHexGrad" x1="70" y1="74" x2="386" y2="382" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#A768F1" />
-      <stop offset="0.55" stop-color="#8A2BE2" />
-      <stop offset="1" stop-color="#6E1FC8" />
-    </linearGradient>
-    <linearGradient id="innerHexGrad" x1="86" y1="112" x2="370" y2="344" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#9F59EE" />
-      <stop offset="0.55" stop-color="#8A2BE2" />
-      <stop offset="1" stop-color="#6920C0" />
+    <linearGradient id="outerHexGrad" x1="44" y1="34" x2="412" y2="428" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#D7B6FF" />
+      <stop offset="0.5" stop-color="#9D57EC" />
+      <stop offset="1" stop-color="#54158F" />
     </linearGradient>
   </defs>
   <g>
-    <polygon points="228,40 390.8,134 390.8,322 228,416 65.2,322 65.2,134" fill="url(#outerHexGrad)" />
-    <circle cx="228" cy="228" r="163" fill="#FFFFFF" />
-    <polygon points="390.8,228 309.4,87 146.6,87 65.2,228 146.6,369 309.4,369" fill="url(#innerHexGrad)" />
+    <polygon points="228,6 420.2,117 420.2,339 228,450 35.8,339 35.8,117" fill="url(#outerHexGrad)" />
+    <circle cx="228" cy="228" r="190" fill="#FFFFFF" />
+
+    <polygon points="228,228 418,228 323,63.5" fill="#7A2BC9" />
+    <polygon points="228,228 323,63.5 133,63.5" fill="#C894FF" />
+    <polygon points="228,228 133,63.5 38,228" fill="#E2C5FF" />
+    <polygon points="228,228 38,228 133,392.5" fill="#B276F6" />
+    <polygon points="228,228 133,392.5 323,392.5" fill="#9650E9" />
+    <polygon points="228,228 323,392.5 418,228" fill="#54158F" />
   </g>
 </svg>
