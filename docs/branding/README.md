@@ -7,7 +7,7 @@ This folder contains branding deliverables derived from the production app icon 
 Only files declared in `Praxis/Praxis.csproj` are used automatically at build time.
 
 Build-referenced assets:
-- `Praxis/Resources/AppIcon/appiconfg-windows.svg`
+- `Praxis/Resources/AppIcon/appiconfg_windows.svg`
   - Windows app icon source (`MauiIcon` for Windows target).
 - `Praxis/Resources/AppIcon/appicon.svg` + `Praxis/Resources/AppIcon/appiconfg.svg`
   - Non-Windows app icon background + foreground (`MauiIcon` for non-Windows targets).
@@ -36,7 +36,7 @@ Generated PNG outputs are stored in:
 
 - Core motif: nested hexagon geometry with a white inscribed circle.
 - Micro variants intentionally keep polygonal segmentation and contrast while reducing visual collapse at tiny sizes.
-- The `appiconfg-windows.svg` variant stays transparent outside the icon silhouette to avoid a forced tile background in Windows shell contexts.
+- The `appiconfg_windows.svg` variant stays transparent outside the icon silhouette to avoid a forced tile background in Windows shell contexts.
 
 ## 日本語訳（後半）
 
@@ -51,4 +51,4 @@ Generated PNG outputs are stored in:
 - 基本モチーフは「正六角形の入れ子 + 白い内接円」です。
 - micro版は、小サイズで潰れにくくするためにわずかに簡略化しています。
   - ただし、ポリゴン分割感と明暗コントラストは維持します。
-- `appiconfg-windows.svg` は、アイコン外側を透明のままにして、Windowsのタスクバー/タイトルバー系で背景タイルが目立ちにくい構成にしています。
+- `appiconfg_windows.svg` は、アイコン外側を透明のままにして、Windowsのタスクバー/タイトルバー系で背景タイルが目立ちにくい構成にしています。

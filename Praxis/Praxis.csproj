@@ -35,7 +35,7 @@
   </PropertyGroup>
   <ItemGroup>
     <MauiIcon Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'"
-              Include="Resources\AppIcon\appiconfg-windows.svg" />
+              Include="Resources\AppIcon\appiconfg_windows.svg" />
     <MauiIcon Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) != 'windows'"
               Include="Resources\AppIcon\appicon.svg"
               ForegroundFile="Resources\AppIcon\appiconfg.svg"
