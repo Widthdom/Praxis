@@ -35,12 +35,12 @@
   </PropertyGroup>
   <ItemGroup>
     <MauiIcon Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'"
-              Include="Resources\AppIcon\appiconfg.svg" />
+              Include="Resources\AppIcon\appiconfg-windows.svg" />
     <MauiIcon Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) != 'windows'"
               Include="Resources\AppIcon\appicon.svg"
               ForegroundFile="Resources\AppIcon\appiconfg.svg"
               Color="#FFFFFF" />
-    <MauiSplashScreen Include="Resources\Splash\splash.svg" Color="#0F5A4D" BaseSize="128,128" />
+    <MauiSplashScreen Include="Resources\Splash\splash.svg" Color="#FFFFFF" BaseSize="128,128" />
     <MauiImage Include="Resources\Images\*" />
     <MauiFont Include="Resources\Fonts\*" />
     <MauiAsset Include="Resources\Raw\**" LogicalName="%(RecursiveDir)%(Filename)%(Extension)" />

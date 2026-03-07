@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg width="64" height="64" viewBox="0 0 456 456" version="1.1" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="outerHexGrad" x1="44" y1="34" x2="412" y2="428" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#E8D8FF" />
+      <stop offset="0.48" stop-color="#9E5AEB" />
+      <stop offset="1" stop-color="#3F1268" />
+    </linearGradient>
+  </defs>
+  <rect x="0" y="0" width="456" height="456" fill="#FFFFFF" />
+  <g>
+    <polygon points="228,6 420.2,117 420.2,339 228,450 35.8,339 35.8,117" fill="url(#outerHexGrad)" />
+    <circle cx="228" cy="228" r="186" fill="#FFFFFF" />
+
+    <polygon points="228,228 396,228 312,82.5" fill="#8B4BD7" />
+    <polygon points="228,228 312,82.5 144,82.5" fill="#CFA9FF" />
+    <polygon points="228,228 144,82.5 60,228" fill="#F0E3FF" />
+    <polygon points="228,228 60,228 144,373.5" fill="#B573F2" />
+    <polygon points="228,228 144,373.5 312,373.5" fill="#7D36CC" />
+    <polygon points="228,228 312,373.5 396,228" fill="#3B0F63" />
+  </g>
+</svg>

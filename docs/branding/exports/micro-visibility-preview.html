@@ -1,0 +1,76 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<style>
+  :root { color-scheme: light; }
+  html, body { margin: 0; background: #ececec; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+  .wrap {
+    width: 1200px;
+    min-height: 860px;
+    box-sizing: border-box;
+    padding: 20px;
+    display: grid;
+    grid-template-rows: auto 1fr 1fr 1fr;
+    row-gap: 14px;
+  }
+  h1 { margin: 0 0 2px; font-size: 38px; line-height: 1.12; }
+  .legend { margin: 0; color: #4d4d4d; font-size: 24px; }
+  .row {
+    display: grid;
+    grid-template-columns: 210px repeat(5, 1fr);
+    align-items: center;
+    column-gap: 12px;
+  }
+  .lab { font-size: 36px; font-weight: 600; color: #333; }
+  .cell {
+    height: 205px;
+    border-radius: 14px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    border: 1px solid rgba(0,0,0,.12);
+  }
+  .bg-light { background: #f7f7f8; }
+  .bg-mid { background: #cfd3d9; }
+  .bg-dark { background: #20242a; color: #e8ebf1; }
+  .size-label { font-size: 28px; opacity: .9; }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Praxis micro icon visibility check</h1>
+    <div class="legend">Source: appiconfg-windows.svg (transparent outside icon)</div>
+
+    <div class="row">
+      <div class="lab">Light BG</div>
+      <div class="cell bg-light"><img src="file:///Users/widom/Projects/mine/Praxis/Praxis/Resources/AppIcon/appiconfg-windows.svg" width="128" height="128"><div class="size-label">128</div></div>
+      <div class="cell bg-light"><img src="file:///Users/widom/Projects/mine/Praxis/Praxis/Resources/AppIcon/appiconfg-windows.svg" width="64" height="64"><div class="size-label">64</div></div>
+      <div class="cell bg-light"><img src="file:///Users/widom/Projects/mine/Praxis/Praxis/Resources/AppIcon/appiconfg-windows.svg" width="32" height="32"><div class="size-label">32</div></div>
+      <div class="cell bg-light"><img src="file:///Users/widom/Projects/mine/Praxis/Praxis/Resources/AppIcon/appiconfg-windows.svg" width="24" height="24"><div class="size-label">24</div></div>
+      <div class="cell bg-light"><img src="file:///Users/widom/Projects/mine/Praxis/Praxis/Resources/AppIcon/appiconfg-windows.svg" width="16" height="16"><div class="size-label">16</div></div>
+    </div>
+
+    <div class="row">
+      <div class="lab">Mid BG</div>
+      <div class="cell bg-mid"><img src="file:///Users/widom/Projects/mine/Praxis/Praxis/Resources/AppIcon/appiconfg-windows.svg" width="128" height="128"><div class="size-label">128</div></div>
+      <div class="cell bg-mid"><img src="file:///Users/widom/Projects/mine/Praxis/Praxis/Resources/AppIcon/appiconfg-windows.svg" width="64" height="64"><div class="size-label">64</div></div>
+      <div class="cell bg-mid"><img src="file:///Users/widom/Projects/mine/Praxis/Praxis/Resources/AppIcon/appiconfg-windows.svg" width="32" height="32"><div class="size-label">32</div></div>
+      <div class="cell bg-mid"><img src="file:///Users/widom/Projects/mine/Praxis/Praxis/Resources/AppIcon/appiconfg-windows.svg" width="24" height="24"><div class="size-label">24</div></div>
+      <div class="cell bg-mid"><img src="file:///Users/widom/Projects/mine/Praxis/Praxis/Resources/AppIcon/appiconfg-windows.svg" width="16" height="16"><div class="size-label">16</div></div>
+    </div>
+
+    <div class="row">
+      <div class="lab">Dark BG</div>
+      <div class="cell bg-dark"><img src="file:///Users/widom/Projects/mine/Praxis/Praxis/Resources/AppIcon/appiconfg-windows.svg" width="128" height="128"><div class="size-label">128</div></div>
+      <div class="cell bg-dark"><img src="file:///Users/widom/Projects/mine/Praxis/Praxis/Resources/AppIcon/appiconfg-windows.svg" width="64" height="64"><div class="size-label">64</div></div>
+      <div class="cell bg-dark"><img src="file:///Users/widom/Projects/mine/Praxis/Praxis/Resources/AppIcon/appiconfg-windows.svg" width="32" height="32"><div class="size-label">32</div></div>
+      <div class="cell bg-dark"><img src="file:///Users/widom/Projects/mine/Praxis/Praxis/Resources/AppIcon/appiconfg-windows.svg" width="24" height="24"><div class="size-label">24</div></div>
+      <div class="cell bg-dark"><img src="file:///Users/widom/Projects/mine/Praxis/Praxis/Resources/AppIcon/appiconfg-windows.svg" width="16" height="16"><div class="size-label">16</div></div>
+    </div>
+  </div>
+</body>
+</html>
