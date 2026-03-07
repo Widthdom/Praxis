@@ -1,4 +1,5 @@
 using Praxis.Core.Logic;
+using Praxis.Core.Models;
 using Praxis.ViewModels;
 using System.Collections.Specialized;
 using System.ComponentModel;
@@ -681,7 +682,7 @@ public partial class MainPage : ContentPage
 
     private void ApplyModalEditorThemeTextColors()
     {
-        var dark = Application.Current?.RequestedTheme == AppTheme.Dark;
+        var dark = IsDarkThemeActive();
         var textColor = Color.FromArgb(ThemeTextColorPolicy.ResolveTextColorHex(dark));
         ModalClipWordEditor.TextColor = textColor;
         ModalNoteEditor.TextColor = textColor;
@@ -2179,14 +2180,37 @@ public partial class MainPage : ContentPage
 #endif
         var theme = viewModel.SelectedTheme switch
         {
-            Praxis.Core.Models.ThemeMode.Light => AppTheme.Light,
-            Praxis.Core.Models.ThemeMode.Dark => AppTheme.Dark,
+            ThemeMode.Light => AppTheme.Light,
+            ThemeMode.Dark => AppTheme.Dark,
             _ => Application.Current?.RequestedTheme ?? AppTheme.Unspecified,
         };
 
         return theme == AppTheme.Dark
             ? Color.FromArgb("#1E1E1E")
             : Color.FromArgb("#F2F2F2");
+    }
+
+    private bool IsDarkThemeActive()
+    {
+        var selectedTheme = Application.Current?.UserAppTheme switch
+        {
+            AppTheme.Dark => ThemeMode.Dark,
+            AppTheme.Light => ThemeMode.Light,
+            _ => ThemeMode.System,
+        };
+
+        var requestedThemeDark = Application.Current?.RequestedTheme == AppTheme.Dark;
+#if MACCATALYST
+        bool? traitDark = (Window?.Handler?.PlatformView as UIWindow)?.TraitCollection?.UserInterfaceStyle switch
+        {
+            UIUserInterfaceStyle.Dark => true,
+            UIUserInterfaceStyle.Light => false,
+            _ => null,
+        };
+#else
+        bool? traitDark = null;
+#endif
+        return ThemeDarkStateResolver.Resolve(selectedTheme, requestedThemeDark, traitDark);
     }
 
     private void ApplyNeutralStatusBackground()
@@ -2483,7 +2507,7 @@ public partial class MainPage : ContentPage
 
     private void ApplyButtonFocusVisual(Button button, bool focused)
     {
-        var dark = Application.Current?.RequestedTheme == AppTheme.Dark;
+        var dark = IsDarkThemeActive();
         button.BorderColor = Color.FromArgb(ButtonFocusVisualPolicy.ResolveBorderColorHex(focused, dark));
         button.BorderWidth = ButtonFocusVisualPolicy.ResolveBorderWidth();
     }
@@ -3898,7 +3922,7 @@ public partial class MainPage : ContentPage
                 MinimumHeightRequest = 34,
                 HorizontalOptions = LayoutOptions.Fill,
                 BackgroundColor = item.IsSelected
-                    ? (Application.Current?.RequestedTheme == AppTheme.Dark ? Color.FromArgb("#3D3D3D") : Color.FromArgb("#E6E6E6"))
+                    ? (IsDarkThemeActive() ? Color.FromArgb("#3D3D3D") : Color.FromArgb("#E6E6E6"))
                     : Colors.Transparent,
             };
 
@@ -3916,7 +3940,7 @@ public partial class MainPage : ContentPage
             {
                 Text = item.Command,
                 LineBreakMode = LineBreakMode.TailTruncation,
-                TextColor = Application.Current?.RequestedTheme == AppTheme.Dark
+                TextColor = IsDarkThemeActive()
                     ? Color.FromArgb("#F2F2F2")
                     : Color.FromArgb("#111111"),
             };
@@ -3926,7 +3950,7 @@ public partial class MainPage : ContentPage
             {
                 Text = item.ButtonText,
                 LineBreakMode = LineBreakMode.TailTruncation,
-                TextColor = Application.Current?.RequestedTheme == AppTheme.Dark
+                TextColor = IsDarkThemeActive()
                     ? Color.FromArgb("#F2F2F2")
                     : Color.FromArgb("#111111"),
             };
@@ -3937,7 +3961,7 @@ public partial class MainPage : ContentPage
             {
                 Text = item.ToolArguments,
                 LineBreakMode = LineBreakMode.TailTruncation,
-                TextColor = Application.Current?.RequestedTheme == AppTheme.Dark
+                TextColor = IsDarkThemeActive()
                     ? Color.FromArgb("#F2F2F2")
                     : Color.FromArgb("#111111"),
             };
@@ -4369,7 +4393,7 @@ public partial class MainPage : ContentPage
 
     private void ApplyMacModalPseudoFocusVisuals()
     {
-        var dark = Application.Current?.RequestedTheme == AppTheme.Dark;
+        var dark = IsDarkThemeActive();
         var focusedBorderColor = dark ? Color.FromArgb("#F2F2F2") : Color.FromArgb("#1A1A1A");
 
         ApplyMacPseudoFocusVisual(ModalCancelButton, macPseudoFocusedModalTarget == ModalFocusTarget.CancelButton, focusedBorderColor);
@@ -4412,7 +4436,7 @@ public partial class MainPage : ContentPage
                 MinimumHeightRequest = 34,
                 HorizontalOptions = LayoutOptions.Fill,
                 BackgroundColor = item.IsSelected
-                    ? (Application.Current?.RequestedTheme == AppTheme.Dark ? Color.FromArgb("#3D3D3D") : Color.FromArgb("#E6E6E6"))
+                    ? (IsDarkThemeActive() ? Color.FromArgb("#3D3D3D") : Color.FromArgb("#E6E6E6"))
                     : Colors.Transparent,
             };
 
@@ -4430,7 +4454,7 @@ public partial class MainPage : ContentPage
             {
                 Text = item.Command,
                 LineBreakMode = LineBreakMode.TailTruncation,
-                TextColor = Application.Current?.RequestedTheme == AppTheme.Dark
+                TextColor = IsDarkThemeActive()
                     ? Color.FromArgb("#F2F2F2")
                     : Color.FromArgb("#111111"),
             };
@@ -4440,7 +4464,7 @@ public partial class MainPage : ContentPage
             {
                 Text = item.ButtonText,
                 LineBreakMode = LineBreakMode.TailTruncation,
-                TextColor = Application.Current?.RequestedTheme == AppTheme.Dark
+                TextColor = IsDarkThemeActive()
                     ? Color.FromArgb("#F2F2F2")
                     : Color.FromArgb("#111111"),
             };
@@ -4451,7 +4475,7 @@ public partial class MainPage : ContentPage
             {
                 Text = item.ToolArguments,
                 LineBreakMode = LineBreakMode.TailTruncation,
-                TextColor = Application.Current?.RequestedTheme == AppTheme.Dark
+                TextColor = IsDarkThemeActive()
                     ? Color.FromArgb("#F2F2F2")
                     : Color.FromArgb("#111111"),
             };
@@ -4466,11 +4490,34 @@ public partial class MainPage : ContentPage
     {
         EnsureMacFirstResponder();
         ApplyMacContentScale();
+        ApplyMacEntryVisualState();
         ApplyMacClipWordEditorVisualState();
         ApplyMacNoteEditorVisualState();
         ApplyMacModalPseudoFocusVisuals();
         ApplyMacCommandSuggestionKeyCommands();
         ApplyMacEditorKeyCommands();
+    }
+
+    private void ApplyMacEntryVisualState()
+    {
+        RefreshMacEntryVisualState(MainCommandEntry);
+        RefreshMacEntryVisualState(MainSearchEntry);
+        RefreshMacEntryVisualState(ModalGuidEntry);
+        RefreshMacEntryVisualState(ModalCommandEntry);
+        RefreshMacEntryVisualState(ModalButtonTextEntry);
+        RefreshMacEntryVisualState(ModalToolEntry);
+        RefreshMacEntryVisualState(ModalArgumentsEntry);
+    }
+
+    private static void RefreshMacEntryVisualState(Entry entry)
+    {
+        if (entry.Handler?.PlatformView is not UITextField textField)
+        {
+            return;
+        }
+
+        textField.SetNeedsLayout();
+        textField.LayoutIfNeeded();
     }
 
     private void ApplyMacClipWordEditorVisualState()
@@ -4480,7 +4527,7 @@ public partial class MainPage : ContentPage
             return;
         }
 
-        var dark = Application.Current?.RequestedTheme == AppTheme.Dark;
+        var dark = IsDarkThemeActive();
         textView.TintColor = dark ? UIColor.White : UIColor.Black;
     }
 
@@ -4514,7 +4561,7 @@ public partial class MainPage : ContentPage
             return;
         }
 
-        var dark = Application.Current?.RequestedTheme == AppTheme.Dark;
+        var dark = IsDarkThemeActive();
         textView.TintColor = dark ? UIColor.White : UIColor.Black;
     }
 

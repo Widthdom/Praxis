@@ -7,6 +7,7 @@ using Microsoft.Maui.Handlers;
 using Microsoft.Maui.Platform;
 using ObjCRuntime;
 using Praxis.Core.Logic;
+using Praxis.Core.Models;
 using UIKit;
 
 namespace Praxis.Controls;
@@ -154,13 +155,33 @@ public class MacEntryHandler : EntryHandler
 
         protected void ApplyFocusVisualState()
         {
-            var dark = TraitCollection?.UserInterfaceStyle == UIUserInterfaceStyle.Dark;
+            var dark = ResolveDarkThemeState();
             var borderColor = dark ? DarkBorderColor : LightBorderColor;
             var focusColor = dark ? DarkFocusUnderlineColor : LightFocusUnderlineColor;
             TintColor = dark ? UIColor.White : UIColor.Black;
             borderLayer.StrokeColor = borderColor;
             focusBorderLayer.StrokeColor = focusColor;
             focusBorderLayer.Hidden = !(IsFirstResponder || pseudoFocused);
+        }
+
+        private bool ResolveDarkThemeState()
+        {
+            var selectedTheme = Application.Current?.UserAppTheme switch
+            {
+                AppTheme.Dark => ThemeMode.Dark,
+                AppTheme.Light => ThemeMode.Light,
+                _ => ThemeMode.System,
+            };
+
+            var requestedThemeDark = Application.Current?.RequestedTheme == AppTheme.Dark;
+            bool? traitDark = TraitCollection?.UserInterfaceStyle switch
+            {
+                UIUserInterfaceStyle.Dark => true,
+                UIUserInterfaceStyle.Light => false,
+                _ => null,
+            };
+
+            return ThemeDarkStateResolver.Resolve(selectedTheme, requestedThemeDark, traitDark);
         }
 
         public void SetPseudoFocus(bool enabled)

@@ -1,4 +1,8 @@
 using Praxis.Core.Models;
+#if MACCATALYST
+using Microsoft.Maui.ApplicationModel;
+using UIKit;
+#endif
 
 namespace Praxis.Services;
 
@@ -25,11 +29,52 @@ public sealed class MauiThemeService : IThemeService
             return;
         }
 
-        Application.Current.UserAppTheme = mode switch
+        var appTheme = mode switch
         {
             ThemeMode.Light => AppTheme.Light,
             ThemeMode.Dark => AppTheme.Dark,
             _ => AppTheme.Unspecified,
         };
+
+        Application.Current.UserAppTheme = appTheme;
+#if MACCATALYST
+        ApplyMacWindowStyle(appTheme);
+#endif
     }
+
+#if MACCATALYST
+    private static void ApplyMacWindowStyle(AppTheme appTheme)
+    {
+        void apply()
+        {
+            var style = appTheme switch
+            {
+                AppTheme.Light => UIUserInterfaceStyle.Light,
+                AppTheme.Dark => UIUserInterfaceStyle.Dark,
+                _ => UIUserInterfaceStyle.Unspecified,
+            };
+
+            foreach (var scene in UIApplication.SharedApplication.ConnectedScenes)
+            {
+                if (scene is not UIWindowScene windowScene)
+                {
+                    continue;
+                }
+
+                foreach (var window in windowScene.Windows)
+                {
+                    window.OverrideUserInterfaceStyle = style;
+                }
+            }
+        }
+
+        if (MainThread.IsMainThread)
+        {
+            apply();
+            return;
+        }
+
+        MainThread.BeginInvokeOnMainThread(apply);
+    }
+#endif
 }
