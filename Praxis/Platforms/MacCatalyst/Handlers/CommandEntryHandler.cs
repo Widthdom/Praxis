@@ -3,6 +3,7 @@ using System.Runtime.InteropServices;
 
 using CoreGraphics;
 using Foundation;
+using Microsoft.Maui;
 using Microsoft.Maui.ApplicationModel;
 using Praxis.Core.Logic;
 using UIKit;
@@ -40,10 +41,24 @@ public class CommandEntryHandler : MacEntryHandler
         return new CommandEntryTextField();
     }
 
+    public override void SetVirtualView(IView view)
+    {
+        base.SetVirtualView(view);
+        if (PlatformView is CommandEntryTextField commandField &&
+            view is CommandEntry commandEntry)
+        {
+            commandField.SetCommandEntryBehavior(
+                CommandEntryBehaviorPolicy.ShouldHandleCommandNavigationShortcuts(commandEntry.EnableCommandNavigationShortcuts),
+                CommandEntryBehaviorPolicy.ShouldTrackActivationFocusTarget(commandEntry.EnableNativeActivationFocus));
+        }
+    }
+
     private sealed class CommandEntryTextField : MacEntryTextField
     {
         protected override nfloat TextInsetRight => 40;
         private bool _filteringText;
+        private bool enableCommandNavigationShortcuts = true;
+        private bool enableNativeActivationFocus = true;
         private NSObject? windowDidBecomeKeyObserver;
         private NSObject? windowDidResignKeyObserver;
         private NSObject? didBecomeActiveObserver;
@@ -56,6 +71,20 @@ public class CommandEntryHandler : MacEntryHandler
         {
             KeyboardType = UIKeyboardType.ASCIICapable;
             AddTarget(OnTextEditingChanged, UIControlEvent.EditingChanged);
+        }
+
+        internal void SetCommandEntryBehavior(bool commandNavigationEnabled, bool nativeActivationFocusEnabled)
+        {
+            enableCommandNavigationShortcuts = commandNavigationEnabled;
+            enableNativeActivationFocus = nativeActivationFocusEnabled;
+
+            if (!CommandEntryBehaviorPolicy.ShouldTrackActivationFocusTarget(enableNativeActivationFocus) &&
+                lastCommandField is not null &&
+                lastCommandField.TryGetTarget(out var trackedField) &&
+                ReferenceEquals(trackedField, this))
+            {
+                lastCommandField = null;
+            }
         }
 
         // [Export] is required so the ObjC runtime dispatches through our override
@@ -197,12 +226,14 @@ public class CommandEntryHandler : MacEntryHandler
                 return;
             }
 
-            if (TryHandleSuggestionNavigation(presses))
+            if (CommandEntryBehaviorPolicy.ShouldHandleCommandNavigationShortcuts(enableCommandNavigationShortcuts) &&
+                TryHandleSuggestionNavigation(presses))
             {
                 return;
             }
 
-            if (TryHandleSearchFocusTabNavigation(presses))
+            if (CommandEntryBehaviorPolicy.ShouldHandleCommandNavigationShortcuts(enableCommandNavigationShortcuts) &&
+                TryHandleSearchFocusTabNavigation(presses))
             {
                 return;
             }
@@ -213,7 +244,8 @@ public class CommandEntryHandler : MacEntryHandler
         public override void MovedToWindow()
         {
             base.MovedToWindow();
-            if (Window is not null)
+            if (Window is not null &&
+                CommandEntryBehaviorPolicy.ShouldTrackActivationFocusTarget(enableNativeActivationFocus))
             {
                 lastCommandField = new WeakReference<CommandEntryTextField>(this);
             }
@@ -519,6 +551,14 @@ public class CommandEntryHandler : MacEntryHandler
 
         internal void TryApplyNativeActivationFocus()
         {
+            if (!CommandEntryBehaviorPolicy.ShouldApplyNativeActivationFocus(
+                    enableNativeActivationFocus,
+                    App.IsEditorOpen,
+                    App.IsConflictDialogOpen))
+            {
+                return;
+            }
+
             var currentWindow = Window;
             if (currentWindow is null)
             {
@@ -526,11 +566,6 @@ public class CommandEntryHandler : MacEntryHandler
             }
 
             if (!currentWindow.IsKeyWindow)
-            {
-                return;
-            }
-
-            if (App.IsEditorOpen || App.IsConflictDialogOpen)
             {
                 return;
             }

@@ -54,6 +54,7 @@ dotnet test Praxis.Tests/Praxis.Tests.csproj --collect:"XPlat Code Coverage"
 - `StatusFlashErrorPolicyTests.cs`: status classification for error flash behavior.
 
 ### Input / Keyboard / Focus Policies
+- `CommandEntryBehaviorPolicyTests.cs`: command entry role flags for navigation shortcuts and activation-time native refocus.
 - `WindowActivationCommandFocusPolicyTests.cs`: activation-time command focus gating.
 - `SearchFocusGuardPolicyTests.cs`: macOS search-focus guard decision rules.
 - `AsciiInputFilterTests.cs`: ASCII filtering rules used by macOS command input paths.
@@ -145,6 +146,7 @@ dotnet test Praxis.Tests/Praxis.Tests.csproj --collect:"XPlat Code Coverage"
 - `StatusFlashErrorPolicyTests.cs`: ステータスのエラーフラッシュ分類判定。
 
 ### 入力 / キーボード / フォーカス
+- `CommandEntryBehaviorPolicyTests.cs`: command 入力欄の候補ショートカット有効化/アクティブ化時ネイティブ再フォーカス有効化ポリシー。
 - `WindowActivationCommandFocusPolicyTests.cs`: ウィンドウ再アクティブ時の command フォーカス可否。
 - `SearchFocusGuardPolicyTests.cs`: macOS の Search フォーカスガード判定。
 - `AsciiInputFilterTests.cs`: macOS command 入力経路で使う ASCII フィルタ判定。
