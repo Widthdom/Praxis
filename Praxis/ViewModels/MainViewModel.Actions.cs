@@ -67,7 +67,7 @@ public partial class MainViewModel
             return;
         }
 #endif
-        Editor = ButtonEditorViewModel.FromRecord(item.ToRecord(), isExistingRecord: true);
+        Editor = ButtonEditorViewModel.FromRecord(item.Snapshot(), isExistingRecord: true);
         IsEditorOpen = true;
         IsContextMenuOpen = false;
     }
@@ -76,15 +76,44 @@ public partial class MainViewModel
     private async Task DeleteButtonAsync(LauncherButtonItemViewModel? item)
     {
         if (item is null) return;
-        await repository.DeleteButtonAsync(item.Id);
-        allButtons.Remove(item);
-        filteredButtons.Remove(item);
-        VisibleButtons.Remove(item);
-        DockButtons.Remove(item);
+        await DeleteButtonsAsync([item], statusForSuccess: "Button deleted.");
+        IsContextMenuOpen = false;
+        ContextMenuTarget = null;
+    }
+
+    private async Task DeleteButtonsAsync(IReadOnlyList<LauncherButtonItemViewModel> items, string statusForSuccess)
+    {
+        if (items.Count == 0)
+        {
+            return;
+        }
+
+        var dockOrderBefore = await repository.GetDockButtonIdsAsync();
+        var snapshots = items
+            .Select(x => x.Snapshot())
+            .ToList();
+
+        foreach (var item in items)
+        {
+            await repository.DeleteButtonAsync(item.Id);
+            allButtons.Remove(item);
+            filteredButtons.Remove(item);
+            VisibleButtons.Remove(item);
+            DockButtons.Remove(item);
+        }
+
         UpdateCanvasSize();
         await PersistDockAsync();
         await stateSyncNotifier.NotifyButtonsChangedAsync();
-        SetStatus("Button deleted.");
+        RecordHistoryAction("delete", snapshots.Select(x => new ButtonHistoryMutation
+        {
+            Id = x.Id,
+            Before = x.Clone(),
+            After = null,
+        }),
+        dockOrderBefore: dockOrderBefore,
+        dockOrderAfter: DockButtons.Select(x => x.Id).ToList());
+        SetStatus(statusForSuccess);
         IsContextMenuOpen = false;
         ContextMenuTarget = null;
     }
@@ -130,21 +159,7 @@ public partial class MainViewModel
         var selected = allButtons.Where(x => x.IsSelected).ToList();
         if (selected.Count > 0)
         {
-            foreach (var item in selected)
-            {
-                await repository.DeleteButtonAsync(item.Id);
-                allButtons.Remove(item);
-                filteredButtons.Remove(item);
-                VisibleButtons.Remove(item);
-                DockButtons.Remove(item);
-            }
-
-            UpdateCanvasSize();
-            await PersistDockAsync();
-            await stateSyncNotifier.NotifyButtonsChangedAsync();
-            SetStatus(selected.Count == 1 ? "Button deleted." : $"{selected.Count} buttons deleted.");
-            IsContextMenuOpen = false;
-            ContextMenuTarget = null;
+            await DeleteButtonsAsync(selected, selected.Count == 1 ? "Button deleted." : $"{selected.Count} buttons deleted.");
             return;
         }
 
@@ -215,6 +230,8 @@ public partial class MainViewModel
         var record = Editor.ToRecord();
         record.X = Math.Max(0, record.X);
         record.Y = Math.Max(0, record.Y);
+        var existing = allButtons.FirstOrDefault(x => x.Id == record.Id);
+        var beforeSnapshot = existing?.Snapshot();
 
         if (Editor.IsExistingRecord)
         {
@@ -267,7 +284,6 @@ public partial class MainViewModel
 
         await repository.UpsertButtonAsync(record);
 
-        var existing = allButtons.FirstOrDefault(x => x.Id == record.Id);
         if (existing is null)
         {
             allButtons.Add(new LauncherButtonItemViewModel(record));
@@ -281,6 +297,12 @@ public partial class MainViewModel
         ApplyFilter();
         UpdateCanvasSize();
         await stateSyncNotifier.NotifyButtonsChangedAsync();
+        RecordHistoryAction(existing is null ? "create" : "edit", [new ButtonHistoryMutation
+        {
+            Id = record.Id,
+            Before = beforeSnapshot?.Clone(),
+            After = record.Clone(),
+        }]);
         SetStatus("Saved.");
     }
 
@@ -351,7 +373,7 @@ public partial class MainViewModel
 
             foreach (var target in dragTargets)
             {
-                dragStart[target.Id] = (target.X, target.Y);
+                dragStart[target.Id] = target.Snapshot();
             }
             return;
         }
@@ -396,12 +418,33 @@ public partial class MainViewModel
 
         if (payload.Status == GestureStatus.Completed)
         {
+            var mutations = new List<ButtonHistoryMutation>();
             foreach (var target in dragTargets)
             {
-                await repository.UpsertButtonAsync(target.ToRecord());
+                if (!dragStart.TryGetValue(target.Id, out var before))
+                {
+                    continue;
+                }
+
+                var after = target.ToRecord();
+                await repository.UpsertButtonAsync(after);
+                target.Overwrite(after);
+                if (before.X != after.X || before.Y != after.Y)
+                {
+                    mutations.Add(new ButtonHistoryMutation
+                    {
+                        Id = target.Id,
+                        Before = before.Clone(),
+                        After = after.Clone(),
+                    });
+                }
             }
 
             await stateSyncNotifier.NotifyButtonsChangedAsync();
+            if (mutations.Count > 0)
+            {
+                RecordHistoryAction("move", mutations);
+            }
 
             dragStart.Clear();
             dragTargets.Clear();
@@ -458,6 +501,106 @@ public partial class MainViewModel
         RefreshVisibleButtons();
         UpdateCanvasSize();
         await Task.CompletedTask;
+    }
+
+    [RelayCommand]
+    private async Task UndoAsync()
+    {
+        if (!actionHistory.TryBeginUndo(out var action))
+        {
+            return;
+        }
+
+        var applied = await ApplyHistoryActionAsync(action, isUndo: true);
+        actionHistory.CompleteUndo(action, applied);
+        SetStatus(applied
+            ? $"Undid {action.Description}."
+            : "Undo canceled: affected buttons changed in another window.");
+    }
+
+    [RelayCommand]
+    private async Task RedoAsync()
+    {
+        if (!actionHistory.TryBeginRedo(out var action))
+        {
+            return;
+        }
+
+        var applied = await ApplyHistoryActionAsync(action, isUndo: false);
+        actionHistory.CompleteRedo(action, applied);
+        SetStatus(applied
+            ? $"Redid {action.Description}."
+            : "Redo canceled: affected buttons changed in another window.");
+    }
+
+    private void RecordHistoryAction(
+        string description,
+        IEnumerable<ButtonHistoryMutation> mutations,
+        IReadOnlyList<Guid>? dockOrderBefore = null,
+        IReadOnlyList<Guid>? dockOrderAfter = null)
+    {
+        var normalized = mutations
+            .Select(x => new ButtonHistoryMutation
+            {
+                Id = x.Id,
+                Before = x.Before?.Clone(),
+                After = x.After?.Clone(),
+            })
+            .ToList();
+        if (normalized.Count == 0)
+        {
+            return;
+        }
+
+        actionHistory.Push(new ButtonHistoryAction
+        {
+            Description = description,
+            Mutations = normalized,
+            DockOrderBefore = dockOrderBefore?.ToList(),
+            DockOrderAfter = dockOrderAfter?.ToList(),
+        });
+    }
+
+    private async Task<bool> ApplyHistoryActionAsync(ButtonHistoryAction action, bool isUndo)
+    {
+        foreach (var mutation in action.Mutations)
+        {
+            var expected = isUndo ? mutation.After : mutation.Before;
+            var current = await repository.GetByIdAsync(mutation.Id, forceReload: true);
+            if (!ButtonHistoryConsistencyPolicy.MatchesExpectedVersion(expected, current))
+            {
+                return false;
+            }
+        }
+
+        foreach (var mutation in action.Mutations)
+        {
+            var target = isUndo ? mutation.Before : mutation.After;
+            if (target is null)
+            {
+                await repository.DeleteButtonAsync(mutation.Id);
+                continue;
+            }
+
+            await repository.UpsertButtonAsync(target.Clone());
+        }
+
+        var dockOrder = isUndo ? action.DockOrderBefore : action.DockOrderAfter;
+        if (dockOrder is not null)
+        {
+            await repository.SetDockButtonIdsAsync(dockOrder);
+        }
+
+        await LoadButtonsFromRepositoryAsync(forceReload: true);
+        await RestoreDockAsync();
+        await stateSyncNotifier.NotifyButtonsChangedAsync();
+
+        if (!string.IsNullOrWhiteSpace(CommandInput))
+        {
+            RefreshCommandSuggestions(CommandInput, IsCommandSuggestionOpen);
+        }
+
+        return true;
     }
 
     private async Task<(bool Success, string Message)> ExecuteRecordAsync(LauncherButtonRecord record, bool fromButton, bool updateStatus = true)

@@ -104,6 +104,11 @@ public class MacEntryHandler : EntryHandler
 
         public override void PressesBegan(NSSet<UIPress> presses, UIPressesEvent? evt)
         {
+            if (TryHandleHistoryShortcuts(presses))
+            {
+                return;
+            }
+
             if (TryHandleEditorShortcuts(presses))
             {
                 return;
@@ -247,6 +252,43 @@ public class MacEntryHandler : EntryHandler
             }
 
             return inserted;
+        }
+
+        private static bool TryHandleHistoryShortcuts(NSSet<UIPress> presses)
+        {
+            if (App.IsEditorOpen || App.IsContextMenuOpen || App.IsConflictDialogOpen)
+            {
+                return false;
+            }
+
+            foreach (var pressObject in presses)
+            {
+                if (pressObject is not UIPress press)
+                {
+                    continue;
+                }
+
+                var key = press.Key;
+                if (key is null)
+                {
+                    continue;
+                }
+
+                var modifiers = key.ModifierFlags;
+                var commandDown = (modifiers & UIKeyModifierFlags.Command) != 0;
+                var shiftDown = (modifiers & UIKeyModifierFlags.Shift) != 0;
+                if (!commandDown ||
+                    (modifiers & (UIKeyModifierFlags.Control | UIKeyModifierFlags.Alternate)) != 0 ||
+                    !IsKeyInput(key, "z"))
+                {
+                    continue;
+                }
+
+                MainThread.BeginInvokeOnMainThread(() => App.RaiseHistoryShortcut(shiftDown ? "Redo" : "Undo"));
+                return true;
+            }
+
+            return false;
         }
 
         private static bool TryHandleEditorShortcuts(NSSet<UIPress> presses)

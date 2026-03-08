@@ -53,6 +53,11 @@ dotnet test Praxis.Tests/Praxis.Tests.csproj --collect:"XPlat Code Coverage"
 - `CommandSuggestionRowColorPolicyTests.cs`: selected/unselected row color decisions per theme.
 - `CommandNotFoundRefocusPolicyTests.cs`: refocus decision for `Command not found:` status.
 - `StatusFlashErrorPolicyTests.cs`: status classification for error flash behavior.
+- `QuickLookPreviewFormatterTests.cs`: quick-look preview text normalization, truncation, and labeled-line formatting.
+
+### Undo / Redo
+- `ActionHistoryTests.cs`: command-pattern history stack behavior (undo/redo transitions, failed-apply recovery, capacity trimming).
+- `ButtonHistoryConsistencyPolicyTests.cs`: optimistic-lock version-match checks used when applying undo/redo mutations.
 
 ### Input / Keyboard / Focus Policies
 - `CommandEntryBehaviorPolicyTests.cs`: command entry role flags for navigation shortcuts and activation-time native refocus.
@@ -147,6 +152,11 @@ dotnet test Praxis.Tests/Praxis.Tests.csproj --collect:"XPlat Code Coverage"
 - `CommandSuggestionRowColorPolicyTests.cs`: テーマ別の候補行背景色判定。
 - `CommandNotFoundRefocusPolicyTests.cs`: `Command not found:` 時の再フォーカス判定。
 - `StatusFlashErrorPolicyTests.cs`: ステータスのエラーフラッシュ分類判定。
+- `QuickLookPreviewFormatterTests.cs`: Quick Look 表示文字列の正規化・省略・ラベル整形。
+
+### Undo / Redo
+- `ActionHistoryTests.cs`: コマンドパターン履歴スタックの挙動（Undo/Redo 遷移、失敗時ロールバック、容量トリム）。
+- `ButtonHistoryConsistencyPolicyTests.cs`: Undo/Redo 適用時に使う楽観的ロック版一致判定（`UpdatedAtUtc`）。
 
 ### 入力 / キーボード / フォーカス
 - `CommandEntryBehaviorPolicyTests.cs`: command 入力欄の候補ショートカット有効化/アクティブ化時ネイティブ再フォーカス有効化ポリシー。

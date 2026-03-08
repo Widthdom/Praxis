@@ -16,10 +16,11 @@ public partial class MainViewModel : ObservableObject
     private readonly IClipboardService clipboardService;
     private readonly IThemeService themeService;
     private readonly IStateSyncNotifier stateSyncNotifier;
+    private readonly ActionHistory<ButtonHistoryAction> actionHistory = new(capacity: 120);
 
     private readonly ObservableCollection<LauncherButtonItemViewModel> allButtons = [];
     private readonly List<LauncherButtonItemViewModel> filteredButtons = [];
-    private readonly Dictionary<Guid, (double X, double Y)> dragStart = [];
+    private readonly Dictionary<Guid, LauncherButtonRecord> dragStart = [];
     private readonly List<LauncherButtonItemViewModel> dragTargets = [];
     private bool suppressCommandSuggestionRefresh;
     private bool pendingExternalReload;

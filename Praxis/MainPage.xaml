@@ -286,6 +286,8 @@
                                     <Border.GestureRecognizers>
                                         <PanGestureRecognizer PanUpdated="Draggable_PanUpdated" />
                                         <PointerGestureRecognizer PointerPressed="Draggable_PointerPressed"
+                                                                  PointerEntered="ButtonQuickLook_PointerEntered"
+                                                                  PointerExited="ButtonQuickLook_PointerExited"
                                                                   PointerMoved="Draggable_PointerMoved"
                                                                   PointerReleased="Draggable_PointerReleased" />
                                         <TapGestureRecognizer Tapped="Draggable_Tapped" />
@@ -343,7 +345,9 @@
                                 </Border.Behaviors>
                                 <Grid Padding="10,6">
                                     <Grid.GestureRecognizers>
-                                        <PointerGestureRecognizer PointerPressed="DockButton_PointerPressed" />
+                                        <PointerGestureRecognizer PointerPressed="DockButton_PointerPressed"
+                                                                  PointerEntered="ButtonQuickLook_PointerEntered"
+                                                                  PointerExited="ButtonQuickLook_PointerExited" />
                                         <TapGestureRecognizer Command="{Binding Source={x:Reference RootPage}, Path=BindingContext.ExecuteButtonCommand}"
                                                               CommandParameter="{Binding .}" />
                                         <TapGestureRecognizer Buttons="Secondary"
@@ -368,6 +372,52 @@
                 StrokeShape="RoundRectangle 10"
                 Padding="10,6">
             <Label Text="{Binding StatusText}" FontSize="13" />
+        </Border>
+
+        <Border x:Name="QuickLookPopup"
+                Grid.RowSpan="4"
+                IsVisible="False"
+                Stroke="{AppThemeBinding Light=#D0D0D0, Dark=#4D4D4D}"
+                BackgroundColor="{AppThemeBinding Light=#FDFDFD, Dark=#252525}"
+                StrokeShape="RoundRectangle 12"
+                Padding="10,9"
+                WidthRequest="420"
+                MaximumWidthRequest="460"
+                HorizontalOptions="Start"
+                VerticalOptions="Start"
+                TranslationX="0"
+                TranslationY="0"
+                ZIndex="960">
+            <Border.Shadow>
+                <Shadow Brush="{AppThemeBinding Light=#44000000, Dark=#88000000}" Opacity="0.18" Offset="0,6" Radius="16" />
+            </Border.Shadow>
+            <VerticalStackLayout Spacing="3">
+                <Label x:Name="QuickLookCommandLabel"
+                       FontSize="12"
+                       MaxLines="2"
+                       LineBreakMode="TailTruncation"
+                       TextColor="{AppThemeBinding Light=#242424, Dark=#E4E4E4}" />
+                <Label x:Name="QuickLookToolLabel"
+                       FontSize="12"
+                       MaxLines="2"
+                       LineBreakMode="TailTruncation"
+                       TextColor="{AppThemeBinding Light=#3A3A3A, Dark=#D4D4D4}" />
+                <Label x:Name="QuickLookArgumentsLabel"
+                       FontSize="12"
+                       MaxLines="2"
+                       LineBreakMode="TailTruncation"
+                       TextColor="{AppThemeBinding Light=#3A3A3A, Dark=#D4D4D4}" />
+                <Label x:Name="QuickLookClipWordLabel"
+                       FontSize="12"
+                       MaxLines="2"
+                       LineBreakMode="TailTruncation"
+                       TextColor="{AppThemeBinding Light=#3A3A3A, Dark=#D4D4D4}" />
+                <Label x:Name="QuickLookNoteLabel"
+                       FontSize="12"
+                       MaxLines="2"
+                       LineBreakMode="TailTruncation"
+                       TextColor="{AppThemeBinding Light=#3A3A3A, Dark=#D4D4D4}" />
+            </VerticalStackLayout>
         </Border>
 
         <Grid Grid.RowSpan="4"

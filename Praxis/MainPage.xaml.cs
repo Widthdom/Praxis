@@ -30,9 +30,19 @@ public partial class MainPage : ContentPage
     private bool initialized;
     private CancellationTokenSource? copyNoticeCts;
     private CancellationTokenSource? statusFlashCts;
+    private CancellationTokenSource? quickLookShowCts;
+    private CancellationTokenSource? quickLookHideCts;
     private Window? attachedWindow;
     private bool suppressNextRootSuggestionClose;
     private TaskCompletionSource<EditorConflictResolution>? editorConflictTcs;
+    private Guid? quickLookPendingItemId;
+    private VisualElement? quickLookPendingAnchor;
+    private const int QuickLookShowDelayMs = 1000;
+    private const int QuickLookHideDelayMs = 120;
+    private const uint QuickLookFadeDurationMs = 150;
+    private const double QuickLookOffsetX = 14;
+    private const double QuickLookOffsetY = 2;
+    private const double QuickLookViewportMargin = 10;
 #if WINDOWS
     private Microsoft.UI.Xaml.UIElement? capturedElement;
     private Microsoft.UI.Xaml.Controls.TextBox? commandTextBox;
@@ -176,6 +186,7 @@ public partial class MainPage : ContentPage
         App.ThemeShortcutRequested += OnThemeShortcutRequested;
         App.EditorShortcutRequested += OnEditorShortcutRequested;
         App.CommandInputShortcutRequested += OnCommandInputShortcutRequested;
+        App.HistoryShortcutRequested += OnHistoryShortcutRequested;
         App.MiddleMouseClickRequested += OnMiddleMouseClickRequested;
 #if MACCATALYST
         App.MacApplicationDeactivating += OnMacApplicationDeactivating;
@@ -297,6 +308,7 @@ public partial class MainPage : ContentPage
         App.SetContextMenuOpenState(false);
         App.SetConflictDialogOpenState(false);
         UpdateConflictDialogModalState(isOpen: false);
+        HideQuickLookPopup();
 #if MACCATALYST
         DetachMacGuidEntryReadOnlyBehavior();
         macGuidLockedText = string.Empty;
@@ -912,6 +924,7 @@ public partial class MainPage : ContentPage
             if (viewModel.IsContextMenuOpen)
             {
                 CloseCommandSuggestionPopup();
+                HideQuickLookPopup();
 #if MACCATALYST
                 ResignMainInputFirstResponder();
 #endif
@@ -972,6 +985,7 @@ public partial class MainPage : ContentPage
         }
 
         App.SetEditorOpenState(true);
+        HideQuickLookPopup();
         ApplyTabPolicy();
         UpdateModalEditorHeights();
 #if MACCATALYST
@@ -1218,6 +1232,183 @@ public partial class MainPage : ContentPage
         EnsureWindowsKeyHooks();
         EnsureWindowsTextBoxHooks();
 #endif
+    }
+
+    private void ButtonQuickLook_PointerEntered(object? sender, PointerEventArgs e)
+    {
+        if (sender is not VisualElement anchor || anchor.BindingContext is not LauncherButtonItemViewModel item)
+        {
+            return;
+        }
+
+        QueueQuickLookPopup(item, anchor);
+    }
+
+    private void ButtonQuickLook_PointerExited(object? sender, PointerEventArgs e)
+    {
+        ScheduleQuickLookHide();
+    }
+
+    private void QueueQuickLookPopup(LauncherButtonItemViewModel item, VisualElement anchor)
+    {
+        if (!xamlLoaded || viewModel.IsEditorOpen || viewModel.IsContextMenuOpen || IsConflictDialogOpen())
+        {
+            return;
+        }
+
+        CancelQuickLookHide();
+        CancelQuickLookShow();
+        quickLookPendingItemId = item.Id;
+        quickLookPendingAnchor = anchor;
+
+        var cts = new CancellationTokenSource();
+        quickLookShowCts = cts;
+        _ = ShowQuickLookAfterDelayAsync(item, anchor, cts.Token);
+    }
+
+    private async Task ShowQuickLookAfterDelayAsync(LauncherButtonItemViewModel item, VisualElement anchor, CancellationToken token)
+    {
+        try
+        {
+            await Task.Delay(QuickLookShowDelayMs, token);
+        }
+        catch (OperationCanceledException)
+        {
+            return;
+        }
+
+        if (token.IsCancellationRequested ||
+            quickLookPendingItemId != item.Id ||
+            !ReferenceEquals(quickLookPendingAnchor, anchor))
+        {
+            return;
+        }
+
+        if (viewModel.IsEditorOpen || viewModel.IsContextMenuOpen || IsConflictDialogOpen())
+        {
+            return;
+        }
+
+        QuickLookCommandLabel.Text = QuickLookPreviewFormatter.BuildLine("Command", item.Command);
+        QuickLookToolLabel.Text = QuickLookPreviewFormatter.BuildLine("Tool", item.Tool);
+        QuickLookArgumentsLabel.Text = QuickLookPreviewFormatter.BuildLine("Arguments", item.Arguments);
+        QuickLookClipWordLabel.Text = QuickLookPreviewFormatter.BuildLine("Clip Word", item.ClipText);
+        QuickLookNoteLabel.Text = QuickLookPreviewFormatter.BuildLine("Note", item.Note);
+        PositionQuickLookPopup(anchor);
+
+        QuickLookPopup.CancelAnimations();
+        if (!QuickLookPopup.IsVisible)
+        {
+            QuickLookPopup.Opacity = 0;
+            QuickLookPopup.IsVisible = true;
+        }
+
+        if (QuickLookPopup.Opacity < 1)
+        {
+            await QuickLookPopup.FadeToAsync(1, QuickLookFadeDurationMs, Easing.CubicOut);
+        }
+
+        if (token.IsCancellationRequested)
+        {
+            return;
+        }
+
+    }
+
+    private void ScheduleQuickLookHide()
+    {
+        CancelQuickLookShow();
+        CancelQuickLookHide();
+        var cts = new CancellationTokenSource();
+        quickLookHideCts = cts;
+        _ = HideQuickLookAfterDelayAsync(cts.Token);
+    }
+
+    private async Task HideQuickLookAfterDelayAsync(CancellationToken token)
+    {
+        try
+        {
+            await Task.Delay(QuickLookHideDelayMs, token);
+        }
+        catch (OperationCanceledException)
+        {
+            return;
+        }
+
+        if (token.IsCancellationRequested || !xamlLoaded || !QuickLookPopup.IsVisible)
+        {
+            return;
+        }
+
+        QuickLookPopup.CancelAnimations();
+        if (QuickLookPopup.Opacity > 0)
+        {
+            await QuickLookPopup.FadeToAsync(0, QuickLookFadeDurationMs, Easing.CubicIn);
+        }
+
+        if (token.IsCancellationRequested)
+        {
+            return;
+        }
+
+        QuickLookPopup.IsVisible = false;
+        QuickLookPopup.Opacity = 0;
+    }
+
+    private void PositionQuickLookPopup(VisualElement anchor)
+    {
+        if (RootGrid.Width <= 0 || RootGrid.Height <= 0 || anchor.Width <= 0 || anchor.Height <= 0)
+        {
+            return;
+        }
+
+        var anchorPos = GetPositionRelativeToAncestor(anchor, RootGrid);
+        var popupWidth = QuickLookPopup.WidthRequest > 0 ? QuickLookPopup.WidthRequest : Math.Min(420, RootGrid.Width * 0.5);
+        var popupHeight = Math.Max(140, QuickLookPopup.Height);
+
+        var targetX = anchorPos.X + anchor.Width + QuickLookOffsetX;
+        var targetY = anchorPos.Y + QuickLookOffsetY;
+
+        var maxX = Math.Max(QuickLookViewportMargin, RootGrid.Width - popupWidth - QuickLookViewportMargin);
+        var maxY = Math.Max(QuickLookViewportMargin, RootGrid.Height - popupHeight - QuickLookViewportMargin);
+
+        if (targetX > maxX)
+        {
+            targetX = anchorPos.X - popupWidth - QuickLookOffsetX;
+        }
+
+        QuickLookPopup.TranslationX = Math.Clamp(targetX, QuickLookViewportMargin, maxX);
+        QuickLookPopup.TranslationY = Math.Clamp(targetY, QuickLookViewportMargin, maxY);
+    }
+
+    private void HideQuickLookPopup()
+    {
+        CancelQuickLookShow();
+        CancelQuickLookHide();
+        quickLookPendingItemId = null;
+        quickLookPendingAnchor = null;
+        if (!xamlLoaded)
+        {
+            return;
+        }
+
+        QuickLookPopup.CancelAnimations();
+        QuickLookPopup.Opacity = 0;
+        QuickLookPopup.IsVisible = false;
+    }
+
+    private void CancelQuickLookShow()
+    {
+        quickLookShowCts?.Cancel();
+        quickLookShowCts?.Dispose();
+        quickLookShowCts = null;
+    }
+
+    private void CancelQuickLookHide()
+    {
+        quickLookHideCts?.Cancel();
+        quickLookHideCts?.Dispose();
+        quickLookHideCts = null;
     }
 
     private void ApplyClearButtonGlyphAlignmentTuning()
@@ -1575,6 +1766,24 @@ public partial class MainPage : ContentPage
             .HasFlag(Windows.UI.Core.CoreVirtualKeyStates.Down);
         var shiftDown = Microsoft.UI.Input.InputKeyboardSource.GetKeyStateForCurrentThread(Windows.System.VirtualKey.Shift)
             .HasFlag(Windows.UI.Core.CoreVirtualKeyStates.Down);
+
+        if (ctrlDown && !shiftDown && e.Key == Windows.System.VirtualKey.Z)
+        {
+            if (TryExecuteHistoryShortcut("Undo"))
+            {
+                e.Handled = true;
+                return;
+            }
+        }
+
+        if (ctrlDown && !shiftDown && e.Key == Windows.System.VirtualKey.Y)
+        {
+            if (TryExecuteHistoryShortcut("Redo"))
+            {
+                e.Handled = true;
+                return;
+            }
+        }
 
         if (IsConflictDialogOpen())
         {
@@ -2120,6 +2329,45 @@ public partial class MainPage : ContentPage
 #endif
     }
 
+    private void OnHistoryShortcutRequested(string action)
+    {
+        Dispatcher.Dispatch(() => TryExecuteHistoryShortcut(action));
+    }
+
+    private bool TryExecuteHistoryShortcut(string action)
+    {
+        if (viewModel.IsEditorOpen || viewModel.IsContextMenuOpen || IsConflictDialogOpen())
+        {
+            return false;
+        }
+
+        if (string.Equals(action, "Undo", StringComparison.OrdinalIgnoreCase))
+        {
+            if (viewModel.UndoCommand.CanExecute(null))
+            {
+                HideQuickLookPopup();
+                viewModel.UndoCommand.Execute(null);
+                return true;
+            }
+
+            return false;
+        }
+
+        if (string.Equals(action, "Redo", StringComparison.OrdinalIgnoreCase))
+        {
+            if (viewModel.RedoCommand.CanExecute(null))
+            {
+                HideQuickLookPopup();
+                viewModel.RedoCommand.Execute(null);
+                return true;
+            }
+
+            return false;
+        }
+
+        return false;
+    }
+
     private void OnMiddleMouseClickRequested()
     {
 #if MACCATALYST
@@ -2314,6 +2562,7 @@ public partial class MainPage : ContentPage
 
         Dispatcher.Dispatch(() =>
         {
+            HideQuickLookPopup();
             ConflictTitleLabel.Text = title;
             ConflictMessageLabel.Text = message;
             SetConflictDialogPseudoFocus(ConflictDialogFocusTarget.Cancel);
@@ -2529,6 +2778,8 @@ public partial class MainPage : ContentPage
             suppressNextRootSuggestionClose = false;
             return;
         }
+
+        HideQuickLookPopup();
 
         var pointer = e.GetPosition(RootGrid);
         if (pointer is not null)

@@ -12,6 +12,8 @@ public class AppDelegate : MauiUIApplicationDelegate
     private static readonly UIKeyCommand ThemeDarkCommand = CreateThemeKeyCommand("d", "handleThemeDark:");
     private static readonly UIKeyCommand ThemeLightCommand = CreateThemeKeyCommand("l", "handleThemeLight:");
     private static readonly UIKeyCommand ThemeSystemCommand = CreateThemeKeyCommand("h", "handleThemeSystem:");
+    private static readonly UIKeyCommand UndoHistoryCommand = CreateHistoryKeyCommand("z", UIKeyModifierFlags.Command, "handleHistoryUndo:");
+    private static readonly UIKeyCommand RedoHistoryCommand = CreateHistoryKeyCommand("z", UIKeyModifierFlags.Command | UIKeyModifierFlags.Shift, "handleHistoryRedo:");
     private NSObject? didBecomeActiveObserver;
     private NSObject? willEnterForegroundObserver;
     private NSObject? windowDidBecomeKeyObserver;
@@ -24,7 +26,7 @@ public class AppDelegate : MauiUIApplicationDelegate
 
     public override bool CanBecomeFirstResponder => true;
 
-    public override UIKeyCommand[] KeyCommands => [ThemeLightCommand, ThemeDarkCommand, ThemeSystemCommand];
+    public override UIKeyCommand[] KeyCommands => [ThemeLightCommand, ThemeDarkCommand, ThemeSystemCommand, UndoHistoryCommand, RedoHistoryCommand];
 
     public override bool FinishedLaunching(UIApplication application, NSDictionary? launchOptions)
     {
@@ -73,9 +75,28 @@ public class AppDelegate : MauiUIApplicationDelegate
         RaiseThemeShortcutByMacKeyInput("h");
     }
 
+    [Export("handleHistoryUndo:")]
+    private static void HandleHistoryUndo(UIKeyCommand command)
+    {
+        MainThread.BeginInvokeOnMainThread(() => App.RaiseHistoryShortcut("Undo"));
+    }
+
+    [Export("handleHistoryRedo:")]
+    private static void HandleHistoryRedo(UIKeyCommand command)
+    {
+        MainThread.BeginInvokeOnMainThread(() => App.RaiseHistoryShortcut("Redo"));
+    }
+
     private static UIKeyCommand CreateThemeKeyCommand(string keyInput, string selectorName)
     {
         var command = UIKeyCommand.Create(new NSString(keyInput), UIKeyModifierFlags.Command | UIKeyModifierFlags.Shift, new Selector(selectorName));
+        TrySetKeyCommandPriorityOverSystem(command);
+        return command;
+    }
+
+    private static UIKeyCommand CreateHistoryKeyCommand(string keyInput, UIKeyModifierFlags modifierFlags, string selectorName)
+    {
+        var command = UIKeyCommand.Create(new NSString(keyInput), modifierFlags, new Selector(selectorName));
         TrySetKeyCommandPriorityOverSystem(command);
         return command;
     }

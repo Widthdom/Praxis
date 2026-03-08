@@ -9,6 +9,8 @@ public partial class MainPage
 {
     private void Draggable_PointerPressed(object? sender, PointerEventArgs e)
     {
+        HideQuickLookPopup();
+
         if (sender is not BindableObject bindable)
         {
             return;
@@ -170,6 +172,8 @@ public partial class MainPage
 
     private void DockButton_PointerPressed(object? sender, PointerEventArgs e)
     {
+        HideQuickLookPopup();
+
         if (sender is not BindableObject bindable || bindable.BindingContext is not LauncherButtonItemViewModel item)
         {
             return;

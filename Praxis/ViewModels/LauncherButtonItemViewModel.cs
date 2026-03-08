@@ -42,6 +42,8 @@ public partial class LauncherButtonItemViewModel : ObservableObject
 
     public Rect LayoutBounds => new(X, Y, Width, Height);
 
+    public LauncherButtonRecord Snapshot() => model.Clone();
+
     public LauncherButtonRecord ToRecord() => new()
     {
         Id = model.Id,

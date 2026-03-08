@@ -13,6 +13,7 @@ public partial class App : Application
     public static event Action<string>? ThemeShortcutRequested;
     public static event Action<string>? EditorShortcutRequested;
     public static event Action<string>? CommandInputShortcutRequested;
+    public static event Action<string>? HistoryShortcutRequested;
     public static event Action? MiddleMouseClickRequested;
 #if MACCATALYST
     public static event Action? MacApplicationDeactivating;
@@ -173,6 +174,17 @@ public partial class App : Application
         try
         {
             CommandInputShortcutRequested?.Invoke(action);
+        }
+        catch
+        {
+        }
+    }
+
+    public static void RaiseHistoryShortcut(string action)
+    {
+        try
+        {
+            HistoryShortcutRequested?.Invoke(action);
         }
         catch
         {
