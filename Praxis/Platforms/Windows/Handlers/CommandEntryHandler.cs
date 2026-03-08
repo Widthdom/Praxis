@@ -186,7 +186,7 @@ public class CommandEntryHandler : EntryHandler
         {
             foreach (var mauiWindow in windows)
             {
-                if (mauiWindow.Handler?.PlatformView is not Window nativeWindow)
+                if (mauiWindow.Handler?.PlatformView is not Microsoft.UI.Xaml.Window nativeWindow)
                 {
                     continue;
                 }
@@ -204,7 +204,7 @@ public class CommandEntryHandler : EntryHandler
 
             foreach (var mauiWindow in windows)
             {
-                if (mauiWindow.Handler?.PlatformView is Window nativeWindow)
+                if (mauiWindow.Handler?.PlatformView is Microsoft.UI.Xaml.Window nativeWindow)
                 {
                     var fallbackWindowHandle = WindowNative.GetWindowHandle(nativeWindow);
                     if (fallbackWindowHandle != IntPtr.Zero)
