@@ -1,15 +1,16 @@
-using Praxis.Core.Logic;
-using Praxis.Core.Models;
-using Praxis.ViewModels;
 using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Reflection;
 using System.Runtime.InteropServices;
+
 using Praxis.Behaviors;
+using Praxis.Core.Logic;
+using Praxis.Core.Models;
+using Praxis.ViewModels;
 #if MACCATALYST
+using CoreGraphics;
 using Foundation;
 using ObjCRuntime;
-using CoreGraphics;
 using UIKit;
 #endif
 

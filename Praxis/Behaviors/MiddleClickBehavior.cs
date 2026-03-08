@@ -1,7 +1,9 @@
-using System.Windows.Input;
-using Microsoft.Maui.Controls;
 using System.Reflection;
+using System.Windows.Input;
+
 using Microsoft.Maui.ApplicationModel;
+using Microsoft.Maui.Controls;
+
 using Praxis.ViewModels;
 #if MACCATALYST
 using Foundation;

@@ -1,6 +1,5 @@
 #if MACCATALYST
 using CoreGraphics;
-using Praxis.Controls;
 
 namespace Praxis.Controls;
 

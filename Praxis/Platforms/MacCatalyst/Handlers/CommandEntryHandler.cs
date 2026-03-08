@@ -1,10 +1,11 @@
 #if MACCATALYST
+using System.Runtime.InteropServices;
+
 using CoreGraphics;
 using Foundation;
 using Microsoft.Maui.ApplicationModel;
 using Praxis.Core.Logic;
 using UIKit;
-using System.Runtime.InteropServices;
 
 namespace Praxis.Controls;
 
