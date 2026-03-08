@@ -683,6 +683,47 @@
             </Border>
         </Grid>
 
+        <Grid x:Name="RatingOverlay"
+              Grid.RowSpan="4"
+              IsVisible="{Binding IsRatingPromptVisible}"
+              BackgroundColor="Transparent"
+              ZIndex="970">
+            <Border HorizontalOptions="Center"
+                    VerticalOptions="Center"
+                    WidthRequest="420"
+                    MaximumWidthRequest="500"
+                    Padding="18"
+                    Stroke="{AppThemeBinding Light=#B5B5B5, Dark=#505050}"
+                    BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#1F1F1F}"
+                    StrokeShape="RoundRectangle 18">
+                <Border.Shadow>
+                    <Shadow Brush="{AppThemeBinding Light=#66000000, Dark=#AA000000}" Opacity="0.22" Offset="0,10" Radius="22" />
+                </Border.Shadow>
+                <VerticalStackLayout Spacing="12">
+                    <Label Text="Enjoying Praxis?"
+                           FontSize="20"
+                           TextColor="{AppThemeBinding Light=#1A1A1A, Dark=#F2F2F2}" />
+                    <Label Text="If Praxis has been useful, please consider leaving a rating. It takes just a moment and helps a lot!"
+                           FontSize="13"
+                           TextColor="{AppThemeBinding Light=#303030, Dark=#D0D0D0}" />
+                    <HorizontalStackLayout HorizontalOptions="Center" Spacing="10">
+                        <Button x:Name="RatingRateButton"
+                                Text="Rate Now"
+                                WidthRequest="120"
+                                Command="{Binding RateAppCommand}" />
+                        <Button x:Name="RatingDeferButton"
+                                Text="Later"
+                                WidthRequest="88"
+                                Command="{Binding DeferRatingCommand}" />
+                        <Button x:Name="RatingDismissButton"
+                                Text="Don't Ask"
+                                WidthRequest="100"
+                                Command="{Binding DismissRatingCommand}" />
+                    </HorizontalStackLayout>
+                </VerticalStackLayout>
+            </Border>
+        </Grid>
+
         <Grid x:Name="CopyNoticeOverlay"
               Grid.RowSpan="4"
               IsVisible="False"

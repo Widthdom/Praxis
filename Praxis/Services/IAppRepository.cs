@@ -1,3 +1,4 @@
+using Praxis.Core.Logic;
 using Praxis.Core.Models;
 
 namespace Praxis.Services;
@@ -17,4 +18,8 @@ public interface IAppRepository
     Task<ThemeMode> GetThemeAsync(CancellationToken cancellationToken = default);
     Task<IReadOnlyList<Guid>> GetDockButtonIdsAsync(CancellationToken cancellationToken = default);
     Task SetDockButtonIdsAsync(IReadOnlyList<Guid> ids, CancellationToken cancellationToken = default);
+    Task<int> GetLaunchCountAsync(CancellationToken cancellationToken = default);
+    Task<int> IncrementLaunchCountAsync(CancellationToken cancellationToken = default);
+    Task<(AppRatingState State, int DeferredAtCount)> GetRatingInfoAsync(CancellationToken cancellationToken = default);
+    Task SetRatingInfoAsync(AppRatingState state, int deferredAtCount, CancellationToken cancellationToken = default);
 }

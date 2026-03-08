@@ -9,6 +9,9 @@ public sealed class SqliteAppRepository : IAppRepository
 {
     private const string ThemeKey = "theme";
     private const string DockOrderKey = "dock_order";
+    private const string LaunchCountKey = "app_launch_count";
+    private const string RatingStateKey = "app_rating_state";
+    private const string RatingDeferredAtKey = "app_rating_deferred_at";
 
     private readonly SemaphoreSlim gate = new(1, 1);
     private readonly string dbPath;
@@ -301,6 +304,99 @@ public sealed class SqliteAppRepository : IAppRepository
             {
                 Key = DockOrderKey,
                 Value = value,
+            });
+        }
+        finally
+        {
+            gate.Release();
+        }
+    }
+
+    public async Task<int> GetLaunchCountAsync(CancellationToken cancellationToken = default)
+    {
+        await gate.WaitAsync(cancellationToken);
+        try
+        {
+            await InitializeCoreAsync();
+            var setting = await Connection.FindAsync<AppSettingEntity>(LaunchCountKey);
+            if (setting is null || !int.TryParse(setting.Value, out var count))
+            {
+                return 0;
+            }
+
+            return count;
+        }
+        finally
+        {
+            gate.Release();
+        }
+    }
+
+    public async Task<int> IncrementLaunchCountAsync(CancellationToken cancellationToken = default)
+    {
+        await gate.WaitAsync(cancellationToken);
+        try
+        {
+            await InitializeCoreAsync();
+            var setting = await Connection.FindAsync<AppSettingEntity>(LaunchCountKey);
+            var current = 0;
+            if (setting is not null && int.TryParse(setting.Value, out var parsed))
+            {
+                current = parsed;
+            }
+
+            var next = current + 1;
+            await Connection.InsertOrReplaceAsync(new AppSettingEntity
+            {
+                Key = LaunchCountKey,
+                Value = next.ToString(),
+            });
+            return next;
+        }
+        finally
+        {
+            gate.Release();
+        }
+    }
+
+    public async Task<(AppRatingState State, int DeferredAtCount)> GetRatingInfoAsync(CancellationToken cancellationToken = default)
+    {
+        await gate.WaitAsync(cancellationToken);
+        try
+        {
+            await InitializeCoreAsync();
+            var stateSetting = await Connection.FindAsync<AppSettingEntity>(RatingStateKey);
+            var deferredSetting = await Connection.FindAsync<AppSettingEntity>(RatingDeferredAtKey);
+            var state = AppRatingPolicy.ParseState(stateSetting?.Value);
+            var deferredAt = 0;
+            if (deferredSetting is not null && int.TryParse(deferredSetting.Value, out var d))
+            {
+                deferredAt = d;
+            }
+
+            return (state, deferredAt);
+        }
+        finally
+        {
+            gate.Release();
+        }
+    }
+
+    public async Task SetRatingInfoAsync(AppRatingState state, int deferredAtCount, CancellationToken cancellationToken = default)
+    {
+        await gate.WaitAsync(cancellationToken);
+        try
+        {
+            await InitializeCoreAsync();
+            await Connection.InsertOrReplaceAsync(new AppSettingEntity
+            {
+                Key = RatingStateKey,
+                Value = AppRatingPolicy.SerializeState(state),
+            });
+            await Connection.InsertOrReplaceAsync(new AppSettingEntity
+            {
+                Key = RatingDeferredAtKey,
+                Value = deferredAtCount.ToString(),
             });
         }
         finally

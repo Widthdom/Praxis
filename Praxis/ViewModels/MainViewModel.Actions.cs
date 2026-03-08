@@ -55,6 +55,7 @@ public partial class MainViewModel
         if (item is null) return;
         await ExecuteRecordAsync(item.ToRecord(), true);
         await AddToDockAsync(item);
+        await CheckRatingPromptAsync();
     }
 
     [RelayCommand]

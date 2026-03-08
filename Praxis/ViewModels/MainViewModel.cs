@@ -55,6 +55,7 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty] private ThemeMode selectedTheme = ThemeMode.System;
     [ObservableProperty] private bool isContextMenuOpen;
     [ObservableProperty] private LauncherButtonItemViewModel? contextMenuTarget;
+    [ObservableProperty] private bool isRatingPromptVisible;
     public Func<EditorConflictContext, Task<EditorConflictResolution>>? ResolveEditorConflictAsync { get; set; }
 
     public ObservableCollection<LauncherButtonItemViewModel> VisibleButtons { get; } = [];
