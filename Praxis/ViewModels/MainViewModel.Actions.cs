@@ -258,7 +258,8 @@ public partial class MainViewModel
                     return;
                 }
             }
-            else if (RecordVersionComparer.HasConflict(Editor.OriginalUpdatedAtUtc, latest.UpdatedAtUtc))
+            else if (RecordVersionComparer.HasConflict(Editor.OriginalUpdatedAtUtc, latest.UpdatedAtUtc) &&
+                     (beforeSnapshot is null || RecordVersionComparer.HasConflict(beforeSnapshot, latest)))
             {
                 var resolution = await ResolveConflictAsync(new EditorConflictContext
                 {

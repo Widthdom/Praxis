@@ -121,4 +121,55 @@ public class CoreLogicPerformanceSafetyTests
         var ts = new DateTime(2026, 2, 15, 10, 0, 0, DateTimeKind.Utc);
         Assert.False(RecordVersionComparer.HasConflict(ts, ts));
     }
+
+    [Fact]
+    public void RecordVersionComparer_RecordOverload_NoConflict_WhenOnlyUpdatedAtDiffers()
+    {
+        var original = new LauncherButtonRecord
+        {
+            Id = Guid.Parse("2CC4A817-8A54-4B81-B600-B7729B95044C"),
+            Command = "open",
+            ButtonText = "Docs",
+            Tool = "cmd",
+            Arguments = "/c start",
+            ClipText = "clip",
+            Note = "note",
+            X = 10,
+            Y = 20,
+            Width = 120,
+            Height = 40,
+            CreatedAtUtc = new DateTime(2026, 2, 15, 8, 0, 0, DateTimeKind.Utc),
+            UpdatedAtUtc = new DateTime(2026, 2, 15, 9, 0, 0, DateTimeKind.Utc),
+        };
+        var latest = original.Clone();
+        latest.UpdatedAtUtc = original.UpdatedAtUtc.AddSeconds(1);
+
+        Assert.False(RecordVersionComparer.HasConflict(original, latest));
+    }
+
+    [Fact]
+    public void RecordVersionComparer_RecordOverload_DetectsConflict_WhenContentDiffers()
+    {
+        var original = new LauncherButtonRecord
+        {
+            Id = Guid.Parse("AFA4D0DC-8346-4C83-8A39-80566221F0AB"),
+            Command = "open",
+            ButtonText = "Docs",
+            Tool = "cmd",
+            Arguments = "/c start",
+            ClipText = "clip",
+            Note = "note",
+            X = 10,
+            Y = 20,
+            Width = 120,
+            Height = 40,
+            CreatedAtUtc = new DateTime(2026, 2, 15, 8, 0, 0, DateTimeKind.Utc),
+            UpdatedAtUtc = new DateTime(2026, 2, 15, 9, 0, 0, DateTimeKind.Utc),
+        };
+        var latest = original.Clone();
+        latest.Note = "changed";
+        latest.UpdatedAtUtc = original.UpdatedAtUtc.AddSeconds(1);
+
+        Assert.True(RecordVersionComparer.HasConflict(original, latest));
+    }
 }

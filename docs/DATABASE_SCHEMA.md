@@ -88,6 +88,7 @@ Purpose: launcher button master records (placement, command, metadata).
 
 Application-level behavior:
 - `UpdatedAtUtc` is overwritten on save (`UpsertButtonAsync`) for optimistic conflict checks.
+- Conflict resolution uses `UpdatedAtUtc` as the primary version signal, but treats rows as non-conflicting when only timestamp differs and all content fields match.
 - `Command` lookup optimization is handled by in-memory case-insensitive cache, not DB index.
 
 ## Table: LaunchLogEntity
@@ -168,7 +169,8 @@ Praxis が使う SQLite テーブル設計を明文化します。
 - 上記 ER 図（`ER Diagram (Mermaid)`）を参照。
 
 ## 主要仕様
-- `LauncherButtonEntity.UpdatedAtUtc` は保存時に更新し、編集競合判定に使います。
+- `LauncherButtonEntity.UpdatedAtUtc` は保存時に更新し、編集競合判定の一次シグナルとして使います。
+- `UpdatedAtUtc` だけが異なり内容が一致する場合は非競合として扱います。
 - `LaunchLogEntity.Source` の現行値は `button` / `command` です。
 - `LaunchLogEntity` は保持期間超過分を `TimestampUtc` 条件で一括削除します。
 - `AppSettingEntity` の既知キー:

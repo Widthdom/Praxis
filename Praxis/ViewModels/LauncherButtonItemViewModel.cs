@@ -73,6 +73,8 @@ public partial class LauncherButtonItemViewModel : ObservableObject
         model.Y = source.Y;
         model.Width = source.Width;
         model.Height = source.Height;
+        model.CreatedAtUtc = source.CreatedAtUtc;
+        model.UpdatedAtUtc = source.UpdatedAtUtc;
         OnPropertyChanged(string.Empty);
     }
 }

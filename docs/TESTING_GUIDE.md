@@ -39,7 +39,7 @@ dotnet test Praxis.Tests/Praxis.Tests.csproj --collect:"XPlat Code Coverage"
 ### Baseline / Cross-Cutting
 - `UnitTest1.cs` (`CoreLogicTests`): baseline checks for command-line build, snapping, search matching, and retention.
 - `CoreLogicEdgeCaseTests.cs`: parser/snapper/matcher/retention edge cases.
-- `CoreLogicPerformanceSafetyTests.cs`: regression-safety checks for defaults, bounds, and conflict detection.
+- `CoreLogicPerformanceSafetyTests.cs`: regression-safety checks for defaults, bounds, and conflict detection (including timestamp-only drift vs material-content conflict cases).
 - `PolicyTruthTableTests.cs`: full truth-table validation for focus-related policy combinations.
 
 ### Models / Defaults
@@ -138,7 +138,7 @@ dotnet test Praxis.Tests/Praxis.Tests.csproj --collect:"XPlat Code Coverage"
 ### 基本 / 横断
 - `UnitTest1.cs`（`CoreLogicTests`）: コマンドライン生成、スナップ、検索一致、保持期間の基本確認。
 - `CoreLogicEdgeCaseTests.cs`: パーサ/スナッパ/マッチャー/保持期間の境界ケース。
-- `CoreLogicPerformanceSafetyTests.cs`: 既定値・境界・競合判定の回帰安全性確認。
+- `CoreLogicPerformanceSafetyTests.cs`: 既定値・境界・競合判定（時刻差分のみは非競合、内容差分は競合）の回帰安全性確認。
 - `PolicyTruthTableTests.cs`: フォーカス系ポリシーの真理値表を網羅検証。
 
 ### モデル / 既定値
