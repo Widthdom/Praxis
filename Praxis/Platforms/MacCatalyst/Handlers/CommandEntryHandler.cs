@@ -4,7 +4,6 @@ using Foundation;
 using Microsoft.Maui.ApplicationModel;
 using Praxis.Core.Logic;
 using UIKit;
-using System.Linq;
 using System.Runtime.InteropServices;
 
 namespace Praxis.Controls;
@@ -59,22 +58,28 @@ public class CommandEntryHandler : MacEntryHandler
         public override void SetMarkedText(string? markedText, NSRange selectedRange)
         {
             // Block non-ASCII IME composition (prevents Japanese/CJK input)
-            if (markedText is { Length: > 0 } && markedText.Any(c => c > 127))
+            if (AsciiInputFilter.ShouldBlockMarkedText(markedText))
+            {
                 return;
+            }
+
             base.SetMarkedText(markedText ?? string.Empty, selectedRange);
         }
 
         [Export("insertText:")]
         public override void InsertText(string text)
         {
-            if (text.Length == 0 || text.All(c => c <= 127))
+            if (text.Length == 0)
             {
                 base.InsertText(text);
                 return;
             }
-            var filtered = new string(text.Where(c => c <= 127).ToArray());
+
+            var filtered = AsciiInputFilter.FilterToAscii(text);
             if (filtered.Length > 0)
+            {
                 base.InsertText(filtered);
+            }
         }
 
         // Safety net: strip any non-ASCII that slipped through via other code paths
@@ -82,9 +87,9 @@ public class CommandEntryHandler : MacEntryHandler
         {
             if (_filteringText) return;
             var current = Text ?? string.Empty;
-            if (current.All(c => c <= 127)) return;
+            if (AsciiInputFilter.IsAsciiOnly(current)) return;
 
-            var filtered = new string(current.Where(c => c <= 127).ToArray());
+            var filtered = AsciiInputFilter.FilterToAscii(current);
             _filteringText = true;
             Text = filtered;
             SendActionForControlEvents(UIControlEvent.EditingChanged);
