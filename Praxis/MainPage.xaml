@@ -326,8 +326,9 @@
                 Stroke="{AppThemeBinding Light=#CECECE, Dark=#4E4E4E}"
                 BackgroundColor="{AppThemeBinding Light=#FCFCFC, Dark=#212121}"
                 StrokeShape="RoundRectangle 20"
+                Margin="{OnPlatform Default='0', WinUI='0,-4,0,-4', MacCatalyst='0,-4,0,-4'}"
                 Padding="12"
-                MinimumHeightRequest="92">
+                MinimumHeightRequest="{OnPlatform Default=92, WinUI=100, MacCatalyst=100}">
             <Border.GestureRecognizers>
                 <PointerGestureRecognizer PointerEntered="DockRegion_PointerEntered"
                                           PointerExited="DockRegion_PointerExited" />
