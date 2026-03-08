@@ -227,6 +227,7 @@ public partial class MainPage : ContentPage
                 ApplyNeutralStatusBackground();
                 ApplyContextActionButtonFocusVisuals();
                 ApplyModalEditorThemeTextColors();
+                RebuildCommandSuggestionStack();
 #if MACCATALYST
                 ApplyMacVisualTuning();
                 ApplyMacNoteEditorVisualState();
@@ -4047,6 +4048,22 @@ public partial class MainPage : ContentPage
         }
     }
 
+    private static void ApplyCommandSuggestionRowThemeColors(Grid row, bool selected)
+    {
+        row.SetAppThemeColor(
+            VisualElement.BackgroundColorProperty,
+            Color.FromArgb(CommandSuggestionRowColorPolicy.ResolveBackgroundHex(selected, isDarkTheme: false)),
+            Color.FromArgb(CommandSuggestionRowColorPolicy.ResolveBackgroundHex(selected, isDarkTheme: true)));
+    }
+
+    private static void ApplyCommandSuggestionLabelThemeColors(Label label)
+    {
+        label.SetAppThemeColor(
+            Label.TextColorProperty,
+            Color.FromArgb(ThemeTextColorPolicy.ResolveTextColorHex(isDarkTheme: false)),
+            Color.FromArgb(ThemeTextColorPolicy.ResolveTextColorHex(isDarkTheme: true)));
+    }
+
 #if !MACCATALYST
     private void RebuildCommandSuggestionStack()
     {
@@ -4070,10 +4087,8 @@ public partial class MainPage : ContentPage
                 Padding = new Thickness(8, 6),
                 MinimumHeightRequest = 34,
                 HorizontalOptions = LayoutOptions.Fill,
-                BackgroundColor = item.IsSelected
-                    ? (IsDarkThemeActive() ? Color.FromArgb("#3D3D3D") : Color.FromArgb("#E6E6E6"))
-                    : Colors.Transparent,
             };
+            ApplyCommandSuggestionRowThemeColors(row, item.IsSelected);
 
             var tap = new TapGestureRecognizer();
             tap.Tapped += (_, _) =>
@@ -4089,20 +4104,16 @@ public partial class MainPage : ContentPage
             {
                 Text = item.Command,
                 LineBreakMode = LineBreakMode.TailTruncation,
-                TextColor = IsDarkThemeActive()
-                    ? Color.FromArgb("#F2F2F2")
-                    : Color.FromArgb("#111111"),
             };
+            ApplyCommandSuggestionLabelThemeColors(commandLabel);
             row.Children.Add(commandLabel);
 
             var buttonTextLabel = new Label
             {
                 Text = item.ButtonText,
                 LineBreakMode = LineBreakMode.TailTruncation,
-                TextColor = IsDarkThemeActive()
-                    ? Color.FromArgb("#F2F2F2")
-                    : Color.FromArgb("#111111"),
             };
+            ApplyCommandSuggestionLabelThemeColors(buttonTextLabel);
             row.SetColumn(buttonTextLabel, 1);
             row.Children.Add(buttonTextLabel);
 
@@ -4110,10 +4121,8 @@ public partial class MainPage : ContentPage
             {
                 Text = item.ToolArguments,
                 LineBreakMode = LineBreakMode.TailTruncation,
-                TextColor = IsDarkThemeActive()
-                    ? Color.FromArgb("#F2F2F2")
-                    : Color.FromArgb("#111111"),
             };
+            ApplyCommandSuggestionLabelThemeColors(toolArgsLabel);
             row.SetColumn(toolArgsLabel, 2);
             row.Children.Add(toolArgsLabel);
 
@@ -4584,10 +4593,8 @@ public partial class MainPage : ContentPage
                 Padding = new Thickness(8, 6),
                 MinimumHeightRequest = 34,
                 HorizontalOptions = LayoutOptions.Fill,
-                BackgroundColor = item.IsSelected
-                    ? (IsDarkThemeActive() ? Color.FromArgb("#3D3D3D") : Color.FromArgb("#E6E6E6"))
-                    : Colors.Transparent,
             };
+            ApplyCommandSuggestionRowThemeColors(row, item.IsSelected);
 
             var tap = new TapGestureRecognizer();
             tap.Tapped += (_, _) =>
@@ -4603,20 +4610,16 @@ public partial class MainPage : ContentPage
             {
                 Text = item.Command,
                 LineBreakMode = LineBreakMode.TailTruncation,
-                TextColor = IsDarkThemeActive()
-                    ? Color.FromArgb("#F2F2F2")
-                    : Color.FromArgb("#111111"),
             };
+            ApplyCommandSuggestionLabelThemeColors(commandLabel);
             row.Children.Add(commandLabel);
 
             var buttonTextLabel = new Label
             {
                 Text = item.ButtonText,
                 LineBreakMode = LineBreakMode.TailTruncation,
-                TextColor = IsDarkThemeActive()
-                    ? Color.FromArgb("#F2F2F2")
-                    : Color.FromArgb("#111111"),
             };
+            ApplyCommandSuggestionLabelThemeColors(buttonTextLabel);
             row.SetColumn(buttonTextLabel, 1);
             row.Children.Add(buttonTextLabel);
 
@@ -4624,10 +4627,8 @@ public partial class MainPage : ContentPage
             {
                 Text = item.ToolArguments,
                 LineBreakMode = LineBreakMode.TailTruncation,
-                TextColor = IsDarkThemeActive()
-                    ? Color.FromArgb("#F2F2F2")
-                    : Color.FromArgb("#111111"),
             };
+            ApplyCommandSuggestionLabelThemeColors(toolArgsLabel);
             row.SetColumn(toolArgsLabel, 2);
             row.Children.Add(toolArgsLabel);
 
