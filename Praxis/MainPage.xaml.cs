@@ -17,14 +17,6 @@ namespace Praxis;
 
 public partial class MainPage : ContentPage
 {
-#if MACCATALYST
-    private static WeakReference<MainPage>? macLastActivePage;
-    private static readonly IntPtr nsCursorClass = ObjcGetClass("NSCursor");
-    private static readonly IntPtr pointingHandCursorSelector = SelRegisterName("pointingHandCursor");
-    private static readonly IntPtr arrowCursorSelector = SelRegisterName("arrowCursor");
-    private static readonly IntPtr setCursorSelector = SelRegisterName("set");
-#endif
-
     private readonly MainViewModel viewModel;
     private ButtonEditorViewModel? observedEditorViewModel;
     private const double ModalSingleLineRowHeight = 40;
@@ -48,9 +40,6 @@ public partial class MainPage : ContentPage
     private object? panDragItem;
 #endif
     private bool selectionDragging;
-#if MACCATALYST
-    private bool selectionPanPrimed;
-#endif
     private Guid? suppressTapExecuteForItemId;
     private bool middlePointerPressReceived;
     private bool suppressNextRootSuggestionClose;
@@ -60,20 +49,6 @@ public partial class MainPage : ContentPage
     private Point selectionLastViewport;
     private Point? lastPointerOnRoot;
     private TaskCompletionSource<EditorConflictResolution>? editorConflictTcs;
-#if MACCATALYST
-    private static readonly TimeSpan macActivationFocusWindow = TimeSpan.FromMilliseconds(900);
-    private static readonly TimeSpan macActivationFocusRequestCoalesceDelay = TimeSpan.FromMilliseconds(45);
-    private static readonly TimeSpan macSearchFocusUserIntentWindow = TimeSpan.FromMilliseconds(800);
-    private long macActivationFocusRequestId;
-    private DateTimeOffset macActivationFocusSessionUntilUtc;
-    private DateTimeOffset macSearchFocusUserIntentUntilUtc;
-    private NSObject? macDidBecomeActiveObserver;
-    private NSObject? macWillEnterForegroundObserver;
-    private NSObject? macSceneDidActivateObserver;
-    private NSObject? macSceneWillEnterForegroundObserver;
-    private NSObject? macWindowDidBecomeKeyObserver;
-    private NSObject? macWillResignActiveObserver;
-#endif
 #if WINDOWS
     private Microsoft.UI.Xaml.UIElement? capturedElement;
     private Microsoft.UI.Xaml.Controls.TextBox? commandTextBox;
@@ -102,6 +77,25 @@ public partial class MainPage : ContentPage
 
     private ConflictDialogFocusTarget? conflictDialogPseudoFocusedTarget;
 #if MACCATALYST
+    private static WeakReference<MainPage>? macLastActivePage;
+    private static readonly IntPtr nsCursorClass = ObjcGetClass("NSCursor");
+    private static readonly IntPtr pointingHandCursorSelector = SelRegisterName("pointingHandCursor");
+    private static readonly IntPtr arrowCursorSelector = SelRegisterName("arrowCursor");
+    private static readonly IntPtr setCursorSelector = SelRegisterName("set");
+    private static readonly TimeSpan macActivationFocusWindow = TimeSpan.FromMilliseconds(900);
+    private static readonly TimeSpan macActivationFocusRequestCoalesceDelay = TimeSpan.FromMilliseconds(45);
+    private static readonly TimeSpan macSearchFocusUserIntentWindow = TimeSpan.FromMilliseconds(800);
+    private bool selectionPanPrimed;
+    private long macActivationFocusRequestId;
+    private DateTimeOffset macActivationFocusSessionUntilUtc;
+    private DateTimeOffset macSearchFocusUserIntentUntilUtc;
+    private NSObject? macDidBecomeActiveObserver;
+    private NSObject? macWillEnterForegroundObserver;
+    private NSObject? macSceneDidActivateObserver;
+    private NSObject? macSceneWillEnterForegroundObserver;
+    private NSObject? macWindowDidBecomeKeyObserver;
+    private NSObject? macWillResignActiveObserver;
+
     private enum ModalFocusTarget
     {
         Guid,

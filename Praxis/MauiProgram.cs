@@ -18,19 +18,17 @@ public static class MauiProgram
                 fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
                 fonts.AddFont("OpenSans-Semibold.ttf", "OpenSansSemibold");
             });
-#if MACCATALYST
+#if MACCATALYST || WINDOWS
         builder.ConfigureMauiHandlers(handlers =>
         {
+#if MACCATALYST
             handlers.AddHandler(typeof(Entry), typeof(MacEntryHandler));
             handlers.AddHandler(typeof(TabNavigatingEditor), typeof(MacEditorHandler));
-            handlers.AddHandler(typeof(CommandEntry), typeof(CommandEntryHandler));
-            handlers.AddHandler(typeof(SearchEntry), typeof(SearchEntryHandler));
-        });
 #endif
-#if WINDOWS
-        builder.ConfigureMauiHandlers(handlers =>
-        {
             handlers.AddHandler(typeof(CommandEntry), typeof(CommandEntryHandler));
+#if MACCATALYST
+            handlers.AddHandler(typeof(SearchEntry), typeof(SearchEntryHandler));
+#endif
         });
 #endif
 
