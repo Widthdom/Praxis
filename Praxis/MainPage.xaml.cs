@@ -2120,7 +2120,7 @@ public partial class MainPage : ContentPage
         statusFlashCts = new CancellationTokenSource();
         var token = statusFlashCts.Token;
         var neutral = GetNeutralStatusBackgroundColor();
-        var flash = IsErrorStatus(message)
+        var flash = StatusFlashErrorPolicy.IsErrorStatus(message)
             ? Color.FromArgb("#D94A4A")
             : Color.FromArgb("#4AAE6A");
 
@@ -2139,11 +2139,6 @@ public partial class MainPage : ContentPage
             ResetStatusBarBackgroundToThemeBinding();
         }
     }
-
-    private static bool IsErrorStatus(string message)
-        => message.StartsWith("Failed", StringComparison.OrdinalIgnoreCase)
-           || message.Contains("error", StringComparison.OrdinalIgnoreCase)
-           || message.Contains("exception", StringComparison.OrdinalIgnoreCase);
 
     private async Task AnimateStatusBackgroundAsync(Color from, Color to, uint durationMs, Easing easing, CancellationToken token)
     {
