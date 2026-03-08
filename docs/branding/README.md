@@ -34,21 +34,48 @@ Generated PNG outputs are stored in:
 
 ## Design Notes
 
-- Core motif: nested hexagon geometry with a white inscribed circle.
+- Core motif: the app name is inspired by the Greek word for "practice," `πρακτικής`, and the mark layers an outer regular hexagon, its inscribed circle, and another regular hexagon inscribed in that circle to evoke Archimedes' process of approximating pi with polygons.
 - Micro variants intentionally keep polygonal segmentation and contrast while reducing visual collapse at tiny sizes.
 - The `appiconfg_windows.svg` variant stays transparent outside the icon silhouette to avoid a forced tile background in Windows shell contexts.
 
-## 日本語訳（後半）
+---
 
-### PNG書き出し物
+# ブランディングバリエーション（日本語）
 
-書き出し済みPNGは次に保存します。
+このフォルダには、本番アプリアイコンのスタイルから派生したブランディング成果物が含まれています。
+
+## ビルド参照アセットとブランディング用アセット
+
+ビルド時に自動で使われるのは、`Praxis/Praxis.csproj` に宣言されているファイルだけです。
+
+ビルド参照アセット:
+- `Praxis/Resources/AppIcon/appiconfg_windows.svg`
+  - Windowsアプリ用アイコンのソース（Windowsターゲット向け `MauiIcon`）。
+- `Praxis/Resources/AppIcon/appicon.svg` + `Praxis/Resources/AppIcon/appiconfg.svg`
+  - Windows以外向けアプリアイコンの背景 + 前景（Windows以外のターゲット向け `MauiIcon`）。
+- `Praxis/Resources/Splash/splash.svg`
+  - スプラッシュ画面のソース（`MauiSplashScreen`）。
+
+この `docs/branding` フォルダにあるブランディング用アセット:
+- `store-icon-1024.svg`
+  - 高解像度の正方形リスティングアイコンのソース（ストアアップロード用）。
+- `store-icon-micro-128.svg`
+  - 128px書き出し向けに最適化したマイクロ版アイコンのソース（視認性のためにわずかに簡略化）。
+- `store-icon-micro-64.svg`
+  - 64px書き出し向けに最適化したマイクロ版アイコンのソース（視認性のためにわずかに簡略化）。
+- `store-hero-1920x1080.svg`
+  - ストアのリスティングページとソーシャルプレビュー向けのヒーロー/バナー画像。
+
+これらのブランディング用ファイルは、プロジェクトに明示的に追加しない限り、アプリパッケージには自動では含まれません。
+
+## PNG出力
+
+生成されたPNG出力は、次の場所に保存されます。
 - `docs/branding/exports/store-icon-micro-128.png`
 - `docs/branding/exports/store-icon-micro-64.png`
 
-### デザイン方針
+## デザイン方針
 
-- 基本モチーフは「正六角形の入れ子 + 白い内接円」です。
-- micro版は、小サイズで潰れにくくするためにわずかに簡略化しています。
-  - ただし、ポリゴン分割感と明暗コントラストは維持します。
-- `appiconfg_windows.svg` は、アイコン外側を透明のままにして、Windowsのタスクバー/タイトルバー系で背景タイルが目立ちにくい構成にしています。
+- 基本モチーフは、古代ギリシャ語で「実践」を表す「`πρακτικής`」にちなむアプリ名の由来と、アルキメデスが円周率を求めた過程のイメージを重ねたものです。外側の正六角形、その内接円、さらにその円に内接する正六角形を重ねることで、多角形による近似の発想を表現しています。
+- micro版は、極小サイズでの視認崩れを抑えつつ、ポリゴン分割感とコントラストを意図的に維持しています。
+- `appiconfg_windows.svg` バリアントは、Windowsシェルの文脈でタイル背景が強制されるのを避けるため、アイコンのシルエット外側を透明のままにしています。
