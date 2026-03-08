@@ -16,11 +16,12 @@ public class CommandEntryHandler : EntryHandler
     private DispatcherQueueTimer? inputScopeEnforcementTimer;
     private TextBox? timerAttachedTextBox;
     private bool filteringText;
+    private bool inputScopeUnsupported;
 
     protected override void ConnectHandler(TextBox platformView)
     {
         base.ConnectHandler(platformView);
-        ApplyAlphanumericInputScope(platformView);
+        TryApplyAlphanumericInputScope(platformView);
         platformView.GotFocus += PlatformView_GotFocus;
         platformView.LostFocus += PlatformView_LostFocus;
         platformView.TextChanging += PlatformView_TextChanging;
@@ -42,9 +43,27 @@ public class CommandEntryHandler : EntryHandler
         return scope;
     }
 
-    private static void ApplyAlphanumericInputScope(TextBox textBox)
+    private bool TryApplyAlphanumericInputScope(TextBox textBox)
     {
-        textBox.InputScope = AlphanumericHalfWidthInputScope;
+        if (inputScopeUnsupported)
+        {
+            return false;
+        }
+
+        try
+        {
+            textBox.InputScope = AlphanumericHalfWidthInputScope;
+            return true;
+        }
+        catch (Exception ex) when (WindowsInputScopeCompatibilityPolicy.ShouldDisableInputScopeOnException(ex))
+        {
+            inputScopeUnsupported = true;
+            return false;
+        }
+        catch
+        {
+            return false;
+        }
     }
 
     private void PlatformView_GotFocus(object sender, RoutedEventArgs e)
@@ -54,7 +73,7 @@ public class CommandEntryHandler : EntryHandler
             return;
         }
 
-        ApplyAlphanumericInputScope(textBox);
+        _ = TryApplyAlphanumericInputScope(textBox);
         ForceAsciiImeMode(textBox);
         StartInputScopeEnforcementTimer(textBox);
     }
@@ -66,7 +85,7 @@ public class CommandEntryHandler : EntryHandler
 
     private void PlatformView_TextChanging(TextBox sender, TextBoxTextChangingEventArgs args)
     {
-        ApplyAlphanumericInputScope(sender);
+        _ = TryApplyAlphanumericInputScope(sender);
         ForceAsciiImeMode(sender);
 
         if (filteringText)
@@ -134,7 +153,7 @@ public class CommandEntryHandler : EntryHandler
             return;
         }
 
-        ApplyAlphanumericInputScope(textBox);
+        _ = TryApplyAlphanumericInputScope(textBox);
         ForceAsciiImeMode(textBox);
     }
 
@@ -194,7 +213,7 @@ public class CommandEntryHandler : EntryHandler
                 if (nativeWindow.Content is FrameworkElement rootElement &&
                     ReferenceEquals(rootElement.XamlRoot, xamlRoot))
                 {
-                    var matchedWindowHandle = WindowNative.GetWindowHandle(nativeWindow);
+                    var matchedWindowHandle = TryGetWindowHandle(nativeWindow);
                     if (matchedWindowHandle != IntPtr.Zero)
                     {
                         return matchedWindowHandle;
@@ -206,7 +225,7 @@ public class CommandEntryHandler : EntryHandler
             {
                 if (mauiWindow.Handler?.PlatformView is Microsoft.UI.Xaml.Window nativeWindow)
                 {
-                    var fallbackWindowHandle = WindowNative.GetWindowHandle(nativeWindow);
+                    var fallbackWindowHandle = TryGetWindowHandle(nativeWindow);
                     if (fallbackWindowHandle != IntPtr.Zero)
                     {
                         return fallbackWindowHandle;
@@ -216,6 +235,18 @@ public class CommandEntryHandler : EntryHandler
         }
 
         return IntPtr.Zero;
+    }
+
+    private static IntPtr TryGetWindowHandle(Microsoft.UI.Xaml.Window nativeWindow)
+    {
+        try
+        {
+            return WindowNative.GetWindowHandle(nativeWindow);
+        }
+        catch
+        {
+            return IntPtr.Zero;
+        }
     }
 
     [DllImport("imm32.dll")]

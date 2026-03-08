@@ -291,7 +291,13 @@ public partial class MainPage
         var prop = control.GetType().GetProperty("UseSystemFocusVisuals", BindingFlags.Public | BindingFlags.Instance);
         if (prop?.CanWrite == true)
         {
-            prop.SetValue(control, false);
+            try
+            {
+                prop.SetValue(control, false);
+            }
+            catch
+            {
+            }
         }
     }
 #endif

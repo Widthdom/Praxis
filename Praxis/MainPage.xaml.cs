@@ -940,6 +940,11 @@ public partial class MainPage : ContentPage
 #endif
                 Dispatcher.DispatchDelayed(UiTimingPolicy.ContextMenuFocusInitialDelay, () =>
                 {
+                    if (!viewModel.IsContextMenuOpen || viewModel.IsEditorOpen || IsConflictDialogOpen())
+                    {
+                        return;
+                    }
+
                     FocusContextActionButton(ContextEditButton);
 #if MACCATALYST
                     EnsureMacFirstResponder();
@@ -996,6 +1001,11 @@ public partial class MainPage : ContentPage
 #endif
         Dispatcher.DispatchDelayed(UiTimingPolicy.EditorOpenFocusDelay, () =>
         {
+            if (!viewModel.IsEditorOpen || IsConflictDialogOpen())
+            {
+                return;
+            }
+
             FocusModalCommandEntryForOpen();
 #if MACCATALYST
             EnsureMacFirstResponder();
@@ -4410,7 +4420,13 @@ public partial class MainPage : ContentPage
             return;
         }
 
-        prop.SetValue(platformView, isTabStop);
+        try
+        {
+            prop.SetValue(platformView, isTabStop);
+        }
+        catch
+        {
+        }
     }
 #endif
 }

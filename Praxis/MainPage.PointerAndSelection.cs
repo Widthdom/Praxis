@@ -1069,7 +1069,18 @@ public partial class MainPage
 
     private void FocusModalCommandEntryForOpen()
     {
+#if WINDOWS
+        try
+        {
+            ModalCommandEntry.Focus();
+        }
+        catch
+        {
+            return;
+        }
+#else
         ModalCommandEntry.Focus();
+#endif
 #if MACCATALYST
         PlaceMacEntryCaretAtEnd(ModalCommandEntry);
         Dispatcher.DispatchDelayed(UiTimingPolicy.ModalOpenMacCaretRetryDelay, () =>

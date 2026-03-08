@@ -66,6 +66,7 @@ dotnet test Praxis.Tests/Praxis.Tests.csproj --collect:"XPlat Code Coverage"
 - `AsciiInputFilterTests.cs`: ASCII filtering rules used by macOS command input paths.
 - `MacCommandInputSourcePolicyTests.cs`: macOS ASCII input-source enforcement gating (first-responder + key-window + app-active) and focused re-apply interval safety.
 - `WindowsCommandInputImePolicyTests.cs`: Windows IME/input-scope enforcement and caret clamp logic.
+- `WindowsInputScopeCompatibilityPolicyTests.cs`: fallback trigger rules when native `InputScope` assignment fails (`ArgumentException`).
 - `WindowsModalFocusRestorePolicyTests.cs`: Windows editor/conflict focus restore conditions.
 - `ConflictDialogFocusRestorePolicyTests.cs`: editor focus restore condition after conflict dialog close.
 - `EditorShortcutActionResolverTests.cs`: key-to-action mapping for modal/context/conflict shortcuts.
@@ -166,6 +167,7 @@ dotnet test Praxis.Tests/Praxis.Tests.csproj --collect:"XPlat Code Coverage"
 - `AsciiInputFilterTests.cs`: macOS command 入力経路で使う ASCII フィルタ判定。
 - `MacCommandInputSourcePolicyTests.cs`: macOS ASCII 入力ソース強制の適用条件（first responder / キーウィンドウ / アプリ active）と、フォーカス中の再強制間隔の安全性を検証。
 - `WindowsCommandInputImePolicyTests.cs`: Windows IME/InputScope 強制とキャレット補正。
+- `WindowsInputScopeCompatibilityPolicyTests.cs`: ネイティブ `InputScope` 設定失敗時（`ArgumentException`）のフォールバック判定。
 - `WindowsModalFocusRestorePolicyTests.cs`: Windows 編集モーダル/競合ダイアログのフォーカス復帰条件。
 - `ConflictDialogFocusRestorePolicyTests.cs`: 競合ダイアログ閉鎖後の編集フォーカス復帰条件。
 - `EditorShortcutActionResolverTests.cs`: モーダル/コンテキスト/競合のキー操作マッピング。
