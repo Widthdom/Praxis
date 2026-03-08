@@ -41,6 +41,7 @@ dotnet test Praxis.Tests/Praxis.Tests.csproj --collect:"XPlat Code Coverage"
 - `CoreLogicEdgeCaseTests.cs`: parser/snapper/matcher/retention edge cases.
 - `CoreLogicPerformanceSafetyTests.cs`: regression-safety checks for defaults, bounds, and conflict detection (including timestamp-only drift vs material-content conflict cases).
 - `PolicyTruthTableTests.cs`: full truth-table validation for focus-related policy combinations.
+- `MainPageStructureTests.cs`: source-structure guard for `MainPage` partial split (field declarations are grouped in `MainPage.Fields.*.cs` and not left in `MainPage.xaml.cs`).
 
 ### Models / Defaults
 - `ModelDefaultsTests.cs`: default values and initialization guarantees for `LauncherButtonRecord` and `LaunchLogEntry`.
@@ -142,6 +143,7 @@ dotnet test Praxis.Tests/Praxis.Tests.csproj --collect:"XPlat Code Coverage"
 - `CoreLogicEdgeCaseTests.cs`: パーサ/スナッパ/マッチャー/保持期間の境界ケース。
 - `CoreLogicPerformanceSafetyTests.cs`: 既定値・境界・競合判定（時刻差分のみは非競合、内容差分は競合）の回帰安全性確認。
 - `PolicyTruthTableTests.cs`: フォーカス系ポリシーの真理値表を網羅検証。
+- `MainPageStructureTests.cs`: `MainPage` の partial 分割構造を保護するソース構成テスト（フィールド宣言を `MainPage.Fields.*.cs` に集約し、`MainPage.xaml.cs` に残さないことを検証）。
 
 ### モデル / 既定値
 - `ModelDefaultsTests.cs`: `LauncherButtonRecord` / `LaunchLogEntry` の既定値・初期化保証。

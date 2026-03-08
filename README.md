@@ -53,7 +53,7 @@ open Praxis/bin/Debug/net10.0-maccatalyst/maccatalyst-arm64/Praxis.app
 
 ## Documentation Map
 - Implementation details: `docs/DEVELOPER_GUIDE.md`
-- Refactoring notes: `MainPage` / `MainViewModel` are split into feature-based partial classes, and UI delay constants are centralized in `UiTimingPolicy` (see Developer Guide).
+- Refactoring notes: `MainPage` / `MainViewModel` are split into feature-based partial classes, and `MainPage` fields are further grouped into concern-based `MainPage.Fields.*.cs` files. UI delay constants are centralized in `UiTimingPolicy` (see Developer Guide).
 - Testing guide (execution, coverage, test inventory): `docs/TESTING_GUIDE.md`
 - SQLite schema: `docs/DATABASE_SCHEMA.md`
 - Branding assets: `docs/branding/README.md`
@@ -115,7 +115,7 @@ open Praxis/bin/Debug/net10.0-maccatalyst/maccatalyst-arm64/Praxis.app
 
 ## ドキュメント一覧
 - 実装仕様: `docs/DEVELOPER_GUIDE.md`
-- リファクタ方針: `MainPage` / `MainViewModel` は機能別 partial class に分割し、UI 遅延定数は `UiTimingPolicy` に集約（詳細は開発者ガイド参照）
+- リファクタ方針: `MainPage` / `MainViewModel` は機能別 partial class に分割し、`MainPage` のフィールド宣言は責務別 `MainPage.Fields.*.cs` に整理。UI 遅延定数は `UiTimingPolicy` に集約（詳細は開発者ガイド参照）
 - テストガイド（実行手順・カバレッジ・テスト一覧）: `docs/TESTING_GUIDE.md`
 - SQLite スキーマ: `docs/DATABASE_SCHEMA.md`
 - ブランディング素材: `docs/branding/README.md`
