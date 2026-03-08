@@ -43,6 +43,7 @@ dotnet test Praxis.Tests/Praxis.Tests.csproj --collect:"XPlat Code Coverage"
 - `PolicyTruthTableTests.cs`: full truth-table validation for focus-related policy combinations.
 - `MainPageStructureTests.cs`: source-structure guard for `MainPage` partial split (field declarations are grouped in `MainPage.Fields.*.cs` and not left in `MainPage.xaml.cs`).
 - `MainViewModelWorkflowIntegrationTests.cs`: workflow integration test for `create -> edit -> execute -> external sync` using linked `MainViewModel` sources and test doubles for repository/executor/sync services.
+- `CiCoverageWorkflowPolicyTests.cs`: workflow-configuration guard that verifies CI test step collects `XPlat Code Coverage` and uploads Cobertura artifact output.
 
 ### Models / Defaults
 - `ModelDefaultsTests.cs`: default values and initialization guarantees for `LauncherButtonRecord` and `LaunchLogEntry`.
@@ -97,7 +98,9 @@ dotnet test Praxis.Tests/Praxis.Tests.csproj --collect:"XPlat Code Coverage"
 - `NonPublicPropertySetterTests.cs`: reflection-based writable property assignment behavior.
 
 ## CI Alignment
-- CI (`.github/workflows/ci.yml`) executes `dotnet test Praxis.Tests/Praxis.Tests.csproj`.
+- CI (`.github/workflows/ci.yml`) executes tests with coverage collection:
+  - `dotnet test Praxis.Tests/Praxis.Tests.csproj -c Release --no-restore -v minimal --collect:"XPlat Code Coverage" --results-directory ./TestResults`
+- CI uploads Cobertura XML artifact from `TestResults/**/coverage.cobertura.xml`.
 - Keep this guide aligned when test files are added/removed/renamed.
 
 ---
@@ -147,6 +150,7 @@ dotnet test Praxis.Tests/Praxis.Tests.csproj --collect:"XPlat Code Coverage"
 - `PolicyTruthTableTests.cs`: フォーカス系ポリシーの真理値表を網羅検証。
 - `MainPageStructureTests.cs`: `MainPage` の partial 分割構造を保護するソース構成テスト（フィールド宣言を `MainPage.Fields.*.cs` に集約し、`MainPage.xaml.cs` に残さないことを検証）。
 - `MainViewModelWorkflowIntegrationTests.cs`: `create -> edit -> execute -> external sync` を通すワークフロー統合テスト。`MainViewModel` の実ソースをリンクし、リポジトリ/実行器/同期通知はテストダブルで結合検証する。
+- `CiCoverageWorkflowPolicyTests.cs`: CI のテスト手順が `XPlat Code Coverage` 収集と Cobertura アーティファクト出力を維持しているかを検証するワークフロー設定ガード。
 
 ### モデル / 既定値
 - `ModelDefaultsTests.cs`: `LauncherButtonRecord` / `LaunchLogEntry` の既定値・初期化保証。
@@ -201,5 +205,7 @@ dotnet test Praxis.Tests/Praxis.Tests.csproj --collect:"XPlat Code Coverage"
 - `NonPublicPropertySetterTests.cs`: リフレクションによる書き込み可能プロパティ設定。
 
 ## CI との整合
-- CI（`.github/workflows/ci.yml`）は `dotnet test Praxis.Tests/Praxis.Tests.csproj` を実行します。
+- CI（`.github/workflows/ci.yml`）は、次のコマンドでテスト＋カバレッジ収集を実行します。
+  - `dotnet test Praxis.Tests/Praxis.Tests.csproj -c Release --no-restore -v minimal --collect:"XPlat Code Coverage" --results-directory ./TestResults`
+- CI は `TestResults/**/coverage.cobertura.xml` を Cobertura アーティファクトとして保存します。
 - テストファイルの追加・削除・改名時は本ガイドも更新してください。

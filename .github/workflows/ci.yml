@@ -34,7 +34,16 @@ jobs:
         run: dotnet restore Praxis.Tests/Praxis.Tests.csproj
 
       - name: Run tests
-        run: dotnet test Praxis.Tests/Praxis.Tests.csproj -c Release --no-restore -v minimal
+        run: >
+          dotnet test Praxis.Tests/Praxis.Tests.csproj -c Release --no-restore -v minimal
+          --collect:"XPlat Code Coverage" --results-directory ./TestResults
+
+      - name: Upload coverage artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: praxis-test-coverage-cobertura
+          path: TestResults/**/coverage.cobertura.xml
+          if-no-files-found: error
 
   windows-build:
     name: Windows Build
