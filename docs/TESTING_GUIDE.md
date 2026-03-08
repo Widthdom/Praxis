@@ -57,7 +57,7 @@ dotnet test Praxis.Tests/Praxis.Tests.csproj --collect:"XPlat Code Coverage"
 - `WindowActivationCommandFocusPolicyTests.cs`: activation-time command focus gating.
 - `SearchFocusGuardPolicyTests.cs`: macOS search-focus guard decision rules.
 - `AsciiInputFilterTests.cs`: ASCII filtering rules used by macOS command input paths.
-- `MacCommandInputSourcePolicyTests.cs`: macOS ASCII input-source enforcement gating (first-responder + key-window + app-active).
+- `MacCommandInputSourcePolicyTests.cs`: macOS ASCII input-source enforcement gating (first-responder + key-window + app-active) for focus-time enforcement without background re-apply.
 - `WindowsCommandInputImePolicyTests.cs`: Windows IME/input-scope enforcement and caret clamp logic.
 - `WindowsModalFocusRestorePolicyTests.cs`: Windows editor/conflict focus restore conditions.
 - `ConflictDialogFocusRestorePolicyTests.cs`: editor focus restore condition after conflict dialog close.
@@ -148,7 +148,7 @@ dotnet test Praxis.Tests/Praxis.Tests.csproj --collect:"XPlat Code Coverage"
 - `WindowActivationCommandFocusPolicyTests.cs`: ウィンドウ再アクティブ時の command フォーカス可否。
 - `SearchFocusGuardPolicyTests.cs`: macOS の Search フォーカスガード判定。
 - `AsciiInputFilterTests.cs`: macOS command 入力経路で使う ASCII フィルタ判定。
-- `MacCommandInputSourcePolicyTests.cs`: macOS ASCII 入力ソース強制の適用条件（first responder / キーウィンドウ / アプリ active）。
+- `MacCommandInputSourcePolicyTests.cs`: macOS ASCII 入力ソース強制の適用条件（first responder / キーウィンドウ / アプリ active）。フォーカス時適用で、バックグラウンド再強制をしない前提を検証。
 - `WindowsCommandInputImePolicyTests.cs`: Windows IME/InputScope 強制とキャレット補正。
 - `WindowsModalFocusRestorePolicyTests.cs`: Windows 編集モーダル/競合ダイアログのフォーカス復帰条件。
 - `ConflictDialogFocusRestorePolicyTests.cs`: 競合ダイアログ閉鎖後の編集フォーカス復帰条件。

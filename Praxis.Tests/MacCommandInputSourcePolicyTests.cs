@@ -4,12 +4,6 @@ namespace Praxis.Tests;
 
 public class MacCommandInputSourcePolicyTests
 {
-    [Fact]
-    public void FocusedInputSourceEnforcementInterval_IsPositive()
-    {
-        Assert.True(MacCommandInputSourcePolicy.FocusedInputSourceEnforcementInterval > TimeSpan.Zero);
-    }
-
     [Theory]
     [InlineData(false, false, false, false)]
     [InlineData(false, false, true, false)]

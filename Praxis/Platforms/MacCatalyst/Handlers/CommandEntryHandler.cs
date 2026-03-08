@@ -45,7 +45,6 @@ public class CommandEntryHandler : MacEntryHandler
         private bool _filteringText;
         private NSObject? windowDidBecomeKeyObserver;
         private NSObject? didBecomeActiveObserver;
-        private NSTimer? _asciiEnforcementTimer;
 
         public CommandEntryTextField()
         {
@@ -60,6 +59,7 @@ public class CommandEntryHandler : MacEntryHandler
             // Block non-ASCII IME composition (prevents Japanese/CJK input)
             if (AsciiInputFilter.ShouldBlockMarkedText(markedText))
             {
+                EnforceAsciiInputSourceIfNeeded();
                 return;
             }
 
@@ -104,14 +104,12 @@ public class CommandEntryHandler : MacEntryHandler
             if (result)
             {
                 EnforceAsciiInputSourceIfNeeded();
-                AttachInputSourceObserver();
             }
             return result;
         }
 
         public override bool ResignFirstResponder()
         {
-            DetachInputSourceObserver();
             return base.ResignFirstResponder();
         }
 
@@ -123,28 +121,13 @@ public class CommandEntryHandler : MacEntryHandler
             CFRelease(source);
         }
 
-        private void AttachInputSourceObserver()
-        {
-            DetachInputSourceObserver();
-            _asciiEnforcementTimer = NSTimer.CreateRepeatingScheduledTimer(
-                MacCommandInputSourcePolicy.FocusedInputSourceEnforcementInterval.TotalSeconds,
-                _ => EnforceAsciiInputSourceIfNeeded());
-        }
-
-        private void DetachInputSourceObserver()
-        {
-            _asciiEnforcementTimer?.Invalidate();
-            _asciiEnforcementTimer?.Dispose();
-            _asciiEnforcementTimer = null;
-        }
-
         private void EnforceAsciiInputSourceIfNeeded()
         {
             var currentWindow = Window;
             var shouldForce = MacCommandInputSourcePolicy.ShouldForceAsciiInputSource(
                 IsFirstResponder,
                 currentWindow?.IsKeyWindow == true,
-                UIApplication.SharedApplication.ApplicationState == UIApplicationState.Active);
+                IsApplicationForegroundActive(currentWindow));
 
             if (!shouldForce)
             {
@@ -199,7 +182,6 @@ public class CommandEntryHandler : MacEntryHandler
             if (disposing)
             {
                 RemoveTarget(OnTextEditingChanged, UIControlEvent.EditingChanged);
-                DetachInputSourceObserver();
                 DetachWindowDidBecomeKeyObserver();
                 DetachDidBecomeActiveObserver();
                 if (lastCommandField is not null &&
@@ -456,6 +438,20 @@ public class CommandEntryHandler : MacEntryHandler
             }
 
             SelectAllText();
+        }
+
+        private bool IsApplicationForegroundActive(UIWindow? currentWindow)
+        {
+            var applicationActive = UIApplication.SharedApplication.ApplicationState == UIApplicationState.Active;
+            var sceneForegroundActive = currentWindow?.WindowScene?.ActivationState switch
+            {
+                UISceneActivationState.ForegroundActive => true,
+                UISceneActivationState.ForegroundInactive => false,
+                UISceneActivationState.Background => false,
+                _ => applicationActive,
+            };
+
+            return applicationActive && sceneForegroundActive;
         }
 
         private void SelectAllText()
