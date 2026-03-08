@@ -32,6 +32,7 @@ public partial class MainPage : ContentPage
     private CancellationTokenSource? statusFlashCts;
     private CancellationTokenSource? quickLookShowCts;
     private CancellationTokenSource? quickLookHideCts;
+    private CancellationTokenSource? dockHoverExitCts;
     private Window? attachedWindow;
     private bool suppressNextRootSuggestionClose;
     private TaskCompletionSource<EditorConflictResolution>? editorConflictTcs;
@@ -43,6 +44,7 @@ public partial class MainPage : ContentPage
     private const double QuickLookOffsetX = 14;
     private const double QuickLookOffsetY = 2;
     private const double QuickLookViewportMargin = 10;
+    private const int DockHoverExitHideDelayMs = 60;
 #if WINDOWS
     private Microsoft.UI.Xaml.UIElement? capturedElement;
     private Microsoft.UI.Xaml.Controls.TextBox? commandTextBox;
@@ -177,6 +179,7 @@ public partial class MainPage : ContentPage
             return;
         }
 
+        SetDockScrollBarVisibility(isPointerOverDockRegion: false);
         ApplyClearButtonGlyphAlignmentTuning();
         this.viewModel.ResolveEditorConflictAsync = ResolveEditorConflictAsync;
         App.SetEditorOpenState(this.viewModel.IsEditorOpen);
@@ -1233,6 +1236,123 @@ public partial class MainPage : ContentPage
         EnsureWindowsTextBoxHooks();
 #endif
     }
+
+    private void DockRegion_PointerEntered(object? sender, PointerEventArgs e)
+    {
+        CancelDockHoverExitHide();
+        SetDockScrollBarVisibility(isPointerOverDockRegion: true);
+    }
+
+    private void DockRegion_PointerExited(object? sender, PointerEventArgs e)
+    {
+        ScheduleDockHoverExitHide();
+    }
+
+    private void DockScroll_HandlerChanged(object? sender, EventArgs e)
+    {
+        ApplyNativeDockScrollBarVisibility(isDockPointerHovering);
+        Dispatcher.DispatchDelayed(TimeSpan.FromMilliseconds(16), () =>
+        {
+            ApplyNativeDockScrollBarVisibility(isDockPointerHovering);
+        });
+        Dispatcher.DispatchDelayed(TimeSpan.FromMilliseconds(80), () =>
+        {
+            ApplyNativeDockScrollBarVisibility(isDockPointerHovering);
+        });
+    }
+
+    private void SetDockScrollBarVisibility(bool isPointerOverDockRegion)
+    {
+        isDockPointerHovering = isPointerOverDockRegion;
+        var showHorizontalScrollBar = DockScrollBarVisibilityPolicy.ShouldShowHorizontalScrollBar(isPointerOverDockRegion: isPointerOverDockRegion);
+        DockScrollBarMask.IsVisible = DockScrollBarVisibilityPolicy.ShouldShowScrollBarMask(showHorizontalScrollBar);
+        ApplyNativeDockScrollBarVisibility(showHorizontalScrollBar);
+    }
+
+    private void ScheduleDockHoverExitHide()
+    {
+        CancelDockHoverExitHide();
+        var cts = new CancellationTokenSource();
+        dockHoverExitCts = cts;
+        _ = HideDockScrollBarAfterExitDelayAsync(cts.Token);
+    }
+
+    private void CancelDockHoverExitHide()
+    {
+        dockHoverExitCts?.Cancel();
+        dockHoverExitCts?.Dispose();
+        dockHoverExitCts = null;
+    }
+
+    private async Task HideDockScrollBarAfterExitDelayAsync(CancellationToken token)
+    {
+        try
+        {
+            await Task.Delay(DockHoverExitHideDelayMs, token);
+        }
+        catch (OperationCanceledException)
+        {
+            return;
+        }
+
+        if (token.IsCancellationRequested)
+        {
+            return;
+        }
+
+        SetDockScrollBarVisibility(isPointerOverDockRegion: false);
+    }
+
+    private void ApplyNativeDockScrollBarVisibility(bool showHorizontalScrollBar)
+    {
+#if WINDOWS
+        if (DockScroll.Handler?.PlatformView is Microsoft.UI.Xaml.Controls.ScrollViewer scrollViewer)
+        {
+            scrollViewer.HorizontalScrollBarVisibility = showHorizontalScrollBar
+                ? Microsoft.UI.Xaml.Controls.ScrollBarVisibility.Visible
+                : Microsoft.UI.Xaml.Controls.ScrollBarVisibility.Hidden;
+        }
+#endif
+#if MACCATALYST
+        if (TryResolveMacDockScrollView() is UIScrollView scrollView)
+        {
+            scrollView.ShowsHorizontalScrollIndicator = showHorizontalScrollBar;
+            scrollView.SetNeedsLayout();
+            scrollView.LayoutIfNeeded();
+        }
+#endif
+    }
+
+#if MACCATALYST
+    private UIScrollView? TryResolveMacDockScrollView()
+    {
+        if (DockScroll.Handler?.PlatformView is not UIView platformView)
+        {
+            return null;
+        }
+
+        return platformView as UIScrollView ?? FindFirstScrollView(platformView);
+    }
+
+    private static UIScrollView? FindFirstScrollView(UIView root)
+    {
+        foreach (var subview in root.Subviews)
+        {
+            if (subview is UIScrollView scrollView)
+            {
+                return scrollView;
+            }
+
+            var nested = FindFirstScrollView(subview);
+            if (nested is not null)
+            {
+                return nested;
+            }
+        }
+
+        return null;
+    }
+#endif
 
     private void ButtonQuickLook_PointerEntered(object? sender, PointerEventArgs e)
     {
@@ -2785,6 +2905,7 @@ public partial class MainPage : ContentPage
         if (pointer is not null)
         {
             lastPointerOnRoot = pointer.Value;
+            SyncDockScrollBarVisibility(pointer.Value);
         }
 
 #if MACCATALYST
@@ -2821,7 +2942,30 @@ public partial class MainPage : ContentPage
         if (pointer is not null)
         {
             lastPointerOnRoot = pointer.Value;
+            SyncDockScrollBarVisibility(pointer.Value);
+            return;
         }
+
+        lastPointerOnRoot = null;
+        CancelDockHoverExitHide();
+        SetDockScrollBarVisibility(isPointerOverDockRegion: false);
+    }
+
+    private void RootGrid_PointerExited(object? sender, PointerEventArgs e)
+    {
+        lastPointerOnRoot = null;
+        CancelDockHoverExitHide();
+        SetDockScrollBarVisibility(isPointerOverDockRegion: false);
+    }
+
+    private void SyncDockScrollBarVisibility(Point rootPoint)
+    {
+        var isPointerOverDockRegion = IsPointInsideElement(rootPoint, DockRegionBorder);
+        if (isPointerOverDockRegion)
+        {
+            CancelDockHoverExitHide();
+        }
+        SetDockScrollBarVisibility(isPointerOverDockRegion);
     }
 
 #if MACCATALYST

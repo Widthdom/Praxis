@@ -75,6 +75,7 @@ dotnet test Praxis.Tests/Praxis.Tests.csproj --collect:"XPlat Code Coverage"
 
 ### UI-Agnostic Visual / Layout Policies
 - `InputClearButtonVisibilityPolicyTests.cs`: clear button visibility rule.
+- `DockScrollBarVisibilityPolicyTests.cs`: dock scrollbar visibility rule from pointer hover state and mask-visibility inversion rule.
 - `ClearButtonGlyphAlignmentPolicyTests.cs`: clear glyph translation policy.
 - `ClearButtonRefocusPolicyTests.cs`: clear-button focus retry schedule by platform.
 - `ButtonFocusVisualPolicyTests.cs`: focus-border style resolution.
@@ -174,6 +175,7 @@ dotnet test Praxis.Tests/Praxis.Tests.csproj --collect:"XPlat Code Coverage"
 
 ### UI 非依存の見た目 / レイアウトポリシー
 - `InputClearButtonVisibilityPolicyTests.cs`: クリアボタン表示条件。
+- `DockScrollBarVisibilityPolicyTests.cs`: ポインターホバー状態に基づく Dock スクロールバー表示判定と、マスク表示の反転ルール判定。
 - `ClearButtonGlyphAlignmentPolicyTests.cs`: クリアボタン `x` の座標補正。
 - `ClearButtonRefocusPolicyTests.cs`: クリア後フォーカス復帰リトライ間隔。
 - `ButtonFocusVisualPolicyTests.cs`: フォーカス枠スタイル判定。
