@@ -1,4 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
+using Praxis.Core.Logic;
 
 namespace Praxis;
 
@@ -19,7 +20,7 @@ public partial class App : Application
     private static long lastActivatedAt;
     private static volatile bool isMacApplicationActive = true;
     public static void RecordActivation() => lastActivatedAt = Environment.TickCount64;
-    public static bool IsActivationSuppressionActive() => Environment.TickCount64 - lastActivatedAt < 500;
+    public static bool IsActivationSuppressionActive() => Environment.TickCount64 - lastActivatedAt < UiTimingPolicy.MacActivationSuppressionWindowMs;
     public static bool IsMacApplicationActive() => isMacApplicationActive;
     public static void SetMacApplicationActive(bool value) => isMacApplicationActive = value;
     public static void RaiseMacApplicationDeactivating()

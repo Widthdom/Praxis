@@ -26,20 +26,7 @@ public sealed class SqliteAppRepository : IAppRepository
         await gate.WaitAsync(cancellationToken);
         try
         {
-            if (connection is not null)
-            {
-                return;
-            }
-
-            connection = new SQLiteAsyncConnection(dbPath);
-            await connection.CreateTableAsync<LauncherButtonEntity>();
-            await connection.CreateTableAsync<LaunchLogEntity>();
-            await connection.CreateTableAsync<AppSettingEntity>();
-
-            var entities = await connection.Table<LauncherButtonEntity>().ToListAsync();
-            cache = entities.Select(Map).ToList();
-            RebuildCommandCache();
-
+            await InitializeCoreAsync();
         }
         finally
         {
@@ -47,233 +34,308 @@ public sealed class SqliteAppRepository : IAppRepository
         }
     }
 
-    public Task<IReadOnlyList<LauncherButtonRecord>> GetButtonsAsync(CancellationToken cancellationToken = default)
-        => Task.FromResult<IReadOnlyList<LauncherButtonRecord>>(cache.Select(Clone).ToList());
+    public async Task<IReadOnlyList<LauncherButtonRecord>> GetButtonsAsync(CancellationToken cancellationToken = default)
+    {
+        await gate.WaitAsync(cancellationToken);
+        try
+        {
+            await InitializeCoreAsync();
+            return cache.Select(Clone).ToList();
+        }
+        finally
+        {
+            gate.Release();
+        }
+    }
 
     public async Task<IReadOnlyList<LauncherButtonRecord>> ReloadButtonsAsync(CancellationToken cancellationToken = default)
     {
-        await InitializeAsync(cancellationToken);
-        var entities = await connection!.Table<LauncherButtonEntity>().ToListAsync();
-        cache = entities.Select(Map).ToList();
-        RebuildCommandCache();
-        return cache.Select(Clone).ToList();
+        await gate.WaitAsync(cancellationToken);
+        try
+        {
+            await InitializeCoreAsync();
+            var entities = await Connection.Table<LauncherButtonEntity>().ToListAsync();
+            cache = entities.Select(Map).ToList();
+            RebuildCommandCache();
+            return cache.Select(Clone).ToList();
+        }
+        finally
+        {
+            gate.Release();
+        }
     }
 
     public async Task<LauncherButtonRecord?> GetByIdAsync(Guid id, bool forceReload = false, CancellationToken cancellationToken = default)
     {
-        await InitializeAsync(cancellationToken);
-
-        if (forceReload)
+        await gate.WaitAsync(cancellationToken);
+        try
         {
-            var entity = await connection!.FindAsync<LauncherButtonEntity>(id.ToString());
-            if (entity is null)
+            await InitializeCoreAsync();
+
+            if (forceReload)
             {
-                cache.RemoveAll(x => x.Id == id);
+                var entity = await Connection.FindAsync<LauncherButtonEntity>(id.ToString());
+                if (entity is null)
+                {
+                    cache.RemoveAll(x => x.Id == id);
+                    RebuildCommandCache();
+                    return null;
+                }
+
+                var mapped = Map(entity);
+                var idx = cache.FindIndex(x => x.Id == id);
+                if (idx >= 0)
+                {
+                    cache[idx] = Clone(mapped);
+                }
+                else
+                {
+                    cache.Add(Clone(mapped));
+                }
+
                 RebuildCommandCache();
-                return null;
+                return Clone(mapped);
             }
 
-            var mapped = Map(entity);
-            var idx = cache.FindIndex(x => x.Id == id);
-            if (idx >= 0)
-            {
-                cache[idx] = Clone(mapped);
-            }
-            else
-            {
-                cache.Add(Clone(mapped));
-            }
-
-            RebuildCommandCache();
-            return Clone(mapped);
+            var cached = cache.FirstOrDefault(x => x.Id == id);
+            return cached is null ? null : Clone(cached);
         }
-
-        var cached = cache.FirstOrDefault(x => x.Id == id);
-        return cached is null ? null : Clone(cached);
+        finally
+        {
+            gate.Release();
+        }
     }
 
-    public Task<LauncherButtonRecord?> GetByCommandAsync(string command, CancellationToken cancellationToken = default)
+    public async Task<LauncherButtonRecord?> GetByCommandAsync(string command, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(command))
         {
-            return Task.FromResult<LauncherButtonRecord?>(null);
+            return null;
         }
 
-        commandCache.TryGetValue(command, out var match);
-        return Task.FromResult(match is null ? null : Clone(match));
+        await gate.WaitAsync(cancellationToken);
+        try
+        {
+            await InitializeCoreAsync();
+            commandCache.TryGetValue(command, out var match);
+            return match is null ? null : Clone(match);
+        }
+        finally
+        {
+            gate.Release();
+        }
     }
 
     public async Task UpsertButtonAsync(LauncherButtonRecord record, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(record);
-        await InitializeAsync(cancellationToken);
-
-        var entity = Map(record);
-        entity.UpdatedAtUtc = DateTime.UtcNow;
-
-        await connection!.InsertOrReplaceAsync(entity);
-
-        var existing = cache.FindIndex(x => x.Id == record.Id);
-        if (existing >= 0)
+        await gate.WaitAsync(cancellationToken);
+        try
         {
-            cache[existing] = Clone(Map(entity));
-        }
-        else
-        {
-            cache.Add(Clone(Map(entity)));
-        }
+            await InitializeCoreAsync();
 
-        RebuildCommandCache();
+            var entity = Map(record);
+            entity.UpdatedAtUtc = DateTime.UtcNow;
+
+            await Connection.InsertOrReplaceAsync(entity);
+
+            var existing = cache.FindIndex(x => x.Id == record.Id);
+            if (existing >= 0)
+            {
+                cache[existing] = Clone(Map(entity));
+            }
+            else
+            {
+                cache.Add(Clone(Map(entity)));
+            }
+
+            RebuildCommandCache();
+        }
+        finally
+        {
+            gate.Release();
+        }
     }
 
     public async Task DeleteButtonAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        await InitializeAsync(cancellationToken);
-        await connection!.DeleteAsync<LauncherButtonEntity>(id.ToString());
-        cache.RemoveAll(x => x.Id == id);
-        RebuildCommandCache();
+        await gate.WaitAsync(cancellationToken);
+        try
+        {
+            await InitializeCoreAsync();
+            await Connection.DeleteAsync<LauncherButtonEntity>(id.ToString());
+            cache.RemoveAll(x => x.Id == id);
+            RebuildCommandCache();
+        }
+        finally
+        {
+            gate.Release();
+        }
     }
 
     public async Task AddLogAsync(LaunchLogEntry entry, CancellationToken cancellationToken = default)
     {
-        await InitializeAsync(cancellationToken);
-        var entity = new LaunchLogEntity
+        await gate.WaitAsync(cancellationToken);
+        try
         {
-            Id = entry.Id.ToString(),
-            ButtonId = entry.ButtonId?.ToString(),
-            Source = entry.Source,
-            Tool = entry.Tool,
-            Arguments = entry.Arguments,
-            Succeeded = entry.Succeeded,
-            Message = entry.Message,
-            TimestampUtc = entry.TimestampUtc,
-        };
+            await InitializeCoreAsync();
+            var entity = new LaunchLogEntity
+            {
+                Id = entry.Id.ToString(),
+                ButtonId = entry.ButtonId?.ToString(),
+                Source = entry.Source,
+                Tool = entry.Tool,
+                Arguments = entry.Arguments,
+                Succeeded = entry.Succeeded,
+                Message = entry.Message,
+                TimestampUtc = entry.TimestampUtc,
+            };
 
-        await connection!.InsertAsync(entity);
+            await Connection.InsertAsync(entity);
+        }
+        finally
+        {
+            gate.Release();
+        }
     }
 
     public async Task PurgeOldLogsAsync(int retentionDays, CancellationToken cancellationToken = default)
     {
-        await InitializeAsync(cancellationToken);
-        if (retentionDays < 1)
+        await gate.WaitAsync(cancellationToken);
+        try
         {
-            retentionDays = 1;
-        }
+            await InitializeCoreAsync();
+            if (retentionDays < 1)
+            {
+                retentionDays = 1;
+            }
 
-        var threshold = DateTime.UtcNow.AddDays(-retentionDays);
-        await connection!.ExecuteAsync(
-            $"DELETE FROM {nameof(LaunchLogEntity)} WHERE {nameof(LaunchLogEntity.TimestampUtc)} < ?",
-            threshold);
+            var threshold = DateTime.UtcNow.AddDays(-retentionDays);
+            await Connection.ExecuteAsync(
+                $"DELETE FROM {nameof(LaunchLogEntity)} WHERE {nameof(LaunchLogEntity.TimestampUtc)} < ?",
+                threshold);
+        }
+        finally
+        {
+            gate.Release();
+        }
     }
 
     public async Task SetThemeAsync(ThemeMode themeMode, CancellationToken cancellationToken = default)
     {
-        await InitializeAsync(cancellationToken);
-        await connection!.InsertOrReplaceAsync(new AppSettingEntity
+        await gate.WaitAsync(cancellationToken);
+        try
         {
-            Key = ThemeKey,
-            Value = themeMode.ToString(),
-        });
+            await InitializeCoreAsync();
+            await Connection.InsertOrReplaceAsync(new AppSettingEntity
+            {
+                Key = ThemeKey,
+                Value = themeMode.ToString(),
+            });
+        }
+        finally
+        {
+            gate.Release();
+        }
     }
 
     public async Task<ThemeMode> GetThemeAsync(CancellationToken cancellationToken = default)
     {
-        await InitializeAsync(cancellationToken);
-        var setting = await connection!.FindAsync<AppSettingEntity>(ThemeKey);
-        if (setting is null || !Enum.TryParse<ThemeMode>(setting.Value, true, out var mode))
+        await gate.WaitAsync(cancellationToken);
+        try
         {
-            return ThemeMode.System;
-        }
+            await InitializeCoreAsync();
+            var setting = await Connection.FindAsync<AppSettingEntity>(ThemeKey);
+            if (setting is null || !Enum.TryParse<ThemeMode>(setting.Value, true, out var mode))
+            {
+                return ThemeMode.System;
+            }
 
-        return mode;
+            return mode;
+        }
+        finally
+        {
+            gate.Release();
+        }
     }
 
     public async Task<IReadOnlyList<Guid>> GetDockButtonIdsAsync(CancellationToken cancellationToken = default)
     {
-        await InitializeAsync(cancellationToken);
-        var setting = await connection!.FindAsync<AppSettingEntity>(DockOrderKey);
-        if (setting is null || string.IsNullOrWhiteSpace(setting.Value))
+        await gate.WaitAsync(cancellationToken);
+        try
         {
-            return [];
-        }
-
-        var ids = new List<Guid>();
-        var parts = setting.Value.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-        foreach (var part in parts)
-        {
-            if (Guid.TryParse(part, out var id))
+            await InitializeCoreAsync();
+            var setting = await Connection.FindAsync<AppSettingEntity>(DockOrderKey);
+            if (setting is null || string.IsNullOrWhiteSpace(setting.Value))
             {
-                ids.Add(id);
+                return [];
             }
-        }
 
-        return ids;
+            var ids = new List<Guid>();
+            var parts = setting.Value.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            foreach (var part in parts)
+            {
+                if (Guid.TryParse(part, out var id))
+                {
+                    ids.Add(id);
+                }
+            }
+
+            return ids;
+        }
+        finally
+        {
+            gate.Release();
+        }
     }
 
     public async Task SetDockButtonIdsAsync(IReadOnlyList<Guid> ids, CancellationToken cancellationToken = default)
     {
-        await InitializeAsync(cancellationToken);
-        var value = string.Join(",", ids.Select(x => x.ToString()));
-        await connection!.InsertOrReplaceAsync(new AppSettingEntity
+        await gate.WaitAsync(cancellationToken);
+        try
         {
-            Key = DockOrderKey,
-            Value = value,
-        });
+            await InitializeCoreAsync();
+            var value = string.Join(",", ids.Select(x => x.ToString()));
+            await Connection.InsertOrReplaceAsync(new AppSettingEntity
+            {
+                Key = DockOrderKey,
+                Value = value,
+            });
+        }
+        finally
+        {
+            gate.Release();
+        }
     }
 
-    private static LauncherButtonRecord Map(LauncherButtonEntity x)
-        => new()
+    private async Task InitializeCoreAsync()
+    {
+        if (connection is not null)
         {
-            Id = Guid.Parse(x.Id),
-            Command = x.Command,
-            ButtonText = x.ButtonText,
-            Tool = x.Tool,
-            Arguments = x.Arguments,
-            ClipText = x.ClipText,
-            Note = x.Note,
-            X = x.X,
-            Y = x.Y,
-            Width = x.Width,
-            Height = x.Height,
-            CreatedAtUtc = x.CreatedAtUtc,
-            UpdatedAtUtc = x.UpdatedAtUtc,
-        };
+            return;
+        }
+
+        connection = new SQLiteAsyncConnection(dbPath);
+        await connection.CreateTableAsync<LauncherButtonEntity>();
+        await connection.CreateTableAsync<LaunchLogEntity>();
+        await connection.CreateTableAsync<AppSettingEntity>();
+
+        var entities = await connection.Table<LauncherButtonEntity>().ToListAsync();
+        cache = entities.Select(Map).ToList();
+        RebuildCommandCache();
+    }
+
+    private SQLiteAsyncConnection Connection =>
+        connection ?? throw new InvalidOperationException("Repository is not initialized.");
+
+    private static LauncherButtonRecord Map(LauncherButtonEntity x)
+        => x.ToRecord();
 
     private static LauncherButtonEntity Map(LauncherButtonRecord x)
-        => new()
-        {
-            Id = x.Id.ToString(),
-            Command = x.Command,
-            ButtonText = x.ButtonText,
-            Tool = x.Tool,
-            Arguments = x.Arguments,
-            ClipText = x.ClipText,
-            Note = x.Note,
-            X = x.X,
-            Y = x.Y,
-            Width = x.Width,
-            Height = x.Height,
-            CreatedAtUtc = x.CreatedAtUtc,
-            UpdatedAtUtc = x.UpdatedAtUtc,
-        };
+        => new(x);
 
     private static LauncherButtonRecord Clone(LauncherButtonRecord x)
-        => new()
-        {
-            Id = x.Id,
-            Command = x.Command,
-            ButtonText = x.ButtonText,
-            Tool = x.Tool,
-            Arguments = x.Arguments,
-            ClipText = x.ClipText,
-            Note = x.Note,
-            X = x.X,
-            Y = x.Y,
-            Width = x.Width,
-            Height = x.Height,
-            CreatedAtUtc = x.CreatedAtUtc,
-            UpdatedAtUtc = x.UpdatedAtUtc,
-        };
+        => x.Clone();
 
     private void RebuildCommandCache()
     {
@@ -293,4 +355,3 @@ public sealed class SqliteAppRepository : IAppRepository
         }
     }
 }
-

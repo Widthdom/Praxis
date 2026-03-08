@@ -48,4 +48,60 @@ public class ModelDefaultsTests
         Assert.Equal(string.Empty, entry.Message);
         Assert.Equal(DateTimeKind.Utc, entry.TimestampUtc.Kind);
     }
+
+    [Fact]
+    public void LauncherButtonRecord_CopyConstructorAndClone_CopyAllFields()
+    {
+        var source = new LauncherButtonRecord
+        {
+            Id = Guid.Parse("7B492B76-C7E8-4E22-B9D6-4A8F78AD6FDE"),
+            Command = "cmd",
+            ButtonText = "Button",
+            Tool = "tool",
+            Arguments = "--arg value",
+            ClipText = "clip",
+            Note = "note",
+            X = 123.5,
+            Y = 456.75,
+            Width = 321.25,
+            Height = 654.5,
+            CreatedAtUtc = new DateTime(2024, 01, 02, 03, 04, 05, DateTimeKind.Utc),
+            UpdatedAtUtc = new DateTime(2024, 06, 07, 08, 09, 10, DateTimeKind.Utc),
+        };
+
+        var copied = new LauncherButtonRecord(source);
+        var cloned = source.Clone();
+
+        Assert.Equal(source.Id, copied.Id);
+        Assert.Equal(source.Command, copied.Command);
+        Assert.Equal(source.ButtonText, copied.ButtonText);
+        Assert.Equal(source.Tool, copied.Tool);
+        Assert.Equal(source.Arguments, copied.Arguments);
+        Assert.Equal(source.ClipText, copied.ClipText);
+        Assert.Equal(source.Note, copied.Note);
+        Assert.Equal(source.X, copied.X);
+        Assert.Equal(source.Y, copied.Y);
+        Assert.Equal(source.Width, copied.Width);
+        Assert.Equal(source.Height, copied.Height);
+        Assert.Equal(source.CreatedAtUtc, copied.CreatedAtUtc);
+        Assert.Equal(source.UpdatedAtUtc, copied.UpdatedAtUtc);
+
+        Assert.Equal(source.Id, cloned.Id);
+        Assert.Equal(source.Command, cloned.Command);
+        Assert.Equal(source.ButtonText, cloned.ButtonText);
+        Assert.Equal(source.Tool, cloned.Tool);
+        Assert.Equal(source.Arguments, cloned.Arguments);
+        Assert.Equal(source.ClipText, cloned.ClipText);
+        Assert.Equal(source.Note, cloned.Note);
+        Assert.Equal(source.X, cloned.X);
+        Assert.Equal(source.Y, cloned.Y);
+        Assert.Equal(source.Width, cloned.Width);
+        Assert.Equal(source.Height, cloned.Height);
+        Assert.Equal(source.CreatedAtUtc, cloned.CreatedAtUtc);
+        Assert.Equal(source.UpdatedAtUtc, cloned.UpdatedAtUtc);
+
+        source.Command = "mutated";
+        Assert.Equal("cmd", copied.Command);
+        Assert.Equal("cmd", cloned.Command);
+    }
 }

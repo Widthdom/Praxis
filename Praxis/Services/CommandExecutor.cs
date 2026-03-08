@@ -7,6 +7,11 @@ public sealed class CommandExecutor : ICommandExecutor
 {
     public Task<(bool Success, string Message)> ExecuteAsync(string tool, string arguments, CancellationToken cancellationToken = default)
     {
+        if (cancellationToken.IsCancellationRequested)
+        {
+            return Task.FromResult((false, "Canceled."));
+        }
+
         if (!string.IsNullOrWhiteSpace(tool))
         {
             return RunProcess(tool, arguments);
@@ -17,40 +22,26 @@ public sealed class CommandExecutor : ICommandExecutor
 
     private static Task<(bool Success, string Message)> RunProcess(string tool, string arguments)
     {
-        try
+        var psi = new ProcessStartInfo
         {
-            var psi = new ProcessStartInfo
-            {
-                FileName = tool,
-                Arguments = arguments,
-                UseShellExecute = true,
-            };
+            FileName = tool,
+            Arguments = arguments,
+            UseShellExecute = true,
+        };
 
-            Process.Start(psi);
-            return Task.FromResult((true, "Executed."));
-        }
-        catch (Exception ex)
-        {
-            return Task.FromResult((false, ex.Message));
-        }
+        return Task.FromResult(StartProcess(psi, "Executed.", $"Process launch failed for tool '{tool}'."));
     }
 
     private static Task<(bool Success, string Message)> OpenHttpUrl(string url)
     {
-        try
-        {
-            Process.Start(new ProcessStartInfo
+        return Task.FromResult(StartProcess(
+            new ProcessStartInfo
             {
                 FileName = url,
                 UseShellExecute = true,
-            });
-
-            return Task.FromResult((true, "Opened in browser."));
-        }
-        catch (Exception ex)
-        {
-            return Task.FromResult((false, ex.Message));
-        }
+            },
+            "Opened in browser.",
+            $"Failed to open URL '{url}'."));
     }
 
     private static Task<(bool Success, string Message)> OpenWithDefaultHandler(string arguments)
@@ -78,12 +69,14 @@ public sealed class CommandExecutor : ICommandExecutor
 
             if (File.Exists(expanded))
             {
-                Process.Start(new ProcessStartInfo
-                {
-                    FileName = expanded,
-                    UseShellExecute = true,
-                });
-                return Task.FromResult((true, "Opened with default app."));
+                return Task.FromResult(StartProcess(
+                    new ProcessStartInfo
+                    {
+                        FileName = expanded,
+                        UseShellExecute = true,
+                    },
+                    "Opened with default app.",
+                    $"Failed to open file '{expanded}'."));
             }
 
             if (Directory.Exists(expanded))
@@ -116,15 +109,35 @@ public sealed class CommandExecutor : ICommandExecutor
                     };
                 }
 
-                Process.Start(psi);
-                return Task.FromResult((true, "Opened folder."));
+                return Task.FromResult(StartProcess(
+                    psi,
+                    "Opened folder.",
+                    $"Failed to open folder '{expanded}'."));
             }
 
             return Task.FromResult((false, $"Path not found: {expanded}"));
         }
         catch (Exception ex)
         {
-            return Task.FromResult((false, ex.Message));
+            return Task.FromResult((false, $"Launch target resolution failed: {ex.Message}"));
+        }
+    }
+
+    private static (bool Success, string Message) StartProcess(ProcessStartInfo startInfo, string successMessage, string failurePrefix)
+    {
+        try
+        {
+            var process = Process.Start(startInfo);
+            if (process is null)
+            {
+                return (false, $"{failurePrefix} No process handle was returned.");
+            }
+
+            return (true, successMessage);
+        }
+        catch (Exception ex)
+        {
+            return (false, $"{failurePrefix} {ex.Message}");
         }
     }
 

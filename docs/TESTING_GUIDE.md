@@ -44,6 +44,7 @@ dotnet test Praxis.Tests/Praxis.Tests.csproj --collect:"XPlat Code Coverage"
 
 ### Models / Defaults
 - `ModelDefaultsTests.cs`: default values and initialization guarantees for `LauncherButtonRecord` and `LaunchLogEntry`.
+  - Includes copy-constructor / `Clone()` full-field copy regression checks for `LauncherButtonRecord`.
 
 ### Command Execution / Matching / Suggestions
 - `CommandLineBuilderTests.cs`: null/whitespace handling and normalization for command-line construction.
@@ -78,6 +79,7 @@ dotnet test Praxis.Tests/Praxis.Tests.csproj --collect:"XPlat Code Coverage"
 - `ThemeDarkStateResolverTests.cs`: effective dark-mode resolution.
 - `ThemeShortcutModeResolverTests.cs`: macOS key-input to theme-mode mapping.
 - `TextCaretPositionResolverTests.cs`: caret-tail placement resolution.
+- `UiTimingPolicyTests.cs`: named UI timing constants (focus restore, activation windows, polling interval) and ordering constraints.
 
 ### Launch / Path / Storage / Reflection Utilities
 - `LaunchTargetResolverTests.cs`: HTTP(S)/file/path fallback target resolution and env expansion.
@@ -136,6 +138,7 @@ dotnet test Praxis.Tests/Praxis.Tests.csproj --collect:"XPlat Code Coverage"
 
 ### モデル / 既定値
 - `ModelDefaultsTests.cs`: `LauncherButtonRecord` / `LaunchLogEntry` の既定値・初期化保証。
+  - `LauncherButtonRecord` のコピーコンストラクタ / `Clone()` が全フィールドを複製することを回帰検証。
 
 ### コマンド実行 / 一致 / 候補
 - `CommandLineBuilderTests.cs`: コマンドライン構築の null/空白処理と正規化。
@@ -170,6 +173,7 @@ dotnet test Praxis.Tests/Praxis.Tests.csproj --collect:"XPlat Code Coverage"
 - `ThemeDarkStateResolverTests.cs`: 実効ダーク判定。
 - `ThemeShortcutModeResolverTests.cs`: macOS キー入力からテーマモード解決。
 - `TextCaretPositionResolverTests.cs`: キャレット末尾配置判定。
+- `UiTimingPolicyTests.cs`: フォーカス復帰・アクティベーション・ポーリングの UI タイミング定数と順序条件。
 
 ### 起動 / パス / ストレージ / リフレクション補助
 - `LaunchTargetResolverTests.cs`: HTTP(S)/ファイル/パスのフォールバック起動先解決と環境変数展開。
