@@ -88,6 +88,8 @@ public partial class MainPage : ContentPage
     private bool windowsSelectAllOnTabNavigationPending;
     private Microsoft.UI.Xaml.UIElement? pageNativeElement;
     private Microsoft.UI.Xaml.Input.KeyEventHandler? pageKeyDownHandler;
+    private bool windowsEditorFocusRestorePending;
+    private bool windowsConflictFocusRestorePending;
 #endif
     private enum ConflictDialogFocusTarget
     {
@@ -667,6 +669,13 @@ public partial class MainPage : ContentPage
     {
 #if MACCATALYST
         ModalNoteFocusUnderline.IsVisible = false;
+#endif
+    }
+
+    private void ModalActionButton_Unfocused(object? sender, FocusEventArgs e)
+    {
+#if WINDOWS
+        QueueWindowsEditorFocusRestore();
 #endif
     }
 
@@ -2433,13 +2442,18 @@ public partial class MainPage : ContentPage
         if (sender is Button unfocusedButton)
         {
             var target = GetConflictDialogTarget(unfocusedButton);
-            if (target is not null && conflictDialogPseudoFocusedTarget == target)
+            if (target is not null &&
+                conflictDialogPseudoFocusedTarget == target &&
+                !IsConflictDialogOpen())
             {
                 ClearConflictDialogPseudoFocus();
             }
         }
 
         ApplyConflictActionButtonFocusVisuals();
+#if WINDOWS
+        QueueWindowsConflictDialogFocusRestore();
+#endif
     }
 
     private void ApplyConflictActionButtonPlatformFocusSettings()
@@ -2952,6 +2966,96 @@ public partial class MainPage : ContentPage
         windowsSelectAllOnTabNavigationPending = false;
     }
 
+    private void WindowsModalInput_LostFocus(object sender, Microsoft.UI.Xaml.RoutedEventArgs e)
+    {
+        QueueWindowsEditorFocusRestore();
+    }
+
+    private void QueueWindowsEditorFocusRestore()
+    {
+        if (windowsEditorFocusRestorePending)
+        {
+            return;
+        }
+
+        windowsEditorFocusRestorePending = true;
+        Dispatcher.DispatchDelayed(TimeSpan.FromMilliseconds(1), () =>
+        {
+            windowsEditorFocusRestorePending = false;
+            var hasEditorFocus = HasWindowsEditorModalFocus();
+            if (!WindowsModalFocusRestorePolicy.ShouldRestoreEditorFocus(
+                    isWindows: true,
+                    isEditorOpen: viewModel.IsEditorOpen,
+                    isConflictDialogOpen: IsConflictDialogOpen(),
+                    hasEditorFocus: hasEditorFocus))
+            {
+                return;
+            }
+
+            ModalCommandEntry.Focus();
+            EnsureWindowsKeyHooks();
+        });
+    }
+
+    private void QueueWindowsConflictDialogFocusRestore()
+    {
+        if (windowsConflictFocusRestorePending)
+        {
+            return;
+        }
+
+        windowsConflictFocusRestorePending = true;
+        Dispatcher.DispatchDelayed(TimeSpan.FromMilliseconds(1), () =>
+        {
+            windowsConflictFocusRestorePending = false;
+            var hasConflictFocus = HasWindowsConflictDialogButtonFocus();
+            if (!WindowsModalFocusRestorePolicy.ShouldRestoreConflictDialogFocus(
+                    isWindows: true,
+                    isConflictDialogOpen: IsConflictDialogOpen(),
+                    hasConflictButtonFocus: hasConflictFocus))
+            {
+                return;
+            }
+
+            var target = conflictDialogPseudoFocusedTarget ?? ConflictDialogFocusTarget.Cancel;
+            var button = target switch
+            {
+                ConflictDialogFocusTarget.Reload => ConflictReloadButton,
+                ConflictDialogFocusTarget.Overwrite => ConflictOverwriteButton,
+                _ => ConflictCancelButton,
+            };
+
+            FocusConflictDialogActionButton(button, target);
+            EnsureWindowsKeyHooks();
+        });
+    }
+
+    private bool HasWindowsEditorModalFocus()
+    {
+        return IsWindowsTextBoxFocused(modalGuidTextBox) ||
+            IsWindowsTextBoxFocused(modalCommandTextBox) ||
+            IsWindowsTextBoxFocused(modalButtonTextTextBox) ||
+            IsWindowsTextBoxFocused(modalToolTextBox) ||
+            IsWindowsTextBoxFocused(modalArgumentsTextBox) ||
+            IsWindowsTextBoxFocused(modalClipWordTextBox) ||
+            IsWindowsTextBoxFocused(modalNoteTextBox) ||
+            IsButtonFocused(ModalCancelButton) ||
+            IsButtonFocused(ModalSaveButton);
+    }
+
+    private bool HasWindowsConflictDialogButtonFocus()
+    {
+        return IsButtonFocused(ConflictReloadButton) ||
+            IsButtonFocused(ConflictOverwriteButton) ||
+            IsButtonFocused(ConflictCancelButton);
+    }
+
+    private static bool IsWindowsTextBoxFocused(Microsoft.UI.Xaml.Controls.TextBox? textBox)
+    {
+        return textBox is not null &&
+            textBox.FocusState != Microsoft.UI.Xaml.FocusState.Unfocused;
+    }
+
     private void PageNativeElement_KeyDown(object sender, Microsoft.UI.Xaml.Input.KeyRoutedEventArgs e)
     {
         if (TryHandleThemeShortcutFromKey(e))
@@ -3130,25 +3234,32 @@ public partial class MainPage : ContentPage
 
         SyncWindowsTextBoxHooks(
             ref modalGuidTextBox,
-            ModalGuidEntry.Handler?.PlatformView as Microsoft.UI.Xaml.Controls.TextBox);
+            ModalGuidEntry.Handler?.PlatformView as Microsoft.UI.Xaml.Controls.TextBox,
+            extraLostFocus: WindowsModalInput_LostFocus);
         SyncWindowsTextBoxHooks(
             ref modalCommandTextBox,
-            ModalCommandEntry.Handler?.PlatformView as Microsoft.UI.Xaml.Controls.TextBox);
+            ModalCommandEntry.Handler?.PlatformView as Microsoft.UI.Xaml.Controls.TextBox,
+            extraLostFocus: WindowsModalInput_LostFocus);
         SyncWindowsTextBoxHooks(
             ref modalButtonTextTextBox,
-            ModalButtonTextEntry.Handler?.PlatformView as Microsoft.UI.Xaml.Controls.TextBox);
+            ModalButtonTextEntry.Handler?.PlatformView as Microsoft.UI.Xaml.Controls.TextBox,
+            extraLostFocus: WindowsModalInput_LostFocus);
         SyncWindowsTextBoxHooks(
             ref modalToolTextBox,
-            ModalToolEntry.Handler?.PlatformView as Microsoft.UI.Xaml.Controls.TextBox);
+            ModalToolEntry.Handler?.PlatformView as Microsoft.UI.Xaml.Controls.TextBox,
+            extraLostFocus: WindowsModalInput_LostFocus);
         SyncWindowsTextBoxHooks(
             ref modalArgumentsTextBox,
-            ModalArgumentsEntry.Handler?.PlatformView as Microsoft.UI.Xaml.Controls.TextBox);
+            ModalArgumentsEntry.Handler?.PlatformView as Microsoft.UI.Xaml.Controls.TextBox,
+            extraLostFocus: WindowsModalInput_LostFocus);
         SyncWindowsTextBoxHooks(
             ref modalClipWordTextBox,
-            ModalClipWordEditor.Handler?.PlatformView as Microsoft.UI.Xaml.Controls.TextBox);
+            ModalClipWordEditor.Handler?.PlatformView as Microsoft.UI.Xaml.Controls.TextBox,
+            extraLostFocus: WindowsModalInput_LostFocus);
         SyncWindowsTextBoxHooks(
             ref modalNoteTextBox,
-            ModalNoteEditor.Handler?.PlatformView as Microsoft.UI.Xaml.Controls.TextBox);
+            ModalNoteEditor.Handler?.PlatformView as Microsoft.UI.Xaml.Controls.TextBox,
+            extraLostFocus: WindowsModalInput_LostFocus);
 
         ConfigureWindowsMultilineEditor(modalClipWordTextBox);
         ConfigureWindowsMultilineEditor(modalNoteTextBox);
@@ -3158,7 +3269,8 @@ public partial class MainPage : ContentPage
         ref Microsoft.UI.Xaml.Controls.TextBox? slot,
         Microsoft.UI.Xaml.Controls.TextBox? current,
         Microsoft.UI.Xaml.Input.KeyEventHandler? extraKeyDown = null,
-        Microsoft.UI.Xaml.Input.PointerEventHandler? extraPointerPressed = null)
+        Microsoft.UI.Xaml.Input.PointerEventHandler? extraPointerPressed = null,
+        Microsoft.UI.Xaml.RoutedEventHandler? extraLostFocus = null)
     {
         if (ReferenceEquals(slot, current))
         {
@@ -3179,6 +3291,11 @@ public partial class MainPage : ContentPage
             {
                 slot.PointerPressed -= extraPointerPressed;
             }
+
+            if (extraLostFocus is not null)
+            {
+                slot.LostFocus -= extraLostFocus;
+            }
         }
 
         slot = current;
@@ -3198,6 +3315,11 @@ public partial class MainPage : ContentPage
         if (extraPointerPressed is not null)
         {
             slot.PointerPressed += extraPointerPressed;
+        }
+
+        if (extraLostFocus is not null)
+        {
+            slot.LostFocus += extraLostFocus;
         }
     }
 

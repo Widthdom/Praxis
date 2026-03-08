@@ -544,8 +544,8 @@
                     <HorizontalStackLayout Grid.Row="1"
                                            HorizontalOptions="Center"
                                            Spacing="10">
-                        <Button x:Name="ModalCancelButton" Text="Cancel" WidthRequest="96" Command="{Binding CancelEditorCommand}" />
-                        <Button x:Name="ModalSaveButton" Text="Save" WidthRequest="96" Command="{Binding SaveEditorCommand}" />
+                        <Button x:Name="ModalCancelButton" Text="Cancel" WidthRequest="96" Unfocused="ModalActionButton_Unfocused" Command="{Binding CancelEditorCommand}" />
+                        <Button x:Name="ModalSaveButton" Text="Save" WidthRequest="96" Unfocused="ModalActionButton_Unfocused" Command="{Binding SaveEditorCommand}" />
                     </HorizontalStackLayout>
                 </Grid>
             </Border>
