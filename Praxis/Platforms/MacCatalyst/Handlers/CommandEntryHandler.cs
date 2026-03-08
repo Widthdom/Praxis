@@ -103,7 +103,7 @@ public class CommandEntryHandler : MacEntryHandler
             var result = base.BecomeFirstResponder();
             if (result)
             {
-                SwitchToAsciiInputSource();
+                EnforceAsciiInputSourceIfNeeded();
                 AttachInputSourceObserver();
             }
             return result;
@@ -126,7 +126,9 @@ public class CommandEntryHandler : MacEntryHandler
         private void AttachInputSourceObserver()
         {
             DetachInputSourceObserver();
-            _asciiEnforcementTimer = NSTimer.CreateRepeatingScheduledTimer(0.2, _ => SwitchToAsciiInputSource());
+            _asciiEnforcementTimer = NSTimer.CreateRepeatingScheduledTimer(
+                MacCommandInputSourcePolicy.FocusedInputSourceEnforcementInterval.TotalSeconds,
+                _ => EnforceAsciiInputSourceIfNeeded());
         }
 
         private void DetachInputSourceObserver()
@@ -134,6 +136,22 @@ public class CommandEntryHandler : MacEntryHandler
             _asciiEnforcementTimer?.Invalidate();
             _asciiEnforcementTimer?.Dispose();
             _asciiEnforcementTimer = null;
+        }
+
+        private void EnforceAsciiInputSourceIfNeeded()
+        {
+            var currentWindow = Window;
+            var shouldForce = MacCommandInputSourcePolicy.ShouldForceAsciiInputSource(
+                IsFirstResponder,
+                currentWindow?.IsKeyWindow == true,
+                UIApplication.SharedApplication.ApplicationState == UIApplicationState.Active);
+
+            if (!shouldForce)
+            {
+                return;
+            }
+
+            SwitchToAsciiInputSource();
         }
 
         [DllImport("/System/Library/Frameworks/Carbon.framework/Carbon")]
