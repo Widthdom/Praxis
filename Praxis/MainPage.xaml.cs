@@ -1977,6 +1977,9 @@ public partial class MainPage : ContentPage
         if (e.PropertyName == nameof(MainViewModel.StatusRevision))
         {
             TriggerStatusFlash(viewModel.StatusText);
+#if MACCATALYST
+            RefocusMainCommandAfterCommandNotFound(viewModel.StatusText);
+#endif
             return;
         }
 
@@ -2139,6 +2142,27 @@ public partial class MainPage : ContentPage
             ResetStatusBarBackgroundToThemeBinding();
         }
     }
+
+#if MACCATALYST
+    private void RefocusMainCommandAfterCommandNotFound(string? statusMessage)
+    {
+        if (!CommandNotFoundRefocusPolicy.ShouldRefocusMainCommand(statusMessage))
+        {
+            return;
+        }
+
+        Dispatcher.DispatchDelayed(TimeSpan.FromMilliseconds(20), () =>
+        {
+            if (!xamlLoaded || viewModel.IsEditorOpen || viewModel.IsContextMenuOpen || IsConflictDialogOpen())
+            {
+                return;
+            }
+
+            ApplyEntryFocusAfterClearButtonTap(MainCommandEntry);
+            EnsureMacFirstResponder();
+        });
+    }
+#endif
 
     private async Task AnimateStatusBackgroundAsync(Color from, Color to, uint durationMs, Easing easing, CancellationToken token)
     {
