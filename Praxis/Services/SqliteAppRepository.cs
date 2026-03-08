@@ -1,3 +1,4 @@
+using Praxis.Core.Logic;
 using Praxis.Core.Models;
 using Praxis.Models;
 using SQLite;
@@ -316,13 +317,41 @@ public sealed class SqliteAppRepository : IAppRepository
         }
 
         connection = new SQLiteAsyncConnection(dbPath);
-        await connection.CreateTableAsync<LauncherButtonEntity>();
-        await connection.CreateTableAsync<LaunchLogEntity>();
-        await connection.CreateTableAsync<AppSettingEntity>();
+        await EnsureSchemaAsync(connection);
 
         var entities = await connection.Table<LauncherButtonEntity>().ToListAsync();
         cache = entities.Select(Map).ToList();
         RebuildCommandCache();
+    }
+
+    private static async Task EnsureSchemaAsync(SQLiteAsyncConnection connection)
+    {
+        var currentVersion = await GetSchemaVersionAsync(connection);
+        foreach (var targetVersion in DatabaseSchemaVersionPolicy.ResolvePendingUpgradeVersions(currentVersion))
+        {
+            await ApplySchemaUpgradeAsync(connection, targetVersion);
+            await SetSchemaVersionAsync(connection, targetVersion);
+        }
+    }
+
+    private static Task<int> GetSchemaVersionAsync(SQLiteAsyncConnection connection)
+        => connection.ExecuteScalarAsync<int>("PRAGMA user_version;");
+
+    private static Task SetSchemaVersionAsync(SQLiteAsyncConnection connection, int version)
+        => connection.ExecuteAsync($"PRAGMA user_version = {version};");
+
+    private static async Task ApplySchemaUpgradeAsync(SQLiteAsyncConnection connection, int targetVersion)
+    {
+        switch (targetVersion)
+        {
+            case 1:
+                await connection.CreateTableAsync<LauncherButtonEntity>();
+                await connection.CreateTableAsync<LaunchLogEntity>();
+                await connection.CreateTableAsync<AppSettingEntity>();
+                break;
+            default:
+                throw new NotSupportedException($"Unknown schema migration target version: {targetVersion}");
+        }
     }
 
     private SQLiteAsyncConnection Connection =>

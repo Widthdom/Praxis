@@ -17,8 +17,10 @@ Authoritative implementation points:
   - macOS (Mac Catalyst): `~/Library/Application Support/Praxis/praxis.db3`
 
 Notes:
-- `SqliteAppRepository.InitializeAsync` creates tables with `CreateTableAsync<T>()` if missing.
-- There is no explicit schema migration framework yet.
+- `SqliteAppRepository.InitializeAsync` manages schema version by `PRAGMA user_version`.
+- Startup applies each pending migration step in order (`current + 1 .. CurrentVersion`) and bumps `user_version` after each step completes.
+- Current schema version: `1`
+- Version `1` migration creates the current three tables with `CreateTableAsync<T>()`.
 - `DateTime` columns are mapped by `sqlite-net-pcl` with provider default settings used by `SQLiteAsyncConnection(dbPath)`.
 - `buttons.sync` is stored separately for multi-window signaling:
   - Windows: `%USERPROFILE%/AppData/Local/Praxis/buttons.sync`
@@ -153,8 +155,10 @@ Praxis が使う SQLite テーブル設計を明文化します。
   - macOS（Mac Catalyst）: `~/Library/Application Support/Praxis/praxis.db3`
 
 補足:
-- `InitializeAsync` で `CreateTableAsync<T>()` を実行し、未作成テーブルを作成します。
-- 現在は専用マイグレーション機構を持っていません。
+- `InitializeAsync` は `PRAGMA user_version` でスキーマバージョンを管理します。
+- 起動時に未適用バージョン（`current + 1 .. CurrentVersion`）を順次適用し、各ステップ完了後に `user_version` を更新します。
+- 現在のスキーマバージョン: `1`
+- バージョン `1` のマイグレーションで現行 3 テーブルを `CreateTableAsync<T>()` で作成します。
 - `DateTime` 列は `SQLiteAsyncConnection(dbPath)` の既定設定に従って `sqlite-net-pcl` 側でマップされます。
 - `buttons.sync` は複数ウィンドウ通知用の別ファイルとして保存します。
   - Windows: `%USERPROFILE%/AppData/Local/Praxis/buttons.sync`

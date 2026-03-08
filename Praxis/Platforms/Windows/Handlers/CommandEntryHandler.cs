@@ -48,6 +48,8 @@ public class CommandEntryHandler : EntryHandler
         }
         catch (Exception ex) when (WindowsInputScopeCompatibilityPolicy.ShouldDisableInputScopeOnException(ex))
         {
+            // Some WinUI environments throw (for example E_RUNTIME_SETVALUE) when InputScope is assigned.
+            // Mark as unsupported so later focuses skip InputScope writes and rely only on imm32 IME fallback.
             inputScopeUnsupported = true;
             return false;
         }
