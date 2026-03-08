@@ -95,6 +95,8 @@ public partial class MainPage : ContentPage
     private NSObject? macSceneWillEnterForegroundObserver;
     private NSObject? macWindowDidBecomeKeyObserver;
     private NSObject? macWillResignActiveObserver;
+    private NSObject? macDidEnterBackgroundObserver;
+    private NSObject? macWindowDidResignKeyObserver;
 
     private enum ModalFocusTarget
     {
@@ -3701,11 +3703,24 @@ public partial class MainPage : ContentPage
         });
         macWindowDidBecomeKeyObserver = center.AddObserver(UIWindow.DidBecomeKeyNotification, _ =>
         {
+            if (UIApplication.SharedApplication.ApplicationState != UIApplicationState.Active)
+            {
+                return;
+            }
+
             App.RecordActivation();
             App.SetMacApplicationActive(true);
             ScheduleMainCommandFocusAfterActivation("UIWindow.DidBecomeKeyNotification");
         });
         macWillResignActiveObserver = center.AddObserver(UIApplication.WillResignActiveNotification, _ =>
+        {
+            App.SetMacApplicationActive(false);
+        });
+        macDidEnterBackgroundObserver = center.AddObserver(UIApplication.DidEnterBackgroundNotification, _ =>
+        {
+            App.SetMacApplicationActive(false);
+        });
+        macWindowDidResignKeyObserver = center.AddObserver(UIWindow.DidResignKeyNotification, _ =>
         {
             App.SetMacApplicationActive(false);
         });
@@ -3718,7 +3733,9 @@ public partial class MainPage : ContentPage
             macSceneDidActivateObserver is null &&
             macSceneWillEnterForegroundObserver is null &&
             macWindowDidBecomeKeyObserver is null &&
-            macWillResignActiveObserver is null)
+            macWillResignActiveObserver is null &&
+            macDidEnterBackgroundObserver is null &&
+            macWindowDidResignKeyObserver is null)
         {
             return;
         }
@@ -3730,6 +3747,8 @@ public partial class MainPage : ContentPage
         DisposeMacObserver(center, ref macSceneWillEnterForegroundObserver);
         DisposeMacObserver(center, ref macWindowDidBecomeKeyObserver);
         DisposeMacObserver(center, ref macWillResignActiveObserver);
+        DisposeMacObserver(center, ref macDidEnterBackgroundObserver);
+        DisposeMacObserver(center, ref macWindowDidResignKeyObserver);
     }
 
     private static void DisposeMacObserver(NSNotificationCenter center, ref NSObject? observer)

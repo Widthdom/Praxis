@@ -44,7 +44,12 @@ public class CommandEntryHandler : MacEntryHandler
         protected override nfloat TextInsetRight => 40;
         private bool _filteringText;
         private NSObject? windowDidBecomeKeyObserver;
+        private NSObject? windowDidResignKeyObserver;
         private NSObject? didBecomeActiveObserver;
+        private NSObject? willResignActiveObserver;
+        private NSObject? didEnterBackgroundObserver;
+        private NSTimer? _asciiEnforcementTimer;
+        private bool appLifecycleSubscribed;
 
         public CommandEntryTextField()
         {
@@ -103,13 +108,14 @@ public class CommandEntryHandler : MacEntryHandler
             var result = base.BecomeFirstResponder();
             if (result)
             {
-                EnforceAsciiInputSourceIfNeeded();
+                RefreshInputSourceEnforcementState();
             }
             return result;
         }
 
         public override bool ResignFirstResponder()
         {
+            DetachInputSourceObserver();
             return base.ResignFirstResponder();
         }
 
@@ -135,6 +141,43 @@ public class CommandEntryHandler : MacEntryHandler
             }
 
             SwitchToAsciiInputSource();
+        }
+
+        private void RefreshInputSourceEnforcementState()
+        {
+            var currentWindow = Window;
+            var shouldForce = MacCommandInputSourcePolicy.ShouldForceAsciiInputSource(
+                IsFirstResponder,
+                currentWindow?.IsKeyWindow == true,
+                IsApplicationForegroundActive(currentWindow));
+
+            if (!shouldForce)
+            {
+                DetachInputSourceObserver();
+                return;
+            }
+
+            EnforceAsciiInputSourceIfNeeded();
+            AttachInputSourceObserver();
+        }
+
+        private void AttachInputSourceObserver()
+        {
+            if (_asciiEnforcementTimer is not null)
+            {
+                return;
+            }
+
+            _asciiEnforcementTimer = NSTimer.CreateRepeatingScheduledTimer(
+                MacCommandInputSourcePolicy.FocusedInputSourceEnforcementInterval.TotalSeconds,
+                _ => RefreshInputSourceEnforcementState());
+        }
+
+        private void DetachInputSourceObserver()
+        {
+            _asciiEnforcementTimer?.Invalidate();
+            _asciiEnforcementTimer?.Dispose();
+            _asciiEnforcementTimer = null;
         }
 
         [DllImport("/System/Library/Frameworks/Carbon.framework/Carbon")]
@@ -175,6 +218,7 @@ public class CommandEntryHandler : MacEntryHandler
             }
 
             AttachWindowDidBecomeKeyObserver();
+            AttachAppLifecycleHandlers();
         }
 
         protected override void Dispose(bool disposing)
@@ -182,8 +226,10 @@ public class CommandEntryHandler : MacEntryHandler
             if (disposing)
             {
                 RemoveTarget(OnTextEditingChanged, UIControlEvent.EditingChanged);
+                DetachInputSourceObserver();
                 DetachWindowDidBecomeKeyObserver();
                 DetachDidBecomeActiveObserver();
+                DetachAppLifecycleHandlers();
                 if (lastCommandField is not null &&
                     lastCommandField.TryGetTarget(out var activeField) &&
                     ReferenceEquals(activeField, this))
@@ -361,19 +407,30 @@ public class CommandEntryHandler : MacEntryHandler
             windowDidBecomeKeyObserver = NSNotificationCenter.DefaultCenter.AddObserver(
                 UIWindow.DidBecomeKeyNotification,
                 notification => OnWindowDidBecomeKey(notification));
+            windowDidResignKeyObserver = NSNotificationCenter.DefaultCenter.AddObserver(
+                UIWindow.DidResignKeyNotification,
+                notification => OnWindowDidResignKey(notification));
             AttachDidBecomeActiveObserver();
         }
 
         private void DetachWindowDidBecomeKeyObserver()
         {
-            if (windowDidBecomeKeyObserver is null)
+            if (windowDidBecomeKeyObserver is not null)
             {
-                return;
+                NSNotificationCenter.DefaultCenter.RemoveObserver(windowDidBecomeKeyObserver);
+                windowDidBecomeKeyObserver.Dispose();
+                windowDidBecomeKeyObserver = null;
             }
 
-            NSNotificationCenter.DefaultCenter.RemoveObserver(windowDidBecomeKeyObserver);
-            windowDidBecomeKeyObserver.Dispose();
-            windowDidBecomeKeyObserver = null;
+            if (windowDidResignKeyObserver is not null)
+            {
+                NSNotificationCenter.DefaultCenter.RemoveObserver(windowDidResignKeyObserver);
+                windowDidResignKeyObserver.Dispose();
+                windowDidResignKeyObserver = null;
+            }
+
+            DetachInputSourceObserver();
+            DetachDidBecomeActiveObserver();
         }
 
         private void AttachDidBecomeActiveObserver()
@@ -382,18 +439,38 @@ public class CommandEntryHandler : MacEntryHandler
             didBecomeActiveObserver = NSNotificationCenter.DefaultCenter.AddObserver(
                 UIApplication.DidBecomeActiveNotification,
                 _ => OnDidBecomeActive());
+            willResignActiveObserver = NSNotificationCenter.DefaultCenter.AddObserver(
+                UIApplication.WillResignActiveNotification,
+                _ => OnWillResignActive());
+            didEnterBackgroundObserver = NSNotificationCenter.DefaultCenter.AddObserver(
+                UIApplication.DidEnterBackgroundNotification,
+                _ => OnDidEnterBackground());
         }
 
         private void DetachDidBecomeActiveObserver()
         {
-            if (didBecomeActiveObserver is null)
+            if (didBecomeActiveObserver is not null)
             {
-                return;
+                NSNotificationCenter.DefaultCenter.RemoveObserver(didBecomeActiveObserver);
+                didBecomeActiveObserver.Dispose();
+                didBecomeActiveObserver = null;
             }
 
-            NSNotificationCenter.DefaultCenter.RemoveObserver(didBecomeActiveObserver);
-            didBecomeActiveObserver.Dispose();
-            didBecomeActiveObserver = null;
+            if (willResignActiveObserver is not null)
+            {
+                NSNotificationCenter.DefaultCenter.RemoveObserver(willResignActiveObserver);
+                willResignActiveObserver.Dispose();
+                willResignActiveObserver = null;
+            }
+
+            if (didEnterBackgroundObserver is not null)
+            {
+                NSNotificationCenter.DefaultCenter.RemoveObserver(didEnterBackgroundObserver);
+                didEnterBackgroundObserver.Dispose();
+                didEnterBackgroundObserver = null;
+            }
+
+            DetachInputSourceObserver();
         }
 
         private void OnWindowDidBecomeKey(NSNotification _)
@@ -401,7 +478,12 @@ public class CommandEntryHandler : MacEntryHandler
             MainThread.BeginInvokeOnMainThread(() =>
             {
                 TryApplyNativeActivationFocus();
-                NSTimer.CreateScheduledTimer(0.12, _ => TryApplyNativeActivationFocus());
+                RefreshInputSourceEnforcementState();
+                NSTimer.CreateScheduledTimer(0.12, _ =>
+                {
+                    TryApplyNativeActivationFocus();
+                    RefreshInputSourceEnforcementState();
+                });
             });
         }
 
@@ -410,8 +492,28 @@ public class CommandEntryHandler : MacEntryHandler
             MainThread.BeginInvokeOnMainThread(() =>
             {
                 TryApplyNativeActivationFocus();
-                NSTimer.CreateScheduledTimer(0.12, _ => TryApplyNativeActivationFocus());
+                RefreshInputSourceEnforcementState();
+                NSTimer.CreateScheduledTimer(0.12, _ =>
+                {
+                    TryApplyNativeActivationFocus();
+                    RefreshInputSourceEnforcementState();
+                });
             });
+        }
+
+        private void OnWindowDidResignKey(NSNotification _)
+        {
+            DeactivateInputSourceEnforcement();
+        }
+
+        private void OnWillResignActive()
+        {
+            DeactivateInputSourceEnforcement();
+        }
+
+        private void OnDidEnterBackground()
+        {
+            DeactivateInputSourceEnforcement();
         }
 
         internal void TryApplyNativeActivationFocus()
@@ -438,10 +540,16 @@ public class CommandEntryHandler : MacEntryHandler
             }
 
             SelectAllText();
+            RefreshInputSourceEnforcementState();
         }
 
         private bool IsApplicationForegroundActive(UIWindow? currentWindow)
         {
+            if (!App.IsMacApplicationActive())
+            {
+                return false;
+            }
+
             var applicationActive = UIApplication.SharedApplication.ApplicationState == UIApplicationState.Active;
             var sceneForegroundActive = currentWindow?.WindowScene?.ActivationState switch
             {
@@ -452,6 +560,43 @@ public class CommandEntryHandler : MacEntryHandler
             };
 
             return applicationActive && sceneForegroundActive;
+        }
+
+        private void AttachAppLifecycleHandlers()
+        {
+            if (appLifecycleSubscribed)
+            {
+                return;
+            }
+
+            App.MacApplicationDeactivating += OnMacApplicationDeactivating;
+            appLifecycleSubscribed = true;
+        }
+
+        private void DetachAppLifecycleHandlers()
+        {
+            if (!appLifecycleSubscribed)
+            {
+                return;
+            }
+
+            App.MacApplicationDeactivating -= OnMacApplicationDeactivating;
+            appLifecycleSubscribed = false;
+        }
+
+        private void OnMacApplicationDeactivating()
+        {
+            MainThread.BeginInvokeOnMainThread(DeactivateInputSourceEnforcement);
+        }
+
+        private void DeactivateInputSourceEnforcement()
+        {
+            DetachInputSourceObserver();
+
+            if (IsFirstResponder)
+            {
+                ResignFirstResponder();
+            }
         }
 
         private void SelectAllText()

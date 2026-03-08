@@ -15,6 +15,10 @@ public class AppDelegate : MauiUIApplicationDelegate
     private NSObject? didBecomeActiveObserver;
     private NSObject? willEnterForegroundObserver;
     private NSObject? windowDidBecomeKeyObserver;
+    private NSObject? willResignActiveObserver;
+    private NSObject? didEnterBackgroundObserver;
+    private NSObject? windowDidResignKeyObserver;
+    private NSObject? sceneWillDeactivateObserver;
 
     protected override MauiApp CreateMauiApp() => MauiProgram.CreateMauiApp();
 
@@ -32,16 +36,13 @@ public class AppDelegate : MauiUIApplicationDelegate
     public override void OnResignActivation(UIApplication application)
     {
         base.OnResignActivation(application);
-        App.SetMacApplicationActive(false);
-        App.RaiseMacApplicationDeactivating();
+        MarkMacAppInactive();
     }
 
     public override void WillEnterForeground(UIApplication application)
     {
         base.WillEnterForeground(application);
-        App.RecordActivation();
-        App.SetMacApplicationActive(true);
-        App.RaiseMacApplicationActivated();
+        MarkMacAppActive();
         CommandEntryHandler.RequestNativeActivationFocus("AppDelegate.WillEnterForeground");
         MainThread.BeginInvokeOnMainThread(() => MainPage.RequestMacCommandFocusFromNativeActivation("AppDelegate.WillEnterForeground"));
     }
@@ -49,9 +50,7 @@ public class AppDelegate : MauiUIApplicationDelegate
     public override void OnActivated(UIApplication application)
     {
         base.OnActivated(application);
-        App.RecordActivation();
-        App.SetMacApplicationActive(true);
-        App.RaiseMacApplicationActivated();
+        MarkMacAppActive();
         CommandEntryHandler.RequestNativeActivationFocus("AppDelegate.OnActivated");
         MainThread.BeginInvokeOnMainThread(() => MainPage.RequestMacCommandFocusFromNativeActivation("AppDelegate.OnActivated"));
     }
@@ -115,27 +114,43 @@ public class AppDelegate : MauiUIApplicationDelegate
         var center = NSNotificationCenter.DefaultCenter;
         didBecomeActiveObserver = center.AddObserver(UIApplication.DidBecomeActiveNotification, _ =>
         {
-            App.RecordActivation();
-            App.SetMacApplicationActive(true);
-            App.RaiseMacApplicationActivated();
+            MarkMacAppActive();
             CommandEntryHandler.RequestNativeActivationFocus("Observer.DidBecomeActive");
             MainThread.BeginInvokeOnMainThread(() => MainPage.RequestMacCommandFocusFromNativeActivation("Observer.DidBecomeActive"));
         });
         willEnterForegroundObserver = center.AddObserver(UIApplication.WillEnterForegroundNotification, _ =>
         {
-            App.RecordActivation();
-            App.SetMacApplicationActive(true);
-            App.RaiseMacApplicationActivated();
+            MarkMacAppActive();
             CommandEntryHandler.RequestNativeActivationFocus("Observer.WillEnterForeground");
             MainThread.BeginInvokeOnMainThread(() => MainPage.RequestMacCommandFocusFromNativeActivation("Observer.WillEnterForeground"));
         });
         windowDidBecomeKeyObserver = center.AddObserver(UIWindow.DidBecomeKeyNotification, _ =>
         {
-            App.RecordActivation();
-            App.SetMacApplicationActive(true);
-            App.RaiseMacApplicationActivated();
+            if (UIApplication.SharedApplication.ApplicationState != UIApplicationState.Active)
+            {
+                return;
+            }
+
+            MarkMacAppActive();
             CommandEntryHandler.RequestNativeActivationFocus("Observer.WindowDidBecomeKey");
             MainThread.BeginInvokeOnMainThread(() => MainPage.RequestMacCommandFocusFromNativeActivation("Observer.WindowDidBecomeKey"));
         });
+        willResignActiveObserver = center.AddObserver(UIApplication.WillResignActiveNotification, _ => MarkMacAppInactive());
+        didEnterBackgroundObserver = center.AddObserver(UIApplication.DidEnterBackgroundNotification, _ => MarkMacAppInactive());
+        windowDidResignKeyObserver = center.AddObserver(UIWindow.DidResignKeyNotification, _ => MarkMacAppInactive());
+        sceneWillDeactivateObserver = center.AddObserver(UIScene.WillDeactivateNotification, _ => MarkMacAppInactive());
+    }
+
+    private static void MarkMacAppActive()
+    {
+        App.RecordActivation();
+        App.SetMacApplicationActive(true);
+        App.RaiseMacApplicationActivated();
+    }
+
+    private static void MarkMacAppInactive()
+    {
+        App.SetMacApplicationActive(false);
+        App.RaiseMacApplicationDeactivating();
     }
 }
