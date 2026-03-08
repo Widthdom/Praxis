@@ -4,4 +4,8 @@ namespace Praxis.Controls;
 
 public class SearchEntry : Entry
 {
+    public SearchEntry()
+    {
+        Keyboard = Keyboard.Plain;
+    }
 }
