@@ -57,7 +57,8 @@
                         <PointerGestureRecognizer PointerEntered="ClearButton_PointerEntered"
                                                   PointerExited="ClearButton_PointerExited" />
                     </Border.GestureRecognizers>
-                    <Grid WidthRequest="9" HeightRequest="9"
+                    <Grid x:Name="CommandClearGlyph"
+                          WidthRequest="9" HeightRequest="9"
                           HorizontalOptions="Center"
                           VerticalOptions="Center"
                           InputTransparent="True">
@@ -120,7 +121,8 @@
                         <PointerGestureRecognizer PointerEntered="ClearButton_PointerEntered"
                                                   PointerExited="ClearButton_PointerExited" />
                     </Border.GestureRecognizers>
-                    <Grid WidthRequest="9" HeightRequest="9"
+                    <Grid x:Name="SearchClearGlyph"
+                          WidthRequest="9" HeightRequest="9"
                           HorizontalOptions="Center"
                           VerticalOptions="Center"
                           InputTransparent="True">

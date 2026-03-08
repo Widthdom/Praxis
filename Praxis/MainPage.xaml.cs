@@ -184,6 +184,7 @@ public partial class MainPage : ContentPage
             return;
         }
 
+        ApplyClearButtonGlyphAlignmentTuning();
         this.viewModel.ResolveEditorConflictAsync = ResolveEditorConflictAsync;
         App.SetEditorOpenState(this.viewModel.IsEditorOpen);
         AttachEditorPropertyChanged(this.viewModel.Editor);
@@ -2702,6 +2703,15 @@ public partial class MainPage : ContentPage
         EnsureWindowsKeyHooks();
         EnsureWindowsTextBoxHooks();
 #endif
+    }
+
+    private void ApplyClearButtonGlyphAlignmentTuning()
+    {
+        var translation = ClearButtonGlyphAlignmentPolicy.ResolveTranslation(OperatingSystem.IsWindows());
+        CommandClearGlyph.TranslationX = translation;
+        CommandClearGlyph.TranslationY = translation;
+        SearchClearGlyph.TranslationX = translation;
+        SearchClearGlyph.TranslationY = translation;
     }
 
     private void CommandClearButton_Tapped(object? sender, TappedEventArgs e)
