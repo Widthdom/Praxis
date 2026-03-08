@@ -90,6 +90,8 @@ public partial class MainPage : ContentPage
     private Microsoft.UI.Xaml.Input.KeyEventHandler? pageKeyDownHandler;
     private bool windowsEditorFocusRestorePending;
     private bool windowsConflictFocusRestorePending;
+    private static readonly TimeSpan windowsFocusRestorePrimaryDelay = TimeSpan.FromMilliseconds(24);
+    private static readonly TimeSpan windowsFocusRestoreSecondaryDelay = TimeSpan.FromMilliseconds(120);
 #endif
     private enum ConflictDialogFocusTarget
     {
@@ -2979,22 +2981,8 @@ public partial class MainPage : ContentPage
         }
 
         windowsEditorFocusRestorePending = true;
-        Dispatcher.DispatchDelayed(TimeSpan.FromMilliseconds(1), () =>
-        {
-            windowsEditorFocusRestorePending = false;
-            var hasEditorFocus = HasWindowsEditorModalFocus();
-            if (!WindowsModalFocusRestorePolicy.ShouldRestoreEditorFocus(
-                    isWindows: true,
-                    isEditorOpen: viewModel.IsEditorOpen,
-                    isConflictDialogOpen: IsConflictDialogOpen(),
-                    hasEditorFocus: hasEditorFocus))
-            {
-                return;
-            }
-
-            ModalCommandEntry.Focus();
-            EnsureWindowsKeyHooks();
-        });
+        Dispatcher.DispatchDelayed(windowsFocusRestorePrimaryDelay, () => TryRestoreWindowsEditorFocus(isFinalAttempt: false));
+        Dispatcher.DispatchDelayed(windowsFocusRestoreSecondaryDelay, () => TryRestoreWindowsEditorFocus(isFinalAttempt: true));
     }
 
     private void QueueWindowsConflictDialogFocusRestore()
@@ -3005,29 +2993,69 @@ public partial class MainPage : ContentPage
         }
 
         windowsConflictFocusRestorePending = true;
-        Dispatcher.DispatchDelayed(TimeSpan.FromMilliseconds(1), () =>
+        Dispatcher.DispatchDelayed(windowsFocusRestorePrimaryDelay, () => TryRestoreWindowsConflictDialogFocus(isFinalAttempt: false));
+        Dispatcher.DispatchDelayed(windowsFocusRestoreSecondaryDelay, () => TryRestoreWindowsConflictDialogFocus(isFinalAttempt: true));
+    }
+
+    private void TryRestoreWindowsEditorFocus(bool isFinalAttempt)
+    {
+        if (!windowsEditorFocusRestorePending)
+        {
+            return;
+        }
+
+        var hasEditorFocus = HasWindowsEditorModalFocus();
+        if (!WindowsModalFocusRestorePolicy.ShouldRestoreEditorFocus(
+                isWindows: true,
+                isEditorOpen: viewModel.IsEditorOpen,
+                isConflictDialogOpen: IsConflictDialogOpen(),
+                hasEditorFocus: hasEditorFocus))
+        {
+            windowsEditorFocusRestorePending = false;
+            return;
+        }
+
+        ModalCommandEntry.Focus();
+        EnsureWindowsKeyHooks();
+        var restored = HasWindowsEditorModalFocus();
+        if (restored || isFinalAttempt)
+        {
+            windowsEditorFocusRestorePending = false;
+        }
+    }
+
+    private void TryRestoreWindowsConflictDialogFocus(bool isFinalAttempt)
+    {
+        if (!windowsConflictFocusRestorePending)
+        {
+            return;
+        }
+
+        var hasConflictFocus = HasWindowsConflictDialogButtonFocus();
+        if (!WindowsModalFocusRestorePolicy.ShouldRestoreConflictDialogFocus(
+                isWindows: true,
+                isConflictDialogOpen: IsConflictDialogOpen(),
+                hasConflictButtonFocus: hasConflictFocus))
         {
             windowsConflictFocusRestorePending = false;
-            var hasConflictFocus = HasWindowsConflictDialogButtonFocus();
-            if (!WindowsModalFocusRestorePolicy.ShouldRestoreConflictDialogFocus(
-                    isWindows: true,
-                    isConflictDialogOpen: IsConflictDialogOpen(),
-                    hasConflictButtonFocus: hasConflictFocus))
-            {
-                return;
-            }
+            return;
+        }
 
-            var target = conflictDialogPseudoFocusedTarget ?? ConflictDialogFocusTarget.Cancel;
-            var button = target switch
-            {
-                ConflictDialogFocusTarget.Reload => ConflictReloadButton,
-                ConflictDialogFocusTarget.Overwrite => ConflictOverwriteButton,
-                _ => ConflictCancelButton,
-            };
+        var target = conflictDialogPseudoFocusedTarget ?? ConflictDialogFocusTarget.Cancel;
+        var button = target switch
+        {
+            ConflictDialogFocusTarget.Reload => ConflictReloadButton,
+            ConflictDialogFocusTarget.Overwrite => ConflictOverwriteButton,
+            _ => ConflictCancelButton,
+        };
 
-            FocusConflictDialogActionButton(button, target);
-            EnsureWindowsKeyHooks();
-        });
+        FocusConflictDialogActionButton(button, target);
+        EnsureWindowsKeyHooks();
+        var restored = HasWindowsConflictDialogButtonFocus();
+        if (restored || isFinalAttempt)
+        {
+            windowsConflictFocusRestorePending = false;
+        }
     }
 
     private bool HasWindowsEditorModalFocus()
