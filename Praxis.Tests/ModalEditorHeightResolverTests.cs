@@ -40,6 +40,20 @@ public class ModalEditorHeightResolverTests
     }
 
     [Fact]
+    public void ResolveHeight_CountsTrailingLineFeed_AsAdditionalLine()
+    {
+        var height = ModalEditorHeightResolver.ResolveHeight("line1\n");
+        Assert.Equal(64, height);
+    }
+
+    [Fact]
+    public void ResolveHeight_CountsTrailingCarriageReturn_AsAdditionalLine()
+    {
+        var height = ModalEditorHeightResolver.ResolveHeight("line1\r");
+        Assert.Equal(64, height);
+    }
+
+    [Fact]
     public void ResolveHeight_ReturnsExpandedHeight_WhenTextUsesMixedLineEndings()
     {
         var height = ModalEditorHeightResolver.ResolveHeight("line1\r\nline2\rline3\nline4");

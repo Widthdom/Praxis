@@ -15,7 +15,10 @@ public class StatusFlashErrorPolicyTests
     public void IsErrorStatus_ReturnsTrue_ForKnownErrorPrefixes()
     {
         Assert.True(StatusFlashErrorPolicy.IsErrorStatus("Failed: launch failed"));
+        Assert.True(StatusFlashErrorPolicy.IsErrorStatus("FAILED: launch failed"));
+        Assert.True(StatusFlashErrorPolicy.IsErrorStatus("NOT FOUND"));
         Assert.True(StatusFlashErrorPolicy.IsErrorStatus("Unhandled exception"));
+        Assert.True(StatusFlashErrorPolicy.IsErrorStatus("Unhandled ERROR"));
     }
 
     [Fact]

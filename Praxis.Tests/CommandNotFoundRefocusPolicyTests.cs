@@ -8,6 +8,7 @@ public class CommandNotFoundRefocusPolicyTests
     public void ShouldRefocusMainCommand_ReturnsTrue_ForCommandNotFoundMessage()
     {
         Assert.True(CommandNotFoundRefocusPolicy.ShouldRefocusMainCommand("Command not found: demo"));
+        Assert.True(CommandNotFoundRefocusPolicy.ShouldRefocusMainCommand("COMMAND NOT FOUND: demo"));
     }
 
     [Fact]
@@ -15,6 +16,7 @@ public class CommandNotFoundRefocusPolicyTests
     {
         Assert.False(CommandNotFoundRefocusPolicy.ShouldRefocusMainCommand("Executed."));
         Assert.False(CommandNotFoundRefocusPolicy.ShouldRefocusMainCommand("Failed: launch failed"));
+        Assert.False(CommandNotFoundRefocusPolicy.ShouldRefocusMainCommand("Last status was Command not found: demo"));
     }
 
     [Fact]

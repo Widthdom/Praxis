@@ -25,4 +25,14 @@ public class ThemeShortcutModeResolverTests
         Assert.False(resolved);
         Assert.Equal(string.Empty, mode);
     }
+
+    [Fact]
+    public void TryResolveModeFromMacKeyInput_ReturnsFalse_ForNullOrWhitespace()
+    {
+        Assert.False(ThemeShortcutModeResolver.TryResolveModeFromMacKeyInput(null!, out var modeFromNull));
+        Assert.Equal(string.Empty, modeFromNull);
+
+        Assert.False(ThemeShortcutModeResolver.TryResolveModeFromMacKeyInput(" ", out var modeFromWhitespace));
+        Assert.Equal(string.Empty, modeFromWhitespace);
+    }
 }

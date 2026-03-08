@@ -6,6 +6,13 @@ namespace Praxis.Tests;
 public class CommandRecordMatcherTests
 {
     [Fact]
+    public void FindMatches_Throws_WhenRecordsIsNull()
+    {
+        Assert.Throws<ArgumentNullException>(() =>
+            CommandRecordMatcher.FindMatches(null!, "build"));
+    }
+
+    [Fact]
     public void FindMatches_ReturnsAllMatchingCommands_IgnoringCaseAndWhitespace()
     {
         var a = new LauncherButtonRecord { Command = "build", ButtonText = "A" };
@@ -37,5 +44,27 @@ public class CommandRecordMatcherTests
         var result = CommandRecordMatcher.FindMatches([a], "test");
 
         Assert.Empty(result);
+    }
+
+    [Fact]
+    public void FindMatches_ReturnsEmpty_WhenCommandInputIsNull()
+    {
+        var a = new LauncherButtonRecord { Command = "build", ButtonText = "A" };
+
+        var result = CommandRecordMatcher.FindMatches([a], null!);
+
+        Assert.Empty(result);
+    }
+
+    [Fact]
+    public void FindMatches_IgnoresRecords_WithNullCommandValues()
+    {
+        var a = new LauncherButtonRecord { Command = null!, ButtonText = "A" };
+        var b = new LauncherButtonRecord { Command = "build", ButtonText = "B" };
+
+        var result = CommandRecordMatcher.FindMatches([a, b], "build");
+
+        Assert.Single(result);
+        Assert.Same(b, result[0]);
     }
 }

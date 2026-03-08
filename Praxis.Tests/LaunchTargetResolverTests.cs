@@ -7,6 +7,7 @@ public class LaunchTargetResolverTests
     [Theory]
     [InlineData("http://example.com")]
     [InlineData("https://example.com/path?q=1")]
+    [InlineData("HTTPS://example.com/path?q=1")]
     public void Resolve_DetectsHttpUrl(string value)
     {
         var result = LaunchTargetResolver.Resolve(value);
@@ -76,6 +77,14 @@ public class LaunchTargetResolverTests
     }
 
     [Fact]
+    public void Resolve_ReturnsNone_ForNullArguments()
+    {
+        var result = LaunchTargetResolver.Resolve(null);
+        Assert.Equal(LaunchTargetKind.None, result.Kind);
+        Assert.Equal(string.Empty, result.Target);
+    }
+
+    [Fact]
     public void Resolve_ExpandsEnvironmentVariables_ForPathLikeValues()
     {
         const string key = "PRAXIS_TEST_HOME";
@@ -99,5 +108,57 @@ public class LaunchTargetResolverTests
         var result = LaunchTargetResolver.Resolve(" \"~/Documents/Praxis\" ");
         Assert.Equal(LaunchTargetKind.FileSystemPath, result.Kind);
         Assert.Equal("~/Documents/Praxis", result.Target);
+    }
+
+    [Fact]
+    public void Resolve_DetectsPathLikeArguments_ForTildeBackslashStyle()
+    {
+        var result = LaunchTargetResolver.Resolve("~\\Documents\\Praxis");
+        Assert.Equal(LaunchTargetKind.FileSystemPath, result.Kind);
+        Assert.Equal("~\\Documents\\Praxis", result.Target);
+    }
+
+    [Fact]
+    public void Resolve_ReturnsNone_WhenExpandedVariableBecomesWhitespace()
+    {
+        const string key = "PRAXIS_TEST_BLANK";
+        var oldValue = Environment.GetEnvironmentVariable(key);
+        try
+        {
+            Environment.SetEnvironmentVariable(key, "   ");
+            var result = LaunchTargetResolver.Resolve("%PRAXIS_TEST_BLANK%");
+            Assert.Equal(LaunchTargetKind.None, result.Kind);
+            Assert.Equal(string.Empty, result.Target);
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable(key, oldValue);
+        }
+    }
+
+    [Fact]
+    public void Resolve_ExpandsEnvironmentVariables_ForUncStyleValues()
+    {
+        const string key = "PRAXIS_TEST_UNC";
+        var oldValue = Environment.GetEnvironmentVariable(key);
+        try
+        {
+            Environment.SetEnvironmentVariable(key, "\\\\server\\share\\folder");
+            var result = LaunchTargetResolver.Resolve("%PRAXIS_TEST_UNC%");
+            Assert.Equal(LaunchTargetKind.FileSystemPath, result.Kind);
+            Assert.Equal("\\\\server\\share\\folder", result.Target);
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable(key, oldValue);
+        }
+    }
+
+    [Fact]
+    public void Resolve_ReturnsNone_ForUnbalancedWrappingQuote()
+    {
+        var result = LaunchTargetResolver.Resolve("\"https://example.com");
+        Assert.Equal(LaunchTargetKind.None, result.Kind);
+        Assert.Equal(string.Empty, result.Target);
     }
 }
