@@ -2729,14 +2729,62 @@ public partial class MainPage : ContentPage
 
     private void FocusEntryAfterClearButtonTap(Entry entry)
     {
-        Dispatcher.Dispatch(() =>
-        {
-            entry.Focus();
-#if MACCATALYST
-            PlaceMacEntryCaretAtEnd(entry);
+        var retryDelays = ClearButtonRefocusPolicy.ResolveRetryDelays(OperatingSystem.IsWindows());
+#if WINDOWS
+        EnsureWindowsTextBoxHooks();
+        windowsSelectAllOnTabNavigationPending = false;
 #endif
-        });
+        foreach (var delay in retryDelays)
+        {
+            if (delay <= TimeSpan.Zero)
+            {
+                Dispatcher.Dispatch(() => ApplyEntryFocusAfterClearButtonTap(entry));
+                continue;
+            }
+
+            Dispatcher.DispatchDelayed(delay, () => ApplyEntryFocusAfterClearButtonTap(entry));
+        }
     }
+
+    private void ApplyEntryFocusAfterClearButtonTap(Entry entry)
+    {
+        entry.Focus();
+#if MACCATALYST
+        PlaceMacEntryCaretAtEnd(entry);
+#endif
+#if WINDOWS
+        windowsSelectAllOnTabNavigationPending = false;
+        var textBox = ResolveWindowsTextBoxForEntry(entry);
+        if (textBox is not null)
+        {
+            textBox.Focus(Microsoft.UI.Xaml.FocusState.Programmatic);
+            PlaceWindowsTextBoxCaretAtEnd(textBox);
+        }
+#endif
+    }
+
+#if WINDOWS
+    private Microsoft.UI.Xaml.Controls.TextBox? ResolveWindowsTextBoxForEntry(Entry entry)
+    {
+        if (ReferenceEquals(entry, MainCommandEntry))
+        {
+            return commandTextBox ?? entry.Handler?.PlatformView as Microsoft.UI.Xaml.Controls.TextBox;
+        }
+
+        if (ReferenceEquals(entry, MainSearchEntry))
+        {
+            return searchTextBox ?? entry.Handler?.PlatformView as Microsoft.UI.Xaml.Controls.TextBox;
+        }
+
+        return entry.Handler?.PlatformView as Microsoft.UI.Xaml.Controls.TextBox;
+    }
+
+    private static void PlaceWindowsTextBoxCaretAtEnd(Microsoft.UI.Xaml.Controls.TextBox textBox)
+    {
+        var caretPosition = TextCaretPositionResolver.ResolveTailOffset(textBox.Text);
+        textBox.Select(caretPosition, 0);
+    }
+#endif
 
     private void ClearButton_PointerEntered(object? sender, PointerEventArgs e)
     {

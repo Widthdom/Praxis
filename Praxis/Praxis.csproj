@@ -100,4 +100,14 @@
           BeforeTargets="ComputeRunArguments"
           DependsOnTargets="Build"
           Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'maccatalyst'" />
+
+  <Target Name="EnsureMacCatalystIntermediateAssemblyForILLink"
+          BeforeTargets="_ComputeManagedAssemblyToLink"
+          Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'maccatalyst'
+                     and Exists('$(TargetPath)')
+                     and !Exists('$(IntermediateOutputPath)$(TargetFileName)')">
+    <MakeDir Directories="$(IntermediateOutputPath)" />
+    <Copy SourceFiles="$(TargetPath)"
+          DestinationFiles="$(IntermediateOutputPath)$(TargetFileName)" />
+  </Target>
 </Project>
