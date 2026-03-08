@@ -9,6 +9,7 @@
 
   <ItemGroup>
     <PackageReference Include="coverlet.collector" Version="6.0.4" />
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.3.2" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
     <PackageReference Include="xunit" Version="2.9.3" />
     <PackageReference Include="xunit.runner.visualstudio" Version="3.1.4" />
@@ -20,6 +21,21 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Praxis.Core\Praxis.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="..\Praxis\Services\IAppRepository.cs" Link="Integration\IAppRepository.cs" />
+    <Compile Include="..\Praxis\Services\IClipboardService.cs" Link="Integration\IClipboardService.cs" />
+    <Compile Include="..\Praxis\Services\ICommandExecutor.cs" Link="Integration\ICommandExecutor.cs" />
+    <Compile Include="..\Praxis\Services\IStateSyncNotifier.cs" Link="Integration\IStateSyncNotifier.cs" />
+    <Compile Include="..\Praxis\Services\IThemeService.cs" Link="Integration\IThemeService.cs" />
+    <Compile Include="..\Praxis\ViewModels\ButtonEditorViewModel.cs" Link="Integration\ButtonEditorViewModel.cs" />
+    <Compile Include="..\Praxis\ViewModels\ButtonHistoryAction.cs" Link="Integration\ButtonHistoryAction.cs" />
+    <Compile Include="..\Praxis\ViewModels\CommandSuggestionItemViewModel.cs" Link="Integration\CommandSuggestionItemViewModel.cs" />
+    <Compile Include="..\Praxis\ViewModels\LauncherButtonItemViewModel.cs" Link="Integration\LauncherButtonItemViewModel.cs" />
+    <Compile Include="..\Praxis\ViewModels\MainViewModel.cs" Link="Integration\MainViewModel.cs" />
+    <Compile Include="..\Praxis\ViewModels\MainViewModel.Actions.cs" Link="Integration\MainViewModel.Actions.cs" />
+    <Compile Include="..\Praxis\ViewModels\MainViewModel.CommandSuggestions.cs" Link="Integration\MainViewModel.CommandSuggestions.cs" />
   </ItemGroup>
 
 </Project>
