@@ -1,6 +1,5 @@
 #if WINDOWS
 using System.Runtime.InteropServices;
-using Microsoft.UI.Dispatching;
 using Microsoft.Maui.Handlers;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -13,9 +12,6 @@ namespace Praxis.Controls;
 public class CommandEntryHandler : EntryHandler
 {
     private static readonly InputScope AlphanumericHalfWidthInputScope = CreateAlphanumericHalfWidthInputScope();
-    private DispatcherQueueTimer? inputScopeEnforcementTimer;
-    private TextBox? timerAttachedTextBox;
-    private bool filteringText;
     private bool inputScopeUnsupported;
 
     protected override void ConnectHandler(TextBox platformView)
@@ -23,16 +19,11 @@ public class CommandEntryHandler : EntryHandler
         base.ConnectHandler(platformView);
         TryApplyAlphanumericInputScope(platformView);
         platformView.GotFocus += PlatformView_GotFocus;
-        platformView.LostFocus += PlatformView_LostFocus;
-        platformView.TextChanging += PlatformView_TextChanging;
     }
 
     protected override void DisconnectHandler(TextBox platformView)
     {
         platformView.GotFocus -= PlatformView_GotFocus;
-        platformView.LostFocus -= PlatformView_LostFocus;
-        platformView.TextChanging -= PlatformView_TextChanging;
-        StopInputScopeEnforcementTimer();
         base.DisconnectHandler(platformView);
     }
 
@@ -74,90 +65,10 @@ public class CommandEntryHandler : EntryHandler
         }
 
         _ = TryApplyAlphanumericInputScope(textBox);
-        ForceAsciiImeMode(textBox);
-        StartInputScopeEnforcementTimer(textBox);
+        ForceAsciiImeModeOnce(textBox);
     }
 
-    private void PlatformView_LostFocus(object sender, RoutedEventArgs e)
-    {
-        StopInputScopeEnforcementTimer();
-    }
-
-    private void PlatformView_TextChanging(TextBox sender, TextBoxTextChangingEventArgs args)
-    {
-        _ = TryApplyAlphanumericInputScope(sender);
-        ForceAsciiImeMode(sender);
-
-        if (filteringText)
-        {
-            return;
-        }
-
-        var current = sender.Text ?? string.Empty;
-        if (AsciiInputFilter.IsAsciiOnly(current))
-        {
-            return;
-        }
-
-        var filtered = AsciiInputFilter.FilterToAscii(current);
-        filteringText = true;
-        try
-        {
-            sender.Text = filtered;
-            sender.SelectionStart = WindowsCommandInputImePolicy.ClampSelectionStart(sender.SelectionStart, filtered.Length);
-            sender.SelectionLength = 0;
-        }
-        finally
-        {
-            filteringText = false;
-        }
-    }
-
-    private void StartInputScopeEnforcementTimer(TextBox textBox)
-    {
-        StopInputScopeEnforcementTimer();
-        timerAttachedTextBox = textBox;
-        var dispatcherQueue = textBox.DispatcherQueue ?? DispatcherQueue.GetForCurrentThread();
-        if (dispatcherQueue is null)
-        {
-            return;
-        }
-
-        var timer = dispatcherQueue.CreateTimer();
-        timer.Interval = WindowsCommandInputImePolicy.FocusedInputScopeEnforcementInterval;
-        timer.IsRepeating = true;
-        timer.Tick += InputScopeEnforcementTimer_Tick;
-        timer.Start();
-        inputScopeEnforcementTimer = timer;
-    }
-
-    private void StopInputScopeEnforcementTimer()
-    {
-        var timer = inputScopeEnforcementTimer;
-        if (timer is not null)
-        {
-            timer.Tick -= InputScopeEnforcementTimer_Tick;
-            timer.Stop();
-        }
-
-        inputScopeEnforcementTimer = null;
-        timerAttachedTextBox = null;
-    }
-
-    private void InputScopeEnforcementTimer_Tick(DispatcherQueueTimer sender, object args)
-    {
-        var textBox = timerAttachedTextBox;
-        if (textBox is null || !WindowsCommandInputImePolicy.ShouldEnforceInputScope(textBox.FocusState != FocusState.Unfocused))
-        {
-            StopInputScopeEnforcementTimer();
-            return;
-        }
-
-        _ = TryApplyAlphanumericInputScope(textBox);
-        ForceAsciiImeMode(textBox);
-    }
-
-    private static void ForceAsciiImeMode(TextBox textBox)
+    private static void ForceAsciiImeModeOnce(TextBox textBox)
     {
         if (!WindowsCommandInputImePolicy.ShouldForceAsciiImeMode(textBox.FocusState != FocusState.Unfocused))
         {

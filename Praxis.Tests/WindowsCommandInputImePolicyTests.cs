@@ -5,24 +5,6 @@ namespace Praxis.Tests;
 public class WindowsCommandInputImePolicyTests
 {
     [Fact]
-    public void FocusedInputScopeEnforcementInterval_IsPositive()
-    {
-        Assert.True(WindowsCommandInputImePolicy.FocusedInputScopeEnforcementInterval > TimeSpan.Zero);
-    }
-
-    [Fact]
-    public void ShouldEnforceInputScope_ReturnsTrue_WhenFocused()
-    {
-        Assert.True(WindowsCommandInputImePolicy.ShouldEnforceInputScope(isFocused: true));
-    }
-
-    [Fact]
-    public void ShouldEnforceInputScope_ReturnsFalse_WhenNotFocused()
-    {
-        Assert.False(WindowsCommandInputImePolicy.ShouldEnforceInputScope(isFocused: false));
-    }
-
-    [Fact]
     public void ShouldForceAsciiImeMode_ReturnsTrue_WhenFocused()
     {
         Assert.True(WindowsCommandInputImePolicy.ShouldForceAsciiImeMode(isFocused: true));

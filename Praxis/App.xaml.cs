@@ -120,7 +120,33 @@ public partial class App : Application
             .HasFlag(global::Windows.UI.Core.CoreVirtualKeyStates.Down);
         var shiftDown = Microsoft.UI.Input.InputKeyboardSource.GetKeyStateForCurrentThread(global::Windows.System.VirtualKey.Shift)
             .HasFlag(global::Windows.UI.Core.CoreVirtualKeyStates.Down);
-        if (!ctrlDown || !shiftDown)
+        if (!ctrlDown)
+        {
+            return;
+        }
+
+        if (!shiftDown && e.Key == global::Windows.System.VirtualKey.Z)
+        {
+            if (ShouldHandleWindowsHistoryShortcut(sender))
+            {
+                RaiseHistoryShortcut("Undo");
+                e.Handled = true;
+            }
+            return;
+        }
+
+        if ((!shiftDown && e.Key == global::Windows.System.VirtualKey.Y) ||
+            (shiftDown && e.Key == global::Windows.System.VirtualKey.Z))
+        {
+            if (ShouldHandleWindowsHistoryShortcut(sender))
+            {
+                RaiseHistoryShortcut("Redo");
+                e.Handled = true;
+            }
+            return;
+        }
+
+        if (!shiftDown)
         {
             return;
         }
@@ -144,6 +170,46 @@ public partial class App : Application
             RaiseThemeShortcut("System");
             e.Handled = true;
         }
+    }
+
+    private static bool ShouldHandleWindowsHistoryShortcut(object sender)
+    {
+        if (isEditorOpen || isContextMenuOpen || isConflictDialogOpen)
+        {
+            return false;
+        }
+
+        if (sender is not Microsoft.UI.Xaml.UIElement element)
+        {
+            return true;
+        }
+
+        var xamlRoot = element.XamlRoot;
+        if (xamlRoot is null)
+        {
+            return true;
+        }
+
+        try
+        {
+            var focused = Microsoft.UI.Xaml.Input.FocusManager.GetFocusedElement(xamlRoot) as Microsoft.UI.Xaml.DependencyObject;
+            while (focused is not null)
+            {
+                if (focused is Microsoft.UI.Xaml.Controls.TextBox ||
+                    focused is Microsoft.UI.Xaml.Controls.PasswordBox ||
+                    focused is Microsoft.UI.Xaml.Controls.RichEditBox)
+                {
+                    return false;
+                }
+
+                focused = Microsoft.UI.Xaml.Media.VisualTreeHelper.GetParent(focused);
+            }
+        }
+        catch
+        {
+        }
+
+        return true;
     }
 #endif
 

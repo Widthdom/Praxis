@@ -1687,6 +1687,11 @@ public partial class MainPage : ContentPage
 #if WINDOWS
     private void CommandTextBox_KeyDown(object sender, Microsoft.UI.Xaml.Input.KeyRoutedEventArgs e)
     {
+        if (e.Handled)
+        {
+            return;
+        }
+
         if (TryHandleThemeShortcutFromKey(e))
         {
             e.Handled = true;
@@ -1721,6 +1726,11 @@ public partial class MainPage : ContentPage
 
     private void SearchTextBox_KeyDown(object sender, Microsoft.UI.Xaml.Input.KeyRoutedEventArgs e)
     {
+        if (e.Handled)
+        {
+            return;
+        }
+
         if (e.Key == Windows.System.VirtualKey.Tab)
         {
             windowsSelectAllOnTabNavigationPending = true;
@@ -1743,9 +1753,39 @@ public partial class MainPage : ContentPage
 
     private void WindowsTextBox_KeyDown(object sender, Microsoft.UI.Xaml.Input.KeyRoutedEventArgs e)
     {
+        if (e.Handled)
+        {
+            return;
+        }
+
         if (e.Key == Windows.System.VirtualKey.Tab)
         {
             windowsSelectAllOnTabNavigationPending = true;
+        }
+    }
+
+    private void WindowsTextBox_PreviewKeyDown(object sender, Microsoft.UI.Xaml.Input.KeyRoutedEventArgs e)
+    {
+        if (e.Handled)
+        {
+            return;
+        }
+
+        if (!TryGetWindowsHistoryShortcutAction(e, out var action))
+        {
+            return;
+        }
+
+        if (sender is Microsoft.UI.Xaml.Controls.TextBox textBox &&
+            ShouldPreferTextHistoryShortcut(textBox) &&
+            HasWindowsTextHistoryShortcut(textBox, action))
+        {
+            return;
+        }
+
+        if (TryExecuteHistoryShortcut(action))
+        {
+            e.Handled = true;
         }
     }
 
@@ -1886,6 +1926,11 @@ public partial class MainPage : ContentPage
 
     private void PageNativeElement_KeyDown(object sender, Microsoft.UI.Xaml.Input.KeyRoutedEventArgs e)
     {
+        if (e.Handled)
+        {
+            return;
+        }
+
         if (TryHandleThemeShortcutFromKey(e))
         {
             e.Handled = true;
@@ -1897,22 +1942,11 @@ public partial class MainPage : ContentPage
         var shiftDown = Microsoft.UI.Input.InputKeyboardSource.GetKeyStateForCurrentThread(Windows.System.VirtualKey.Shift)
             .HasFlag(Windows.UI.Core.CoreVirtualKeyStates.Down);
 
-        if (ctrlDown && !shiftDown && e.Key == Windows.System.VirtualKey.Z)
+        if (TryGetWindowsHistoryShortcutAction(e, out var historyAction) &&
+            TryExecuteHistoryShortcut(historyAction))
         {
-            if (TryExecuteHistoryShortcut("Undo"))
-            {
-                e.Handled = true;
-                return;
-            }
-        }
-
-        if (ctrlDown && !shiftDown && e.Key == Windows.System.VirtualKey.Y)
-        {
-            if (TryExecuteHistoryShortcut("Redo"))
-            {
-                e.Handled = true;
-                return;
-            }
+            e.Handled = true;
+            return;
         }
 
         if (IsConflictDialogOpen())
@@ -2044,6 +2078,55 @@ public partial class MainPage : ContentPage
         return false;
     }
 
+    private static bool TryGetWindowsHistoryShortcutAction(Microsoft.UI.Xaml.Input.KeyRoutedEventArgs e, out string action)
+    {
+        action = string.Empty;
+        var ctrlDown = Microsoft.UI.Input.InputKeyboardSource.GetKeyStateForCurrentThread(Windows.System.VirtualKey.Control)
+            .HasFlag(Windows.UI.Core.CoreVirtualKeyStates.Down);
+        var shiftDown = Microsoft.UI.Input.InputKeyboardSource.GetKeyStateForCurrentThread(Windows.System.VirtualKey.Shift)
+            .HasFlag(Windows.UI.Core.CoreVirtualKeyStates.Down);
+        if (!ctrlDown)
+        {
+            return false;
+        }
+
+        if (!shiftDown && e.Key == Windows.System.VirtualKey.Z)
+        {
+            action = "Undo";
+            return true;
+        }
+
+        if ((!shiftDown && e.Key == Windows.System.VirtualKey.Y) ||
+            (shiftDown && e.Key == Windows.System.VirtualKey.Z))
+        {
+            action = "Redo";
+            return true;
+        }
+
+        return false;
+    }
+
+    private bool ShouldPreferTextHistoryShortcut(Microsoft.UI.Xaml.Controls.TextBox textBox)
+    {
+        return ReferenceEquals(textBox, commandTextBox) ||
+            ReferenceEquals(textBox, searchTextBox);
+    }
+
+    private static bool HasWindowsTextHistoryShortcut(Microsoft.UI.Xaml.Controls.TextBox textBox, string action)
+    {
+        if (string.Equals(action, "Undo", StringComparison.OrdinalIgnoreCase))
+        {
+            return textBox.CanUndo;
+        }
+
+        if (string.Equals(action, "Redo", StringComparison.OrdinalIgnoreCase))
+        {
+            return textBox.CanRedo;
+        }
+
+        return false;
+    }
+
     private void EnsureWindowsKeyHooks()
     {
         var current = Handler?.PlatformView as Microsoft.UI.Xaml.UIElement;
@@ -2125,6 +2208,7 @@ public partial class MainPage : ContentPage
 
         if (slot is not null)
         {
+            slot.PreviewKeyDown -= WindowsTextBox_PreviewKeyDown;
             slot.KeyDown -= WindowsTextBox_KeyDown;
             slot.GotFocus -= WindowsTextBox_GotFocus;
             slot.PointerPressed -= WindowsTextBox_PointerPressed;
@@ -2150,6 +2234,7 @@ public partial class MainPage : ContentPage
             return;
         }
 
+        slot.PreviewKeyDown += WindowsTextBox_PreviewKeyDown;
         slot.KeyDown += WindowsTextBox_KeyDown;
         slot.GotFocus += WindowsTextBox_GotFocus;
         slot.PointerPressed += WindowsTextBox_PointerPressed;
