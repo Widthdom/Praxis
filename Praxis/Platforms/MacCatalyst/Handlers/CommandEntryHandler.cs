@@ -4,6 +4,8 @@ using Foundation;
 using Microsoft.Maui.ApplicationModel;
 using Praxis.Core.Logic;
 using UIKit;
+using System.Linq;
+using System.Runtime.InteropServices;
 
 namespace Praxis.Controls;
 
@@ -41,8 +43,102 @@ public class CommandEntryHandler : MacEntryHandler
     private sealed class CommandEntryTextField : MacEntryTextField
     {
         protected override nfloat TextInsetRight => 40;
+        private bool _filteringText;
         private NSObject? windowDidBecomeKeyObserver;
         private NSObject? didBecomeActiveObserver;
+        private NSTimer? _asciiEnforcementTimer;
+
+        public CommandEntryTextField()
+        {
+            KeyboardType = UIKeyboardType.ASCIICapable;
+            AddTarget(OnTextEditingChanged, UIControlEvent.EditingChanged);
+        }
+
+        // [Export] is required so the ObjC runtime dispatches through our override
+        [Export("setMarkedText:selectedRange:")]
+        public override void SetMarkedText(string? markedText, NSRange selectedRange)
+        {
+            // Block non-ASCII IME composition (prevents Japanese/CJK input)
+            if (markedText is { Length: > 0 } && markedText.Any(c => c > 127))
+                return;
+            base.SetMarkedText(markedText ?? string.Empty, selectedRange);
+        }
+
+        [Export("insertText:")]
+        public override void InsertText(string text)
+        {
+            if (text.Length == 0 || text.All(c => c <= 127))
+            {
+                base.InsertText(text);
+                return;
+            }
+            var filtered = new string(text.Where(c => c <= 127).ToArray());
+            if (filtered.Length > 0)
+                base.InsertText(filtered);
+        }
+
+        // Safety net: strip any non-ASCII that slipped through via other code paths
+        private void OnTextEditingChanged(object? sender, EventArgs e)
+        {
+            if (_filteringText) return;
+            var current = Text ?? string.Empty;
+            if (current.All(c => c <= 127)) return;
+
+            var filtered = new string(current.Where(c => c <= 127).ToArray());
+            _filteringText = true;
+            Text = filtered;
+            SendActionForControlEvents(UIControlEvent.EditingChanged);
+            _filteringText = false;
+            var endPos = EndOfDocument;
+            SelectedTextRange = GetTextRange(endPos, endPos);
+        }
+
+        public override bool BecomeFirstResponder()
+        {
+            var result = base.BecomeFirstResponder();
+            if (result)
+            {
+                SwitchToAsciiInputSource();
+                AttachInputSourceObserver();
+            }
+            return result;
+        }
+
+        public override bool ResignFirstResponder()
+        {
+            DetachInputSourceObserver();
+            return base.ResignFirstResponder();
+        }
+
+        private static void SwitchToAsciiInputSource()
+        {
+            var source = TISCopyCurrentASCIICapableKeyboardInputSource();
+            if (source == IntPtr.Zero) return;
+            TISSelectInputSource(source);
+            CFRelease(source);
+        }
+
+        private void AttachInputSourceObserver()
+        {
+            DetachInputSourceObserver();
+            _asciiEnforcementTimer = NSTimer.CreateRepeatingScheduledTimer(0.2, _ => SwitchToAsciiInputSource());
+        }
+
+        private void DetachInputSourceObserver()
+        {
+            _asciiEnforcementTimer?.Invalidate();
+            _asciiEnforcementTimer?.Dispose();
+            _asciiEnforcementTimer = null;
+        }
+
+        [DllImport("/System/Library/Frameworks/Carbon.framework/Carbon")]
+        private static extern IntPtr TISCopyCurrentASCIICapableKeyboardInputSource();
+
+        [DllImport("/System/Library/Frameworks/Carbon.framework/Carbon")]
+        private static extern void TISSelectInputSource(IntPtr inputSource);
+
+        [DllImport("/System/Library/Frameworks/CoreFoundation.framework/CoreFoundation")]
+        private static extern void CFRelease(IntPtr cf);
 
         public override void PressesBegan(NSSet<UIPress> presses, UIPressesEvent? evt)
         {
@@ -79,6 +175,8 @@ public class CommandEntryHandler : MacEntryHandler
         {
             if (disposing)
             {
+                RemoveTarget(OnTextEditingChanged, UIControlEvent.EditingChanged);
+                DetachInputSourceObserver();
                 DetachWindowDidBecomeKeyObserver();
                 DetachDidBecomeActiveObserver();
                 if (lastCommandField is not null &&

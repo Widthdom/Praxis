@@ -27,6 +27,12 @@ public static class MauiProgram
             handlers.AddHandler(typeof(SearchEntry), typeof(SearchEntryHandler));
         });
 #endif
+#if WINDOWS
+        builder.ConfigureMauiHandlers(handlers =>
+        {
+            handlers.AddHandler(typeof(CommandEntry), typeof(CommandEntryHandler));
+        });
+#endif
 
         builder.Services.AddSingleton<IAppRepository, SqliteAppRepository>();
         builder.Services.AddSingleton<ICommandExecutor, CommandExecutor>();
