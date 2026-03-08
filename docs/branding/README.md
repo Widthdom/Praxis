@@ -34,7 +34,7 @@ Generated PNG outputs are stored in:
 
 ## Design Notes
 
-- Core motif: the app name is inspired by the Greek word for "practice," `πρακτικής`, and the mark layers an outer regular hexagon, its inscribed circle, and another regular hexagon inscribed in that circle to evoke Archimedes' process of approximating pi with polygons.
+- Core motif: the app name is inspired by the Greek word for "practice," `πρᾶξις`, and the mark layers an outer regular hexagon, its inscribed circle, and another regular hexagon inscribed in that circle to evoke Archimedes' process of approximating pi with polygons.
 - Micro variants intentionally keep polygonal segmentation and contrast while reducing visual collapse at tiny sizes.
 - The `appiconfg_windows.svg` variant stays transparent outside the icon silhouette to avoid a forced tile background in Windows shell contexts.
 
@@ -76,6 +76,6 @@ Generated PNG outputs are stored in:
 
 ## デザイン方針
 
-- 基本モチーフは、古代ギリシャ語で「実践」を表す「`πρακτικής`」にちなむアプリ名の由来と、アルキメデスが円周率を求めた過程のイメージを重ねたものです。外側の正六角形、その内接円、さらにその円に内接する正六角形を重ねることで、多角形による近似の発想を表現しています。
+- 基本モチーフは、古代ギリシャ語で「実践」を表す「`πρᾶξις`」にちなむアプリ名の由来と、アルキメデスが円周率を求めた過程のイメージを重ねたものです。外側の正六角形、その内接円、さらにその円に内接する正六角形を重ねることで、多角形による近似の発想を表現しています。
 - micro版は、極小サイズでの視認崩れを抑えつつ、ポリゴン分割感とコントラストを意図的に維持しています。
 - `appiconfg_windows.svg` バリアントは、Windowsシェルの文脈でタイル背景が強制されるのを避けるため、アイコンのシルエット外側を透明のままにしています。
