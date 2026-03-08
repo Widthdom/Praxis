@@ -29,8 +29,8 @@ public class AppStoragePathLayoutResolverTests
             isWindows: false);
 
         Assert.Equal(
-            @"/Users/tester/Library/Application Support/Praxis/praxis.db3",
-            path);
+            NormalizeSeparators(@"/Users/tester/Library/Application Support/Praxis/praxis.db3"),
+            NormalizeSeparators(path));
     }
 
     [Fact]
@@ -55,7 +55,7 @@ public class AppStoragePathLayoutResolverTests
             isWindows: false);
 
         Assert.Equal(
-            @"/Users/tester/Library/Application Support/Praxis/buttons.sync",
-            path);
+            NormalizeSeparators(@"/Users/tester/Library/Application Support/Praxis/buttons.sync"),
+            NormalizeSeparators(path));
     }
 }

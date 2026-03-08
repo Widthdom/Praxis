@@ -5,11 +5,16 @@ namespace Praxis.Tests;
 public class DockScrollBarVisibilityPolicyTests
 {
     [Theory]
-    [InlineData(true, true)]
-    [InlineData(false, false)]
-    public void ShouldShowHorizontalScrollBar_MatchesPointerHoverState(bool isPointerOverDockRegion, bool expected)
+    [InlineData(true, true, true)]
+    [InlineData(true, false, false)]
+    [InlineData(false, true, false)]
+    [InlineData(false, false, false)]
+    public void ShouldShowHorizontalScrollBar_RequiresHoverAndHorizontalOverflow(
+        bool isPointerOverDockRegion,
+        bool hasHorizontalOverflow,
+        bool expected)
     {
-        Assert.Equal(expected, DockScrollBarVisibilityPolicy.ShouldShowHorizontalScrollBar(isPointerOverDockRegion));
+        Assert.Equal(expected, DockScrollBarVisibilityPolicy.ShouldShowHorizontalScrollBar(isPointerOverDockRegion, hasHorizontalOverflow));
     }
 
     [Theory]

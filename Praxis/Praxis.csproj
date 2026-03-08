@@ -59,24 +59,11 @@
   <Target Name="AdhocSignSqliteDylibForMacCatalyst"
           AfterTargets="_CreateAppBundle;Build"
           BeforeTargets="Run"
-          Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'maccatalyst'">
+          Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'maccatalyst' and $([MSBuild]::IsOSPlatform('osx'))">
     <Exec Condition="Exists('$(OutputPath)libe_sqlite3.dylib')"
           Command="codesign --force --sign - --timestamp=none &quot;$(OutputPath)libe_sqlite3.dylib&quot;" />
     <Exec Condition="Exists('$(OutputPath)$(AssemblyName).app/Contents/MonoBundle/libe_sqlite3.dylib')"
           Command="codesign --force --sign - --timestamp=none &quot;$(OutputPath)$(AssemblyName).app/Contents/MonoBundle/libe_sqlite3.dylib&quot;" />
-  </Target>
-
-  <Target Name="EnsureMacCatalystXamlEmbeddedResources"
-          AfterTargets="_MauiAddXamlEmbeddedResources"
-          BeforeTargets="CoreCompile"
-          Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'maccatalyst'">
-    <ItemGroup>
-      <EmbeddedResource Remove="App.xaml;MainPage.xaml;Resources/Styles/Colors.xaml;Resources/Styles/Styles.xaml" />
-      <EmbeddedResource Include="App.xaml" LogicalName="Praxis.App.xaml" />
-      <EmbeddedResource Include="MainPage.xaml" LogicalName="Praxis.MainPage.xaml" />
-      <EmbeddedResource Include="Resources/Styles/Colors.xaml" LogicalName="Praxis.Resources.Styles.Colors.xaml" />
-      <EmbeddedResource Include="Resources/Styles/Styles.xaml" LogicalName="Praxis.Resources.Styles.Styles.xaml" />
-    </ItemGroup>
   </Target>
 
   <Target Name="ForceMacCatalystCoreCompileForXamlStability"

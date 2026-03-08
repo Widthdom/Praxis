@@ -217,6 +217,8 @@ public partial class MainPage : ContentPage
         TopBarGrid.SizeChanged += (_, _) => UpdateCommandSuggestionPopupPlacement();
         MainCommandEntry.SizeChanged += (_, _) => UpdateCommandSuggestionPopupPlacement();
         MainSearchEntry.SizeChanged += (_, _) => UpdateCommandSuggestionPopupPlacement();
+        DockScroll.SizeChanged += (_, _) => RefreshDockScrollBarVisibility();
+        DockButtonsStack.SizeChanged += (_, _) => RefreshDockScrollBarVisibility();
         if (Application.Current is not null)
         {
             Application.Current.RequestedThemeChanged += (_, _) => Dispatcher.Dispatch(() =>
@@ -1260,23 +1262,31 @@ public partial class MainPage : ContentPage
 
     private void DockScroll_HandlerChanged(object? sender, EventArgs e)
     {
-        ApplyNativeDockScrollBarVisibility(isDockPointerHovering);
+        RefreshDockScrollBarVisibility();
         Dispatcher.DispatchDelayed(TimeSpan.FromMilliseconds(16), () =>
         {
-            ApplyNativeDockScrollBarVisibility(isDockPointerHovering);
+            RefreshDockScrollBarVisibility();
         });
         Dispatcher.DispatchDelayed(TimeSpan.FromMilliseconds(80), () =>
         {
-            ApplyNativeDockScrollBarVisibility(isDockPointerHovering);
+            RefreshDockScrollBarVisibility();
         });
     }
 
     private void SetDockScrollBarVisibility(bool isPointerOverDockRegion)
     {
         isDockPointerHovering = isPointerOverDockRegion;
-        var showHorizontalScrollBar = DockScrollBarVisibilityPolicy.ShouldShowHorizontalScrollBar(isPointerOverDockRegion: isPointerOverDockRegion);
+        var hasHorizontalOverflow = ResolveDockHasHorizontalOverflow();
+        var showHorizontalScrollBar = DockScrollBarVisibilityPolicy.ShouldShowHorizontalScrollBar(
+            isPointerOverDockRegion: isPointerOverDockRegion,
+            hasHorizontalOverflow: hasHorizontalOverflow);
         DockScrollBarMask.IsVisible = DockScrollBarVisibilityPolicy.ShouldShowScrollBarMask(showHorizontalScrollBar);
         ApplyNativeDockScrollBarVisibility(showHorizontalScrollBar);
+    }
+
+    private void RefreshDockScrollBarVisibility()
+    {
+        SetDockScrollBarVisibility(isDockPointerHovering);
     }
 
     private void ScheduleDockHoverExitHide()
@@ -1331,6 +1341,24 @@ public partial class MainPage : ContentPage
             scrollView.LayoutIfNeeded();
         }
 #endif
+    }
+
+    private bool ResolveDockHasHorizontalOverflow()
+    {
+#if WINDOWS
+        if (DockScroll.Handler?.PlatformView is Microsoft.UI.Xaml.Controls.ScrollViewer scrollViewer &&
+            scrollViewer.ExtentWidth > 0 &&
+            scrollViewer.ViewportWidth > 0)
+        {
+            return scrollViewer.ExtentWidth > scrollViewer.ViewportWidth + 0.5;
+        }
+#endif
+        if (DockScroll.Width <= 0 || DockButtonsStack.Width <= 0)
+        {
+            return false;
+        }
+
+        return DockButtonsStack.Width > DockScroll.Width + 0.5;
     }
 
 #if MACCATALYST
