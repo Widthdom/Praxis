@@ -68,7 +68,7 @@ dotnet test Praxis.Tests/Praxis.Tests.csproj --collect:"XPlat Code Coverage"
 - `SearchFocusGuardPolicyTests.cs`: macOS search-focus guard decision rules.
 - `AsciiInputFilterTests.cs`: ASCII filtering rules used by macOS command input paths.
 - `MacCommandInputSourcePolicyTests.cs`: macOS ASCII input-source enforcement gating (first-responder + key-window + app-active) and focused re-apply interval safety.
-- `WindowsCommandInputImePolicyTests.cs`: Windows IME ASCII-mode gating (`ShouldForceAsciiImeMode`), focus-time ASCII nudge retry schedule, conversion-mode normalization, and caret clamp logic.
+- `WindowsCommandInputImePolicyTests.cs`: Windows IME ASCII-mode gating (`ShouldForceAsciiImeMode`), focus-time ASCII nudge retry schedule, focused-state ASCII reassert gating/interval, conversion-mode normalization, and caret clamp logic.
 - `WindowsInputScopeCompatibilityPolicyTests.cs`: fallback trigger rules when native `InputScope` assignment fails (`ArgumentException`).
 - `WindowsModalFocusRestorePolicyTests.cs`: Windows editor/conflict focus restore conditions.
 - `ConflictDialogFocusRestorePolicyTests.cs`: editor focus restore condition after conflict dialog close.
@@ -175,7 +175,7 @@ dotnet test Praxis.Tests/Praxis.Tests.csproj --collect:"XPlat Code Coverage"
 - `SearchFocusGuardPolicyTests.cs`: macOS の Search フォーカスガード判定。
 - `AsciiInputFilterTests.cs`: macOS command 入力経路で使う ASCII フィルタ判定。
 - `MacCommandInputSourcePolicyTests.cs`: macOS ASCII 入力ソース強制の適用条件（first responder / キーウィンドウ / アプリ active）と、フォーカス中の再強制間隔の安全性を検証。
-- `WindowsCommandInputImePolicyTests.cs`: Windows IME の ASCII モード適用判定（`ShouldForceAsciiImeMode`）、フォーカス時 ASCII 補正の再試行スケジュール、変換モード正規化、キャレット補正。
+- `WindowsCommandInputImePolicyTests.cs`: Windows IME の ASCII モード適用判定（`ShouldForceAsciiImeMode`）、フォーカス時 ASCII 補正の再試行スケジュール、フォーカス中英字再強制の適用条件/間隔、変換モード正規化、キャレット補正。
 - `WindowsInputScopeCompatibilityPolicyTests.cs`: ネイティブ `InputScope` 設定失敗時（`ArgumentException`）のフォールバック判定。
 - `WindowsModalFocusRestorePolicyTests.cs`: Windows 編集モーダル/競合ダイアログのフォーカス復帰条件。
 - `ConflictDialogFocusRestorePolicyTests.cs`: 競合ダイアログ閉鎖後の編集フォーカス復帰条件。

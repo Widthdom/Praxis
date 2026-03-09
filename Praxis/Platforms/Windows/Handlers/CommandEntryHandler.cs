@@ -13,17 +13,21 @@ public class CommandEntryHandler : EntryHandler
 {
     private static readonly InputScope AlphanumericHalfWidthInputScope = CreateAlphanumericHalfWidthInputScope();
     private bool inputScopeUnsupported;
+    private CancellationTokenSource? focusedAsciiImeReassertCts;
 
     protected override void ConnectHandler(TextBox platformView)
     {
         base.ConnectHandler(platformView);
         TryApplyAlphanumericInputScope(platformView);
         platformView.GotFocus += PlatformView_GotFocus;
+        platformView.LostFocus += PlatformView_LostFocus;
     }
 
     protected override void DisconnectHandler(TextBox platformView)
     {
         platformView.GotFocus -= PlatformView_GotFocus;
+        platformView.LostFocus -= PlatformView_LostFocus;
+        StopFocusedAsciiImeReassert();
         base.DisconnectHandler(platformView);
     }
 
@@ -68,6 +72,12 @@ public class CommandEntryHandler : EntryHandler
 
         _ = TryApplyAlphanumericInputScope(textBox);
         ApplyAsciiImeModeForFocus(textBox);
+        TryStartFocusedAsciiImeReassert(textBox);
+    }
+
+    private void PlatformView_LostFocus(object sender, RoutedEventArgs e)
+    {
+        StopFocusedAsciiImeReassert();
     }
 
     private static void ApplyAsciiImeModeForFocus(TextBox textBox)
@@ -113,6 +123,72 @@ public class CommandEntryHandler : EntryHandler
 
             ForceAsciiImeModeOnce(textBox);
         });
+    }
+
+    private void TryStartFocusedAsciiImeReassert(TextBox textBox)
+    {
+        StopFocusedAsciiImeReassert();
+        var keepAsciiImeWhileFocused = (VirtualView as CommandEntry)?.KeepAsciiImeWhileFocused ?? false;
+        if (!WindowsCommandInputImePolicy.ShouldReassertAsciiImeMode(
+                isFocused: textBox.FocusState != FocusState.Unfocused,
+                keepAsciiImeWhileFocused: keepAsciiImeWhileFocused))
+        {
+            return;
+        }
+
+        var cts = new CancellationTokenSource();
+        focusedAsciiImeReassertCts = cts;
+        _ = RunFocusedAsciiImeReassertLoopAsync(textBox, cts.Token);
+    }
+
+    private void StopFocusedAsciiImeReassert()
+    {
+        focusedAsciiImeReassertCts?.Cancel();
+        focusedAsciiImeReassertCts?.Dispose();
+        focusedAsciiImeReassertCts = null;
+    }
+
+    private static async Task RunFocusedAsciiImeReassertLoopAsync(TextBox textBox, CancellationToken cancellationToken)
+    {
+        var interval = WindowsCommandInputImePolicy.ResolveAsciiImeReassertInterval();
+
+        while (!cancellationToken.IsCancellationRequested)
+        {
+            try
+            {
+                await Task.Delay(interval, cancellationToken).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException)
+            {
+                return;
+            }
+
+            if (cancellationToken.IsCancellationRequested)
+            {
+                return;
+            }
+
+            var dispatcherQueue = textBox.DispatcherQueue;
+            if (dispatcherQueue is null)
+            {
+                return;
+            }
+
+            var enqueued = dispatcherQueue.TryEnqueue(() =>
+            {
+                if (textBox.FocusState == FocusState.Unfocused)
+                {
+                    return;
+                }
+
+                ForceAsciiImeModeOnce(textBox);
+            });
+
+            if (!enqueued)
+            {
+                return;
+            }
+        }
     }
 
     private static void ForceAsciiImeModeOnce(TextBox textBox)

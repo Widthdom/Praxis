@@ -18,6 +18,13 @@ public class CommandEntry : Entry
             typeof(CommandEntry),
             true);
 
+    public static readonly BindableProperty KeepAsciiImeWhileFocusedProperty =
+        BindableProperty.Create(
+            nameof(KeepAsciiImeWhileFocused),
+            typeof(bool),
+            typeof(CommandEntry),
+            false);
+
     public bool EnableCommandNavigationShortcuts
     {
         get => (bool)GetValue(EnableCommandNavigationShortcutsProperty);
@@ -28,6 +35,12 @@ public class CommandEntry : Entry
     {
         get => (bool)GetValue(EnableNativeActivationFocusProperty);
         set => SetValue(EnableNativeActivationFocusProperty, value);
+    }
+
+    public bool KeepAsciiImeWhileFocused
+    {
+        get => (bool)GetValue(KeepAsciiImeWhileFocusedProperty);
+        set => SetValue(KeepAsciiImeWhileFocusedProperty, value);
     }
 
     public CommandEntry()

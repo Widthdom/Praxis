@@ -512,6 +512,7 @@
                             <controls:CommandEntry x:Name="ModalCommandEntry" Grid.Row="1" Grid.Column="1" Text="{Binding Editor.Command}" HeightRequest="40"
                                                    EnableCommandNavigationShortcuts="False"
                                                    EnableNativeActivationFocus="False"
+                                                   KeepAsciiImeWhileFocused="True"
                                                    HandlerChanged="ModalTextInput_HandlerChanged" />
                             <Button x:Name="CopyCommandButton" Grid.Row="1" Grid.Column="2" Text="{OnPlatform WinUI='&#xE8C8;', MacCatalyst='⧉'}" FontFamily="{OnPlatform WinUI='Segoe MDL2 Assets', MacCatalyst=''}"
                                     Command="{Binding CopyFieldCommand}"

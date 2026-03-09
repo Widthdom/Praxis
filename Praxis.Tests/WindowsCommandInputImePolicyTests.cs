@@ -35,6 +35,31 @@ public class WindowsCommandInputImePolicyTests
     }
 
     [Theory]
+    [InlineData(true, true, true)]
+    [InlineData(true, false, false)]
+    [InlineData(false, true, false)]
+    [InlineData(false, false, false)]
+    public void ShouldReassertAsciiImeMode_ReturnsExpectedValue(
+        bool isFocused,
+        bool keepAsciiImeWhileFocused,
+        bool expected)
+    {
+        var result = WindowsCommandInputImePolicy.ShouldReassertAsciiImeMode(
+            isFocused: isFocused,
+            keepAsciiImeWhileFocused: keepAsciiImeWhileFocused);
+
+        Assert.Equal(expected, result);
+    }
+
+    [Fact]
+    public void ResolveAsciiImeReassertInterval_ReturnsPositiveInterval()
+    {
+        var interval = WindowsCommandInputImePolicy.ResolveAsciiImeReassertInterval();
+
+        Assert.True(interval > TimeSpan.Zero);
+    }
+
+    [Theory]
     [InlineData(0x0000u, 0x0000u)]
     [InlineData(0x0001u, 0x0000u)]
     [InlineData(0x0002u, 0x0000u)]
