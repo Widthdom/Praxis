@@ -198,6 +198,7 @@ public partial class MainViewModel
             Y = Math.Max(0, GridSnapper.Snap(y)),
             Width = ButtonLayoutDefaults.Width,
             Height = ButtonLayoutDefaults.Height,
+            UseInvertedThemeColors = false,
             CreatedAtUtc = DateTime.UtcNow,
             UpdatedAtUtc = DateTime.UtcNow,
         };

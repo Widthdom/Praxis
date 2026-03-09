@@ -92,6 +92,7 @@ public partial class MainPage
             ModalFocusTarget.Arguments => IsModalFocusTargetActive(ModalArgumentsEntry),
             ModalFocusTarget.ClipWord => IsModalFocusTargetActive(ModalClipWordEditor),
             ModalFocusTarget.Note => IsModalFocusTargetActive(ModalNoteEditor),
+            ModalFocusTarget.InvertThemeColors => IsModalFocusTargetActive(ModalInvertThemeCheckBox),
             ModalFocusTarget.CancelButton => macPseudoFocusedModalTarget == ModalFocusTarget.CancelButton,
             ModalFocusTarget.SaveButton => macPseudoFocusedModalTarget == ModalFocusTarget.SaveButton,
             _ => false,
@@ -116,6 +117,8 @@ public partial class MainPage
                 return TryFocusModalVisual(ModalClipWordEditor);
             case ModalFocusTarget.Note:
                 return TryFocusModalVisual(ModalNoteEditor);
+            case ModalFocusTarget.InvertThemeColors:
+                return TryFocusModalVisual(ModalInvertThemeCheckBox);
             case ModalFocusTarget.CancelButton:
                 SetMacModalPseudoFocus(ModalFocusTarget.CancelButton);
                 return true;
@@ -674,6 +677,7 @@ public partial class MainPage
             ModalArgumentsEntry.Handler?.PlatformView as UIResponder,
             ModalClipWordEditor.Handler?.PlatformView as UIResponder,
             ModalNoteEditor.Handler?.PlatformView as UIResponder,
+            ModalInvertThemeCheckBox.Handler?.PlatformView as UIResponder,
             ModalCancelButton.Handler?.PlatformView as UIResponder,
             ModalSaveButton.Handler?.PlatformView as UIResponder,
             UIApplication.SharedApplication.Delegate as UIResponder,
@@ -1118,6 +1122,7 @@ public partial class MainPage
         ModalArgumentsEntry.Unfocus();
         ModalClipWordEditor.Unfocus();
         ModalNoteEditor.Unfocus();
+        ModalInvertThemeCheckBox.Unfocus();
 
         if (ModalGuidEntry.Handler?.PlatformView is UITextField guidField && guidField.IsFirstResponder)
         {
@@ -1152,6 +1157,12 @@ public partial class MainPage
         if (ModalNoteEditor.Handler?.PlatformView is UITextView noteField && noteField.IsFirstResponder)
         {
             noteField.ResignFirstResponder();
+        }
+
+        if (ModalInvertThemeCheckBox.Handler?.PlatformView is UIResponder invertThemeCheckBox &&
+            invertThemeCheckBox.IsFirstResponder)
+        {
+            invertThemeCheckBox.ResignFirstResponder();
         }
 
         ModalClipWordFocusUnderline.IsVisible = false;

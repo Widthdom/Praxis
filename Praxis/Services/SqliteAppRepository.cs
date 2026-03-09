@@ -349,9 +349,29 @@ public sealed class SqliteAppRepository : IAppRepository
                 await connection.CreateTableAsync<LaunchLogEntity>();
                 await connection.CreateTableAsync<AppSettingEntity>();
                 break;
+            case 2:
+                if (!await ColumnExistsAsync(
+                        connection,
+                        nameof(LauncherButtonEntity),
+                        nameof(LauncherButtonEntity.UseInvertedThemeColors)))
+                {
+                    await connection.ExecuteAsync(
+                        $"ALTER TABLE {nameof(LauncherButtonEntity)} " +
+                        $"ADD COLUMN {nameof(LauncherButtonEntity.UseInvertedThemeColors)} INTEGER NOT NULL DEFAULT 0;");
+                }
+
+                break;
             default:
                 throw new NotSupportedException($"Unknown schema migration target version: {targetVersion}");
         }
+    }
+
+    private static async Task<bool> ColumnExistsAsync(SQLiteAsyncConnection connection, string tableName, string columnName)
+    {
+        var count = await connection.ExecuteScalarAsync<int>(
+            $"SELECT COUNT(1) FROM pragma_table_info('{tableName}') WHERE name = ?;",
+            columnName);
+        return count > 0;
     }
 
     private SQLiteAsyncConnection Connection =>

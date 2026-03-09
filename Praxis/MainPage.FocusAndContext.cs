@@ -420,6 +420,7 @@ public partial class MainPage
         SetTabStop(ModalArgumentsEntry, editorEnabled);
         SetTabStop(ModalClipWordEditor, editorEnabled);
         SetTabStop(ModalNoteEditor, editorEnabled);
+        SetTabStop(ModalInvertThemeCheckBox, editorEnabled);
         SetTabStop(ModalCancelButton, editorEnabled);
         SetTabStop(ModalSaveButton, editorEnabled);
 

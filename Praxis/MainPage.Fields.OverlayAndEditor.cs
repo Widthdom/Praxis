@@ -7,8 +7,8 @@ public partial class MainPage
     // Modal editor sizing constants.
     private const double ModalSingleLineRowHeight = 40;
     private const double ModalRowSpacing = 8;
-    private const int ModalTotalRows = 7;
-    private const int ModalStaticRows = 5;
+    private const int ModalTotalRows = 8;
+    private const int ModalStaticRows = 6;
     private const double ModalScrollMaxHeightFallback = 460;
     private const double ModalScrollVerticalReserve = 260;
 

@@ -24,12 +24,14 @@ public class MainViewModelWorkflowIntegrationTests
         viewModel.Editor.ButtonText = "Build";
         viewModel.Editor.Tool = "echo";
         viewModel.Editor.Arguments = "v1";
+        viewModel.Editor.UseInvertedThemeColors = true;
 
         await viewModel.SaveEditorCommand.ExecuteAsync(null);
 
         var created = Assert.Single(await repository.GetButtonsAsync());
         Assert.Equal("Build", created.ButtonText);
         Assert.Equal("v1", created.Arguments);
+        Assert.True(created.UseInvertedThemeColors);
         Assert.Equal(1, syncNotifier.NotifyCount);
 
         var createdVm = Assert.Single(viewModel.VisibleButtons);
@@ -37,12 +39,14 @@ public class MainViewModelWorkflowIntegrationTests
         Assert.True(viewModel.IsEditorOpen);
         viewModel.Editor.ButtonText = "Build Updated";
         viewModel.Editor.Arguments = "v2";
+        viewModel.Editor.UseInvertedThemeColors = false;
 
         await viewModel.SaveEditorCommand.ExecuteAsync(null);
 
         var edited = Assert.Single(await repository.GetButtonsAsync());
         Assert.Equal("Build Updated", edited.ButtonText);
         Assert.Equal("v2", edited.Arguments);
+        Assert.False(edited.UseInvertedThemeColors);
         Assert.Equal(2, syncNotifier.NotifyCount);
 
         var editedVm = Assert.Single(viewModel.VisibleButtons);

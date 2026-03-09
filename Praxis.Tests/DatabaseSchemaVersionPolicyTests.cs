@@ -5,11 +5,19 @@ namespace Praxis.Tests;
 public class DatabaseSchemaVersionPolicyTests
 {
     [Fact]
-    public void ResolvePendingUpgradeVersions_ReturnsSingleUpgrade_WhenDatabaseIsUnversioned()
+    public void ResolvePendingUpgradeVersions_ReturnsAllUpgrades_WhenDatabaseIsUnversioned()
     {
         var result = DatabaseSchemaVersionPolicy.ResolvePendingUpgradeVersions(0);
 
-        Assert.Equal([1], result);
+        Assert.Equal([1, 2], result);
+    }
+
+    [Fact]
+    public void ResolvePendingUpgradeVersions_ReturnsSecondUpgrade_WhenDatabaseIsOnVersionOne()
+    {
+        var result = DatabaseSchemaVersionPolicy.ResolvePendingUpgradeVersions(1);
+
+        Assert.Equal([2], result);
     }
 
     [Fact]

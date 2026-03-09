@@ -39,6 +39,7 @@ public static class ButtonHistoryConsistencyPolicy
             Math.Abs(expected.Y - current.Y) < 0.0001 &&
             Math.Abs(expected.Width - current.Width) < 0.0001 &&
             Math.Abs(expected.Height - current.Height) < 0.0001 &&
+            expected.UseInvertedThemeColors == current.UseInvertedThemeColors &&
             expected.CreatedAtUtc == current.CreatedAtUtc;
     }
 }

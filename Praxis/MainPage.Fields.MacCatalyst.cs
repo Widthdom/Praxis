@@ -39,6 +39,7 @@ public partial class MainPage
         ModalFocusTarget.Arguments,
         ModalFocusTarget.ClipWord,
         ModalFocusTarget.Note,
+        ModalFocusTarget.InvertThemeColors,
         ModalFocusTarget.CancelButton,
         ModalFocusTarget.SaveButton,
     ];
@@ -78,6 +79,7 @@ public partial class MainPage
         Arguments,
         ClipWord,
         Note,
+        InvertThemeColors,
         CancelButton,
         SaveButton,
     }

@@ -21,6 +21,7 @@ public class ModelDefaultsTests
         Assert.Equal(0, record.Y);
         Assert.Equal(ButtonLayoutDefaults.Width, record.Width);
         Assert.Equal(ButtonLayoutDefaults.Height, record.Height);
+        Assert.False(record.UseInvertedThemeColors);
         Assert.Equal(DateTimeKind.Utc, record.CreatedAtUtc.Kind);
         Assert.Equal(DateTimeKind.Utc, record.UpdatedAtUtc.Kind);
     }
@@ -65,6 +66,7 @@ public class ModelDefaultsTests
             Y = 456.75,
             Width = 321.25,
             Height = 654.5,
+            UseInvertedThemeColors = true,
             CreatedAtUtc = new DateTime(2024, 01, 02, 03, 04, 05, DateTimeKind.Utc),
             UpdatedAtUtc = new DateTime(2024, 06, 07, 08, 09, 10, DateTimeKind.Utc),
         };
@@ -83,6 +85,7 @@ public class ModelDefaultsTests
         Assert.Equal(source.Y, copied.Y);
         Assert.Equal(source.Width, copied.Width);
         Assert.Equal(source.Height, copied.Height);
+        Assert.Equal(source.UseInvertedThemeColors, copied.UseInvertedThemeColors);
         Assert.Equal(source.CreatedAtUtc, copied.CreatedAtUtc);
         Assert.Equal(source.UpdatedAtUtc, copied.UpdatedAtUtc);
 
@@ -97,6 +100,7 @@ public class ModelDefaultsTests
         Assert.Equal(source.Y, cloned.Y);
         Assert.Equal(source.Width, cloned.Width);
         Assert.Equal(source.Height, cloned.Height);
+        Assert.Equal(source.UseInvertedThemeColors, cloned.UseInvertedThemeColors);
         Assert.Equal(source.CreatedAtUtc, cloned.CreatedAtUtc);
         Assert.Equal(source.UpdatedAtUtc, cloned.UpdatedAtUtc);
 

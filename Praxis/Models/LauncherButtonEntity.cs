@@ -23,6 +23,7 @@ public sealed class LauncherButtonEntity
         Y = source.Y;
         Width = source.Width;
         Height = source.Height;
+        UseInvertedThemeColors = source.UseInvertedThemeColors;
         CreatedAtUtc = source.CreatedAtUtc;
         UpdatedAtUtc = source.UpdatedAtUtc;
     }
@@ -39,6 +40,7 @@ public sealed class LauncherButtonEntity
     public double Y { get; set; }
     public double Width { get; set; } = ButtonLayoutDefaults.Width;
     public double Height { get; set; } = ButtonLayoutDefaults.Height;
+    public bool UseInvertedThemeColors { get; set; }
     public DateTime CreatedAtUtc { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAtUtc { get; set; } = DateTime.UtcNow;
 
@@ -56,6 +58,7 @@ public sealed class LauncherButtonEntity
             Y = Y,
             Width = Width,
             Height = Height,
+            UseInvertedThemeColors = UseInvertedThemeColors,
             CreatedAtUtc = CreatedAtUtc,
             UpdatedAtUtc = UpdatedAtUtc,
         };

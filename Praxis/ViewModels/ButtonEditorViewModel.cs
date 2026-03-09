@@ -21,6 +21,7 @@ public partial class ButtonEditorViewModel : ObservableObject
     [ObservableProperty] private double y;
     [ObservableProperty] private double width = ButtonLayoutDefaults.Width;
     [ObservableProperty] private double height = ButtonLayoutDefaults.Height;
+    [ObservableProperty] private bool useInvertedThemeColors;
 
     public static ButtonEditorViewModel FromRecord(LauncherButtonRecord record, bool isExistingRecord = true)
         => new()
@@ -40,6 +41,7 @@ public partial class ButtonEditorViewModel : ObservableObject
             Y = record.Y,
             Width = record.Width,
             Height = record.Height,
+            UseInvertedThemeColors = record.UseInvertedThemeColors,
         };
 
     public LauncherButtonRecord ToRecord() => new()
@@ -55,6 +57,7 @@ public partial class ButtonEditorViewModel : ObservableObject
         Y = Y,
         Width = Width <= 0 ? ButtonLayoutDefaults.Width : Width,
         Height = Height <= 0 ? ButtonLayoutDefaults.Height : Height,
+        UseInvertedThemeColors = UseInvertedThemeColors,
         CreatedAtUtc = OriginalCreatedAtUtc == default ? DateTime.UtcNow : OriginalCreatedAtUtc,
         UpdatedAtUtc = DateTime.UtcNow,
     };

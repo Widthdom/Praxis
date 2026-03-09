@@ -92,6 +92,12 @@ public partial class MainPage
 #endif
     }
 
+    private void ModalInvertThemeToggle_Tapped(object? sender, TappedEventArgs e)
+    {
+        viewModel.Editor.UseInvertedThemeColors = !viewModel.Editor.UseInvertedThemeColors;
+        ModalInvertThemeCheckBox.Focus();
+    }
+
     private void ModalGuidEntry_HandlerChanged(object? sender, EventArgs e)
     {
 #if MACCATALYST
@@ -1350,6 +1356,7 @@ public partial class MainPage
             IsWindowsTextBoxFocused(modalArgumentsTextBox) ||
             IsWindowsTextBoxFocused(modalClipWordTextBox) ||
             IsWindowsTextBoxFocused(modalNoteTextBox) ||
+            IsCheckBoxFocused(ModalInvertThemeCheckBox) ||
             IsButtonFocused(ModalCancelButton) ||
             IsButtonFocused(ModalSaveButton);
     }
@@ -1365,6 +1372,23 @@ public partial class MainPage
     {
         return textBox is not null &&
             textBox.FocusState != Microsoft.UI.Xaml.FocusState.Unfocused;
+    }
+
+    private static bool IsCheckBoxFocused(Microsoft.Maui.Controls.CheckBox checkBox)
+    {
+        if (checkBox.IsFocused)
+        {
+            return true;
+        }
+
+#if WINDOWS
+        if (checkBox.Handler?.PlatformView is Microsoft.UI.Xaml.Controls.Control control)
+        {
+            return control.FocusState != Microsoft.UI.Xaml.FocusState.Unfocused;
+        }
+#endif
+
+        return false;
     }
 
     private void PageNativeElement_KeyDown(object sender, Microsoft.UI.Xaml.Input.KeyRoutedEventArgs e)

@@ -287,6 +287,17 @@
                                         <DataTrigger TargetType="Border" Binding="{Binding IsSelected}" Value="True">
                                             <Setter Property="BackgroundColor" Value="{AppThemeBinding Light=#DCDCDC, Dark=#505050}" />
                                         </DataTrigger>
+                                        <DataTrigger TargetType="Border" Binding="{Binding UseInvertedThemeColors}" Value="True">
+                                            <Setter Property="Stroke" Value="{AppThemeBinding Light=#545454, Dark=#B6B6B6}" />
+                                            <Setter Property="BackgroundColor" Value="{AppThemeBinding Light=#363636, Dark=#FFFFFF}" />
+                                        </DataTrigger>
+                                        <MultiTrigger TargetType="Border">
+                                            <MultiTrigger.Conditions>
+                                                <BindingCondition Binding="{Binding IsSelected}" Value="True" />
+                                                <BindingCondition Binding="{Binding UseInvertedThemeColors}" Value="True" />
+                                            </MultiTrigger.Conditions>
+                                            <Setter Property="BackgroundColor" Value="{AppThemeBinding Light=#505050, Dark=#DCDCDC}" />
+                                        </MultiTrigger>
                                     </Border.Triggers>
                                     <Border.GestureRecognizers>
                                         <PanGestureRecognizer PanUpdated="Draggable_PanUpdated" />
@@ -304,7 +315,13 @@
                                                Style="{StaticResource PlacementButtonTextLabelStyle}"
                                                TextColor="{AppThemeBinding Light=#1A1A1A, Dark=#F2F2F2}"
                                                HorizontalTextAlignment="Center"
-                                               VerticalTextAlignment="Center" />
+                                               VerticalTextAlignment="Center">
+                                            <Label.Triggers>
+                                                <DataTrigger TargetType="Label" Binding="{Binding UseInvertedThemeColors}" Value="True">
+                                                    <Setter Property="TextColor" Value="{AppThemeBinding Light=#F2F2F2, Dark=#1A1A1A}" />
+                                                </DataTrigger>
+                                            </Label.Triggers>
+                                        </Label>
                                     </Grid>
                                 </Border>
                             </DataTemplate>
@@ -364,6 +381,12 @@
                                         WidthRequest="{x:Static corelogic:ButtonLayoutDefaults.Width}"
                                         HeightRequest="{x:Static corelogic:ButtonLayoutDefaults.Height}"
                                         Padding="0">
+                                    <Border.Triggers>
+                                        <DataTrigger TargetType="Border" Binding="{Binding UseInvertedThemeColors}" Value="True">
+                                            <Setter Property="Stroke" Value="{AppThemeBinding Light=#545454, Dark=#B6B6B6}" />
+                                            <Setter Property="BackgroundColor" Value="{AppThemeBinding Light=#363636, Dark=#FFFFFF}" />
+                                        </DataTrigger>
+                                    </Border.Triggers>
                                     <Border.Behaviors>
                                         <behaviors:MiddleClickBehavior Command="{Binding Source={x:Reference RootPage}, Path=BindingContext.OpenEditorCommand}" />
                                     </Border.Behaviors>
@@ -381,7 +404,13 @@
                                                Style="{StaticResource PlacementButtonTextLabelStyle}"
                                                TextColor="{AppThemeBinding Light=#1A1A1A, Dark=#F2F2F2}"
                                                HorizontalTextAlignment="Center"
-                                               VerticalTextAlignment="Center" />
+                                               VerticalTextAlignment="Center">
+                                            <Label.Triggers>
+                                                <DataTrigger TargetType="Label" Binding="{Binding UseInvertedThemeColors}" Value="True">
+                                                    <Setter Property="TextColor" Value="{AppThemeBinding Light=#F2F2F2, Dark=#1A1A1A}" />
+                                                </DataTrigger>
+                                            </Label.Triggers>
+                                        </Label>
                                     </Grid>
                                 </Border>
                             </DataTemplate>
@@ -505,7 +534,7 @@
                     <ScrollView x:Name="EditorFieldsScrollView"
                                 Grid.Row="0"
                                 VerticalOptions="Start">
-                        <Grid ColumnDefinitions="140,*,44" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto" ColumnSpacing="8" RowSpacing="8">
+                        <Grid ColumnDefinitions="140,*,44" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto" ColumnSpacing="8" RowSpacing="8">
                             <Label Grid.Row="0" Grid.Column="0" Text="GUID" VerticalTextAlignment="Center" HeightRequest="40" />
                             <Entry x:Name="ModalGuidEntry" Grid.Row="0" Grid.Column="1" Text="{Binding Editor.GuidText}" IsReadOnly="{OnPlatform Default=True, MacCatalyst=False}" HeightRequest="40" HandlerChanged="ModalGuidEntry_HandlerChanged" />
                             <Button x:Name="CopyGuidButton" Grid.Row="0" Grid.Column="2" Text="{OnPlatform WinUI='&#xE8C8;', MacCatalyst='⧉'}" FontFamily="{OnPlatform WinUI='Segoe MDL2 Assets', MacCatalyst=''}"
@@ -627,6 +656,57 @@
                                     Command="{Binding CopyFieldCommand}"
                                     CommandParameter="{Binding Editor.Note}" HeightRequest="40" WidthRequest="40" Padding="0" VerticalOptions="Center"
                                     Clicked="CopyIconButton_Clicked" />
+
+                            <Label Grid.Row="7" Grid.Column="0" Text="Invert Theme" VerticalTextAlignment="Center" HeightRequest="40" />
+                            <HorizontalStackLayout Grid.Row="7" Grid.Column="1" Spacing="8" VerticalOptions="Center">
+                                <Grid WidthRequest="18" HeightRequest="18" VerticalOptions="Center">
+                                    <CheckBox x:Name="ModalInvertThemeCheckBox"
+                                              IsChecked="{Binding Editor.UseInvertedThemeColors}"
+                                              Focused="ModalEditorField_Focused"
+                                              Color="{AppThemeBinding Light=#1A1A1A, Dark=#F2F2F2}"
+                                              Opacity="0"
+                                              WidthRequest="18"
+                                              HeightRequest="18"
+                                              VerticalOptions="Center"
+                                              HorizontalOptions="Center" />
+                                    <Grid WidthRequest="18"
+                                          HeightRequest="18"
+                                          VerticalOptions="Center"
+                                          HorizontalOptions="Center">
+                                        <Grid.GestureRecognizers>
+                                            <TapGestureRecognizer Tapped="ModalInvertThemeToggle_Tapped" />
+                                        </Grid.GestureRecognizers>
+                                        <BoxView Margin="1"
+                                                 Color="{AppThemeBinding Light=#FFFFFF, Dark=#2A2A2A}" />
+                                        <BoxView IsVisible="{Binding Editor.UseInvertedThemeColors}"
+                                                 Margin="1"
+                                                 Color="{AppThemeBinding Light=#111111, Dark=#F2F2F2}" />
+                                        <BoxView HeightRequest="1"
+                                                 VerticalOptions="Start"
+                                                 Color="{AppThemeBinding Light=#CECECE, Dark=#4E4E4E}" />
+                                        <BoxView HeightRequest="1"
+                                                 VerticalOptions="End"
+                                                 Color="{AppThemeBinding Light=#CECECE, Dark=#4E4E4E}" />
+                                        <BoxView WidthRequest="1"
+                                                 HorizontalOptions="Start"
+                                                 Color="{AppThemeBinding Light=#CECECE, Dark=#4E4E4E}" />
+                                        <BoxView WidthRequest="1"
+                                                 HorizontalOptions="End"
+                                                 Color="{AppThemeBinding Light=#CECECE, Dark=#4E4E4E}" />
+                                        <shapes:Polyline IsVisible="{Binding Editor.UseInvertedThemeColors}"
+                                                         Points="1.4,5.6 3.5,8 8.9,2.1"
+                                                         Stroke="{AppThemeBinding Light=#F2F2F2, Dark=#111111}"
+                                                         StrokeThickness="2"
+                                                         StrokeLineCap="Round"
+                                                         StrokeLineJoin="Round"
+                                                         HorizontalOptions="Center"
+                                                         VerticalOptions="Center" />
+                                    </Grid>
+                                </Grid>
+                                <Label Text="Use opposite theme colors for this button"
+                                       VerticalTextAlignment="Center"
+                                       LineBreakMode="TailTruncation" />
+                            </HorizontalStackLayout>
                         </Grid>
                     </ScrollView>
 

@@ -19,8 +19,13 @@ Authoritative implementation points:
 Notes:
 - `SqliteAppRepository.InitializeAsync` manages schema version by `PRAGMA user_version`.
 - Startup applies each pending migration step in order (`current + 1 .. CurrentVersion`) and bumps `user_version` after each step completes.
-- Current schema version: `1`
+- Current schema version: `2`
 - Version `1` migration creates the current three tables with `CreateTableAsync<T>()`.
+- Version `2` migration adds `UseInvertedThemeColors` column to `LauncherButtonEntity` (safe on already-updated/newly-created tables).
+- Automatic startup migration examples:
+  - `user_version=0` -> apply `v1`, then `v2`
+  - `user_version=1` -> apply `v2`
+  - `user_version=2` -> no migration
 - `DateTime` columns are mapped by `sqlite-net-pcl` with provider default settings used by `SQLiteAsyncConnection(dbPath)`.
 - `buttons.sync` is stored separately for multi-window signaling:
   - Windows: `%USERPROFILE%/AppData/Local/Praxis/buttons.sync`
@@ -46,6 +51,7 @@ erDiagram
         float Y
         float Width
         float Height
+        integer UseInvertedThemeColors
         datetime CreatedAtUtc
         datetime UpdatedAtUtc
     }
@@ -85,6 +91,7 @@ Purpose: launcher button master records (placement, command, metadata).
 | `Y` | `float` | Yes | No | Canvas Y position |
 | `Width` | `float` | Yes | No | Button width |
 | `Height` | `float` | Yes | No | Button height |
+| `UseInvertedThemeColors` | `integer` | Yes | No | Per-button theme inversion flag (`0`=normal, `1`=inverted) |
 | `CreatedAtUtc` | `datetime` | Yes | No | Created timestamp (UTC) |
 | `UpdatedAtUtc` | `datetime` | Yes | No | Last updated timestamp (UTC) |
 
@@ -157,8 +164,13 @@ Praxis が使う SQLite テーブル設計を明文化します。
 補足:
 - `InitializeAsync` は `PRAGMA user_version` でスキーマバージョンを管理します。
 - 起動時に未適用バージョン（`current + 1 .. CurrentVersion`）を順次適用し、各ステップ完了後に `user_version` を更新します。
-- 現在のスキーマバージョン: `1`
+- 現在のスキーマバージョン: `2`
 - バージョン `1` のマイグレーションで現行 3 テーブルを `CreateTableAsync<T>()` で作成します。
+- バージョン `2` のマイグレーションで `LauncherButtonEntity` に `UseInvertedThemeColors` 列を追加します（既存/新規DBのどちらでも安全に適用）。
+- 起動時の自動移行例:
+  - `user_version=0` -> `v1` と `v2` を順に適用
+  - `user_version=1` -> `v2` のみ適用
+  - `user_version=2` -> 移行なし
 - `DateTime` 列は `SQLiteAsyncConnection(dbPath)` の既定設定に従って `sqlite-net-pcl` 側でマップされます。
 - `buttons.sync` は複数ウィンドウ通知用の別ファイルとして保存します。
   - Windows: `%USERPROFILE%/AppData/Local/Praxis/buttons.sync`

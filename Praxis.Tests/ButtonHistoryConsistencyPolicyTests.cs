@@ -87,4 +87,31 @@ public class ButtonHistoryConsistencyPolicyTests
 
         Assert.False(ButtonHistoryConsistencyPolicy.MatchesExpectedVersion(expected, current));
     }
+
+    [Fact]
+    public void MatchesExpectedVersion_ReturnsFalse_WhenInvertedThemeFlagDiffers()
+    {
+        var expected = new LauncherButtonRecord
+        {
+            Id = Guid.Parse("E8C80058-6709-4CF2-8E57-D9E18A6B9965"),
+            Command = "open",
+            ButtonText = "Docs",
+            Tool = "cmd",
+            Arguments = "/c start",
+            ClipText = "clip",
+            Note = "note",
+            X = 12,
+            Y = 24,
+            Width = 120,
+            Height = 44,
+            UseInvertedThemeColors = false,
+            CreatedAtUtc = new DateTime(2025, 04, 05, 6, 7, 8, DateTimeKind.Utc),
+            UpdatedAtUtc = new DateTime(2025, 04, 05, 6, 7, 8, DateTimeKind.Utc),
+        };
+        var current = expected.Clone();
+        current.UseInvertedThemeColors = true;
+        current.UpdatedAtUtc = expected.UpdatedAtUtc.AddSeconds(1);
+
+        Assert.False(ButtonHistoryConsistencyPolicy.MatchesExpectedVersion(expected, current));
+    }
 }

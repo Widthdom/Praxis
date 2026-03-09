@@ -39,6 +39,18 @@ public partial class LauncherButtonItemViewModel : ObservableObject
     public double Y { get => model.Y; set { model.Y = value; OnPropertyChanged(); OnPropertyChanged(nameof(LayoutBounds)); } }
     public double Width { get => model.Width; set { model.Width = value; OnPropertyChanged(); OnPropertyChanged(nameof(LayoutBounds)); } }
     public double Height { get => model.Height; set { model.Height = value; OnPropertyChanged(); OnPropertyChanged(nameof(LayoutBounds)); } }
+    public bool UseInvertedThemeColors
+    {
+        get => model.UseInvertedThemeColors;
+        set
+        {
+            if (model.UseInvertedThemeColors != value)
+            {
+                model.UseInvertedThemeColors = value;
+                OnPropertyChanged();
+            }
+        }
+    }
 
     public Rect LayoutBounds => new(X, Y, Width, Height);
 
@@ -57,6 +69,7 @@ public partial class LauncherButtonItemViewModel : ObservableObject
         Y = model.Y,
         Width = model.Width,
         Height = model.Height,
+        UseInvertedThemeColors = model.UseInvertedThemeColors,
         CreatedAtUtc = model.CreatedAtUtc,
         UpdatedAtUtc = DateTime.UtcNow,
     };
@@ -73,6 +86,7 @@ public partial class LauncherButtonItemViewModel : ObservableObject
         model.Y = source.Y;
         model.Width = source.Width;
         model.Height = source.Height;
+        model.UseInvertedThemeColors = source.UseInvertedThemeColors;
         model.CreatedAtUtc = source.CreatedAtUtc;
         model.UpdatedAtUtc = source.UpdatedAtUtc;
         OnPropertyChanged(string.Empty);

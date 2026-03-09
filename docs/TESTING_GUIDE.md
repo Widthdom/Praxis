@@ -41,13 +41,13 @@ dotnet test Praxis.Tests/Praxis.Tests.csproj --collect:"XPlat Code Coverage"
 - `CoreLogicEdgeCaseTests.cs`: parser/snapper/matcher/retention edge cases.
 - `CoreLogicPerformanceSafetyTests.cs`: regression-safety checks for defaults, bounds, and conflict detection (including timestamp-only drift vs material-content conflict cases).
 - `PolicyTruthTableTests.cs`: full truth-table validation for focus-related policy combinations.
-- `MainPageStructureTests.cs`: source-structure guard for `MainPage` partial split (field declarations are grouped in `MainPage.Fields.*.cs` and not left in `MainPage.xaml.cs`), plus an XAML guard for placement/dock button-label font sizing (`12` on all platforms).
+- `MainPageStructureTests.cs`: source-structure guard for `MainPage` partial split (field declarations are grouped in `MainPage.Fields.*.cs` and not left in `MainPage.xaml.cs`), plus XAML guards for placement/dock button-label font sizing (`12` on all platforms) and inverted-theme UI wiring (`UseInvertedThemeColors` triggers + editor checkbox binding + flat-square checkbox rendering hooks + text-field-matched border/background colors + equal-thickness edge line settings + polyline checkmark settings).
 - `MainViewModelWorkflowIntegrationTests.cs`: workflow integration tests for `create -> edit -> execute -> external sync` plus command-suggestion selection behavior (`popup opens with no preselected row`, then first `Down` selects index `0`) using linked `MainViewModel` sources and test doubles for repository/executor/sync services.
 - `CiCoverageWorkflowPolicyTests.cs`: workflow-configuration guard that verifies CI test step collects `XPlat Code Coverage` and uploads Cobertura artifact output.
 
 ### Models / Defaults
 - `ModelDefaultsTests.cs`: default values and initialization guarantees for `LauncherButtonRecord` and `LaunchLogEntry`.
-  - Includes copy-constructor / `Clone()` full-field copy regression checks for `LauncherButtonRecord`.
+  - Includes copy-constructor / `Clone()` full-field copy regression checks for `LauncherButtonRecord` (including `UseInvertedThemeColors`).
 
 ### Command Execution / Matching / Suggestions
 - `CommandLineBuilderTests.cs`: null/whitespace handling and normalization for command-line construction.
@@ -60,7 +60,7 @@ dotnet test Praxis.Tests/Praxis.Tests.csproj --collect:"XPlat Code Coverage"
 
 ### Undo / Redo
 - `ActionHistoryTests.cs`: command-pattern history stack behavior (undo/redo transitions, failed-apply recovery, capacity trimming).
-- `ButtonHistoryConsistencyPolicyTests.cs`: optimistic-lock version-match checks used when applying undo/redo mutations.
+- `ButtonHistoryConsistencyPolicyTests.cs`: optimistic-lock version-match checks used when applying undo/redo mutations (including mismatch detection when `UseInvertedThemeColors` differs).
 
 ### Input / Keyboard / Focus Policies
 - `CommandEntryBehaviorPolicyTests.cs`: command entry role flags for navigation shortcuts and activation-time native refocus.
@@ -94,7 +94,7 @@ dotnet test Praxis.Tests/Praxis.Tests.csproj --collect:"XPlat Code Coverage"
 ### Launch / Path / Storage / Reflection Utilities
 - `LaunchTargetResolverTests.cs`: HTTP(S)/file/path fallback target resolution and env expansion.
 - `AppStoragePathLayoutResolverTests.cs`: platform-specific storage layout policy.
-- `DatabaseSchemaVersionPolicyTests.cs`: schema-version upgrade-path resolution (`PRAGMA user_version` migration sequencing, unsupported/future version rejection).
+- `DatabaseSchemaVersionPolicyTests.cs`: schema-version upgrade-path resolution (`PRAGMA user_version` migration sequencing, unsupported/future version rejection), including v1->v2 and unversioned->current multi-step upgrades.
 - `NonPublicPropertySetterTests.cs`: reflection-based writable property assignment behavior.
 
 ## CI Alignment
@@ -148,13 +148,13 @@ dotnet test Praxis.Tests/Praxis.Tests.csproj --collect:"XPlat Code Coverage"
 - `CoreLogicEdgeCaseTests.cs`: パーサ/スナッパ/マッチャー/保持期間の境界ケース。
 - `CoreLogicPerformanceSafetyTests.cs`: 既定値・境界・競合判定（時刻差分のみは非競合、内容差分は競合）の回帰安全性確認。
 - `PolicyTruthTableTests.cs`: フォーカス系ポリシーの真理値表を網羅検証。
-- `MainPageStructureTests.cs`: `MainPage` の partial 分割構造を保護するソース構成テスト（フィールド宣言を `MainPage.Fields.*.cs` に集約し、`MainPage.xaml.cs` に残さないことを検証）に加え、配置領域/Dock ボタン文言フォント（全プラットフォームで `12`）の XAML 仕様ガードも行う。
+- `MainPageStructureTests.cs`: `MainPage` の partial 分割構造を保護するソース構成テスト（フィールド宣言を `MainPage.Fields.*.cs` に集約し、`MainPage.xaml.cs` に残さないことを検証）に加え、配置領域/Dock ボタン文言フォント（全プラットフォームで `12`）と反転配色UI配線（`UseInvertedThemeColors` トリガー + 編集モーダルチェックボックス binding + フラット正方形チェック表示フック + テキスト入力欄準拠の枠/背景色 + 四辺同一太さの線設定 + ポリラインチェックマーク設定）の XAML 仕様ガードも行う。
 - `MainViewModelWorkflowIntegrationTests.cs`: `create -> edit -> execute -> external sync` を通すワークフロー統合テストに加え、command 候補の選択仕様（ポップアップ表示直後は未選択、最初の `↓` で index `0` 選択）も検証する。`MainViewModel` の実ソースをリンクし、リポジトリ/実行器/同期通知はテストダブルで結合検証する。
 - `CiCoverageWorkflowPolicyTests.cs`: CI のテスト手順が `XPlat Code Coverage` 収集と Cobertura アーティファクト出力を維持しているかを検証するワークフロー設定ガード。
 
 ### モデル / 既定値
 - `ModelDefaultsTests.cs`: `LauncherButtonRecord` / `LaunchLogEntry` の既定値・初期化保証。
-  - `LauncherButtonRecord` のコピーコンストラクタ / `Clone()` が全フィールドを複製することを回帰検証。
+  - `LauncherButtonRecord` のコピーコンストラクタ / `Clone()` が全フィールド（`UseInvertedThemeColors` 含む）を複製することを回帰検証。
 
 ### コマンド実行 / 一致 / 候補
 - `CommandLineBuilderTests.cs`: コマンドライン構築の null/空白処理と正規化。
@@ -167,7 +167,7 @@ dotnet test Praxis.Tests/Praxis.Tests.csproj --collect:"XPlat Code Coverage"
 
 ### Undo / Redo
 - `ActionHistoryTests.cs`: コマンドパターン履歴スタックの挙動（Undo/Redo 遷移、失敗時ロールバック、容量トリム）。
-- `ButtonHistoryConsistencyPolicyTests.cs`: Undo/Redo 適用時に使う楽観的ロック版一致判定（`UpdatedAtUtc`）。
+- `ButtonHistoryConsistencyPolicyTests.cs`: Undo/Redo 適用時に使う楽観的ロック版一致判定（`UpdatedAtUtc`）。`UseInvertedThemeColors` 差分を内容差分として正しく不一致判定することも検証。
 
 ### 入力 / キーボード / フォーカス
 - `CommandEntryBehaviorPolicyTests.cs`: command 入力欄の候補ショートカット有効化/アクティブ化時ネイティブ再フォーカス有効化ポリシー。
@@ -201,7 +201,7 @@ dotnet test Praxis.Tests/Praxis.Tests.csproj --collect:"XPlat Code Coverage"
 ### 起動 / パス / ストレージ / リフレクション補助
 - `LaunchTargetResolverTests.cs`: HTTP(S)/ファイル/パスのフォールバック起動先解決と環境変数展開。
 - `AppStoragePathLayoutResolverTests.cs`: プラットフォーム別ストレージ配置ルール。
-- `DatabaseSchemaVersionPolicyTests.cs`: スキーマバージョンのアップグレード経路解決（`PRAGMA user_version` の段階適用順序、未対応/未来バージョン拒否）を検証。
+- `DatabaseSchemaVersionPolicyTests.cs`: スキーマバージョンのアップグレード経路解決（`PRAGMA user_version` の段階適用順序、未対応/未来バージョン拒否）を検証。`v1 -> v2` と `未バージョン -> 現行` の段階適用も確認する。
 - `NonPublicPropertySetterTests.cs`: リフレクションによる書き込み可能プロパティ設定。
 
 ## CI との整合

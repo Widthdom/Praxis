@@ -61,6 +61,26 @@ public class MainPageStructureTests
         Assert.Equal(2, CountOccurrences(xaml, "Style=\"{StaticResource PlacementButtonTextLabelStyle}\""));
     }
 
+    [Fact]
+    public void MainPage_InvertedThemeButtonUi_IsWiredInPlacementDockAndEditor()
+    {
+        var root = ResolveRepositoryRoot();
+        var xaml = File.ReadAllText(Path.Combine(root, "Praxis", "MainPage.xaml"));
+
+        Assert.Contains("Binding=\"{Binding UseInvertedThemeColors}\"", xaml);
+        Assert.Contains("Text=\"Invert Theme\"", xaml);
+        Assert.Contains("IsChecked=\"{Binding Editor.UseInvertedThemeColors}\"", xaml);
+        Assert.Contains("Opacity=\"0\"", xaml);
+        Assert.Contains("Color=\"{AppThemeBinding Light=#FFFFFF, Dark=#2A2A2A}\"", xaml);
+        Assert.Contains("Color=\"{AppThemeBinding Light=#CECECE, Dark=#4E4E4E}\"", xaml);
+        Assert.Contains("HeightRequest=\"1\"", xaml);
+        Assert.Contains("WidthRequest=\"1\"", xaml);
+        Assert.Contains("<shapes:Polyline", xaml);
+        Assert.Contains("Points=\"1.4,5.6 3.5,8 8.9,2.1\"", xaml);
+        Assert.Contains("StrokeThickness=\"2\"", xaml);
+        Assert.Contains("Tapped=\"ModalInvertThemeToggle_Tapped\"", xaml);
+    }
+
     private static string ResolveRepositoryRoot()
     {
         var current = new DirectoryInfo(AppContext.BaseDirectory);
