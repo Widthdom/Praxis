@@ -252,7 +252,6 @@ public partial class MainViewModel
 
             CommandSuggestionPopupHeight = Math.Min(280, Math.Max(44, 12 + CommandSuggestions.Count * 38));
             IsCommandSuggestionOpen = true;
-            SetSelectedSuggestionIndex(0);
         }
         catch
         {

@@ -71,6 +71,49 @@ public class MainViewModelWorkflowIntegrationTests
         Assert.Equal("Build Synced", Assert.Single(viewModel.VisibleButtons).ButtonText);
     }
 
+    [Fact]
+    public async Task CommandSuggestions_DoNotAutoSelect_AndDownSelectsFirstItem()
+    {
+        var repository = new InMemoryAppRepository();
+        await repository.UpsertButtonAsync(new LauncherButtonRecord
+        {
+            Id = Guid.NewGuid(),
+            Command = "build",
+            ButtonText = "Build",
+            Tool = "echo",
+            Arguments = "one",
+        });
+        await repository.UpsertButtonAsync(new LauncherButtonRecord
+        {
+            Id = Guid.NewGuid(),
+            Command = "bundle",
+            ButtonText = "Bundle",
+            Tool = "echo",
+            Arguments = "two",
+        });
+
+        var executor = new RecordingCommandExecutor((true, "ok"));
+        var clipboard = new RecordingClipboardService();
+        var theme = new RecordingThemeService();
+        var syncNotifier = new TestStateSyncNotifier();
+        var viewModel = new MainViewModel(repository, executor, clipboard, theme, syncNotifier);
+        await viewModel.InitializeAsync();
+
+        viewModel.CommandInput = "bu";
+        await WaitUntilAsync(() => viewModel.IsCommandSuggestionOpen && viewModel.CommandSuggestions.Count == 2);
+
+        Assert.Equal(-1, viewModel.SelectedCommandSuggestionIndex);
+        Assert.Null(viewModel.SelectedCommandSuggestion);
+        Assert.All(viewModel.CommandSuggestions, x => Assert.False(x.IsSelected));
+
+        viewModel.MoveSuggestionDownCommand.Execute(null);
+
+        Assert.Equal(0, viewModel.SelectedCommandSuggestionIndex);
+        Assert.NotNull(viewModel.SelectedCommandSuggestion);
+        Assert.Same(viewModel.CommandSuggestions[0], viewModel.SelectedCommandSuggestion);
+        Assert.True(viewModel.CommandSuggestions[0].IsSelected);
+    }
+
     private static async Task WaitUntilAsync(Func<bool> condition, int timeoutMs = 2000)
     {
         var started = DateTime.UtcNow;
