@@ -67,7 +67,52 @@ public class CommandEntryHandler : EntryHandler
         }
 
         _ = TryApplyAlphanumericInputScope(textBox);
-        ForceAsciiImeModeOnce(textBox);
+        ApplyAsciiImeModeForFocus(textBox);
+    }
+
+    private static void ApplyAsciiImeModeForFocus(TextBox textBox)
+    {
+        var delays = WindowsCommandInputImePolicy.ResolveAsciiImeNudgeDelays(
+            isFocused: textBox.FocusState != FocusState.Unfocused);
+
+        foreach (var delay in delays)
+        {
+            if (delay <= TimeSpan.Zero)
+            {
+                ForceAsciiImeModeOnce(textBox);
+                continue;
+            }
+
+            _ = QueueAsciiImeModeNudge(textBox, delay);
+        }
+    }
+
+    private static async Task QueueAsciiImeModeNudge(TextBox textBox, TimeSpan delay)
+    {
+        try
+        {
+            await Task.Delay(delay).ConfigureAwait(false);
+        }
+        catch
+        {
+            return;
+        }
+
+        var dispatcherQueue = textBox.DispatcherQueue;
+        if (dispatcherQueue is null)
+        {
+            return;
+        }
+
+        _ = dispatcherQueue.TryEnqueue(() =>
+        {
+            if (textBox.FocusState == FocusState.Unfocused)
+            {
+                return;
+            }
+
+            ForceAsciiImeModeOnce(textBox);
+        });
     }
 
     private static void ForceAsciiImeModeOnce(TextBox textBox)

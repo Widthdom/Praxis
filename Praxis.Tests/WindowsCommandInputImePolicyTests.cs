@@ -16,6 +16,24 @@ public class WindowsCommandInputImePolicyTests
         Assert.False(WindowsCommandInputImePolicy.ShouldForceAsciiImeMode(isFocused: false));
     }
 
+    [Fact]
+    public void ResolveAsciiImeNudgeDelays_ReturnsImmediateAndDelayedAttempts_WhenFocused()
+    {
+        var delays = WindowsCommandInputImePolicy.ResolveAsciiImeNudgeDelays(isFocused: true);
+
+        Assert.Equal(2, delays.Count);
+        Assert.Equal(TimeSpan.Zero, delays[0]);
+        Assert.True(delays[1] > TimeSpan.Zero);
+    }
+
+    [Fact]
+    public void ResolveAsciiImeNudgeDelays_ReturnsNoAttempts_WhenNotFocused()
+    {
+        var delays = WindowsCommandInputImePolicy.ResolveAsciiImeNudgeDelays(isFocused: false);
+
+        Assert.Empty(delays);
+    }
+
     [Theory]
     [InlineData(0x0000u, 0x0000u)]
     [InlineData(0x0001u, 0x0000u)]

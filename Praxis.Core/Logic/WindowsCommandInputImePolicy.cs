@@ -7,7 +7,16 @@ public static class WindowsCommandInputImePolicy
     private const uint ImeConversionFullShape = 0x0008;
     private const uint ImeConversionCharCode = 0x0020;
     private const uint ImeConversionHanjiConvert = 0x0040;
+    private static readonly TimeSpan[] asciiImeNudgeDelays =
+    [
+        TimeSpan.Zero,
+        TimeSpan.FromMilliseconds(28),
+    ];
+
     public static bool ShouldForceAsciiImeMode(bool isFocused) => isFocused;
+
+    public static IReadOnlyList<TimeSpan> ResolveAsciiImeNudgeDelays(bool isFocused)
+        => isFocused ? asciiImeNudgeDelays : [];
 
     public static uint ResolveAsciiConversionMode(uint conversionMode)
         => conversionMode & ~(ImeConversionNative |
