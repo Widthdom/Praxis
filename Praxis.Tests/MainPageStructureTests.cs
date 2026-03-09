@@ -50,6 +50,17 @@ public class MainPageStructureTests
         }
     }
 
+    [Fact]
+    public void MainPage_PlacementAndDockButtonLabels_UseSmallerFontOnWindowsAndMac()
+    {
+        var root = ResolveRepositoryRoot();
+        var xaml = File.ReadAllText(Path.Combine(root, "Praxis", "MainPage.xaml"));
+
+        Assert.Contains("<Style x:Key=\"PlacementButtonTextLabelStyle\"", xaml);
+        Assert.Contains("<Setter Property=\"FontSize\" Value=\"12\" />", xaml);
+        Assert.Equal(2, CountOccurrences(xaml, "Style=\"{StaticResource PlacementButtonTextLabelStyle}\""));
+    }
+
     private static string ResolveRepositoryRoot()
     {
         var current = new DirectoryInfo(AppContext.BaseDirectory);
@@ -64,5 +75,19 @@ public class MainPageStructureTests
         }
 
         throw new InvalidOperationException("Could not locate repository root from test runtime base directory.");
+    }
+
+    private static int CountOccurrences(string source, string value)
+    {
+        var count = 0;
+        var index = 0;
+
+        while ((index = source.IndexOf(value, index, StringComparison.Ordinal)) >= 0)
+        {
+            count++;
+            index += value.Length;
+        }
+
+        return count;
     }
 }

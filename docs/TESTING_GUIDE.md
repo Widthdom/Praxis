@@ -41,7 +41,7 @@ dotnet test Praxis.Tests/Praxis.Tests.csproj --collect:"XPlat Code Coverage"
 - `CoreLogicEdgeCaseTests.cs`: parser/snapper/matcher/retention edge cases.
 - `CoreLogicPerformanceSafetyTests.cs`: regression-safety checks for defaults, bounds, and conflict detection (including timestamp-only drift vs material-content conflict cases).
 - `PolicyTruthTableTests.cs`: full truth-table validation for focus-related policy combinations.
-- `MainPageStructureTests.cs`: source-structure guard for `MainPage` partial split (field declarations are grouped in `MainPage.Fields.*.cs` and not left in `MainPage.xaml.cs`).
+- `MainPageStructureTests.cs`: source-structure guard for `MainPage` partial split (field declarations are grouped in `MainPage.Fields.*.cs` and not left in `MainPage.xaml.cs`), plus an XAML guard for placement/dock button-label font sizing (`12` on all platforms).
 - `MainViewModelWorkflowIntegrationTests.cs`: workflow integration test for `create -> edit -> execute -> external sync` using linked `MainViewModel` sources and test doubles for repository/executor/sync services.
 - `CiCoverageWorkflowPolicyTests.cs`: workflow-configuration guard that verifies CI test step collects `XPlat Code Coverage` and uploads Cobertura artifact output.
 
@@ -148,7 +148,7 @@ dotnet test Praxis.Tests/Praxis.Tests.csproj --collect:"XPlat Code Coverage"
 - `CoreLogicEdgeCaseTests.cs`: パーサ/スナッパ/マッチャー/保持期間の境界ケース。
 - `CoreLogicPerformanceSafetyTests.cs`: 既定値・境界・競合判定（時刻差分のみは非競合、内容差分は競合）の回帰安全性確認。
 - `PolicyTruthTableTests.cs`: フォーカス系ポリシーの真理値表を網羅検証。
-- `MainPageStructureTests.cs`: `MainPage` の partial 分割構造を保護するソース構成テスト（フィールド宣言を `MainPage.Fields.*.cs` に集約し、`MainPage.xaml.cs` に残さないことを検証）。
+- `MainPageStructureTests.cs`: `MainPage` の partial 分割構造を保護するソース構成テスト（フィールド宣言を `MainPage.Fields.*.cs` に集約し、`MainPage.xaml.cs` に残さないことを検証）に加え、配置領域/Dock ボタン文言フォント（全プラットフォームで `12`）の XAML 仕様ガードも行う。
 - `MainViewModelWorkflowIntegrationTests.cs`: `create -> edit -> execute -> external sync` を通すワークフロー統合テスト。`MainViewModel` の実ソースをリンクし、リポジトリ/実行器/同期通知はテストダブルで結合検証する。
 - `CiCoverageWorkflowPolicyTests.cs`: CI のテスト手順が `XPlat Code Coverage` 収集と Cobertura アーティファクト出力を維持しているかを検証するワークフロー設定ガード。
 
