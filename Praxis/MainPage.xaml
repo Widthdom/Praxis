@@ -299,7 +299,7 @@
                                         <TapGestureRecognizer Buttons="Secondary"
                                                               Tapped="Draggable_SecondaryTapped" />
                                     </Border.GestureRecognizers>
-                                    <Grid Padding="10,6" InputTransparent="True">
+                                    <Grid Padding="0,0" InputTransparent="True">
                                         <Label Text="{Binding ButtonText}"
                                                Style="{StaticResource PlacementButtonTextLabelStyle}"
                                                TextColor="{AppThemeBinding Light=#1A1A1A, Dark=#F2F2F2}"
