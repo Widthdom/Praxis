@@ -59,6 +59,8 @@ public partial class App : Application
             errorLogger?.Log(ex, nameof(InitializeComponent));
             Resources = new ResourceDictionary();
         }
+
+        errorLogger?.LogInfo("App started.", nameof(App));
     }
 
     private static void OnUnhandledException(object sender, UnhandledExceptionEventArgs e)

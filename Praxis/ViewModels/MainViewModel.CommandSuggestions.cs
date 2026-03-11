@@ -69,6 +69,7 @@ public partial class MainViewModel
             return;
         }
 
+        errorLogger.LogInfo($"Command suggestion selected: \"{item.Command}\" (button: \"{item.ButtonText}\")", nameof(PickSuggestionAsync));
         suppressCommandSuggestionRefresh = true;
         CommandInput = item.Command;
         suppressCommandSuggestionRefresh = false;

@@ -231,6 +231,7 @@ public sealed class SqliteAppRepository : IAppRepository
             var entity = new ErrorLogEntity
             {
                 Id = entry.Id.ToString(),
+                Level = entry.Level,
                 Context = entry.Context,
                 ExceptionType = entry.ExceptionType,
                 Message = entry.Message,
@@ -409,6 +410,18 @@ public sealed class SqliteAppRepository : IAppRepository
                 break;
             case 3:
                 await connection.CreateTableAsync<ErrorLogEntity>();
+                break;
+            case 4:
+                if (!await ColumnExistsAsync(
+                        connection,
+                        nameof(ErrorLogEntity),
+                        nameof(ErrorLogEntity.Level)))
+                {
+                    await connection.ExecuteAsync(
+                        $"ALTER TABLE {nameof(ErrorLogEntity)} " +
+                        $"ADD COLUMN {nameof(ErrorLogEntity.Level)} TEXT NOT NULL DEFAULT 'Error';");
+                }
+
                 break;
             default:
                 throw new NotSupportedException($"Unknown schema migration target version: {targetVersion}");

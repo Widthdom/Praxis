@@ -14,7 +14,7 @@ public class MainViewModelWorkflowIntegrationTests
         var clipboard = new RecordingClipboardService();
         var theme = new RecordingThemeService();
         var syncNotifier = new TestStateSyncNotifier();
-        var viewModel = new MainViewModel(repository, executor, clipboard, theme, syncNotifier);
+        var viewModel = new MainViewModel(repository, executor, clipboard, theme, syncNotifier, new NullErrorLogger());
 
         await viewModel.InitializeAsync();
 
@@ -100,7 +100,7 @@ public class MainViewModelWorkflowIntegrationTests
         var clipboard = new RecordingClipboardService();
         var theme = new RecordingThemeService();
         var syncNotifier = new TestStateSyncNotifier();
-        var viewModel = new MainViewModel(repository, executor, clipboard, theme, syncNotifier);
+        var viewModel = new MainViewModel(repository, executor, clipboard, theme, syncNotifier, new NullErrorLogger());
         await viewModel.InitializeAsync();
 
         viewModel.CommandInput = "bu";
@@ -388,5 +388,11 @@ public class MainViewModelWorkflowIntegrationTests
         public void Dispose()
         {
         }
+    }
+
+    private sealed class NullErrorLogger : IErrorLogger
+    {
+        public void Log(Exception exception, string context) { }
+        public void LogInfo(string message, string context) { }
     }
 }

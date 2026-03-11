@@ -18,12 +18,18 @@ public sealed class DbErrorLogger : IErrorLogger
         _ = LogAsync(exception, context);
     }
 
+    public void LogInfo(string message, string context)
+    {
+        _ = LogInfoAsync(message, context);
+    }
+
     private async Task LogAsync(Exception exception, string context)
     {
         try
         {
             var entry = new ErrorLogEntry
             {
+                Level = "Error",
                 Context = context,
                 ExceptionType = exception.GetType().FullName ?? exception.GetType().Name,
                 Message = exception.Message,
@@ -33,6 +39,28 @@ public sealed class DbErrorLogger : IErrorLogger
 
             await repository.AddErrorLogAsync(entry);
             await repository.PurgeOldErrorLogsAsync(RetentionDays);
+        }
+        catch
+        {
+            // ログ書き込み失敗は握り潰す（無限ループ防止）
+        }
+    }
+
+    private async Task LogInfoAsync(string message, string context)
+    {
+        try
+        {
+            var entry = new ErrorLogEntry
+            {
+                Level = "Info",
+                Context = context,
+                ExceptionType = string.Empty,
+                Message = message,
+                StackTrace = string.Empty,
+                TimestampUtc = DateTime.UtcNow,
+            };
+
+            await repository.AddErrorLogAsync(entry);
         }
         catch
         {

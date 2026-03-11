@@ -16,6 +16,7 @@ public partial class MainViewModel : ObservableObject
     private readonly IClipboardService clipboardService;
     private readonly IThemeService themeService;
     private readonly IStateSyncNotifier stateSyncNotifier;
+    private readonly IErrorLogger errorLogger;
     private readonly ActionHistory<ButtonHistoryAction> actionHistory = new(capacity: 120);
 
     private readonly ObservableCollection<LauncherButtonItemViewModel> allButtons = [];
@@ -68,13 +69,15 @@ public partial class MainViewModel : ObservableObject
         ICommandExecutor commandExecutor,
         IClipboardService clipboardService,
         IThemeService themeService,
-        IStateSyncNotifier stateSyncNotifier)
+        IStateSyncNotifier stateSyncNotifier,
+        IErrorLogger errorLogger)
     {
         this.repository = repository;
         this.commandExecutor = commandExecutor;
         this.clipboardService = clipboardService;
         this.themeService = themeService;
         this.stateSyncNotifier = stateSyncNotifier;
+        this.errorLogger = errorLogger;
         this.stateSyncNotifier.ButtonsChanged += StateSyncNotifierOnButtonsChanged;
     }
 
@@ -88,6 +91,7 @@ public partial class MainViewModel : ObservableObject
         ApplyFilter();
         UpdateCanvasSize();
         await RestoreDockAsync();
+        errorLogger.LogInfo($"Initialized. Buttons: {allButtons.Count}, Theme: {SelectedTheme}", nameof(InitializeAsync));
     }
 
     partial void OnIsEditorOpenChanged(bool value)
@@ -245,6 +249,7 @@ public partial class MainViewModel : ObservableObject
             RefreshCommandSuggestions(CommandInput, IsCommandSuggestionOpen);
         }
 
+        errorLogger.LogInfo($"Reloaded from external window sync. Buttons: {allButtons.Count}, Theme: {SelectedTheme}", nameof(ReloadOnMainThreadAsync));
         SetStatus("Synced from another window.");
     }
 
