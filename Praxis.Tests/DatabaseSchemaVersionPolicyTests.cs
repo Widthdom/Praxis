@@ -9,7 +9,7 @@ public class DatabaseSchemaVersionPolicyTests
     {
         var result = DatabaseSchemaVersionPolicy.ResolvePendingUpgradeVersions(0);
 
-        Assert.Equal([1, 2], result);
+        Assert.Equal([1, 2, 3], result);
     }
 
     [Fact]
@@ -17,7 +17,7 @@ public class DatabaseSchemaVersionPolicyTests
     {
         var result = DatabaseSchemaVersionPolicy.ResolvePendingUpgradeVersions(1);
 
-        Assert.Equal([2], result);
+        Assert.Equal([2, 3], result);
     }
 
     [Fact]

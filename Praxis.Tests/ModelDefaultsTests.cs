@@ -51,6 +51,19 @@ public class ModelDefaultsTests
     }
 
     [Fact]
+    public void ErrorLogEntry_Defaults_AreInitializedAsExpected()
+    {
+        var entry = new ErrorLogEntry();
+
+        Assert.NotEqual(Guid.Empty, entry.Id);
+        Assert.Equal(string.Empty, entry.Context);
+        Assert.Equal(string.Empty, entry.ExceptionType);
+        Assert.Equal(string.Empty, entry.Message);
+        Assert.Equal(string.Empty, entry.StackTrace);
+        Assert.Equal(DateTimeKind.Utc, entry.TimestampUtc.Kind);
+    }
+
+    [Fact]
     public void LauncherButtonRecord_CopyConstructorAndClone_CopyAllFields()
     {
         var source = new LauncherButtonRecord
