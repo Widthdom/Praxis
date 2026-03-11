@@ -27,7 +27,7 @@ public partial class MainViewModel : ObservableObject
     private int externalReloadInProgress;
     private CancellationTokenSource? commandSuggestionDebounceCts;
     private int dragCanvasUpdateCounter;
-    private const int CommandSuggestionDebounceMs = 120;
+    private const int CommandSuggestionDebounceMs = 400;
     private const int DragCanvasUpdateIntervalEvents = 4;
     private const double ViewportMargin = 120;
 
