@@ -250,6 +250,12 @@ public class MainViewModelWorkflowIntegrationTests
             return Task.CompletedTask;
         }
 
+        public Task AddErrorLogAsync(Core.Models.ErrorLogEntry entry, CancellationToken cancellationToken = default)
+            => Task.CompletedTask;
+
+        public Task PurgeOldErrorLogsAsync(int retentionDays, CancellationToken cancellationToken = default)
+            => Task.CompletedTask;
+
         public Task SetThemeAsync(ThemeMode mode, CancellationToken cancellationToken = default)
         {
             lock (gate)
