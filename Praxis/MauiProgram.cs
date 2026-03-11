@@ -33,6 +33,7 @@ public static class MauiProgram
 #endif
 
         builder.Services.AddSingleton<IAppRepository, SqliteAppRepository>();
+        builder.Services.AddSingleton<IErrorLogger, DbErrorLogger>();
         builder.Services.AddSingleton<ICommandExecutor, CommandExecutor>();
         builder.Services.AddSingleton<IClipboardService, MauiClipboardService>();
         builder.Services.AddSingleton<IThemeService, MauiThemeService>();

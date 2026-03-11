@@ -1,11 +1,13 @@
 using Microsoft.Extensions.DependencyInjection;
 using Praxis.Core.Logic;
+using Praxis.Services;
 
 namespace Praxis;
 
 public partial class App : Application
 {
     private readonly IServiceProvider services;
+    private static IErrorLogger? errorLogger;
     private Page? rootPage;
     private static volatile bool isEditorOpen;
     private static volatile bool isContextMenuOpen;
@@ -26,12 +28,14 @@ public partial class App : Application
     public static void SetMacApplicationActive(bool value) => isMacApplicationActive = value;
     public static void RaiseMacApplicationDeactivating()
     {
-        try { MacApplicationDeactivating?.Invoke(); } catch { }
+        try { MacApplicationDeactivating?.Invoke(); }
+        catch (Exception ex) { errorLogger?.Log(ex, nameof(RaiseMacApplicationDeactivating)); }
     }
 
     public static void RaiseMacApplicationActivated()
     {
-        try { MacApplicationActivated?.Invoke(); } catch { }
+        try { MacApplicationActivated?.Invoke(); }
+        catch (Exception ex) { errorLogger?.Log(ex, nameof(RaiseMacApplicationActivated)); }
     }
 #endif
 #if WINDOWS
@@ -41,14 +45,34 @@ public partial class App : Application
     public App(IServiceProvider services)
     {
         this.services = services;
+        errorLogger = services.GetRequiredService<IErrorLogger>();
+
+        AppDomain.CurrentDomain.UnhandledException += OnUnhandledException;
+        TaskScheduler.UnobservedTaskException += OnUnobservedTaskException;
+
         try
         {
             InitializeComponent();
         }
-        catch
+        catch (Exception ex)
         {
+            errorLogger?.Log(ex, nameof(InitializeComponent));
             Resources = new ResourceDictionary();
         }
+    }
+
+    private static void OnUnhandledException(object sender, UnhandledExceptionEventArgs e)
+    {
+        if (e.ExceptionObject is Exception ex)
+        {
+            errorLogger?.Log(ex, "AppDomain.UnhandledException");
+        }
+    }
+
+    private static void OnUnobservedTaskException(object? sender, UnobservedTaskExceptionEventArgs e)
+    {
+        errorLogger?.Log(e.Exception, "TaskScheduler.UnobservedTaskException");
+        e.SetObserved();
     }
 
     protected override Window CreateWindow(IActivationState? activationState)
@@ -77,8 +101,9 @@ public partial class App : Application
                     nativeWindow.Activate();
                 }
             }
-            catch
+            catch (Exception ex)
             {
+                errorLogger?.Log(ex, "Window.HandlerChanged");
             }
         };
 #endif
@@ -205,8 +230,9 @@ public partial class App : Application
                 focused = Microsoft.UI.Xaml.Media.VisualTreeHelper.GetParent(focused);
             }
         }
-        catch
+        catch (Exception ex)
         {
+            errorLogger?.Log(ex, nameof(ShouldHandleWindowsHistoryShortcut));
         }
 
         return true;
@@ -219,8 +245,9 @@ public partial class App : Application
         {
             ThemeShortcutRequested?.Invoke(mode);
         }
-        catch
+        catch (Exception ex)
         {
+            errorLogger?.Log(ex, nameof(RaiseThemeShortcut));
         }
     }
 
@@ -230,8 +257,9 @@ public partial class App : Application
         {
             EditorShortcutRequested?.Invoke(action);
         }
-        catch
+        catch (Exception ex)
         {
+            errorLogger?.Log(ex, nameof(RaiseEditorShortcut));
         }
     }
 
@@ -241,8 +269,9 @@ public partial class App : Application
         {
             CommandInputShortcutRequested?.Invoke(action);
         }
-        catch
+        catch (Exception ex)
         {
+            errorLogger?.Log(ex, nameof(RaiseCommandInputShortcut));
         }
     }
 
@@ -252,8 +281,9 @@ public partial class App : Application
         {
             HistoryShortcutRequested?.Invoke(action);
         }
-        catch
+        catch (Exception ex)
         {
+            errorLogger?.Log(ex, nameof(RaiseHistoryShortcut));
         }
     }
 
@@ -263,8 +293,9 @@ public partial class App : Application
         {
             MiddleMouseClickRequested?.Invoke();
         }
-        catch
+        catch (Exception ex)
         {
+            errorLogger?.Log(ex, nameof(RaiseMiddleMouseClick));
         }
     }
 
