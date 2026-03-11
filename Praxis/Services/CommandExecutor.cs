@@ -79,6 +79,23 @@ public sealed class CommandExecutor : ICommandExecutor
                     $"Failed to open file '{expanded}'."));
             }
 
+            // UNC shares can require auth before Directory.Exists/File.Exists become true.
+            // Let Explorer handle auth prompt by attempting open directly.
+            if (OperatingSystem.IsWindows() && WindowsPathPolicy.IsUncPath(expanded))
+            {
+                var psi = new ProcessStartInfo
+                {
+                    FileName = "explorer.exe",
+                    Arguments = $"\"{expanded}\"",
+                    UseShellExecute = true,
+                };
+
+                return Task.FromResult(StartProcess(
+                    psi,
+                    "Opening UNC path with Explorer.",
+                    $"Failed to open UNC path '{expanded}'."));
+            }
+
             if (Directory.Exists(expanded))
             {
                 ProcessStartInfo psi;
