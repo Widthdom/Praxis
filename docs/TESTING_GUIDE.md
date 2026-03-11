@@ -46,7 +46,7 @@ dotnet test Praxis.Tests/Praxis.Tests.csproj --collect:"XPlat Code Coverage"
 - `CiCoverageWorkflowPolicyTests.cs`: workflow-configuration guard that verifies CI test step collects `XPlat Code Coverage` and uploads Cobertura artifact output.
 
 ### Models / Defaults
-- `ModelDefaultsTests.cs`: default values and initialization guarantees for `LauncherButtonRecord` and `LaunchLogEntry`.
+- `ModelDefaultsTests.cs`: default values and initialization guarantees for `LauncherButtonRecord`, `LaunchLogEntry`, and `ErrorLogEntry`.
   - Includes copy-constructor / `Clone()` full-field copy regression checks for `LauncherButtonRecord` (including `UseInvertedThemeColors`).
 
 ### Command Execution / Matching / Suggestions
@@ -95,7 +95,7 @@ dotnet test Praxis.Tests/Praxis.Tests.csproj --collect:"XPlat Code Coverage"
 - `LaunchTargetResolverTests.cs`: HTTP(S)/file/path fallback target resolution and env expansion.
 - `WindowsPathPolicyTests.cs`: UNC (`\\\\server\\share`) path detection used by Windows auth-first launch flow.
 - `AppStoragePathLayoutResolverTests.cs`: platform-specific storage layout policy.
-- `DatabaseSchemaVersionPolicyTests.cs`: schema-version upgrade-path resolution (`PRAGMA user_version` migration sequencing, unsupported/future version rejection), including v1->v2 and unversioned->current multi-step upgrades.
+- `DatabaseSchemaVersionPolicyTests.cs`: schema-version upgrade-path resolution (`PRAGMA user_version` migration sequencing, unsupported/future version rejection), including v1->v2->v3 and unversioned->current multi-step upgrades.
 - `NonPublicPropertySetterTests.cs`: reflection-based writable property assignment behavior.
 
 ## CI Alignment
@@ -154,7 +154,7 @@ dotnet test Praxis.Tests/Praxis.Tests.csproj --collect:"XPlat Code Coverage"
 - `CiCoverageWorkflowPolicyTests.cs`: CI のテスト手順が `XPlat Code Coverage` 収集と Cobertura アーティファクト出力を維持しているかを検証するワークフロー設定ガード。
 
 ### モデル / 既定値
-- `ModelDefaultsTests.cs`: `LauncherButtonRecord` / `LaunchLogEntry` の既定値・初期化保証。
+- `ModelDefaultsTests.cs`: `LauncherButtonRecord` / `LaunchLogEntry` / `ErrorLogEntry` の既定値・初期化保証。
   - `LauncherButtonRecord` のコピーコンストラクタ / `Clone()` が全フィールド（`UseInvertedThemeColors` 含む）を複製することを回帰検証。
 
 ### コマンド実行 / 一致 / 候補
@@ -203,7 +203,7 @@ dotnet test Praxis.Tests/Praxis.Tests.csproj --collect:"XPlat Code Coverage"
 - `LaunchTargetResolverTests.cs`: HTTP(S)/ファイル/パスのフォールバック起動先解決と環境変数展開。
 - `WindowsPathPolicyTests.cs`: Windows の認証先行起動フローで使う UNC（`\\\\server\\share`）判定。
 - `AppStoragePathLayoutResolverTests.cs`: プラットフォーム別ストレージ配置ルール。
-- `DatabaseSchemaVersionPolicyTests.cs`: スキーマバージョンのアップグレード経路解決（`PRAGMA user_version` の段階適用順序、未対応/未来バージョン拒否）を検証。`v1 -> v2` と `未バージョン -> 現行` の段階適用も確認する。
+- `DatabaseSchemaVersionPolicyTests.cs`: スキーマバージョンのアップグレード経路解決（`PRAGMA user_version` の段階適用順序、未対応/未来バージョン拒否）を検証。`v1 -> v2 -> v3` と `未バージョン -> 現行` の段階適用も確認する。
 - `NonPublicPropertySetterTests.cs`: リフレクションによる書き込み可能プロパティ設定。
 
 ## CI との整合

@@ -5,6 +5,7 @@ License: MIT (see `LICENSE`).
 ## Overview
 Praxis is a desktop launcher app built with .NET MAUI.
 It stores launcher buttons in SQLite (with schema version tracking via `PRAGMA user_version`) and executes commands with arguments.
+Application exceptions are captured and stored in the local SQLite database for diagnostic purposes (30-day retention).
 
 ## User Features
 - Execute from the command input with `Enter`
@@ -108,6 +109,7 @@ open Praxis/bin/Debug/net10.0-maccatalyst/maccatalyst-arm64/Praxis.app
 ## 概要
 Praxis は .NET MAUI で実装したデスクトップ向けランチャーです。
 ランチャーボタンを SQLite（`PRAGMA user_version` によるスキーマバージョン管理付き）に保存し、コマンドと引数を実行します。
+アプリケーション例外は診断目的でローカルの SQLite データベースに記録されます（保持期間: 30 日）。
 
 ## 主な機能（ユーザー向け）
 - コマンド入力欄で `Enter` 実行
