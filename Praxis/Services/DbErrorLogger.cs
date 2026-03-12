@@ -42,7 +42,7 @@ public sealed class DbErrorLogger : IErrorLogger
         }
         catch
         {
-            // ログ書き込み失敗は握り潰す（無限ループ防止）
+            // Swallow write failures to avoid infinite logging loops.
         }
     }
 
@@ -64,7 +64,7 @@ public sealed class DbErrorLogger : IErrorLogger
         }
         catch
         {
-            // ログ書き込み失敗は握り潰す（無限ループ防止）
+            // Swallow write failures to avoid infinite logging loops.
         }
     }
 }
