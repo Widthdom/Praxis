@@ -221,6 +221,10 @@ public partial class MainViewModel
             return;
         }
 
+        var label = Editor.IsExistingRecord
+            ? $"\"{Editor.ButtonText}\" [{Editor.Id}]"
+            : $"\"{Editor.ButtonText}\" (new)";
+        errorLogger.LogInfo($"Editor canceled: {label}", nameof(CancelEditor));
         IsEditorOpen = false;
     }
 
@@ -349,6 +353,7 @@ public partial class MainViewModel
             parsed = ThemeMode.System;
         }
 
+        errorLogger.LogInfo($"Theme set to {parsed}", nameof(SetThemeAsync));
         SelectedTheme = parsed;
         themeService.Apply(parsed);
         await repository.SetThemeAsync(parsed);
@@ -524,6 +529,7 @@ public partial class MainViewModel
 
         var applied = await ApplyHistoryActionAsync(action, isUndo: true);
         actionHistory.CompleteUndo(action, applied);
+        errorLogger.LogInfo($"Undo: {action.Description}, applied={applied}", nameof(UndoAsync));
         SetStatus(applied
             ? $"Undid {action.Description}."
             : "Undo canceled: affected buttons changed in another window.");
@@ -539,6 +545,7 @@ public partial class MainViewModel
 
         var applied = await ApplyHistoryActionAsync(action, isUndo: false);
         actionHistory.CompleteRedo(action, applied);
+        errorLogger.LogInfo($"Redo: {action.Description}, applied={applied}", nameof(RedoAsync));
         SetStatus(applied
             ? $"Redid {action.Description}."
             : "Redo canceled: affected buttons changed in another window.");

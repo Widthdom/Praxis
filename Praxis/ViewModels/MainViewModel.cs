@@ -81,6 +81,11 @@ public partial class MainViewModel : ObservableObject
         this.stateSyncNotifier.ButtonsChanged += StateSyncNotifierOnButtonsChanged;
     }
 
+    public void NotifyWindowDisappearing()
+    {
+        errorLogger.LogInfo($"Window disappearing. Buttons: {allButtons.Count}", nameof(NotifyWindowDisappearing));
+    }
+
     public async Task InitializeAsync()
     {
         await repository.InitializeAsync();

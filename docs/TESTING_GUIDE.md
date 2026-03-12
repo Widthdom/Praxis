@@ -95,7 +95,7 @@ dotnet test Praxis.Tests/Praxis.Tests.csproj --collect:"XPlat Code Coverage"
 - `LaunchTargetResolverTests.cs`: HTTP(S)/file/path fallback target resolution and env expansion.
 - `WindowsPathPolicyTests.cs`: UNC (`\\\\server\\share`) path detection used by Windows auth-first launch flow.
 - `AppStoragePathLayoutResolverTests.cs`: platform-specific storage layout policy.
-- `DatabaseSchemaVersionPolicyTests.cs`: schema-version upgrade-path resolution (`PRAGMA user_version` migration sequencing, unsupported/future version rejection), including v1->v2->v3 and unversioned->current multi-step upgrades.
+- `DatabaseSchemaVersionPolicyTests.cs`: schema-version upgrade-path resolution (`PRAGMA user_version` migration sequencing, unsupported/future version rejection), including v1->v2->v3->v4 and unversioned->current multi-step upgrades.
 - `NonPublicPropertySetterTests.cs`: reflection-based writable property assignment behavior.
 
 ## CI Alignment
@@ -203,7 +203,7 @@ dotnet test Praxis.Tests/Praxis.Tests.csproj --collect:"XPlat Code Coverage"
 - `LaunchTargetResolverTests.cs`: HTTP(S)/ファイル/パスのフォールバック起動先解決と環境変数展開。
 - `WindowsPathPolicyTests.cs`: Windows の認証先行起動フローで使う UNC（`\\\\server\\share`）判定。
 - `AppStoragePathLayoutResolverTests.cs`: プラットフォーム別ストレージ配置ルール。
-- `DatabaseSchemaVersionPolicyTests.cs`: スキーマバージョンのアップグレード経路解決（`PRAGMA user_version` の段階適用順序、未対応/未来バージョン拒否）を検証。`v1 -> v2 -> v3` と `未バージョン -> 現行` の段階適用も確認する。
+- `DatabaseSchemaVersionPolicyTests.cs`: スキーマバージョンのアップグレード経路解決（`PRAGMA user_version` の段階適用順序、未対応/未来バージョン拒否）を検証。`v1 -> v2 -> v3 -> v4` と `未バージョン -> 現行` の段階適用も確認する。
 - `NonPublicPropertySetterTests.cs`: リフレクションによる書き込み可能プロパティ設定。
 
 ## CI との整合

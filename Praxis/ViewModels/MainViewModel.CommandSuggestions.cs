@@ -302,6 +302,7 @@ public partial class MainViewModel
 
         if (targets.Count == 0)
         {
+            errorLogger.LogInfo($"Command not found: \"{cmd}\"", nameof(ExecuteCommandMatchesAsync));
             SetStatus($"Command not found: {cmd}");
             return;
         }
