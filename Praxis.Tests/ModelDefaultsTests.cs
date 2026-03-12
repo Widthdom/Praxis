@@ -56,6 +56,7 @@ public class ModelDefaultsTests
         var entry = new ErrorLogEntry();
 
         Assert.NotEqual(Guid.Empty, entry.Id);
+        Assert.Equal("Error", entry.Level);
         Assert.Equal(string.Empty, entry.Context);
         Assert.Equal(string.Empty, entry.ExceptionType);
         Assert.Equal(string.Empty, entry.Message);

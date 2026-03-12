@@ -20,15 +20,17 @@ Authoritative implementation points:
 Notes:
 - `SqliteAppRepository.InitializeAsync` manages schema version by `PRAGMA user_version`.
 - Startup applies each pending migration step in order (`current + 1 .. CurrentVersion`) and bumps `user_version` after each step completes.
-- Current schema version: `3`
+- Current schema version: `4`
 - Version `1` migration creates the initial three tables with `CreateTableAsync<T>()`.
 - Version `2` migration adds `UseInvertedThemeColors` column to `LauncherButtonEntity` (safe on already-updated/newly-created tables).
 - Version `3` migration creates `ErrorLogEntity` table for application error logging.
+- Version `4` migration adds `Level` column to `ErrorLogEntity` (`TEXT NOT NULL DEFAULT 'Error'`).
 - Automatic startup migration examples:
-  - `user_version=0` -> apply `v1`, then `v2`, then `v3`
-  - `user_version=1` -> apply `v2`, then `v3`
-  - `user_version=2` -> apply `v3`
-  - `user_version=3` -> no migration
+  - `user_version=0` -> apply `v1`, then `v2`, then `v3`, then `v4`
+  - `user_version=1` -> apply `v2`, then `v3`, then `v4`
+  - `user_version=2` -> apply `v3`, then `v4`
+  - `user_version=3` -> apply `v4`
+  - `user_version=4` -> no migration
 - `DateTime` columns are mapped by `sqlite-net-pcl` with provider default settings used by `SQLiteAsyncConnection(dbPath)`.
 - `buttons.sync` is stored separately for multi-window signaling:
   - Windows: `%USERPROFILE%/AppData/Local/Praxis/buttons.sync`
@@ -73,6 +75,7 @@ erDiagram
 
     ErrorLogEntity {
         varchar Id PK
+        varchar Level
         varchar Context
         varchar ExceptionType
         varchar Message
@@ -132,20 +135,22 @@ Application-level behavior:
   - `DELETE FROM LaunchLogEntity WHERE TimestampUtc < threshold`
 
 ## Table: ErrorLogEntity
-Purpose: application error logs (exception logging).
+Purpose: application error logs (exception and info logging).
 
 | Column | SQLite type | Null | PK | Description |
 |---|---|---|---|---|
 | `Id` | `varchar` | No | Yes | GUID string (`ErrorLogEntry.Id`) |
-| `Context` | `varchar` | Yes | No | Code context where the exception was caught (e.g. method name) |
-| `ExceptionType` | `varchar` | Yes | No | Full exception type name |
-| `Message` | `varchar` | Yes | No | Exception message |
-| `StackTrace` | `varchar` | Yes | No | Exception stack trace |
-| `TimestampUtc` | `datetime` | Yes | No | Timestamp when the error was logged (UTC) |
+| `Level` | `varchar` | No | No | Severity level (`Error` / `Info`) |
+| `Context` | `varchar` | Yes | No | Code context where the entry was logged (e.g. method name) |
+| `ExceptionType` | `varchar` | Yes | No | Full exception type name (empty for Info entries) |
+| `Message` | `varchar` | Yes | No | Exception message or info message |
+| `StackTrace` | `varchar` | Yes | No | Exception stack trace (empty for Info entries) |
+| `TimestampUtc` | `datetime` | Yes | No | Timestamp when the entry was logged (UTC) |
 
 Application-level behavior:
-- Written by `DbErrorLogger` via `IErrorLogger.Log(exception, context)`.
-- Retention cleanup: `DELETE FROM ErrorLogEntity WHERE TimestampUtc < threshold` (30-day retention).
+- Error entries written by `DbErrorLogger` via `IErrorLogger.Log(exception, context)`.
+- Info entries written by `DbErrorLogger` via `IErrorLogger.LogInfo(message, context)`.
+- Retention cleanup: `DELETE FROM ErrorLogEntity WHERE TimestampUtc < threshold` (30-day retention, applies to Error entries only).
 - Write failures are silently suppressed to avoid infinite error loops.
 
 ## Table: AppSettingEntity
@@ -195,15 +200,17 @@ Praxis が使う SQLite テーブル設計を明文化します。
 補足:
 - `InitializeAsync` は `PRAGMA user_version` でスキーマバージョンを管理します。
 - 起動時に未適用バージョン（`current + 1 .. CurrentVersion`）を順次適用し、各ステップ完了後に `user_version` を更新します。
-- 現在のスキーマバージョン: `3`
+- 現在のスキーマバージョン: `4`
 - バージョン `1` のマイグレーションで初期 3 テーブルを `CreateTableAsync<T>()` で作成します。
 - バージョン `2` のマイグレーションで `LauncherButtonEntity` に `UseInvertedThemeColors` 列を追加します（既存/新規DBのどちらでも安全に適用）。
 - バージョン `3` のマイグレーションでアプリエラーログ用の `ErrorLogEntity` テーブルを作成します。
+- バージョン `4` のマイグレーションで `ErrorLogEntity` に `Level` 列（`TEXT NOT NULL DEFAULT 'Error'`）を追加します。
 - 起動時の自動移行例:
-  - `user_version=0` -> `v1`、`v2`、`v3` を順に適用
-  - `user_version=1` -> `v2`、`v3` を順に適用
-  - `user_version=2` -> `v3` のみ適用
-  - `user_version=3` -> 移行なし
+  - `user_version=0` -> `v1`、`v2`、`v3`、`v4` を順に適用
+  - `user_version=1` -> `v2`、`v3`、`v4` を順に適用
+  - `user_version=2` -> `v3`、`v4` を順に適用
+  - `user_version=3` -> `v4` のみ適用
+  - `user_version=4` -> 移行なし
 - `DateTime` 列は `SQLiteAsyncConnection(dbPath)` の既定設定に従って `sqlite-net-pcl` 側でマップされます。
 - `buttons.sync` は複数ウィンドウ通知用の別ファイルとして保存します。
   - Windows: `%USERPROFILE%/AppData/Local/Praxis/buttons.sync`
@@ -223,7 +230,7 @@ Praxis が使う SQLite テーブル設計を明文化します。
 - `UpdatedAtUtc` だけが異なり内容が一致する場合は非競合として扱います。
 - `LaunchLogEntity.Source` の現行値は `button` / `command` です。
 - `LaunchLogEntity` は保持期間超過分を `TimestampUtc` 条件で一括削除します。
-- `ErrorLogEntity` は `IErrorLogger.Log(exception, context)` 経由で `DbErrorLogger` が書き込みます。保持期間は 30 日。書き込み失敗は無限ループ防止のため握り潰します。
+- `ErrorLogEntity` は `IErrorLogger.Log(exception, context)`（Error）および `IErrorLogger.LogInfo(message, context)`（Info）経由で `DbErrorLogger` が書き込みます。保持期間は 30 日（Error エントリのみ）。書き込み失敗は無限ループ防止のため握り潰します。
 - `AppSettingEntity` の既知キー:
   - `theme`（`Light` / `Dark` / `System`）
   - `dock_order`（GUID の CSV）
