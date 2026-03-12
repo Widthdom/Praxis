@@ -172,6 +172,7 @@ public partial class MainPage : ContentPage
 
     protected override void OnDisappearing()
     {
+        viewModel.NotifyWindowDisappearing();
         base.OnDisappearing();
         DetachEditorPropertyChanged();
         App.SetEditorOpenState(false);

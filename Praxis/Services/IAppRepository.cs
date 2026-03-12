@@ -13,6 +13,8 @@ public interface IAppRepository
     Task DeleteButtonAsync(Guid id, CancellationToken cancellationToken = default);
     Task AddLogAsync(LaunchLogEntry entry, CancellationToken cancellationToken = default);
     Task PurgeOldLogsAsync(int retentionDays, CancellationToken cancellationToken = default);
+    Task AddErrorLogAsync(ErrorLogEntry entry, CancellationToken cancellationToken = default);
+    Task PurgeOldErrorLogsAsync(int retentionDays, CancellationToken cancellationToken = default);
     Task SetThemeAsync(ThemeMode themeMode, CancellationToken cancellationToken = default);
     Task<ThemeMode> GetThemeAsync(CancellationToken cancellationToken = default);
     Task<IReadOnlyList<Guid>> GetDockButtonIdsAsync(CancellationToken cancellationToken = default);

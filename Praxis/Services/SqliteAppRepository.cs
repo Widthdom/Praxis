@@ -222,6 +222,53 @@ public sealed class SqliteAppRepository : IAppRepository
         }
     }
 
+    public async Task AddErrorLogAsync(ErrorLogEntry entry, CancellationToken cancellationToken = default)
+    {
+        await gate.WaitAsync(cancellationToken);
+        try
+        {
+            await InitializeCoreAsync();
+            var entity = new ErrorLogEntity
+            {
+                Id = entry.Id.ToString(),
+                Level = entry.Level,
+                Context = entry.Context,
+                ExceptionType = entry.ExceptionType,
+                Message = entry.Message,
+                StackTrace = entry.StackTrace,
+                TimestampUtc = entry.TimestampUtc,
+            };
+
+            await Connection.InsertAsync(entity);
+        }
+        finally
+        {
+            gate.Release();
+        }
+    }
+
+    public async Task PurgeOldErrorLogsAsync(int retentionDays, CancellationToken cancellationToken = default)
+    {
+        await gate.WaitAsync(cancellationToken);
+        try
+        {
+            await InitializeCoreAsync();
+            if (retentionDays < 1)
+            {
+                retentionDays = 1;
+            }
+
+            var threshold = DateTime.UtcNow.AddDays(-retentionDays);
+            await Connection.ExecuteAsync(
+                $"DELETE FROM {nameof(ErrorLogEntity)} WHERE {nameof(ErrorLogEntity.TimestampUtc)} < ?",
+                threshold);
+        }
+        finally
+        {
+            gate.Release();
+        }
+    }
+
     public async Task SetThemeAsync(ThemeMode themeMode, CancellationToken cancellationToken = default)
     {
         await gate.WaitAsync(cancellationToken);
@@ -358,6 +405,21 @@ public sealed class SqliteAppRepository : IAppRepository
                     await connection.ExecuteAsync(
                         $"ALTER TABLE {nameof(LauncherButtonEntity)} " +
                         $"ADD COLUMN {nameof(LauncherButtonEntity.UseInvertedThemeColors)} INTEGER NOT NULL DEFAULT 0;");
+                }
+
+                break;
+            case 3:
+                await connection.CreateTableAsync<ErrorLogEntity>();
+                break;
+            case 4:
+                if (!await ColumnExistsAsync(
+                        connection,
+                        nameof(ErrorLogEntity),
+                        nameof(ErrorLogEntity.Level)))
+                {
+                    await connection.ExecuteAsync(
+                        $"ALTER TABLE {nameof(ErrorLogEntity)} " +
+                        $"ADD COLUMN {nameof(ErrorLogEntity.Level)} TEXT NOT NULL DEFAULT 'Error';");
                 }
 
                 break;

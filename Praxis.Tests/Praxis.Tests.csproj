@@ -28,6 +28,7 @@
     <Compile Include="..\Praxis\Services\IClipboardService.cs" Link="Integration\IClipboardService.cs" />
     <Compile Include="..\Praxis\Services\ICommandExecutor.cs" Link="Integration\ICommandExecutor.cs" />
     <Compile Include="..\Praxis\Services\IStateSyncNotifier.cs" Link="Integration\IStateSyncNotifier.cs" />
+    <Compile Include="..\Praxis\Services\IErrorLogger.cs" Link="Integration\IErrorLogger.cs" />
     <Compile Include="..\Praxis\Services\IThemeService.cs" Link="Integration\IThemeService.cs" />
     <Compile Include="..\Praxis\ViewModels\ButtonEditorViewModel.cs" Link="Integration\ButtonEditorViewModel.cs" />
     <Compile Include="..\Praxis\ViewModels\ButtonHistoryAction.cs" Link="Integration\ButtonHistoryAction.cs" />

@@ -69,6 +69,7 @@ public partial class MainViewModel
             return;
         }
 
+        errorLogger.LogInfo($"Command suggestion selected: \"{item.Command}\" (button: \"{item.ButtonText}\")", nameof(PickSuggestionAsync));
         suppressCommandSuggestionRefresh = true;
         CommandInput = item.Command;
         suppressCommandSuggestionRefresh = false;
@@ -301,6 +302,7 @@ public partial class MainViewModel
 
         if (targets.Count == 0)
         {
+            errorLogger.LogInfo($"Command not found: \"{cmd}\"", nameof(ExecuteCommandMatchesAsync));
             SetStatus($"Command not found: {cmd}");
             return;
         }

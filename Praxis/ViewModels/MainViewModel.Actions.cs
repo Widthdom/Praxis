@@ -67,6 +67,7 @@ public partial class MainViewModel
             return;
         }
 #endif
+        errorLogger.LogInfo($"Editor opened for existing button: \"{item.ButtonText}\" [{item.Id}] command=\"{item.Command}\"", nameof(OpenEditor));
         Editor = ButtonEditorViewModel.FromRecord(item.Snapshot(), isExistingRecord: true);
         IsEditorOpen = true;
         IsContextMenuOpen = false;
@@ -88,6 +89,8 @@ public partial class MainViewModel
             return;
         }
 
+        var names = string.Join(", ", items.Select(x => $"\"{x.ButtonText}\" [{x.Id}]"));
+        errorLogger.LogInfo($"Button(s) deleted: {names}", nameof(DeleteButtonsAsync));
         var dockOrderBefore = await repository.GetDockButtonIdsAsync();
         var snapshots = items
             .Select(x => x.Snapshot())
@@ -188,6 +191,7 @@ public partial class MainViewModel
 
     private void OpenCreateEditor(double x, double y, string arguments)
     {
+        errorLogger.LogInfo($"Editor opened for new button at ({x:F0}, {y:F0})", nameof(OpenCreateEditor));
         var record = new LauncherButtonRecord
         {
             Id = Guid.NewGuid(),
@@ -217,6 +221,10 @@ public partial class MainViewModel
             return;
         }
 
+        var label = Editor.IsExistingRecord
+            ? $"\"{Editor.ButtonText}\" [{Editor.Id}]"
+            : $"\"{Editor.ButtonText}\" (new)";
+        errorLogger.LogInfo($"Editor canceled: {label}", nameof(CancelEditor));
         IsEditorOpen = false;
     }
 
@@ -288,10 +296,13 @@ public partial class MainViewModel
 
         if (existing is null)
         {
+            errorLogger.LogInfo($"Button created: \"{record.ButtonText}\" [{record.Id}] command=\"{record.Command}\" tool={record.Tool} args=\"{record.Arguments}\"", nameof(SaveEditorAsync));
             allButtons.Add(new LauncherButtonItemViewModel(record));
         }
         else
         {
+            var diff = BuildButtonDiff(beforeSnapshot, record);
+            errorLogger.LogInfo($"Button updated: \"{record.ButtonText}\" [{record.Id}]{diff}", nameof(SaveEditorAsync));
             existing.Overwrite(record);
         }
 
@@ -317,7 +328,9 @@ public partial class MainViewModel
 
         try
         {
-            return await ResolveEditorConflictAsync.Invoke(context);
+            var resolution = await ResolveEditorConflictAsync.Invoke(context);
+            errorLogger.LogInfo($"Conflict dialog: type={context.ConflictType}, resolution={resolution}, button=\"{context.EditingRecord.ButtonText}\" [{context.EditingRecord.Id}]", nameof(ResolveConflictAsync));
+            return resolution;
         }
         catch
         {
@@ -340,6 +353,7 @@ public partial class MainViewModel
             parsed = ThemeMode.System;
         }
 
+        errorLogger.LogInfo($"Theme set to {parsed}", nameof(SetThemeAsync));
         SelectedTheme = parsed;
         themeService.Apply(parsed);
         await repository.SetThemeAsync(parsed);
@@ -515,6 +529,7 @@ public partial class MainViewModel
 
         var applied = await ApplyHistoryActionAsync(action, isUndo: true);
         actionHistory.CompleteUndo(action, applied);
+        errorLogger.LogInfo($"Undo: {action.Description}, applied={applied}", nameof(UndoAsync));
         SetStatus(applied
             ? $"Undid {action.Description}."
             : "Undo canceled: affected buttons changed in another window.");
@@ -530,6 +545,7 @@ public partial class MainViewModel
 
         var applied = await ApplyHistoryActionAsync(action, isUndo: false);
         actionHistory.CompleteRedo(action, applied);
+        errorLogger.LogInfo($"Redo: {action.Description}, applied={applied}", nameof(RedoAsync));
         SetStatus(applied
             ? $"Redid {action.Description}."
             : "Redo canceled: affected buttons changed in another window.");
@@ -614,10 +630,16 @@ public partial class MainViewModel
             await clipboardService.SetTextAsync(record.ClipText);
         }
 
+        var source = fromButton ? "button" : "command";
+        errorLogger.LogInfo(
+            $"Executed ({source}): \"{record.ButtonText}\" [{record.Id}] tool={record.Tool} args=\"{record.Arguments}\" succeeded={result.Success}" +
+            (result.Success ? string.Empty : $" error=\"{result.Message}\""),
+            nameof(ExecuteRecordAsync));
+
         await repository.AddLogAsync(new LaunchLogEntry
         {
             ButtonId = record.Id,
-            Source = fromButton ? "button" : "command",
+            Source = source,
             Tool = record.Tool,
             Arguments = record.Arguments,
             Succeeded = result.Success,
@@ -650,6 +672,25 @@ public partial class MainViewModel
 
         await PersistDockAsync();
         await stateSyncNotifier.NotifyButtonsChangedAsync();
+    }
+
+    private static string BuildButtonDiff(LauncherButtonRecord? before, LauncherButtonRecord after)
+    {
+        if (before is null)
+        {
+            return string.Empty;
+        }
+
+        var parts = new List<string>();
+        if (before.ButtonText != after.ButtonText) parts.Add($"ButtonText: \"{before.ButtonText}\"→\"{after.ButtonText}\"");
+        if (before.Command != after.Command) parts.Add($"Command: \"{before.Command}\"→\"{after.Command}\"");
+        if (before.Tool != after.Tool) parts.Add($"Tool: {before.Tool}→{after.Tool}");
+        if (before.Arguments != after.Arguments) parts.Add($"Arguments: \"{before.Arguments}\"→\"{after.Arguments}\"");
+        if (before.ClipText != after.ClipText) parts.Add("ClipText changed");
+        if (before.Note != after.Note) parts.Add("Note changed");
+        if (before.X != after.X || before.Y != after.Y) parts.Add($"Position: ({before.X:F0},{before.Y:F0})→({after.X:F0},{after.Y:F0})");
+        if (before.UseInvertedThemeColors != after.UseInvertedThemeColors) parts.Add($"UseInvertedThemeColors: {before.UseInvertedThemeColors}→{after.UseInvertedThemeColors}");
+        return parts.Count == 0 ? " (no changes)" : ": " + string.Join(", ", parts);
     }
 
     private async Task PersistDockAsync()
