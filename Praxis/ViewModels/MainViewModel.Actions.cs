@@ -623,10 +623,16 @@ public partial class MainViewModel
             await clipboardService.SetTextAsync(record.ClipText);
         }
 
+        var source = fromButton ? "button" : "command";
+        errorLogger.LogInfo(
+            $"Executed ({source}): \"{record.ButtonText}\" [{record.Id}] tool={record.Tool} args=\"{record.Arguments}\" succeeded={result.Success}" +
+            (result.Success ? string.Empty : $" error=\"{result.Message}\""),
+            nameof(ExecuteRecordAsync));
+
         await repository.AddLogAsync(new LaunchLogEntry
         {
             ButtonId = record.Id,
-            Source = fromButton ? "button" : "command",
+            Source = source,
             Tool = record.Tool,
             Arguments = record.Arguments,
             Succeeded = result.Success,
