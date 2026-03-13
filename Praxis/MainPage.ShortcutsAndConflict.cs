@@ -817,6 +817,19 @@ public partial class MainPage
             return false;
         }
 
+        var suggestionHit = TryGetSuggestionItemAtRootPoint(rootPoint);
+        if (suggestionHit is not null)
+        {
+            CloseCommandSuggestionPopup();
+            if (viewModel.OpenEditorCommand.CanExecute(suggestionHit.Source))
+            {
+                viewModel.OpenEditorCommand.Execute(suggestionHit.Source);
+                return true;
+            }
+
+            return false;
+        }
+
         var hit = TryGetPlacementButtonAtRootPoint(rootPoint) ?? TryGetDockButtonAtRootPoint(rootPoint);
         if (hit is null)
         {
@@ -831,6 +844,35 @@ public partial class MainPage
         }
 
         return false;
+    }
+
+    private CommandSuggestionItemViewModel? TryGetSuggestionItemAtRootPoint(Point rootPoint)
+    {
+        if (!viewModel.IsCommandSuggestionOpen || viewModel.CommandSuggestions.Count == 0)
+        {
+            return null;
+        }
+
+        var localInStack = TryConvertRootPointToElementLocal(rootPoint, CommandSuggestionStack);
+        if (localInStack is null)
+        {
+            return null;
+        }
+
+        const double rowHeight = 34;
+        const double itemSpacing = 2;
+        const double itemStep = rowHeight + itemSpacing;
+
+        var scrollY = CommandSuggestionScrollView.ScrollY;
+        var adjustedY = localInStack.Value.Y + scrollY;
+
+        var index = (int)(adjustedY / itemStep);
+        if (index < 0 || index >= viewModel.CommandSuggestions.Count)
+        {
+            return null;
+        }
+
+        return viewModel.CommandSuggestions[index];
     }
 
     private LauncherButtonItemViewModel? TryGetPlacementButtonAtRootPoint(Point rootPoint)
@@ -995,6 +1037,42 @@ public partial class MainPage
                 }
             };
             row.GestureRecognizers.Add(tap);
+
+            var pointer = new PointerGestureRecognizer();
+            pointer.PointerPressed += (_, e) =>
+            {
+                if (IsMiddlePointerPressed(e))
+                {
+                    CloseCommandSuggestionPopup();
+                    if (viewModel.OpenEditorCommand.CanExecute(item.Source))
+                    {
+                        viewModel.OpenEditorCommand.Execute(item.Source);
+                    }
+
+                    return;
+                }
+
+                if (IsSecondaryPointerPressed(e))
+                {
+                    CloseCommandSuggestionPopup();
+                    if (viewModel.OpenContextMenuCommand.CanExecute(item.Source))
+                    {
+                        viewModel.OpenContextMenuCommand.Execute(item.Source);
+                    }
+                }
+            };
+            row.GestureRecognizers.Add(pointer);
+
+            var secondaryTap = new TapGestureRecognizer { Buttons = ButtonsMask.Secondary };
+            secondaryTap.Tapped += (_, _) =>
+            {
+                CloseCommandSuggestionPopup();
+                if (viewModel.OpenContextMenuCommand.CanExecute(item.Source))
+                {
+                    viewModel.OpenContextMenuCommand.Execute(item.Source);
+                }
+            };
+            row.GestureRecognizers.Add(secondaryTap);
 
             var commandLabel = new Label
             {

@@ -236,7 +236,8 @@
                 </CollectionView.ItemTemplate>
             </CollectionView>
 
-            <ScrollView IsVisible="True"
+            <ScrollView x:Name="CommandSuggestionScrollView"
+                        IsVisible="True"
                         Orientation="Vertical">
                 <VerticalStackLayout x:Name="CommandSuggestionStack"
                                      Spacing="2"
