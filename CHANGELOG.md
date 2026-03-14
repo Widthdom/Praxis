@@ -56,7 +56,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - Dock area height expanded
 - New button icon changed from plain `+` to wireframe hex logo (outer hexagon · inscribed circle · inner hexagon · center `+`)
 - App icon and splash screen refreshed to hexagon + polygon contrast design with micro-optimized variants
-- `MainPage` refactored into 12 concern-based partial classes (`PointerAndSelection`, `FocusAndContext`, `EditorAndInput`, `ShortcutsAndConflict`, `MacCatalystBehavior`, `LayoutUtilities`, and field partials)
+- `MainPage` concern split refined further: `EditorAndInput` was narrowed to shared input behavior, while modal editor, view-model event wiring, status/theme logic, dock/quick-look behavior, and Windows-native input hooks moved into dedicated partial classes
 - `SqliteAppRepository` public operations protected with exclusive locking for thread safety
 - UI delay values consolidated into `UiTimingPolicy`
 - Platform preprocessor blocks consolidated across `MainPage` field files and `MauiProgram` handler registration
@@ -123,7 +123,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - Dock 領域の縦幅を拡張
 - 新規ボタンアイコンをプレーンな `+` から線画ヘックスロゴに変更（外六角形・内接円・内六角形・中央 `+`）
 - アプリアイコン・スプラッシュを六角形＋ポリゴンコントラストデザインに刷新（マイクロサイズ最適化バリアント付き）
-- `MainPage` を責務別 12 個の partial クラスに分割（`PointerAndSelection`、`FocusAndContext`、`EditorAndInput`、`ShortcutsAndConflict`、`MacCatalystBehavior`、`LayoutUtilities` およびフィールド partial 群）
+- `MainPage` の責務分割をさらに細分化し、`EditorAndInput` は共有入力処理へ絞り込み、編集モーダル、ViewModel イベント配線、ステータス/テーマ、Dock/Quick Look、Windows ネイティブ入力フックを専用 partial へ分離
 - `SqliteAppRepository` の全公開操作を排他制御で保護しスレッドセーフに
 - UI 遅延値を `UiTimingPolicy` へ集約
 - `MainPage` フィールドファイルと `MauiProgram` ハンドラ登録のプラットフォームプリプロセッサブロックを整理・統合
