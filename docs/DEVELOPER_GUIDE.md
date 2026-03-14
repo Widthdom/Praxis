@@ -146,6 +146,7 @@ Test-specific operation and coverage inventory are documented in `docs/TESTING_G
   - In Dark theme: render with Light-theme button colors
   - Configured from editor modal checkbox (`Invert Theme`)
   - In editor modal, the checkbox indicator is rendered as a flat square on both Windows and Mac (native checkbox visuals hidden) to keep monochrome two-tone styling
+  - Both the checkbox indicator and its label ("Use opposite theme colors for this button") are tappable — each carries a `TapGestureRecognizer` bound to the same handler (`ModalInvertThemeToggle_Tapped`)
   - Border color and empty-state background are matched to modal text-field palette (Light `#CECECE/#FFFFFF`, Dark `#4E4E4E/#2A2A2A`)
   - Border is rendered by four equal-thickness lines (`1`) to keep edge weight consistent
   - Checkmark is drawn by a `Polyline` (`StrokeThickness=2`) with a slightly sharper angle

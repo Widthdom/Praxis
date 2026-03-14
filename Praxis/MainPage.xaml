@@ -706,7 +706,11 @@
                                 </Grid>
                                 <Label Text="Use opposite theme colors for this button"
                                        VerticalTextAlignment="Center"
-                                       LineBreakMode="TailTruncation" />
+                                       LineBreakMode="TailTruncation">
+                                    <Label.GestureRecognizers>
+                                        <TapGestureRecognizer Tapped="ModalInvertThemeToggle_Tapped" />
+                                    </Label.GestureRecognizers>
+                                </Label>
                             </HorizontalStackLayout>
                         </Grid>
                     </ScrollView>
