@@ -139,6 +139,10 @@ public class MainPageStructureTests
         Assert.Contains("Points=\"1.4,5.6 3.5,8 8.9,2.1\"", xaml);
         Assert.Contains("StrokeThickness=\"2\"", xaml);
         Assert.Contains("Tapped=\"ModalInvertThemeToggle_Tapped\"", xaml);
+        Assert.Contains("Text=\"Use opposite theme colors for this button\"", xaml);
+        var labelIndex = xaml.IndexOf("Text=\"Use opposite theme colors for this button\"", StringComparison.Ordinal);
+        var labelRegion = xaml.Substring(labelIndex, 300);
+        Assert.Contains("ModalInvertThemeToggle_Tapped", labelRegion);
     }
 
     private static string ResolveRepositoryRoot()
