@@ -150,7 +150,7 @@ Purpose: application error logs (exception and info logging).
 Application-level behavior:
 - Error entries written by `DbErrorLogger` via `IErrorLogger.Log(exception, context)`.
 - Info entries written by `DbErrorLogger` via `IErrorLogger.LogInfo(message, context)`.
-- Retention cleanup: `DELETE FROM ErrorLogEntity WHERE TimestampUtc < threshold` (30-day retention, applies to Error entries only).
+- Retention cleanup: `DELETE FROM ErrorLogEntity WHERE TimestampUtc < threshold` (30-day retention; cleanup is triggered only when Error entries are written, and deletes all rows older than the threshold regardless of Level).
 - Write failures are silently suppressed to avoid infinite error loops.
 
 ## Table: AppSettingEntity
@@ -174,7 +174,7 @@ Known keys used by current code:
 
 ## Compatibility Notes
 - Old database files may contain legacy tables (for example `LauncherItems`).
-- Current repository code reads/writes only the three tables listed above.
+- Current repository code reads/writes only the four tables listed above.
 
 ---
 
@@ -230,7 +230,7 @@ Praxis が使う SQLite テーブル設計を明文化します。
 - `UpdatedAtUtc` だけが異なり内容が一致する場合は非競合として扱います。
 - `LaunchLogEntity.Source` の現行値は `button` / `command` です。
 - `LaunchLogEntity` は保持期間超過分を `TimestampUtc` 条件で一括削除します。
-- `ErrorLogEntity` は `IErrorLogger.Log(exception, context)`（Error）および `IErrorLogger.LogInfo(message, context)`（Info）経由で `DbErrorLogger` が書き込みます。保持期間は 30 日（Error エントリのみ）。書き込み失敗は無限ループ防止のため握り潰します。
+- `ErrorLogEntity` は `IErrorLogger.Log(exception, context)`（Error）および `IErrorLogger.LogInfo(message, context)`（Info）経由で `DbErrorLogger` が書き込みます。保持期間クリーンアップは Error エントリ書き込み時にのみ発動し、Level を問わず閾値より古い全行を削除します（30 日保持）。書き込み失敗は無限ループ防止のため握り潰します。
 - `AppSettingEntity` の既知キー:
   - `theme`（`Light` / `Dark` / `System`）
   - `dock_order`（GUID の CSV）
@@ -241,4 +241,4 @@ Praxis が使う SQLite テーブル設計を明文化します。
 
 ## 互換性メモ
 - 既存環境には旧テーブル（例: `LauncherItems`）が残る場合があります。
-- 現行コードがアクセスするのは本ドキュメント記載の 3 テーブルのみです。
+- 現行コードがアクセスするのは本ドキュメント記載の 4 テーブルのみです。
