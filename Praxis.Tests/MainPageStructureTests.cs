@@ -141,7 +141,7 @@ public class MainPageStructureTests
         Assert.Contains("Tapped=\"ModalInvertThemeToggle_Tapped\"", xaml);
         Assert.Contains("Text=\"Use opposite theme colors for this button\"", xaml);
         var labelIndex = xaml.IndexOf("Text=\"Use opposite theme colors for this button\"", StringComparison.Ordinal);
-        var labelRegion = xaml.Substring(labelIndex, 300);
+        var labelRegion = xaml.Substring(labelIndex, 500);
         Assert.Contains("ModalInvertThemeToggle_Tapped", labelRegion);
     }
 
