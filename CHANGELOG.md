@@ -15,6 +15,10 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - SQLite schema versioning via `PRAGMA user_version` with sequential auto-migration
 - Cross-window sync via `FileSystemWatcher` signal file (`buttons.sync`) with instance-id self-filter
 - Conflict detection dialog for concurrent multi-window edits (optimistic locking via `Version` column)
+- Execute all matching commands on Enter (not just the first match)
+- Clip Word field supports multiline input
+- Search text auto-cleared on button create
+- Arrow-key focus cycling for context menu and conflict dialog on Windows/macOS
 - Middle-click and right-click interactions on command suggestion rows
 - Command suggestion debounce increased to 400 ms to reduce noise during fast typing
 - First `Down` key selects first candidate; popup no longer auto-selects on open
@@ -24,6 +28,9 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - Invert-theme label is tappable to toggle the checkbox (not just the checkbox itself)
 
 ### Fixed
+- Command suggestions auto-close when context menu opens
+- Command suggestion click runs the command and autofills the command input
+- Windows: Tab focus navigation selects all text in input fields
 - Clear button focus restore stability after tap (immediate attempt + short delayed retry)
 - Clear-button X glyph vertical centering on Windows
 - Command suggestion colors stay theme-synced during live theme switch
@@ -46,8 +53,12 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - Command and Button Text field order swapped in editor modal (Command first)
 - UI button font size unified to 12 across all platforms
 - UI button padding set to 0 in placement area and Dock
+- Dock area height expanded
 - New button icon changed from plain `+` to wireframe hex logo (outer hexagon · inscribed circle · inner hexagon · center `+`)
+- App icon and splash screen refreshed to hexagon + polygon contrast design with micro-optimized variants
 - `MainPage` refactored into 12 concern-based partial classes (`PointerAndSelection`, `FocusAndContext`, `EditorAndInput`, `ShortcutsAndConflict`, `MacCatalystBehavior`, `LayoutUtilities`, and field partials)
+- `SqliteAppRepository` public operations protected with exclusive locking for thread safety
+- UI delay values consolidated into `UiTimingPolicy`
 - Platform preprocessor blocks consolidated across `MainPage` field files and `MauiProgram` handler registration
 - Redundant `using` directives removed and `using` order normalized
 - `MainViewModel` and its partial classes annotated with `LogInfo` calls for key lifecycle events
@@ -71,6 +82,10 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - `PRAGMA user_version` による SQLite スキーマバージョン管理と順次自動マイグレーション
 - `FileSystemWatcher` シグナルファイル（`buttons.sync`）によるウィンドウ間同期（自インスタンス発信は除外）
 - 複数ウィンドウ同時編集の競合検出ダイアログ（`Version` 列による楽観的ロック）
+- Enter キーで一致するすべてのコマンドを実行（先頭一致だけでなく全一致）
+- Clip Word フィールドの複数行入力対応
+- ボタン新規作成時に検索テキストを自動クリア
+- コンテキストメニュー・競合ダイアログの矢印キーフォーカス循環（Windows/macOS）
 - コマンド候補行へのミドルクリック・右クリック操作
 - コマンド候補のデバウンスを 400 ms に延長し高速入力時のノイズを軽減
 - 候補ポップアップ表示直後は自動選択せず、最初の `↓` キーで先頭候補を選択
@@ -80,6 +95,9 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - 色反転ラベルをタップしてチェックボックスをトグル可能に（チェックボックス本体以外もタップ可）
 
 ### 修正
+- コンテキストメニュー表示時にコマンド候補を自動クローズ
+- コマンド候補クリックでコマンド実行・入力欄への自動補完
+- Windows: Tab フォーカス移動時にテキスト入力欄の全選択
 - クリアボタンタップ後のフォーカス復帰を安定化（即時試行 + 短遅延リトライ）
 - Windows のクリアボタン X グリフの垂直方向センタリング
 - テーマのライブ切替中もコマンド候補の色をテーマに同期
@@ -102,8 +120,12 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - エディタモーダルのフィールド順を変更（Command を Button Text より前に）
 - UI ボタンのフォント サイズを全プラットフォームで 12 に統一
 - 配置領域と Dock のボタンの padding を 0 に統一
+- Dock 領域の縦幅を拡張
 - 新規ボタンアイコンをプレーンな `+` から線画ヘックスロゴに変更（外六角形・内接円・内六角形・中央 `+`）
+- アプリアイコン・スプラッシュを六角形＋ポリゴンコントラストデザインに刷新（マイクロサイズ最適化バリアント付き）
 - `MainPage` を責務別 12 個の partial クラスに分割（`PointerAndSelection`、`FocusAndContext`、`EditorAndInput`、`ShortcutsAndConflict`、`MacCatalystBehavior`、`LayoutUtilities` およびフィールド partial 群）
+- `SqliteAppRepository` の全公開操作を排他制御で保護しスレッドセーフに
+- UI 遅延値を `UiTimingPolicy` へ集約
 - `MainPage` フィールドファイルと `MauiProgram` ハンドラ登録のプラットフォームプリプロセッサブロックを整理・統合
 - 重複 `using` ディレクティブの削除と `using` 順序の正規化
 - `MainViewModel` と各 partial クラスに主要ライフサイクルイベントの `LogInfo` 呼び出しを追加
