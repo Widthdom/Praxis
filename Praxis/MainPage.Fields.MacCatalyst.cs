@@ -33,8 +33,8 @@ public partial class MainPage
     private static readonly ModalFocusTarget[] ModalFocusOrder =
     [
         ModalFocusTarget.Guid,
-        ModalFocusTarget.Command,
         ModalFocusTarget.ButtonText,
+        ModalFocusTarget.Command,
         ModalFocusTarget.Tool,
         ModalFocusTarget.Arguments,
         ModalFocusTarget.ClipWord,
