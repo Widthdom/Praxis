@@ -491,6 +491,47 @@ public partial class MainPage
             };
             row.GestureRecognizers.Add(tap);
 
+            var pointer = new PointerGestureRecognizer();
+            pointer.PointerPressed += (_, e) =>
+            {
+                if (!App.IsMacApplicationActive() || App.IsActivationSuppressionActive())
+                {
+                    return;
+                }
+
+                if (IsOtherMouseFromPlatformArgs(e.PlatformArgs) || IsMiddlePointerPressed(e))
+                {
+                    CloseCommandSuggestionPopup();
+                    if (viewModel.OpenEditorCommand.CanExecute(item.Source))
+                    {
+                        viewModel.OpenEditorCommand.Execute(item.Source);
+                    }
+
+                    return;
+                }
+
+                if (IsSecondaryPointerPressed(e))
+                {
+                    CloseCommandSuggestionPopup();
+                    if (viewModel.OpenContextMenuCommand.CanExecute(item.Source))
+                    {
+                        viewModel.OpenContextMenuCommand.Execute(item.Source);
+                    }
+                }
+            };
+            row.GestureRecognizers.Add(pointer);
+
+            var secondaryTap = new TapGestureRecognizer { Buttons = ButtonsMask.Secondary };
+            secondaryTap.Tapped += (_, _) =>
+            {
+                CloseCommandSuggestionPopup();
+                if (viewModel.OpenContextMenuCommand.CanExecute(item.Source))
+                {
+                    viewModel.OpenContextMenuCommand.Execute(item.Source);
+                }
+            };
+            row.GestureRecognizers.Add(secondaryTap);
+
             var commandLabel = new Label
             {
                 Text = item.Command,

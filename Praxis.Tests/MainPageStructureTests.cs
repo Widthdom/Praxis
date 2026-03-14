@@ -62,6 +62,66 @@ public class MainPageStructureTests
     }
 
     [Fact]
+    public void MainPage_CommandSuggestionScrollView_IsNamed()
+    {
+        var root = ResolveRepositoryRoot();
+        var xaml = File.ReadAllText(Path.Combine(root, "Praxis", "MainPage.xaml"));
+
+        Assert.Contains("x:Name=\"CommandSuggestionScrollView\"", xaml);
+    }
+
+    [Fact]
+    public void MainPage_SuggestionRowMiddleClickAndSecondaryTap_AreImplementedInNonMacRebuildStack()
+    {
+        var root = ResolveRepositoryRoot();
+        var source = File.ReadAllText(Path.Combine(root, "Praxis", "MainPage.ShortcutsAndConflict.cs"));
+
+        Assert.Contains("IsMiddlePointerPressed(e)", source);
+        Assert.Contains("IsSecondaryPointerPressed(e)", source);
+        Assert.Contains("ButtonsMask.Secondary", source);
+        Assert.Contains("OpenEditorCommand", source);
+        Assert.Contains("OpenContextMenuCommand", source);
+    }
+
+    [Fact]
+    public void MainPage_SuggestionRowMiddleClickAndSecondaryTap_AreImplementedInMacRebuildStack()
+    {
+        var root = ResolveRepositoryRoot();
+        var source = File.ReadAllText(Path.Combine(root, "Praxis", "MainPage.MacCatalystBehavior.cs"));
+
+        Assert.Contains("IsOtherMouseFromPlatformArgs(e.PlatformArgs)", source);
+        Assert.Contains("IsMiddlePointerPressed(e)", source);
+        Assert.Contains("IsSecondaryPointerPressed(e)", source);
+        Assert.Contains("ButtonsMask.Secondary", source);
+        Assert.Contains("OpenEditorCommand", source);
+        Assert.Contains("OpenContextMenuCommand", source);
+    }
+
+    [Fact]
+    public void MainPage_HandleMacMiddleClick_ChecksSuggestionItemsBeforePlacementButtons()
+    {
+        var root = ResolveRepositoryRoot();
+        var source = File.ReadAllText(Path.Combine(root, "Praxis", "MainPage.ShortcutsAndConflict.cs"));
+
+        Assert.Contains("TryGetSuggestionItemAtRootPoint", source);
+
+        var suggestionCheckIndex = source.IndexOf("TryGetSuggestionItemAtRootPoint", StringComparison.Ordinal);
+        var placementCheckIndex = source.IndexOf("TryGetPlacementButtonAtRootPoint", StringComparison.Ordinal);
+        Assert.True(suggestionCheckIndex < placementCheckIndex,
+            "TryGetSuggestionItemAtRootPoint should appear before TryGetPlacementButtonAtRootPoint in HandleMacMiddleClick");
+    }
+
+    [Fact]
+    public void MainPage_TryGetSuggestionItemAtRootPoint_AccountsForScrollOffset()
+    {
+        var root = ResolveRepositoryRoot();
+        var source = File.ReadAllText(Path.Combine(root, "Praxis", "MainPage.ShortcutsAndConflict.cs"));
+
+        Assert.Contains("CommandSuggestionScrollView.ScrollY", source);
+        Assert.Contains("TryConvertRootPointToElementLocal(rootPoint, CommandSuggestionStack)", source);
+    }
+
+    [Fact]
     public void MainPage_InvertedThemeButtonUi_IsWiredInPlacementDockAndEditor()
     {
         var root = ResolveRepositoryRoot();
