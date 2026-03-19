@@ -49,7 +49,8 @@ public class CommandEntryHandler : MacEntryHandler
         {
             commandField.SetCommandEntryBehavior(
                 CommandEntryBehaviorPolicy.ShouldHandleCommandNavigationShortcuts(commandEntry.EnableCommandNavigationShortcuts),
-                CommandEntryBehaviorPolicy.ShouldTrackActivationFocusTarget(commandEntry.EnableNativeActivationFocus));
+                CommandEntryBehaviorPolicy.ShouldTrackActivationFocusTarget(commandEntry.EnableNativeActivationFocus),
+                commandEntry.EnforceAsciiInput);
         }
     }
 
@@ -59,6 +60,7 @@ public class CommandEntryHandler : MacEntryHandler
         private bool _filteringText;
         private bool enableCommandNavigationShortcuts = true;
         private bool enableNativeActivationFocus = true;
+        private bool enableAsciiInputEnforcement;
         private NSObject? windowDidBecomeKeyObserver;
         private NSObject? windowDidResignKeyObserver;
         private NSObject? didBecomeActiveObserver;
@@ -69,14 +71,26 @@ public class CommandEntryHandler : MacEntryHandler
 
         public CommandEntryTextField()
         {
-            KeyboardType = UIKeyboardType.ASCIICapable;
             AddTarget(OnTextEditingChanged, UIControlEvent.EditingChanged);
         }
 
-        internal void SetCommandEntryBehavior(bool commandNavigationEnabled, bool nativeActivationFocusEnabled)
+        internal void SetCommandEntryBehavior(
+            bool commandNavigationEnabled,
+            bool nativeActivationFocusEnabled,
+            bool asciiInputEnforcementEnabled)
         {
             enableCommandNavigationShortcuts = commandNavigationEnabled;
             enableNativeActivationFocus = nativeActivationFocusEnabled;
+            enableAsciiInputEnforcement = asciiInputEnforcementEnabled;
+
+            if (enableAsciiInputEnforcement)
+            {
+                KeyboardType = UIKeyboardType.ASCIICapable;
+            }
+            else
+            {
+                DetachInputSourceObserver();
+            }
 
             if (!CommandEntryBehaviorPolicy.ShouldTrackActivationFocusTarget(enableNativeActivationFocus) &&
                 lastCommandField is not null &&
@@ -91,6 +105,12 @@ public class CommandEntryHandler : MacEntryHandler
         [Export("setMarkedText:selectedRange:")]
         public override void SetMarkedText(string? markedText, NSRange selectedRange)
         {
+            if (!enableAsciiInputEnforcement)
+            {
+                base.SetMarkedText(markedText ?? string.Empty, selectedRange);
+                return;
+            }
+
             // Block non-ASCII IME composition (prevents Japanese/CJK input)
             if (AsciiInputFilter.ShouldBlockMarkedText(markedText))
             {
@@ -104,6 +124,12 @@ public class CommandEntryHandler : MacEntryHandler
         [Export("insertText:")]
         public override void InsertText(string text)
         {
+            if (!enableAsciiInputEnforcement)
+            {
+                base.InsertText(text);
+                return;
+            }
+
             if (text.Length == 0)
             {
                 base.InsertText(text);
@@ -120,6 +146,11 @@ public class CommandEntryHandler : MacEntryHandler
         // Safety net: strip any non-ASCII that slipped through via other code paths
         private void OnTextEditingChanged(object? sender, EventArgs e)
         {
+            if (!enableAsciiInputEnforcement)
+            {
+                return;
+            }
+
             if (_filteringText) return;
             var current = Text ?? string.Empty;
             if (AsciiInputFilter.IsAsciiOnly(current)) return;
@@ -163,7 +194,8 @@ public class CommandEntryHandler : MacEntryHandler
             var shouldForce = MacCommandInputSourcePolicy.ShouldForceAsciiInputSource(
                 IsFirstResponder,
                 currentWindow?.IsKeyWindow == true,
-                IsApplicationForegroundActive(currentWindow));
+                IsApplicationForegroundActive(currentWindow),
+                enableAsciiInputEnforcement);
 
             if (!shouldForce)
             {
@@ -179,7 +211,8 @@ public class CommandEntryHandler : MacEntryHandler
             var shouldForce = MacCommandInputSourcePolicy.ShouldForceAsciiInputSource(
                 IsFirstResponder,
                 currentWindow?.IsKeyWindow == true,
-                IsApplicationForegroundActive(currentWindow));
+                IsApplicationForegroundActive(currentWindow),
+                enableAsciiInputEnforcement);
 
             if (!shouldForce)
             {

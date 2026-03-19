@@ -14,13 +14,17 @@ public static class WindowsCommandInputImePolicy
     ];
     private static readonly TimeSpan asciiImeReassertInterval = TimeSpan.FromMilliseconds(180);
 
-    public static bool ShouldForceAsciiImeMode(bool isFocused) => isFocused;
+    public static bool ShouldForceAsciiImeMode(bool isFocused, bool enforceAsciiInput)
+        => isFocused && enforceAsciiInput;
 
-    public static IReadOnlyList<TimeSpan> ResolveAsciiImeNudgeDelays(bool isFocused)
-        => isFocused ? asciiImeNudgeDelays : [];
+    public static IReadOnlyList<TimeSpan> ResolveAsciiImeNudgeDelays(bool isFocused, bool enforceAsciiInput)
+        => ShouldForceAsciiImeMode(isFocused, enforceAsciiInput) ? asciiImeNudgeDelays : [];
 
-    public static bool ShouldReassertAsciiImeMode(bool isFocused, bool keepAsciiImeWhileFocused)
-        => isFocused && keepAsciiImeWhileFocused;
+    public static bool ShouldReassertAsciiImeMode(
+        bool isFocused,
+        bool keepAsciiImeWhileFocused,
+        bool enforceAsciiInput)
+        => isFocused && keepAsciiImeWhileFocused && enforceAsciiInput;
 
     public static TimeSpan ResolveAsciiImeReassertInterval() => asciiImeReassertInterval;
 

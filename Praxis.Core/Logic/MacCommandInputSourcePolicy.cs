@@ -6,6 +6,10 @@ public static class MacCommandInputSourcePolicy
 
     public static TimeSpan FocusedInputSourceEnforcementInterval => focusedInputSourceEnforcementInterval;
 
-    public static bool ShouldForceAsciiInputSource(bool isFirstResponder, bool isWindowKey, bool isAppActive)
-        => isFirstResponder && isWindowKey && isAppActive;
+    public static bool ShouldForceAsciiInputSource(
+        bool isFirstResponder,
+        bool isWindowKey,
+        bool isAppActive,
+        bool enforceAsciiInput)
+        => isFirstResponder && isWindowKey && isAppActive && enforceAsciiInput;
 }

@@ -40,6 +40,11 @@ public class CommandEntryHandler : EntryHandler
 
     private bool TryApplyAlphanumericInputScope(TextBox textBox)
     {
+        if (!IsAsciiInputEnforcementEnabled())
+        {
+            return false;
+        }
+
         if (inputScopeUnsupported)
         {
             return false;
@@ -80,10 +85,11 @@ public class CommandEntryHandler : EntryHandler
         StopFocusedAsciiImeReassert();
     }
 
-    private static void ApplyAsciiImeModeForFocus(TextBox textBox)
+    private void ApplyAsciiImeModeForFocus(TextBox textBox)
     {
         var delays = WindowsCommandInputImePolicy.ResolveAsciiImeNudgeDelays(
-            isFocused: textBox.FocusState != FocusState.Unfocused);
+            isFocused: textBox.FocusState != FocusState.Unfocused,
+            enforceAsciiInput: IsAsciiInputEnforcementEnabled());
 
         foreach (var delay in delays)
         {
@@ -93,11 +99,11 @@ public class CommandEntryHandler : EntryHandler
                 continue;
             }
 
-            _ = QueueAsciiImeModeNudge(textBox, delay);
+            _ = QueueAsciiImeModeNudgeAsync(textBox, delay);
         }
     }
 
-    private static async Task QueueAsciiImeModeNudge(TextBox textBox, TimeSpan delay)
+    private async Task QueueAsciiImeModeNudgeAsync(TextBox textBox, TimeSpan delay)
     {
         try
         {
@@ -131,7 +137,8 @@ public class CommandEntryHandler : EntryHandler
         var keepAsciiImeWhileFocused = (VirtualView as CommandEntry)?.KeepAsciiImeWhileFocused ?? false;
         if (!WindowsCommandInputImePolicy.ShouldReassertAsciiImeMode(
                 isFocused: textBox.FocusState != FocusState.Unfocused,
-                keepAsciiImeWhileFocused: keepAsciiImeWhileFocused))
+                keepAsciiImeWhileFocused: keepAsciiImeWhileFocused,
+                enforceAsciiInput: IsAsciiInputEnforcementEnabled()))
         {
             return;
         }
@@ -148,7 +155,7 @@ public class CommandEntryHandler : EntryHandler
         focusedAsciiImeReassertCts = null;
     }
 
-    private static async Task RunFocusedAsciiImeReassertLoopAsync(TextBox textBox, CancellationToken cancellationToken)
+    private async Task RunFocusedAsciiImeReassertLoopAsync(TextBox textBox, CancellationToken cancellationToken)
     {
         var interval = WindowsCommandInputImePolicy.ResolveAsciiImeReassertInterval();
 
@@ -191,9 +198,11 @@ public class CommandEntryHandler : EntryHandler
         }
     }
 
-    private static void ForceAsciiImeModeOnce(TextBox textBox)
+    private void ForceAsciiImeModeOnce(TextBox textBox)
     {
-        if (!WindowsCommandInputImePolicy.ShouldForceAsciiImeMode(textBox.FocusState != FocusState.Unfocused))
+        if (!WindowsCommandInputImePolicy.ShouldForceAsciiImeMode(
+                textBox.FocusState != FocusState.Unfocused,
+                IsAsciiInputEnforcementEnabled()))
         {
             return;
         }
@@ -270,6 +279,9 @@ public class CommandEntryHandler : EntryHandler
 
         return IntPtr.Zero;
     }
+
+    private bool IsAsciiInputEnforcementEnabled()
+        => (VirtualView as CommandEntry)?.EnforceAsciiInput ?? false;
 
     private static IntPtr TryGetWindowHandle(Microsoft.UI.Xaml.Window nativeWindow)
     {

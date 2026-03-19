@@ -25,6 +25,13 @@ public class CommandEntry : Entry
             typeof(CommandEntry),
             false);
 
+    public static readonly BindableProperty EnforceAsciiInputProperty =
+        BindableProperty.Create(
+            nameof(EnforceAsciiInput),
+            typeof(bool),
+            typeof(CommandEntry),
+            false);
+
     public bool EnableCommandNavigationShortcuts
     {
         get => (bool)GetValue(EnableCommandNavigationShortcutsProperty);
@@ -41,6 +48,12 @@ public class CommandEntry : Entry
     {
         get => (bool)GetValue(KeepAsciiImeWhileFocusedProperty);
         set => SetValue(KeepAsciiImeWhileFocusedProperty, value);
+    }
+
+    public bool EnforceAsciiInput
+    {
+        get => (bool)GetValue(EnforceAsciiInputProperty);
+        set => SetValue(EnforceAsciiInputProperty, value);
     }
 
     public CommandEntry()

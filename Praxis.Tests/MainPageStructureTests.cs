@@ -103,6 +103,25 @@ public class MainPageStructureTests
     }
 
     [Fact]
+    public void MainPage_ModalCommandEntry_OptsIntoAsciiInputEnforcement_WhileMainCommandEntryDoesNot()
+    {
+        var root = ResolveRepositoryRoot();
+        var xaml = File.ReadAllText(Path.Combine(root, "Praxis", "MainPage.xaml"));
+
+        var mainEntryIndex = xaml.IndexOf("x:Name=\"MainCommandEntry\"", StringComparison.Ordinal);
+        var modalEntryIndex = xaml.IndexOf("x:Name=\"ModalCommandEntry\"", StringComparison.Ordinal);
+
+        Assert.True(mainEntryIndex >= 0, "MainCommandEntry was not found in MainPage.xaml.");
+        Assert.True(modalEntryIndex >= 0, "ModalCommandEntry was not found in MainPage.xaml.");
+
+        var mainRegion = xaml.Substring(mainEntryIndex, Math.Min(500, xaml.Length - mainEntryIndex));
+        var modalRegion = xaml.Substring(modalEntryIndex, Math.Min(500, xaml.Length - modalEntryIndex));
+
+        Assert.DoesNotContain("EnforceAsciiInput=\"True\"", mainRegion);
+        Assert.Contains("EnforceAsciiInput=\"True\"", modalRegion);
+    }
+
+    [Fact]
     public void MainPage_SuggestionRowMiddleClickAndSecondaryTap_AreImplementedInNonMacRebuildStack()
     {
         var root = ResolveRepositoryRoot();

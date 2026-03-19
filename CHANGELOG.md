@@ -36,11 +36,12 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - Clear-button X glyph vertical centering on Windows
 - Command suggestion colors stay theme-synced during live theme switch
 - `CommandEntry` / `SearchEntry`: lowercase letters no longer converted to uppercase
-- IME / ASCII enforcement in command entry:
+- Main command entry no longer attempts to switch IME/input-source mode on focus on Windows or macOS
+- Modal `Command` IME / ASCII enforcement:
   - Windows: `InputScopeNameValue.AlphanumericHalfWidth` on focus + `imm32` nudge (immediate + one delayed retry)
   - macOS: `AsciiInputFilter` + `setMarkedText` / `insertText` blocking, detached on app deactivation
 - Modal `Command` IME reasserted while focused on Windows (prevents manual IME-mode switching)
-- macOS: ASCII input source enforced only while field is first responder in active key window
+- macOS: modal ASCII input source enforced only while field is first responder in active key window
 - macOS: after "Command not found", focus is restored to command input for immediate retry
 - macOS: ILLink input loss in clear-button path prevented via intermediate assembly copy
 - Windows: modal/conflict focus fallback uses 2-stage retry so Esc and Ctrl+S remain responsive
@@ -104,11 +105,12 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - Windows のクリアボタン X グリフの垂直方向センタリング
 - テーマのライブ切替中もコマンド候補の色をテーマに同期
 - `CommandEntry` / `SearchEntry` で英小文字が大文字変換される問題
-- コマンド入力欄の IME / ASCII 強制:
+- メインの command 入力欄で、Windows / macOS ともフォーカス時の IME / 入力ソース切替を行わないよう修正
+- モーダル `Command` 欄の IME / ASCII 強制:
   - Windows: フォーカス時に `InputScopeNameValue.AlphanumericHalfWidth` + `imm32` ナッジ（即時 + 短遅延リトライ）
   - macOS: `AsciiInputFilter` + `setMarkedText` / `insertText` ブロック（アプリ非アクティブ時は即時解除）
 - Windows のモーダル `Command` 欄でフォーカス中も IME を英字に再強制（手動 IME 切替を抑止）
-- macOS: ASCII 入力ソース強制をアクティブキーウィンドウのファーストレスポンダ中のみに限定
+- macOS: モーダル command 欄の ASCII 入力ソース強制をアクティブキーウィンドウのファーストレスポンダ中のみに限定
 - macOS: 「Command not found」後にコマンド入力欄へフォーカスを戻し即時リトライ可能に
 - macOS: ILLink によるクリアボタンパスの入力欠落を中間アセンブリコピーで防止
 - Windows: モーダル/競合フォーカス復帰を 2 段リトライ化し Esc・Ctrl+S の取りこぼしを防止
