@@ -298,7 +298,8 @@ sequenceDiagram
   - If a tab character is injected by platform input path, fallback sanitization removes it and resolves focus direction via `EditorTabInsertionResolver`.
   - `MacEditorHandler.MacEditorTextView.KeyCommands` override returns non-null to match UIKit nullable contract and avoid CS8764 warnings.
   - `GUID` is selectable but not editable.
-  - On editor-open focus, `Command` places caret at tail and avoids select-all.
+  - On editor open, `ButtonText` receives initial focus.
+  - When `Command` is focused inside the modal, it places the caret at tail and avoids select-all.
   - When pseudo-focus is on `Cancel` / `Save`, `Enter` executes the focused action.
 - macOS context menu keyboard behavior:
   - `Up` / `Down` cycles between `Edit` and `Delete`.
@@ -333,7 +334,8 @@ sequenceDiagram
   - On Windows, multiline editors (`Clip Word` / `Note`) configure native `ScrollViewer` vertical mode/visibility to `Auto`, so overflow text can be scrolled.
   - The modal field section uses `Auto` row sizing (not `*`) so cleared multiline content releases extra whitespace immediately.
   - On Windows Dark theme, `Clip Word` / `Note` text color is explicitly synchronized to theme-aware modal input text color to keep contrast readable.
-  - On Windows, when focus leaves all modal inputs/actions, focus is restored to modal `Command` so modal shortcuts (`Esc` / `Ctrl+S`) remain active.
+  - On open, the editor modal focuses `ButtonText`, matching the topmost editable field after `GUID`.
+  - On Windows, when focus leaves all modal inputs/actions, focus is restored to modal `ButtonText` so modal shortcuts (`Esc` / `Ctrl+S`) remain active.
 - Conflict resolution dialog:
   - Replaces native action sheet with in-app overlay dialog (`ConflictOverlay`) for visual consistency.
   - Supports both Light and Dark themes.
@@ -344,7 +346,7 @@ sequenceDiagram
   - `Tab` traverses left-to-right, and `Shift+Tab` traverses right-to-left (both with wrap).
   - `Enter` executes the currently focused conflict action.
   - On Windows, if all conflict action buttons lose focus, focus is restored to the last conflict target (fallback `Cancel`) so `Esc` is still handled immediately.
-  - On close, editor focus is restored to modal `Command` when editor remains open; this keeps `Esc` / `Ctrl+S` active on Windows immediately after returning from conflict dialog.
+  - On close, editor focus is restored to modal `ButtonText` when editor remains open; this keeps `Esc` / `Ctrl+S` active on Windows immediately after returning from conflict dialog.
   - While conflict dialog is open, focus is constrained to the conflict dialog and does not move to the underlying editor modal.
 
 ## Testing Documentation
@@ -658,7 +660,8 @@ sequenceDiagram
   - プラットフォーム入力経路でタブ文字が混入した場合は、`EditorTabInsertionResolver` で方向判定し、文字を除去してフォーカス遷移に補正する。
   - `MacEditorHandler.MacEditorTextView.KeyCommands` は non-null 戻り値でオーバーライドし、UIKit 側の nullable 契約に合わせて CS8764 警告を防止する。
   - `GUID` 欄は選択可能だが編集不可。
-  - モーダル表示時に `Command` 欄へフォーカスする際は、全選択せずキャレットを末尾に置く。
+  - モーダル表示時の初期フォーカスは `ButtonText` 欄とする。
+  - モーダル内で `Command` 欄をフォーカスした場合は、全選択せずキャレットを末尾に置く。
   - `Cancel` / `Save` の擬似フォーカス中は `Enter` で該当アクションを実行する。
 - macOS のコンテキストメニューのキーボード挙動:
   - `↑` / `↓` で `Edit` と `Delete` を循環する。
@@ -689,7 +692,8 @@ sequenceDiagram
   - Windows では `Clip Word` / `Note` のネイティブ `ScrollViewer` を `Auto` 縦スクロールに設定し、オーバーフローしたテキストを縦スクロール可能にする。
   - モーダル項目領域は `*` ではなく `Auto` 行サイズで構成し、複数行入力を消した際に余白を即時解放する。
   - Windows ダークテーマでは、`Clip Word` / `Note` の文字色をテーマ連動のモーダル入力文字色に明示同期し、コントラストを維持する。
-  - Windows では、モーダル入力欄/操作ボタンすべてからフォーカスが外れたとき、`Command` へフォーカスを復帰して `Esc` / `Ctrl+S` ショートカットを維持する。
+  - 表示時の初期フォーカスは、`GUID` を除く先頭の編集可能欄である `ButtonText` とする。
+  - Windows では、モーダル入力欄/操作ボタンすべてからフォーカスが外れたとき、`ButtonText` へフォーカスを復帰して `Esc` / `Ctrl+S` ショートカットを維持する。
 - 競合解決ダイアログ:
   - OS 既定のアクションシートではなく、アプリ内オーバーレイ（`ConflictOverlay`）で表示してデザインを統一。
   - ライト/ダーク両テーマに対応。
@@ -700,7 +704,7 @@ sequenceDiagram
   - `Tab` は左から右、`Shift+Tab` は右から左へ循環（どちらも端でラップ）する。
   - `Enter` で現在フォーカス中の競合アクションを実行する。
   - Windows では競合アクションボタンすべてからフォーカスが外れた場合、最後に選択していた競合ターゲット（未設定時は `Cancel`）へ復帰して `Esc` を即時処理する。
-  - クローズ後に編集モーダルが継続表示される場合は `Command` へフォーカスを戻し、Windows でも復帰直後から `Esc` / `Ctrl+S` を有効に保つ。
+  - クローズ後に編集モーダルが継続表示される場合は `ButtonText` へフォーカスを戻し、Windows でも復帰直後から `Esc` / `Ctrl+S` を有効に保つ。
   - 競合ダイアログ表示中は、フォーカスを競合ダイアログ内に閉じ、背面の編集モーダルには移動させない。
 
 ## テストドキュメント

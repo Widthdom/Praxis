@@ -122,7 +122,7 @@ public partial class MainPage
                 return;
             }
 
-            FocusModalCommandEntryForOpen();
+            FocusModalPrimaryEditorField();
 #if MACCATALYST
             EnsureMacFirstResponder();
             ApplyMacEditorKeyCommands();

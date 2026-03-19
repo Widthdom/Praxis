@@ -23,7 +23,7 @@ public static class UiTimingPolicy
     public static readonly TimeSpan CommandNotFoundRefocusDelay = TimeSpan.FromMilliseconds(20);
     public static readonly TimeSpan ConflictDialogFocusRetryDelay = TimeSpan.FromMilliseconds(120);
     public static readonly TimeSpan ConflictDialogEditorFocusRestoreDelay = TimeSpan.FromMilliseconds(40);
-    public static readonly TimeSpan ModalOpenCommandFocusDelay = TimeSpan.FromMilliseconds(60);
+    public static readonly TimeSpan ModalOpenInitialFocusDelay = TimeSpan.FromMilliseconds(60);
     public static readonly TimeSpan ModalOpenMacCaretRetryDelay = TimeSpan.FromMilliseconds(40);
     public static readonly TimeSpan MacInitialCommandFocusRetryDelay = TimeSpan.FromMilliseconds(140);
     public static readonly TimeSpan MacMiddleButtonPollingInterval = TimeSpan.FromMilliseconds(16);

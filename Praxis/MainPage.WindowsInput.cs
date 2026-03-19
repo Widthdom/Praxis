@@ -175,7 +175,7 @@ public partial class MainPage
             return;
         }
 
-        ModalCommandEntry.Focus();
+        FocusModalPrimaryEditorField();
         EnsureWindowsKeyHooks();
         var restored = HasWindowsEditorModalFocus();
         if (restored || isFinalAttempt)

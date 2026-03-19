@@ -1064,34 +1064,24 @@ public partial class MainPage
     private async Task OpenCreateEditorFromCanvasPointAsync(Point canvasPoint)
     {
         await viewModel.OpenCreateEditorAtAsync(canvasPoint.X, canvasPoint.Y, useClipboardForArguments: true);
-        Dispatcher.DispatchDelayed(UiTimingPolicy.ModalOpenCommandFocusDelay, FocusModalCommandEntryForOpen);
+        Dispatcher.DispatchDelayed(UiTimingPolicy.ModalOpenInitialFocusDelay, FocusModalPrimaryEditorField);
     }
 
-    private void FocusModalCommandEntryForOpen()
+    private void FocusModalPrimaryEditorField()
     {
 #if WINDOWS
         try
         {
-            ModalCommandEntry.Focus();
+            ModalButtonTextEntry.Focus();
         }
         catch
         {
             return;
         }
+#elif MACCATALYST
+        TryFocusModalPrimaryTarget();
 #else
-        ModalCommandEntry.Focus();
-#endif
-#if MACCATALYST
-        PlaceMacEntryCaretAtEnd(ModalCommandEntry);
-        Dispatcher.DispatchDelayed(UiTimingPolicy.ModalOpenMacCaretRetryDelay, () =>
-        {
-            if (!viewModel.IsEditorOpen)
-            {
-                return;
-            }
-
-            PlaceMacEntryCaretAtEnd(ModalCommandEntry);
-        });
+        ModalButtonTextEntry.Focus();
 #endif
     }
 

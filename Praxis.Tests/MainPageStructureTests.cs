@@ -71,6 +71,38 @@ public class MainPageStructureTests
     }
 
     [Fact]
+    public void MainPage_EditorModal_PlacesButtonTextBeforeCommand()
+    {
+        var root = ResolveRepositoryRoot();
+        var xaml = File.ReadAllText(Path.Combine(root, "Praxis", "MainPage.xaml"));
+
+        var buttonTextIndex = xaml.IndexOf("x:Name=\"ModalButtonTextEntry\"", StringComparison.Ordinal);
+        var commandIndex = xaml.IndexOf("x:Name=\"ModalCommandEntry\"", StringComparison.Ordinal);
+
+        Assert.True(buttonTextIndex >= 0, "ModalButtonTextEntry was not found in MainPage.xaml.");
+        Assert.True(commandIndex >= 0, "ModalCommandEntry was not found in MainPage.xaml.");
+        Assert.True(buttonTextIndex < commandIndex, "ButtonText should appear before Command in the editor modal.");
+    }
+
+    [Fact]
+    public void MainPage_EditorModal_DefaultFocusTargetsButtonText()
+    {
+        var root = ResolveRepositoryRoot();
+        var pointerSource = File.ReadAllText(Path.Combine(root, "Praxis", "MainPage.PointerAndSelection.cs"));
+        var viewModelEventsSource = File.ReadAllText(Path.Combine(root, "Praxis", "MainPage.ViewModelEvents.cs"));
+        var windowsSource = File.ReadAllText(Path.Combine(root, "Praxis", "MainPage.WindowsInput.cs"));
+        var conflictSource = File.ReadAllText(Path.Combine(root, "Praxis", "MainPage.ShortcutsAndConflict.cs"));
+
+        Assert.Contains("private void FocusModalPrimaryEditorField()", pointerSource);
+        Assert.Contains("ModalButtonTextEntry.Focus();", pointerSource);
+        Assert.Contains("UiTimingPolicy.ModalOpenInitialFocusDelay", pointerSource);
+        Assert.DoesNotContain("FocusModalCommandEntryForOpen", pointerSource);
+        Assert.Contains("FocusModalPrimaryEditorField();", viewModelEventsSource);
+        Assert.Contains("FocusModalPrimaryEditorField();", windowsSource);
+        Assert.Contains("FocusModalPrimaryEditorField();", conflictSource);
+    }
+
+    [Fact]
     public void MainPage_SuggestionRowMiddleClickAndSecondaryTap_AreImplementedInNonMacRebuildStack()
     {
         var root = ResolveRepositoryRoot();

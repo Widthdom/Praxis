@@ -30,6 +30,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 ### Fixed
 - Command suggestions auto-close when context menu opens
 - Command suggestion click runs the command and autofills the command input
+- Editor modal default focus now lands on `ButtonText`, matching the field order after the Button Text / Command swap
 - Windows: Tab focus navigation selects all text in input fields
 - Clear button focus restore stability after tap (immediate attempt + short delayed retry)
 - Clear-button X glyph vertical centering on Windows
@@ -97,6 +98,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 ### 修正
 - コンテキストメニュー表示時にコマンド候補を自動クローズ
 - コマンド候補クリックでコマンド実行・入力欄への自動補完
+- エディタモーダルの既定フォーカスを、Button Text / Command 入れ替え後の欄順に合わせて `ButtonText` へ修正
 - Windows: Tab フォーカス移動時にテキスト入力欄の全選択
 - クリアボタンタップ後のフォーカス復帰を安定化（即時試行 + 短遅延リトライ）
 - Windows のクリアボタン X グリフの垂直方向センタリング

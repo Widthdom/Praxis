@@ -596,7 +596,7 @@ public partial class MainPage
                 return;
             }
 
-            ModalCommandEntry.Focus();
+            FocusModalPrimaryEditorField();
 #if WINDOWS
             EnsureWindowsKeyHooks();
 #endif

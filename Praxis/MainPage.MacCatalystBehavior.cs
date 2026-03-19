@@ -24,7 +24,7 @@ public partial class MainPage
         var currentIndex = GetCurrentModalFocusIndex();
         if (currentIndex < 0)
         {
-            TryFocusModalCommandTarget();
+            TryFocusModalPrimaryTarget();
             return;
         }
 
@@ -160,6 +160,11 @@ public partial class MainPage
         ClearMacModalPseudoFocus();
         FocusModalTarget(target);
         return IsModalFocusTargetActive(target);
+    }
+
+    private bool TryFocusModalPrimaryTarget()
+    {
+        return TryFocusModalVisual(ModalButtonTextEntry);
     }
 
     private bool TryFocusModalCommandTarget()
