@@ -4,24 +4,24 @@ This folder contains branding deliverables derived from the production app icon 
 
 ## Build-Referenced Assets vs Branding Assets
 
-Only files declared in `Praxis/Praxis.csproj` are used automatically at build time.
+Only files declared in [`Praxis/Praxis.csproj`](../../Praxis/Praxis.csproj) are used automatically at build time.
 
 Build-referenced assets:
-- `Praxis/Resources/AppIcon/appiconfg_windows.svg`
+- [`Praxis/Resources/AppIcon/appiconfg_windows.svg`](../../Praxis/Resources/AppIcon/appiconfg_windows.svg)
   - Windows app icon source (`MauiIcon` for Windows target).
-- `Praxis/Resources/AppIcon/appicon.svg` + `Praxis/Resources/AppIcon/appiconfg.svg`
+- [`Praxis/Resources/AppIcon/appicon.svg`](../../Praxis/Resources/AppIcon/appicon.svg) + [`Praxis/Resources/AppIcon/appiconfg.svg`](../../Praxis/Resources/AppIcon/appiconfg.svg)
   - Non-Windows app icon background + foreground (`MauiIcon` for non-Windows targets).
-- `Praxis/Resources/Splash/splash.svg`
+- [`Praxis/Resources/Splash/splash.svg`](../../Praxis/Resources/Splash/splash.svg)
   - Splash screen source (`MauiSplashScreen`).
 
 Branding assets in this `docs/branding` folder:
-- `store-icon-1024.svg`
+- [`store-icon-1024.svg`](store-icon-1024.svg)
   - High-resolution square listing icon source (store uploads).
-- `store-icon-micro-128.svg`
+- [`store-icon-micro-128.svg`](store-icon-micro-128.svg)
   - Micro-optimized icon source for 128px exports (slightly simplified for legibility).
-- `store-icon-micro-64.svg`
+- [`store-icon-micro-64.svg`](store-icon-micro-64.svg)
   - Micro-optimized icon source for 64px exports (slightly simplified for legibility).
-- `store-hero-1920x1080.svg`
+- [`store-hero-1920x1080.svg`](store-hero-1920x1080.svg)
   - Hero/banner visual for store listing pages and social previews.
 
 These branding files are not auto-included in app packages unless you explicitly add them to the project.
@@ -29,8 +29,8 @@ These branding files are not auto-included in app packages unless you explicitly
 ## Exported PNG Outputs
 
 Generated PNG outputs are stored in:
-- `docs/branding/exports/store-icon-micro-128.png`
-- `docs/branding/exports/store-icon-micro-64.png`
+- [`docs/branding/exports/store-icon-micro-128.png`](exports/store-icon-micro-128.png)
+- [`docs/branding/exports/store-icon-micro-64.png`](exports/store-icon-micro-64.png)
 
 ## Design Notes
 
@@ -46,24 +46,24 @@ Generated PNG outputs are stored in:
 
 ## ビルド参照アセットとブランディング用アセット
 
-ビルド時に自動で使われるのは、`Praxis/Praxis.csproj` に宣言されているファイルだけです。
+ビルド時に自動で使われるのは、[`Praxis/Praxis.csproj`](../../Praxis/Praxis.csproj) に宣言されているファイルだけです。
 
 ビルド参照アセット:
-- `Praxis/Resources/AppIcon/appiconfg_windows.svg`
+- [`Praxis/Resources/AppIcon/appiconfg_windows.svg`](../../Praxis/Resources/AppIcon/appiconfg_windows.svg)
   - Windowsアプリ用アイコンのソース（Windowsターゲット向け `MauiIcon`）。
-- `Praxis/Resources/AppIcon/appicon.svg` + `Praxis/Resources/AppIcon/appiconfg.svg`
+- [`Praxis/Resources/AppIcon/appicon.svg`](../../Praxis/Resources/AppIcon/appicon.svg) + [`Praxis/Resources/AppIcon/appiconfg.svg`](../../Praxis/Resources/AppIcon/appiconfg.svg)
   - Windows以外向けアプリアイコンの背景 + 前景（Windows以外のターゲット向け `MauiIcon`）。
-- `Praxis/Resources/Splash/splash.svg`
+- [`Praxis/Resources/Splash/splash.svg`](../../Praxis/Resources/Splash/splash.svg)
   - スプラッシュ画面のソース（`MauiSplashScreen`）。
 
 この `docs/branding` フォルダにあるブランディング用アセット:
-- `store-icon-1024.svg`
+- [`store-icon-1024.svg`](store-icon-1024.svg)
   - 高解像度の正方形リスティングアイコンのソース（ストアアップロード用）。
-- `store-icon-micro-128.svg`
+- [`store-icon-micro-128.svg`](store-icon-micro-128.svg)
   - 128px書き出し向けに最適化したマイクロ版アイコンのソース（視認性のためにわずかに簡略化）。
-- `store-icon-micro-64.svg`
+- [`store-icon-micro-64.svg`](store-icon-micro-64.svg)
   - 64px書き出し向けに最適化したマイクロ版アイコンのソース（視認性のためにわずかに簡略化）。
-- `store-hero-1920x1080.svg`
+- [`store-hero-1920x1080.svg`](store-hero-1920x1080.svg)
   - ストアのリスティングページとソーシャルプレビュー向けのヒーロー/バナー画像。
 
 これらのブランディング用ファイルは、プロジェクトに明示的に追加しない限り、アプリパッケージには自動では含まれません。
@@ -71,8 +71,8 @@ Generated PNG outputs are stored in:
 ## PNG出力
 
 生成されたPNG出力は、次の場所に保存されます。
-- `docs/branding/exports/store-icon-micro-128.png`
-- `docs/branding/exports/store-icon-micro-64.png`
+- [`docs/branding/exports/store-icon-micro-128.png`](exports/store-icon-micro-128.png)
+- [`docs/branding/exports/store-icon-micro-64.png`](exports/store-icon-micro-64.png)
 
 ## デザイン方針
 

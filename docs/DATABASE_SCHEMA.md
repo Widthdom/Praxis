@@ -4,14 +4,14 @@
 This document defines the SQLite table design used by Praxis.
 
 Authoritative implementation points:
-- `Praxis/Services/SqliteAppRepository.cs`
-- `Praxis/Models/LauncherButtonEntity.cs`
-- `Praxis/Models/LaunchLogEntity.cs`
-- `Praxis/Models/ErrorLogEntity.cs`
-- `Praxis/Models/AppSettingEntity.cs`
+- [`Praxis/Services/SqliteAppRepository.cs`](../Praxis/Services/SqliteAppRepository.cs)
+- [`Praxis/Models/LauncherButtonEntity.cs`](../Praxis/Models/LauncherButtonEntity.cs)
+- [`Praxis/Models/LaunchLogEntity.cs`](../Praxis/Models/LaunchLogEntity.cs)
+- [`Praxis/Models/ErrorLogEntity.cs`](../Praxis/Models/ErrorLogEntity.cs)
+- [`Praxis/Models/AppSettingEntity.cs`](../Praxis/Models/AppSettingEntity.cs)
 
 ## Database File Location
-- Logical path source: `Praxis/Services/AppStoragePaths.cs`
+- Logical path source: [`Praxis/Services/AppStoragePaths.cs`](../Praxis/Services/AppStoragePaths.cs)
 - Current file name: `praxis.db3`
 - Current resolved locations:
   - Windows: `%USERPROFILE%/AppData/Local/Praxis/praxis.db3`
@@ -184,14 +184,14 @@ Known keys used by current code:
 Praxis が使う SQLite テーブル設計を明文化します。
 
 実装上の正本:
-- `Praxis/Services/SqliteAppRepository.cs`
-- `Praxis/Models/LauncherButtonEntity.cs`
-- `Praxis/Models/LaunchLogEntity.cs`
-- `Praxis/Models/ErrorLogEntity.cs`
-- `Praxis/Models/AppSettingEntity.cs`
+- [`Praxis/Services/SqliteAppRepository.cs`](../Praxis/Services/SqliteAppRepository.cs)
+- [`Praxis/Models/LauncherButtonEntity.cs`](../Praxis/Models/LauncherButtonEntity.cs)
+- [`Praxis/Models/LaunchLogEntity.cs`](../Praxis/Models/LaunchLogEntity.cs)
+- [`Praxis/Models/ErrorLogEntity.cs`](../Praxis/Models/ErrorLogEntity.cs)
+- [`Praxis/Models/AppSettingEntity.cs`](../Praxis/Models/AppSettingEntity.cs)
 
 ## DB ファイル
-- パス定義: `Praxis/Services/AppStoragePaths.cs`
+- パス定義: [`Praxis/Services/AppStoragePaths.cs`](../Praxis/Services/AppStoragePaths.cs)
 - ファイル名: `praxis.db3`
 - 現在の実解決先:
   - Windows: `%USERPROFILE%/AppData/Local/Praxis/praxis.db3`
