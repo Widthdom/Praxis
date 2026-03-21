@@ -8,7 +8,7 @@ Use it for test execution, coverage checks, and file-by-file intent.
 - Framework: xUnit
 - Runner: `Microsoft.NET.Test.Sdk`
 - Coverage collector: `coverlet.collector` (`XPlat Code Coverage`)
-- Test project: `Praxis.Tests/Praxis.Tests.csproj`
+- Test project: [`Praxis.Tests/Praxis.Tests.csproj`](../Praxis.Tests/Praxis.Tests.csproj)
 - Primary target: `net10.0`
 
 ## How To Run
@@ -37,69 +37,69 @@ dotnet test Praxis.Tests/Praxis.Tests.csproj --collect:"XPlat Code Coverage"
 ## Test Inventory (File By File)
 
 ### Baseline / Cross-Cutting
-- `UnitTest1.cs` (`CoreLogicTests`): baseline checks for command-line build, snapping, search matching, and retention.
-- `CoreLogicEdgeCaseTests.cs`: parser/snapper/matcher/retention edge cases.
-- `CoreLogicPerformanceSafetyTests.cs`: regression-safety checks for defaults, bounds, and conflict detection (including timestamp-only drift vs material-content conflict cases).
-- `PolicyTruthTableTests.cs`: full truth-table validation for focus-related policy combinations.
-- `MainPageStructureTests.cs`: source-structure guard for the `MainPage` partial split (field declarations stay in `MainPage.Fields.*.cs`, while behavior remains separated into concern-based files such as `MainPage.ModalEditor.cs`, `MainPage.StatusAndTheme.cs`, `MainPage.DockAndQuickLook.cs`, and `MainPage.WindowsInput.cs` instead of drifting back into `MainPage.xaml.cs`), plus XAML guards for placement/dock button-label font sizing (`12` on all platforms), editor-modal field order/default focus alignment (`ButtonText` appears before `Command` and is the default modal focus target), modal-only ASCII-enforcement opt-in (`ModalCommandEntry` sets `EnforceAsciiInput="True"` while `MainCommandEntry` does not), and inverted-theme UI wiring (`UseInvertedThemeColors` triggers + editor checkbox binding + flat-square checkbox rendering hooks + text-field-matched border/background colors + equal-thickness edge line settings + polyline checkmark settings + label tap handler so clicking the "Use opposite theme colors for this button" text also toggles the checkbox). Also guards suggestion-row mouse interaction wiring: `CommandSuggestionScrollView` is named in XAML, middle/secondary-click gesture handlers are present in both `MainPage.ShortcutsAndConflict.cs` (non-Mac rebuild path) and `MainPage.MacCatalystBehavior.cs` (Mac rebuild path), `TryGetSuggestionItemAtRootPoint` appears before `TryGetPlacementButtonAtRootPoint` in `HandleMacMiddleClick`, and `CommandSuggestionScrollView.ScrollY` is used for scroll-offset-aware hit testing.
-- `MainViewModelWorkflowIntegrationTests.cs`: workflow integration tests for `create -> edit -> execute -> external sync` plus command-suggestion selection behavior (`popup opens with no preselected row`, then first `Down` selects index `0`) using linked `MainViewModel` sources and test doubles for repository/executor/sync services.
-- `CiCoverageWorkflowPolicyTests.cs`: workflow-configuration guard that verifies CI test step collects `XPlat Code Coverage` and uploads Cobertura artifact output.
+- [`UnitTest1.cs`](../Praxis.Tests/UnitTest1.cs) (`CoreLogicTests`): baseline checks for command-line build, snapping, search matching, and retention.
+- [`CoreLogicEdgeCaseTests.cs`](../Praxis.Tests/CoreLogicEdgeCaseTests.cs): parser/snapper/matcher/retention edge cases.
+- [`CoreLogicPerformanceSafetyTests.cs`](../Praxis.Tests/CoreLogicPerformanceSafetyTests.cs): regression-safety checks for defaults, bounds, and conflict detection (including timestamp-only drift vs material-content conflict cases).
+- [`PolicyTruthTableTests.cs`](../Praxis.Tests/PolicyTruthTableTests.cs): full truth-table validation for focus-related policy combinations.
+- [`MainPageStructureTests.cs`](../Praxis.Tests/MainPageStructureTests.cs): source-structure guard for the `MainPage` partial split (field declarations stay in `MainPage.Fields.*.cs`, while behavior remains separated into concern-based files such as [`MainPage.ModalEditor.cs`](../Praxis/MainPage.ModalEditor.cs), [`MainPage.StatusAndTheme.cs`](../Praxis/MainPage.StatusAndTheme.cs), [`MainPage.DockAndQuickLook.cs`](../Praxis/MainPage.DockAndQuickLook.cs), and [`MainPage.WindowsInput.cs`](../Praxis/MainPage.WindowsInput.cs) instead of drifting back into [`MainPage.xaml.cs`](../Praxis/MainPage.xaml.cs)), plus XAML guards for placement/dock button-label font sizing (`12` on all platforms), editor-modal field order/default focus alignment (`ButtonText` appears before `Command` and is the default modal focus target), modal-only ASCII-enforcement opt-in (`ModalCommandEntry` sets `EnforceAsciiInput="True"` while `MainCommandEntry` does not), and inverted-theme UI wiring (`UseInvertedThemeColors` triggers + editor checkbox binding + flat-square checkbox rendering hooks + text-field-matched border/background colors + equal-thickness edge line settings + polyline checkmark settings + label tap handler so clicking the "Use opposite theme colors for this button" text also toggles the checkbox). Also guards suggestion-row mouse interaction wiring: `CommandSuggestionScrollView` is named in XAML, middle/secondary-click gesture handlers are present in both [`MainPage.ShortcutsAndConflict.cs`](../Praxis/MainPage.ShortcutsAndConflict.cs) (non-Mac rebuild path) and [`MainPage.MacCatalystBehavior.cs`](../Praxis/MainPage.MacCatalystBehavior.cs) (Mac rebuild path), `TryGetSuggestionItemAtRootPoint` appears before `TryGetPlacementButtonAtRootPoint` in `HandleMacMiddleClick`, and `CommandSuggestionScrollView.ScrollY` is used for scroll-offset-aware hit testing.
+- [`MainViewModelWorkflowIntegrationTests.cs`](../Praxis.Tests/MainViewModelWorkflowIntegrationTests.cs): workflow integration tests for `create -> edit -> execute -> external sync` plus command-suggestion selection behavior (`popup opens with no preselected row`, then first `Down` selects index `0`) using linked [`MainViewModel`](../Praxis/ViewModels/MainViewModel.cs) sources and test doubles for repository/executor/sync services.
+- [`CiCoverageWorkflowPolicyTests.cs`](../Praxis.Tests/CiCoverageWorkflowPolicyTests.cs): workflow-configuration guard that verifies CI test step collects `XPlat Code Coverage` and uploads Cobertura artifact output.
 
 ### Models / Defaults
-- `ModelDefaultsTests.cs`: default values and initialization guarantees for `LauncherButtonRecord`, `LaunchLogEntry`, and `ErrorLogEntry`.
+- [`ModelDefaultsTests.cs`](../Praxis.Tests/ModelDefaultsTests.cs): default values and initialization guarantees for `LauncherButtonRecord`, `LaunchLogEntry`, and `ErrorLogEntry`.
   - Includes copy-constructor / `Clone()` full-field copy regression checks for `LauncherButtonRecord` (including `UseInvertedThemeColors`).
 
 ### Command Execution / Matching / Suggestions
-- `CommandLineBuilderTests.cs`: null/whitespace handling and normalization for command-line construction.
-- `CommandRecordMatcherTests.cs`: exact command matching rules, null guards, and case/trim behavior.
-- `CommandSuggestionVisibilityPolicyTests.cs`: close policy when context menu opens.
-- `CommandSuggestionRowColorPolicyTests.cs`: selected/unselected row color decisions per theme.
-- `CommandNotFoundRefocusPolicyTests.cs`: refocus decision for `Command not found:` status.
-- `StatusFlashErrorPolicyTests.cs`: status classification for error flash behavior.
-- `QuickLookPreviewFormatterTests.cs`: quick-look preview text normalization, truncation, and labeled-line formatting.
+- [`CommandLineBuilderTests.cs`](../Praxis.Tests/CommandLineBuilderTests.cs): null/whitespace handling and normalization for command-line construction.
+- [`CommandRecordMatcherTests.cs`](../Praxis.Tests/CommandRecordMatcherTests.cs): exact command matching rules, null guards, and case/trim behavior.
+- [`CommandSuggestionVisibilityPolicyTests.cs`](../Praxis.Tests/CommandSuggestionVisibilityPolicyTests.cs): close policy when context menu opens.
+- [`CommandSuggestionRowColorPolicyTests.cs`](../Praxis.Tests/CommandSuggestionRowColorPolicyTests.cs): selected/unselected row color decisions per theme.
+- [`CommandNotFoundRefocusPolicyTests.cs`](../Praxis.Tests/CommandNotFoundRefocusPolicyTests.cs): refocus decision for `Command not found:` status.
+- [`StatusFlashErrorPolicyTests.cs`](../Praxis.Tests/StatusFlashErrorPolicyTests.cs): status classification for error flash behavior.
+- [`QuickLookPreviewFormatterTests.cs`](../Praxis.Tests/QuickLookPreviewFormatterTests.cs): quick-look preview text normalization, truncation, and labeled-line formatting.
 
 ### Undo / Redo
-- `ActionHistoryTests.cs`: command-pattern history stack behavior (undo/redo transitions, failed-apply recovery, capacity trimming).
-- `ButtonHistoryConsistencyPolicyTests.cs`: optimistic-lock version-match checks used when applying undo/redo mutations (including mismatch detection when `UseInvertedThemeColors` differs).
+- [`ActionHistoryTests.cs`](../Praxis.Tests/ActionHistoryTests.cs): command-pattern history stack behavior (undo/redo transitions, failed-apply recovery, capacity trimming).
+- [`ButtonHistoryConsistencyPolicyTests.cs`](../Praxis.Tests/ButtonHistoryConsistencyPolicyTests.cs): optimistic-lock version-match checks used when applying undo/redo mutations (including mismatch detection when `UseInvertedThemeColors` differs).
 
 ### Input / Keyboard / Focus Policies
-- `CommandEntryBehaviorPolicyTests.cs`: command entry role flags for navigation shortcuts and activation-time native refocus.
-- `WindowActivationCommandFocusPolicyTests.cs`: activation-time command focus gating.
-- `SearchFocusGuardPolicyTests.cs`: macOS search-focus guard decision rules.
-- `AsciiInputFilterTests.cs`: ASCII filtering rules used by macOS modal command input paths.
-- `MacCommandInputSourcePolicyTests.cs`: macOS ASCII input-source enforcement gating (first-responder + key-window + app-active + per-entry opt-in) and focused re-apply interval safety.
-- `WindowsCommandInputImePolicyTests.cs`: Windows IME ASCII-mode gating (`ShouldForceAsciiImeMode` with per-entry opt-in), focus-time ASCII nudge retry schedule, focused-state ASCII reassert gating/interval, conversion-mode normalization, and caret clamp logic.
-- `WindowsInputScopeCompatibilityPolicyTests.cs`: fallback trigger rules when native `InputScope` assignment fails (`ArgumentException`).
-- `WindowsModalFocusRestorePolicyTests.cs`: Windows editor/conflict focus restore conditions.
-- `ConflictDialogFocusRestorePolicyTests.cs`: editor focus restore condition after conflict dialog close.
-- `EditorShortcutActionResolverTests.cs`: key-to-action mapping for modal/context/conflict shortcuts.
-- `EditorShortcutScopeResolverTests.cs`: active scope decision when overlays are open/closed.
-- `EditorTabInsertionResolverTests.cs`: tab-character fallback detection and navigation mapping.
-- `FocusRingNavigatorTests.cs`: wrap-around navigation index behavior.
+- [`CommandEntryBehaviorPolicyTests.cs`](../Praxis.Tests/CommandEntryBehaviorPolicyTests.cs): command entry role flags for navigation shortcuts and activation-time native refocus.
+- [`WindowActivationCommandFocusPolicyTests.cs`](../Praxis.Tests/WindowActivationCommandFocusPolicyTests.cs): activation-time command focus gating.
+- [`SearchFocusGuardPolicyTests.cs`](../Praxis.Tests/SearchFocusGuardPolicyTests.cs): macOS search-focus guard decision rules.
+- [`AsciiInputFilterTests.cs`](../Praxis.Tests/AsciiInputFilterTests.cs): ASCII filtering rules used by macOS modal command input paths.
+- [`MacCommandInputSourcePolicyTests.cs`](../Praxis.Tests/MacCommandInputSourcePolicyTests.cs): macOS ASCII input-source enforcement gating (first-responder + key-window + app-active + per-entry opt-in) and focused re-apply interval safety.
+- [`WindowsCommandInputImePolicyTests.cs`](../Praxis.Tests/WindowsCommandInputImePolicyTests.cs): Windows IME ASCII-mode gating (`ShouldForceAsciiImeMode` with per-entry opt-in), focus-time ASCII nudge retry schedule, focused-state ASCII reassert gating/interval, conversion-mode normalization, and caret clamp logic.
+- [`WindowsInputScopeCompatibilityPolicyTests.cs`](../Praxis.Tests/WindowsInputScopeCompatibilityPolicyTests.cs): fallback trigger rules when native `InputScope` assignment fails (`ArgumentException`).
+- [`WindowsModalFocusRestorePolicyTests.cs`](../Praxis.Tests/WindowsModalFocusRestorePolicyTests.cs): Windows editor/conflict focus restore conditions.
+- [`ConflictDialogFocusRestorePolicyTests.cs`](../Praxis.Tests/ConflictDialogFocusRestorePolicyTests.cs): editor focus restore condition after conflict dialog close.
+- [`EditorShortcutActionResolverTests.cs`](../Praxis.Tests/EditorShortcutActionResolverTests.cs): key-to-action mapping for modal/context/conflict shortcuts.
+- [`EditorShortcutScopeResolverTests.cs`](../Praxis.Tests/EditorShortcutScopeResolverTests.cs): active scope decision when overlays are open/closed.
+- [`EditorTabInsertionResolverTests.cs`](../Praxis.Tests/EditorTabInsertionResolverTests.cs): tab-character fallback detection and navigation mapping.
+- [`FocusRingNavigatorTests.cs`](../Praxis.Tests/FocusRingNavigatorTests.cs): wrap-around navigation index behavior.
 
 ### UI-Agnostic Visual / Layout Policies
-- `InputClearButtonVisibilityPolicyTests.cs`: clear button visibility rule.
-- `DockScrollBarVisibilityPolicyTests.cs`: dock scrollbar visibility rule from pointer hover state + horizontal-overflow state, and mask-visibility inversion rule.
-- `ClearButtonGlyphAlignmentPolicyTests.cs`: clear glyph translation policy.
-- `ClearButtonRefocusPolicyTests.cs`: clear-button focus retry schedule by platform.
-- `ButtonFocusVisualPolicyTests.cs`: focus-border style resolution.
-- `ModalEditorHeightResolverTests.cs`: multiline editor height calculation and clamping.
-- `ModalEditorScrollHeightResolverTests.cs`: modal scroll height clamping.
-- `ThemeTextColorPolicyTests.cs`: theme text color policy.
-- `ThemeDarkStateResolverTests.cs`: effective dark-mode resolution.
-- `ThemeShortcutModeResolverTests.cs`: macOS key-input to theme-mode mapping.
-- `TextCaretPositionResolverTests.cs`: caret-tail placement resolution.
-- `UiTimingPolicyTests.cs`: named UI timing constants (focus restore, activation windows, polling interval) and ordering constraints.
+- [`InputClearButtonVisibilityPolicyTests.cs`](../Praxis.Tests/InputClearButtonVisibilityPolicyTests.cs): clear button visibility rule.
+- [`DockScrollBarVisibilityPolicyTests.cs`](../Praxis.Tests/DockScrollBarVisibilityPolicyTests.cs): dock scrollbar visibility rule from pointer hover state + horizontal-overflow state, and mask-visibility inversion rule.
+- [`ClearButtonGlyphAlignmentPolicyTests.cs`](../Praxis.Tests/ClearButtonGlyphAlignmentPolicyTests.cs): clear glyph translation policy.
+- [`ClearButtonRefocusPolicyTests.cs`](../Praxis.Tests/ClearButtonRefocusPolicyTests.cs): clear-button focus retry schedule by platform.
+- [`ButtonFocusVisualPolicyTests.cs`](../Praxis.Tests/ButtonFocusVisualPolicyTests.cs): focus-border style resolution.
+- [`ModalEditorHeightResolverTests.cs`](../Praxis.Tests/ModalEditorHeightResolverTests.cs): multiline editor height calculation and clamping.
+- [`ModalEditorScrollHeightResolverTests.cs`](../Praxis.Tests/ModalEditorScrollHeightResolverTests.cs): modal scroll height clamping.
+- [`ThemeTextColorPolicyTests.cs`](../Praxis.Tests/ThemeTextColorPolicyTests.cs): theme text color policy.
+- [`ThemeDarkStateResolverTests.cs`](../Praxis.Tests/ThemeDarkStateResolverTests.cs): effective dark-mode resolution.
+- [`ThemeShortcutModeResolverTests.cs`](../Praxis.Tests/ThemeShortcutModeResolverTests.cs): macOS key-input to theme-mode mapping.
+- [`TextCaretPositionResolverTests.cs`](../Praxis.Tests/TextCaretPositionResolverTests.cs): caret-tail placement resolution.
+- [`UiTimingPolicyTests.cs`](../Praxis.Tests/UiTimingPolicyTests.cs): named UI timing constants (focus restore, activation windows, polling interval) and ordering constraints.
 
 ### Launch / Path / Storage / Reflection Utilities
-- `LaunchTargetResolverTests.cs`: HTTP(S)/file/path fallback target resolution and env expansion.
-- `WindowsPathPolicyTests.cs`: UNC (`\\\\server\\share`) path detection used by Windows auth-first launch flow.
-- `AppStoragePathLayoutResolverTests.cs`: platform-specific storage layout policy.
-- `DatabaseSchemaVersionPolicyTests.cs`: schema-version upgrade-path resolution (`PRAGMA user_version` migration sequencing, unsupported/future version rejection), including v1->v2->v3->v4 and unversioned->current multi-step upgrades.
-- `NonPublicPropertySetterTests.cs`: reflection-based writable property assignment behavior.
+- [`LaunchTargetResolverTests.cs`](../Praxis.Tests/LaunchTargetResolverTests.cs): HTTP(S)/file/path fallback target resolution and env expansion.
+- [`WindowsPathPolicyTests.cs`](../Praxis.Tests/WindowsPathPolicyTests.cs): UNC (`\\\\server\\share`) path detection used by Windows auth-first launch flow.
+- [`AppStoragePathLayoutResolverTests.cs`](../Praxis.Tests/AppStoragePathLayoutResolverTests.cs): platform-specific storage layout policy.
+- [`DatabaseSchemaVersionPolicyTests.cs`](../Praxis.Tests/DatabaseSchemaVersionPolicyTests.cs): schema-version upgrade-path resolution (`PRAGMA user_version` migration sequencing, unsupported/future version rejection), including v1->v2->v3->v4 and unversioned->current multi-step upgrades.
+- [`NonPublicPropertySetterTests.cs`](../Praxis.Tests/NonPublicPropertySetterTests.cs): reflection-based writable property assignment behavior.
 
 ## CI Alignment
-- CI (`.github/workflows/ci.yml`) executes tests with coverage collection:
+- CI ([`.github/workflows/ci.yml`](../.github/workflows/ci.yml)) executes tests with coverage collection:
   - `dotnet test Praxis.Tests/Praxis.Tests.csproj -c Release --no-restore -v minimal --collect:"XPlat Code Coverage" --results-directory ./TestResults`
 - CI uploads Cobertura XML artifact from `TestResults/**/coverage.cobertura.xml`.
 - Keep this guide aligned when test files are added/removed/renamed.
@@ -116,7 +116,7 @@ dotnet test Praxis.Tests/Praxis.Tests.csproj --collect:"XPlat Code Coverage"
 - テストフレームワーク: xUnit
 - テストランナー: `Microsoft.NET.Test.Sdk`
 - カバレッジ収集: `coverlet.collector`（`XPlat Code Coverage`）
-- テストプロジェクト: `Praxis.Tests/Praxis.Tests.csproj`
+- テストプロジェクト: [`Praxis.Tests/Praxis.Tests.csproj`](../Praxis.Tests/Praxis.Tests.csproj)
 - 主ターゲット: `net10.0`
 
 ## 実行方法
@@ -145,69 +145,69 @@ dotnet test Praxis.Tests/Praxis.Tests.csproj --collect:"XPlat Code Coverage"
 ## テスト一覧（ファイル別）
 
 ### 基本 / 横断
-- `UnitTest1.cs`（`CoreLogicTests`）: コマンドライン生成、スナップ、検索一致、保持期間の基本確認。
-- `CoreLogicEdgeCaseTests.cs`: パーサ/スナッパ/マッチャー/保持期間の境界ケース。
-- `CoreLogicPerformanceSafetyTests.cs`: 既定値・境界・競合判定（時刻差分のみは非競合、内容差分は競合）の回帰安全性確認。
-- `PolicyTruthTableTests.cs`: フォーカス系ポリシーの真理値表を網羅検証。
-- `MainPageStructureTests.cs`: `MainPage` の partial 分割構造を保護するソース構成テスト。フィールド宣言を `MainPage.Fields.*.cs` に集約し、挙動コードも `MainPage.ModalEditor.cs`、`MainPage.StatusAndTheme.cs`、`MainPage.DockAndQuickLook.cs`、`MainPage.WindowsInput.cs` などの責務別 partial に維持して `MainPage.xaml.cs` へ戻さないことを検証する。加えて、配置領域/Dock ボタン文言フォント（全プラットフォームで `12`）、編集モーダルの欄順と既定フォーカス整合（`ButtonText` が `Command` より上にあり、既定フォーカス対象でもあること）、モーダル専用の ASCII 強制 opt-in（`ModalCommandEntry` のみ `EnforceAsciiInput="True"` を持ち、`MainCommandEntry` は持たないこと）、反転配色UI配線（`UseInvertedThemeColors` トリガー + 編集モーダルチェックボックス binding + フラット正方形チェック表示フック + テキスト入力欄準拠の枠/背景色 + 四辺同一太さの線設定 + ポリラインチェックマーク設定 + ラベルタップハンドラにより "Use opposite theme colors for this button" テキストのクリックでもチェックボックスを切り替え）の XAML/ソース仕様ガードも行う。候補行のマウス操作配線も検証: `CommandSuggestionScrollView` が XAML で命名されていること、ミドル/セカンダリクリックのジェスチャーハンドラが `MainPage.ShortcutsAndConflict.cs`（非 Mac rebuild パス）と `MainPage.MacCatalystBehavior.cs`（Mac rebuild パス）の両方に存在すること、`HandleMacMiddleClick` 内で `TryGetSuggestionItemAtRootPoint` が `TryGetPlacementButtonAtRootPoint` より先に呼ばれること、スクロールオフセット考慮のヒットテストで `CommandSuggestionScrollView.ScrollY` を参照していること。
-- `MainViewModelWorkflowIntegrationTests.cs`: `create -> edit -> execute -> external sync` を通すワークフロー統合テストに加え、command 候補の選択仕様（ポップアップ表示直後は未選択、最初の `↓` で index `0` 選択）も検証する。`MainViewModel` の実ソースをリンクし、リポジトリ/実行器/同期通知はテストダブルで結合検証する。
-- `CiCoverageWorkflowPolicyTests.cs`: CI のテスト手順が `XPlat Code Coverage` 収集と Cobertura アーティファクト出力を維持しているかを検証するワークフロー設定ガード。
+- [`UnitTest1.cs`](../Praxis.Tests/UnitTest1.cs)（`CoreLogicTests`）: コマンドライン生成、スナップ、検索一致、保持期間の基本確認。
+- [`CoreLogicEdgeCaseTests.cs`](../Praxis.Tests/CoreLogicEdgeCaseTests.cs): パーサ/スナッパ/マッチャー/保持期間の境界ケース。
+- [`CoreLogicPerformanceSafetyTests.cs`](../Praxis.Tests/CoreLogicPerformanceSafetyTests.cs): 既定値・境界・競合判定（時刻差分のみは非競合、内容差分は競合）の回帰安全性確認。
+- [`PolicyTruthTableTests.cs`](../Praxis.Tests/PolicyTruthTableTests.cs): フォーカス系ポリシーの真理値表を網羅検証。
+- [`MainPageStructureTests.cs`](../Praxis.Tests/MainPageStructureTests.cs): `MainPage` の partial 分割構造を保護するソース構成テスト。フィールド宣言を `MainPage.Fields.*.cs` に集約し、挙動コードも [`MainPage.ModalEditor.cs`](../Praxis/MainPage.ModalEditor.cs)、[`MainPage.StatusAndTheme.cs`](../Praxis/MainPage.StatusAndTheme.cs)、[`MainPage.DockAndQuickLook.cs`](../Praxis/MainPage.DockAndQuickLook.cs)、[`MainPage.WindowsInput.cs`](../Praxis/MainPage.WindowsInput.cs) などの責務別 partial に維持して [`MainPage.xaml.cs`](../Praxis/MainPage.xaml.cs) へ戻さないことを検証する。加えて、配置領域/Dock ボタン文言フォント（全プラットフォームで `12`）、編集モーダルの欄順と既定フォーカス整合（`ButtonText` が `Command` より上にあり、既定フォーカス対象でもあること）、モーダル専用の ASCII 強制 opt-in（`ModalCommandEntry` のみ `EnforceAsciiInput="True"` を持ち、`MainCommandEntry` は持たないこと）、反転配色UI配線（`UseInvertedThemeColors` トリガー + 編集モーダルチェックボックス binding + フラット正方形チェック表示フック + テキスト入力欄準拠の枠/背景色 + 四辺同一太さの線設定 + ポリラインチェックマーク設定 + ラベルタップハンドラにより "Use opposite theme colors for this button" テキストのクリックでもチェックボックスを切り替え）の XAML/ソース仕様ガードも行う。候補行のマウス操作配線も検証: `CommandSuggestionScrollView` が XAML で命名されていること、ミドル/セカンダリクリックのジェスチャーハンドラが [`MainPage.ShortcutsAndConflict.cs`](../Praxis/MainPage.ShortcutsAndConflict.cs)（非 Mac rebuild パス）と [`MainPage.MacCatalystBehavior.cs`](../Praxis/MainPage.MacCatalystBehavior.cs)（Mac rebuild パス）の両方に存在すること、`HandleMacMiddleClick` 内で `TryGetSuggestionItemAtRootPoint` が `TryGetPlacementButtonAtRootPoint` より先に呼ばれること、スクロールオフセット考慮のヒットテストで `CommandSuggestionScrollView.ScrollY` を参照していること。
+- [`MainViewModelWorkflowIntegrationTests.cs`](../Praxis.Tests/MainViewModelWorkflowIntegrationTests.cs): `create -> edit -> execute -> external sync` を通すワークフロー統合テストに加え、command 候補の選択仕様（ポップアップ表示直後は未選択、最初の `↓` で index `0` 選択）も検証する。[`MainViewModel`](../Praxis/ViewModels/MainViewModel.cs) の実ソースをリンクし、リポジトリ/実行器/同期通知はテストダブルで結合検証する。
+- [`CiCoverageWorkflowPolicyTests.cs`](../Praxis.Tests/CiCoverageWorkflowPolicyTests.cs): CI のテスト手順が `XPlat Code Coverage` 収集と Cobertura アーティファクト出力を維持しているかを検証するワークフロー設定ガード。
 
 ### モデル / 既定値
-- `ModelDefaultsTests.cs`: `LauncherButtonRecord` / `LaunchLogEntry` / `ErrorLogEntry` の既定値・初期化保証。
+- [`ModelDefaultsTests.cs`](../Praxis.Tests/ModelDefaultsTests.cs): [`LauncherButtonRecord`](../Praxis.Core/Models/LauncherButtonRecord.cs) / [`LaunchLogEntry`](../Praxis.Core/Models/LaunchLogEntry.cs) / [`ErrorLogEntry`](../Praxis.Core/Models/ErrorLogEntry.cs) の既定値・初期化保証。
   - `LauncherButtonRecord` のコピーコンストラクタ / `Clone()` が全フィールド（`UseInvertedThemeColors` 含む）を複製することを回帰検証。
 
 ### コマンド実行 / 一致 / 候補
-- `CommandLineBuilderTests.cs`: コマンドライン構築の null/空白処理と正規化。
-- `CommandRecordMatcherTests.cs`: command 完全一致規則、null ガード、trim/大小文字非依存。
-- `CommandSuggestionVisibilityPolicyTests.cs`: コンテキストメニュー表示時の候補クローズ判定。
-- `CommandSuggestionRowColorPolicyTests.cs`: テーマ別の候補行背景色判定。
-- `CommandNotFoundRefocusPolicyTests.cs`: `Command not found:` 時の再フォーカス判定。
-- `StatusFlashErrorPolicyTests.cs`: ステータスのエラーフラッシュ分類判定。
-- `QuickLookPreviewFormatterTests.cs`: Quick Look 表示文字列の正規化・省略・ラベル整形。
+- [`CommandLineBuilderTests.cs`](../Praxis.Tests/CommandLineBuilderTests.cs): コマンドライン構築の null/空白処理と正規化。
+- [`CommandRecordMatcherTests.cs`](../Praxis.Tests/CommandRecordMatcherTests.cs): command 完全一致規則、null ガード、trim/大小文字非依存。
+- [`CommandSuggestionVisibilityPolicyTests.cs`](../Praxis.Tests/CommandSuggestionVisibilityPolicyTests.cs): コンテキストメニュー表示時の候補クローズ判定。
+- [`CommandSuggestionRowColorPolicyTests.cs`](../Praxis.Tests/CommandSuggestionRowColorPolicyTests.cs): テーマ別の候補行背景色判定。
+- [`CommandNotFoundRefocusPolicyTests.cs`](../Praxis.Tests/CommandNotFoundRefocusPolicyTests.cs): `Command not found:` 時の再フォーカス判定。
+- [`StatusFlashErrorPolicyTests.cs`](../Praxis.Tests/StatusFlashErrorPolicyTests.cs): ステータスのエラーフラッシュ分類判定。
+- [`QuickLookPreviewFormatterTests.cs`](../Praxis.Tests/QuickLookPreviewFormatterTests.cs): Quick Look 表示文字列の正規化・省略・ラベル整形。
 
 ### Undo / Redo
-- `ActionHistoryTests.cs`: コマンドパターン履歴スタックの挙動（Undo/Redo 遷移、失敗時ロールバック、容量トリム）。
-- `ButtonHistoryConsistencyPolicyTests.cs`: Undo/Redo 適用時に使う楽観的ロック版一致判定（`UpdatedAtUtc`）。`UseInvertedThemeColors` 差分を内容差分として正しく不一致判定することも検証。
+- [`ActionHistoryTests.cs`](../Praxis.Tests/ActionHistoryTests.cs): コマンドパターン履歴スタックの挙動（Undo/Redo 遷移、失敗時ロールバック、容量トリム）。
+- [`ButtonHistoryConsistencyPolicyTests.cs`](../Praxis.Tests/ButtonHistoryConsistencyPolicyTests.cs): Undo/Redo 適用時に使う楽観的ロック版一致判定（`UpdatedAtUtc`）。`UseInvertedThemeColors` 差分を内容差分として正しく不一致判定することも検証。
 
 ### 入力 / キーボード / フォーカス
-- `CommandEntryBehaviorPolicyTests.cs`: command 入力欄の候補ショートカット有効化/アクティブ化時ネイティブ再フォーカス有効化ポリシー。
-- `WindowActivationCommandFocusPolicyTests.cs`: ウィンドウ再アクティブ時の command フォーカス可否。
-- `SearchFocusGuardPolicyTests.cs`: macOS の Search フォーカスガード判定。
-- `AsciiInputFilterTests.cs`: macOS モーダル command 入力経路で使う ASCII フィルタ判定。
-- `MacCommandInputSourcePolicyTests.cs`: macOS ASCII 入力ソース強制の適用条件（first responder / キーウィンドウ / アプリ active / 欄ごとの opt-in）と、フォーカス中の再強制間隔の安全性を検証。
-- `WindowsCommandInputImePolicyTests.cs`: Windows IME の ASCII モード適用判定（欄ごとの opt-in を含む `ShouldForceAsciiImeMode`）、フォーカス時 ASCII 補正の再試行スケジュール、フォーカス中英字再強制の適用条件/間隔、変換モード正規化、キャレット補正。
-- `WindowsInputScopeCompatibilityPolicyTests.cs`: ネイティブ `InputScope` 設定失敗時（`ArgumentException`）のフォールバック判定。
-- `WindowsModalFocusRestorePolicyTests.cs`: Windows 編集モーダル/競合ダイアログのフォーカス復帰条件。
-- `ConflictDialogFocusRestorePolicyTests.cs`: 競合ダイアログ閉鎖後の編集フォーカス復帰条件。
-- `EditorShortcutActionResolverTests.cs`: モーダル/コンテキスト/競合のキー操作マッピング。
-- `EditorShortcutScopeResolverTests.cs`: オーバーレイ表示状態のショートカット有効範囲判定。
-- `EditorTabInsertionResolverTests.cs`: タブ文字フォールバック検知と遷移方向判定。
-- `FocusRingNavigatorTests.cs`: ラップ付きフォーカスインデックス遷移。
+- [`CommandEntryBehaviorPolicyTests.cs`](../Praxis.Tests/CommandEntryBehaviorPolicyTests.cs): command 入力欄の候補ショートカット有効化/アクティブ化時ネイティブ再フォーカス有効化ポリシー。
+- [`WindowActivationCommandFocusPolicyTests.cs`](../Praxis.Tests/WindowActivationCommandFocusPolicyTests.cs): ウィンドウ再アクティブ時の command フォーカス可否。
+- [`SearchFocusGuardPolicyTests.cs`](../Praxis.Tests/SearchFocusGuardPolicyTests.cs): macOS の Search フォーカスガード判定。
+- [`AsciiInputFilterTests.cs`](../Praxis.Tests/AsciiInputFilterTests.cs): macOS モーダル command 入力経路で使う ASCII フィルタ判定。
+- [`MacCommandInputSourcePolicyTests.cs`](../Praxis.Tests/MacCommandInputSourcePolicyTests.cs): macOS ASCII 入力ソース強制の適用条件（first responder / キーウィンドウ / アプリ active / 欄ごとの opt-in）と、フォーカス中の再強制間隔の安全性を検証。
+- [`WindowsCommandInputImePolicyTests.cs`](../Praxis.Tests/WindowsCommandInputImePolicyTests.cs): Windows IME の ASCII モード適用判定（欄ごとの opt-in を含む `ShouldForceAsciiImeMode`）、フォーカス時 ASCII 補正の再試行スケジュール、フォーカス中英字再強制の適用条件/間隔、変換モード正規化、キャレット補正。
+- [`WindowsInputScopeCompatibilityPolicyTests.cs`](../Praxis.Tests/WindowsInputScopeCompatibilityPolicyTests.cs): ネイティブ `InputScope` 設定失敗時（`ArgumentException`）のフォールバック判定。
+- [`WindowsModalFocusRestorePolicyTests.cs`](../Praxis.Tests/WindowsModalFocusRestorePolicyTests.cs): Windows 編集モーダル/競合ダイアログのフォーカス復帰条件。
+- [`ConflictDialogFocusRestorePolicyTests.cs`](../Praxis.Tests/ConflictDialogFocusRestorePolicyTests.cs): 競合ダイアログ閉鎖後の編集フォーカス復帰条件。
+- [`EditorShortcutActionResolverTests.cs`](../Praxis.Tests/EditorShortcutActionResolverTests.cs): モーダル/コンテキスト/競合のキー操作マッピング。
+- [`EditorShortcutScopeResolverTests.cs`](../Praxis.Tests/EditorShortcutScopeResolverTests.cs): オーバーレイ表示状態のショートカット有効範囲判定。
+- [`EditorTabInsertionResolverTests.cs`](../Praxis.Tests/EditorTabInsertionResolverTests.cs): タブ文字フォールバック検知と遷移方向判定。
+- [`FocusRingNavigatorTests.cs`](../Praxis.Tests/FocusRingNavigatorTests.cs): ラップ付きフォーカスインデックス遷移。
 
 ### UI 非依存の見た目 / レイアウトポリシー
-- `InputClearButtonVisibilityPolicyTests.cs`: クリアボタン表示条件。
-- `DockScrollBarVisibilityPolicyTests.cs`: ポインターホバー状態 + 横オーバーフロー状態に基づく Dock スクロールバー表示判定と、マスク表示の反転ルール判定。
-- `ClearButtonGlyphAlignmentPolicyTests.cs`: クリアボタン `x` の座標補正。
-- `ClearButtonRefocusPolicyTests.cs`: クリア後フォーカス復帰リトライ間隔。
-- `ButtonFocusVisualPolicyTests.cs`: フォーカス枠スタイル判定。
-- `ModalEditorHeightResolverTests.cs`: 複数行エディタ高さ算出とクランプ。
-- `ModalEditorScrollHeightResolverTests.cs`: モーダル項目スクロール高さクランプ。
-- `ThemeTextColorPolicyTests.cs`: テーマ連動文字色判定。
-- `ThemeDarkStateResolverTests.cs`: 実効ダーク判定。
-- `ThemeShortcutModeResolverTests.cs`: macOS キー入力からテーマモード解決。
-- `TextCaretPositionResolverTests.cs`: キャレット末尾配置判定。
-- `UiTimingPolicyTests.cs`: フォーカス復帰・アクティベーション・ポーリングの UI タイミング定数と順序条件。
+- [`InputClearButtonVisibilityPolicyTests.cs`](../Praxis.Tests/InputClearButtonVisibilityPolicyTests.cs): クリアボタン表示条件。
+- [`DockScrollBarVisibilityPolicyTests.cs`](../Praxis.Tests/DockScrollBarVisibilityPolicyTests.cs): ポインターホバー状態 + 横オーバーフロー状態に基づく Dock スクロールバー表示判定と、マスク表示の反転ルール判定。
+- [`ClearButtonGlyphAlignmentPolicyTests.cs`](../Praxis.Tests/ClearButtonGlyphAlignmentPolicyTests.cs): クリアボタン `x` の座標補正。
+- [`ClearButtonRefocusPolicyTests.cs`](../Praxis.Tests/ClearButtonRefocusPolicyTests.cs): クリア後フォーカス復帰リトライ間隔。
+- [`ButtonFocusVisualPolicyTests.cs`](../Praxis.Tests/ButtonFocusVisualPolicyTests.cs): フォーカス枠スタイル判定。
+- [`ModalEditorHeightResolverTests.cs`](../Praxis.Tests/ModalEditorHeightResolverTests.cs): 複数行エディタ高さ算出とクランプ。
+- [`ModalEditorScrollHeightResolverTests.cs`](../Praxis.Tests/ModalEditorScrollHeightResolverTests.cs): モーダル項目スクロール高さクランプ。
+- [`ThemeTextColorPolicyTests.cs`](../Praxis.Tests/ThemeTextColorPolicyTests.cs): テーマ連動文字色判定。
+- [`ThemeDarkStateResolverTests.cs`](../Praxis.Tests/ThemeDarkStateResolverTests.cs): 実効ダーク判定。
+- [`ThemeShortcutModeResolverTests.cs`](../Praxis.Tests/ThemeShortcutModeResolverTests.cs): macOS キー入力からテーマモード解決。
+- [`TextCaretPositionResolverTests.cs`](../Praxis.Tests/TextCaretPositionResolverTests.cs): キャレット末尾配置判定。
+- [`UiTimingPolicyTests.cs`](../Praxis.Tests/UiTimingPolicyTests.cs): フォーカス復帰・アクティベーション・ポーリングの UI タイミング定数と順序条件。
 
 ### 起動 / パス / ストレージ / リフレクション補助
-- `LaunchTargetResolverTests.cs`: HTTP(S)/ファイル/パスのフォールバック起動先解決と環境変数展開。
-- `WindowsPathPolicyTests.cs`: Windows の認証先行起動フローで使う UNC（`\\\\server\\share`）判定。
-- `AppStoragePathLayoutResolverTests.cs`: プラットフォーム別ストレージ配置ルール。
-- `DatabaseSchemaVersionPolicyTests.cs`: スキーマバージョンのアップグレード経路解決（`PRAGMA user_version` の段階適用順序、未対応/未来バージョン拒否）を検証。`v1 -> v2 -> v3 -> v4` と `未バージョン -> 現行` の段階適用も確認する。
-- `NonPublicPropertySetterTests.cs`: リフレクションによる書き込み可能プロパティ設定。
+- [`LaunchTargetResolverTests.cs`](../Praxis.Tests/LaunchTargetResolverTests.cs): HTTP(S)/ファイル/パスのフォールバック起動先解決と環境変数展開。
+- [`WindowsPathPolicyTests.cs`](../Praxis.Tests/WindowsPathPolicyTests.cs): Windows の認証先行起動フローで使う UNC（`\\\\server\\share`）判定。
+- [`AppStoragePathLayoutResolverTests.cs`](../Praxis.Tests/AppStoragePathLayoutResolverTests.cs): プラットフォーム別ストレージ配置ルール。
+- [`DatabaseSchemaVersionPolicyTests.cs`](../Praxis.Tests/DatabaseSchemaVersionPolicyTests.cs): スキーマバージョンのアップグレード経路解決（`PRAGMA user_version` の段階適用順序、未対応/未来バージョン拒否）を検証。`v1 -> v2 -> v3 -> v4` と `未バージョン -> 現行` の段階適用も確認する。
+- [`NonPublicPropertySetterTests.cs`](../Praxis.Tests/NonPublicPropertySetterTests.cs): リフレクションによる書き込み可能プロパティ設定。
 
 ## CI との整合
-- CI（`.github/workflows/ci.yml`）は、次のコマンドでテスト＋カバレッジ収集を実行します。
+- CI（[`.github/workflows/ci.yml`](../.github/workflows/ci.yml)）は、次のコマンドでテスト＋カバレッジ収集を実行します。
   - `dotnet test Praxis.Tests/Praxis.Tests.csproj -c Release --no-restore -v minimal --collect:"XPlat Code Coverage" --results-directory ./TestResults`
 - CI は `TestResults/**/coverage.cobertura.xml` を Cobertura アーティファクトとして保存します。
 - テストファイルの追加・削除・改名時は本ガイドも更新してください。
