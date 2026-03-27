@@ -207,7 +207,9 @@ public partial class MainPage
 
     private void FocusEntryAfterClearButtonTap(Entry entry)
     {
-        var retryDelays = ClearButtonRefocusPolicy.ResolveRetryDelays(OperatingSystem.IsWindows());
+        var retryDelays = ClearButtonRefocusPolicy.ResolveRetryDelays(
+            isWindows: OperatingSystem.IsWindows(),
+            isMacCatalyst: OperatingSystem.IsMacCatalyst());
 #if WINDOWS
         EnsureWindowsTextBoxHooks();
         windowsSelectAllOnTabNavigationPending = false;
@@ -231,12 +233,21 @@ public partial class MainPage
         PlaceMacEntryCaretAtEnd(entry);
 #endif
 #if WINDOWS
+        EnsureWindowsTextBoxHooks();
         windowsSelectAllOnTabNavigationPending = false;
         var textBox = ResolveWindowsTextBoxForEntry(entry);
-        if (textBox is not null)
+        if (!ShouldApplyWindowsNativeTextBoxFocus(textBox))
         {
-            textBox.Focus(Microsoft.UI.Xaml.FocusState.Programmatic);
+            return;
+        }
+
+        try
+        {
+            textBox!.Focus(Microsoft.UI.Xaml.FocusState.Programmatic);
             PlaceWindowsTextBoxCaretAtEnd(textBox);
+        }
+        catch
+        {
         }
 #endif
     }
@@ -244,17 +255,26 @@ public partial class MainPage
 #if WINDOWS
     private Microsoft.UI.Xaml.Controls.TextBox? ResolveWindowsTextBoxForEntry(Entry entry)
     {
+        var current = entry.Handler?.PlatformView as Microsoft.UI.Xaml.Controls.TextBox;
         if (ReferenceEquals(entry, MainCommandEntry))
         {
-            return commandTextBox ?? entry.Handler?.PlatformView as Microsoft.UI.Xaml.Controls.TextBox;
+            return current ?? commandTextBox;
         }
 
         if (ReferenceEquals(entry, MainSearchEntry))
         {
-            return searchTextBox ?? entry.Handler?.PlatformView as Microsoft.UI.Xaml.Controls.TextBox;
+            return current ?? searchTextBox;
         }
 
-        return entry.Handler?.PlatformView as Microsoft.UI.Xaml.Controls.TextBox;
+        return current;
+    }
+
+    private static bool ShouldApplyWindowsNativeTextBoxFocus(Microsoft.UI.Xaml.Controls.TextBox? textBox)
+    {
+        return WindowsNativeFocusSafetyPolicy.ShouldApplyNativeFocus(
+            hasTextBox: textBox is not null,
+            isLoaded: textBox?.IsLoaded == true,
+            hasXamlRoot: textBox?.XamlRoot is not null);
     }
 
     private static void PlaceWindowsTextBoxCaretAtEnd(Microsoft.UI.Xaml.Controls.TextBox textBox)

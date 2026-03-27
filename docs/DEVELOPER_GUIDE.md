@@ -107,6 +107,7 @@ Test-specific operation and coverage inventory are documented in [`docs/TESTING_
 - Windows command input uses a dedicated handler. Only command entries that opt into ASCII enforcement apply native `InputScopeNameValue.AlphanumericHalfWidth` on focus and nudge IME open/conversion state toward ASCII via `imm32` with an immediate attempt plus one short delayed retry per focus acquisition. Global focused-state periodic re-apply and `TextChanging` rewrite remain disabled by default to protect text Undo/Redo granularity, while modal edit `Command` opts into focused-state ASCII reassertion to prevent manual IME-mode switching while focused. If native `InputScope` assignment throws `ArgumentException (E_RUNTIME_SETVALUE)` on some environments, the handler flips a one-way unsupported flag, skips later `InputScope` writes, and continues with the IME fallback path.
 - [`Praxis.Core/Logic/`](../Praxis.Core/Logic/)
   - Search matcher, command line builder, grid snap, log retention, launch target resolver, button layout defaults, record version comparer, ASCII input filter
+  - Clear-button focus behavior is policy-driven: `ClearButtonRefocusPolicy` chooses retry timing per platform, and `WindowsNativeFocusSafetyPolicy` gates native `TextBox.Focus/Select` to loaded/XamlRoot-backed controls only
   - [`UiTimingPolicy`](../Praxis.Core/Logic/UiTimingPolicy.cs) centralizes UI delay constants shared by app code (focus restore, mac activation windows, polling intervals)
 
 ## Architecture Flows
@@ -272,9 +273,11 @@ sequenceDiagram
   - On macOS, `ModalCommandEntry` disables command suggestion navigation and activation-time native refocus, so modal command IME control does not change top-bar focus behavior.
   - On Windows, only `ModalCommandEntry` applies native `InputScopeNameValue.AlphanumericHalfWidth` on focus and nudges IME open/conversion state toward ASCII via `imm32` immediately plus one short delayed retry per focus acquisition. Focused-state periodic re-apply and `TextChanging` rewrite are disabled by default to avoid degrading text Undo/Redo granularity, while modal `ModalCommandEntry` enables focused-state ASCII reassertion so IME cannot be switched away from alphanumeric mode during modal editing.
   - `Command`/`Search` use an in-field circular clear button (`x`) shown only while text is non-empty; right text inset is increased to prevent overlap with the button.
-  - Clear-button tap clears the target input and immediately refocuses the same input so caret/editing state stays active.
+  - Clear-button tap clears the target input and refocuses the same input so caret/editing state stays active.
+  - On macOS, clear-button refocus is deferred to the next frame (plus one short retry) so the field does not re-enter first-responder negotiation while the clear button is disappearing.
   - Windows clear-button glyph alignment uses `ClearButtonGlyphAlignmentPolicy` (`-0.5` translation on both axes) so the `x` intersection stays centered in the circle.
   - Windows clear-button focus restore uses `ClearButtonRefocusPolicy` (immediate + short delayed retry) and native `TextBox.Focus(Programmatic)` + caret-tail placement to avoid pointer-tap timing blur.
+  - On Windows, native refocus/caret restore is skipped unless the current `TextBox` is still loaded and has a live `XamlRoot`; the handler-backed `PlatformView` is preferred over cached references to avoid touching stale controls after clear-button visibility/layout churn.
   - Clear button hover sets hand cursor on Windows/macOS. Windows applies `ProtectedCursor` via reflection (`NonPublicPropertySetter`) to avoid access-level differences across SDKs; macOS uses `NSCursor.pointingHandCursor`.
   - Opening context menu from right click closes suggestions and moves focus target to `Edit` (on macOS, command-input first responder is also resigned)
   - Windows arrow key handling is attached in [`MainPage.WindowsInput.cs`](../Praxis/MainPage.WindowsInput.cs) (`MainCommandEntry_HandlerChanged` wires native hooks, `KeyDown` routes the keys)
@@ -635,9 +638,11 @@ sequenceDiagram
 - Windows の command 入力欄では、ASCII 強制は `ModalCommandEntry` にだけ適用する。フォーカス時にネイティブ `InputScopeNameValue.AlphanumericHalfWidth` を適用し、`imm32` で IME の Open/Conversion 状態を英字入力寄りへ「即時 + 短遅延の 1 回再試行」で戻す。通常はフォーカス中のタイマー再強制や `TextChanging` での文字列書き換えを無効化して Undo/Redo 粒度への副作用を避けるが、モーダル `ModalCommandEntry` はフォーカス中の英字再強制を有効化して、フォーカス後の手動IME切替を抑止している。`InputScope` 設定が `ArgumentException (E_RUNTIME_SETVALUE)` で失敗した環境では、再設定を無効化してフォールバック動作を維持する。
   - `Command`/`Search` は、文字列が空でないときのみ欄内右端に丸形クリアボタン（`x`）を表示し、文字重なり防止のため右側テキスト余白を拡張する
   - 配置領域/Dock のボタンをホバーすると、ミニマルな Quick Look オーバーレイで `Command` / `Tool` / `Arguments` / `Clip Word` / `Note` の概要を表示する
-  - クリアボタン押下時は対象入力欄をクリアし、同じ入力欄へ即時フォーカスを戻してキャレット表示を維持する
+  - クリアボタン押下時は対象入力欄をクリアし、同じ入力欄へ再フォーカスしてキャレット表示を維持する
+  - macOS では、クリアボタン非表示切替中の responder 再入を避けるため、再フォーカスを次フレームへ遅延し、必要なら短い追試行を行う
   - Windows のクリアボタン `x` 位置補正は `ClearButtonGlyphAlignmentPolicy` で管理し、X/Y ともに `-0.5` 平行移動して `x` の交点を丸背景中心へ合わせる
   - Windows のクリア後フォーカス復帰は `ClearButtonRefocusPolicy`（即時＋短遅延）で再試行し、ネイティブ `TextBox.Focus(Programmatic)` とキャレット末尾配置を併用してタップ由来のフォーカス外れを防ぐ
+  - Windows では、ネイティブ再フォーカス/キャレット復帰は loaded かつ `XamlRoot` を持つ `TextBox` にだけ適用し、cached 参照よりも現在の handler `PlatformView` を優先して stale control 参照を避ける
   - クリアボタンのホバー時カーソルは Windows/macOS で手形にする。Windows は SDK 差分を吸収するため `NonPublicPropertySetter` を使って `ProtectedCursor` をリフレクション設定し、macOS は `NSCursor.pointingHandCursor` を使う
   - 右クリックでコンテキストメニューを開いたときは、候補を閉じて `Edit` をフォーカス対象にする（macOS では Command 入力の first responder も解除する）
   - Windows の方向キー上下は [`MainPage.WindowsInput.cs`](../Praxis/MainPage.WindowsInput.cs) で処理し、`MainCommandEntry_HandlerChanged` からネイティブフックを接続して `KeyDown` へルーティングする

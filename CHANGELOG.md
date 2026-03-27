@@ -34,6 +34,8 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - New-button create now selects all `ButtonText` text on initial modal focus on both Windows and macOS
 - Windows: Tab focus navigation selects all text in input fields
 - Clear button focus restore stability after tap (immediate attempt + short delayed retry)
+- Windows: top-bar `Command` / `Search` clear-button refocus now skips stale native `TextBox` instances to avoid rare aborts
+- macOS: clear-button refocus is deferred to the next frame to avoid responder re-entry during clear-button hide
 - Clear-button X glyph vertical centering on Windows
 - Command suggestion colors stay theme-synced during live theme switch
 - `CommandEntry` / `SearchEntry`: lowercase letters no longer converted to uppercase
@@ -104,6 +106,8 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - 新規ボタン作成時は、モーダル初回フォーカスの `ButtonText` を Windows / macOS で全選択
 - Windows: Tab フォーカス移動時にテキスト入力欄の全選択
 - クリアボタンタップ後のフォーカス復帰を安定化（即時試行 + 短遅延リトライ）
+- Windows: 上部 `Command` / `Search` のクリア後再フォーカスで stale な native `TextBox` を避け、まれな abort を抑止
+- macOS: クリア後再フォーカスを次フレームへ遅延し、クリアボタン非表示切替中の responder 再入を回避
 - Windows のクリアボタン X グリフの垂直方向センタリング
 - テーマのライブ切替中もコマンド候補の色をテーマに同期
 - `CommandEntry` / `SearchEntry` で英小文字が大文字変換される問題
