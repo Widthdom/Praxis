@@ -6,6 +6,8 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 
 ## [Unreleased]
 
+### [1.1.0] - 2026-03-28
+
 ### Added
 - Per-button inverted colors with auto DB schema migration (v1 → v2)
 - DB-backed error logging (ERROR + INFO levels) with 30-day retention (`ErrorLog` table, schema v3 → v4)
@@ -78,6 +80,8 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 
 ## [Unreleased]
 
+### [1.1.0] - 2026-03-28
+
 ### 追加
 - ボタン単位の色反転（インバート）機能、DB スキーマ自動マイグレーション付き（v1 → v2）
 - DB バックの ERROR / INFO 2レベルエラーログ（`ErrorLog` テーブル、30日保持、schema v3 → v4）
@@ -139,3 +143,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - `MainPage` フィールドファイルと `MauiProgram` ハンドラ登録のプラットフォームプリプロセッサブロックを整理・統合
 - 重複 `using` ディレクティブの削除と `using` 順序の正規化
 - `MainViewModel` と各 partial クラスに主要ライフサイクルイベントの `LogInfo` 呼び出しを追加
+
+[Unreleased]: https://github.com/Widthdom/Praxis/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/Widthdom/Praxis/compare/v1.0.0...v1.1.0
+[1.0.0]: https://github.com/Widthdom/Praxis/tree/v1.0.0
