@@ -6,6 +6,15 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 
 ## [Unreleased]
 
+### [1.1.1] - 2026-03-28
+
+### Fixed
+- GitHub Actions checkout now fetches full history so Nerdbank.GitVersioning can calculate version height in CI and release packaging jobs
+- macOS GitHub Actions jobs initialize Xcode before Mac Catalyst build/publish to avoid `ibtoold` / Xcode plug-in initialization failures on fresh runners
+
+### Changed
+- Added README header badges for CI, CodeQL, Delivery, .NET 10, .NET MAUI, supported platforms, SQLite, and MIT license
+
 ### [1.1.0] - 2026-03-28
 
 ### Added
@@ -80,6 +89,15 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 
 ## [Unreleased]
 
+### [1.1.1] - 2026-03-28
+
+### 修正
+- GitHub Actions の checkout で履歴をフル取得するようにし、CI と配布ジョブで Nerdbank.GitVersioning の version height 計算が shallow clone で失敗しないよう修正
+- macOS の GitHub Actions ジョブで Mac Catalyst の build / publish 前に Xcode を初期化し、fresh runner 上の `ibtoold` / Xcode プラグイン初期化失敗を回避
+
+### 変更
+- README 冒頭に CI / CodeQL / Delivery / .NET 10 / .NET MAUI / 対応プラットフォーム / SQLite / MIT License のバッジを追加
+
 ### [1.1.0] - 2026-03-28
 
 ### 追加
@@ -144,6 +162,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - 重複 `using` ディレクティブの削除と `using` 順序の正規化
 - `MainViewModel` と各 partial クラスに主要ライフサイクルイベントの `LogInfo` 呼び出しを追加
 
-[Unreleased]: https://github.com/Widthdom/Praxis/compare/v1.1.0...HEAD
+[Unreleased]: https://github.com/Widthdom/Praxis/compare/v1.1.1...HEAD
+[1.1.1]: https://github.com/Widthdom/Praxis/compare/v1.1.0...v1.1.1
 [1.1.0]: https://github.com/Widthdom/Praxis/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/Widthdom/Praxis/tree/v1.0.0
