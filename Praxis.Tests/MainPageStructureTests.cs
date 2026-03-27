@@ -103,6 +103,24 @@ public class MainPageStructureTests
     }
 
     [Fact]
+    public void MainPage_NewEditorOpen_SelectsAllButtonTextOnInitialFocus()
+    {
+        var root = ResolveRepositoryRoot();
+        var pointerSource = File.ReadAllText(Path.Combine(root, "Praxis", "MainPage.PointerAndSelection.cs"));
+        var viewModelEventsSource = File.ReadAllText(Path.Combine(root, "Praxis", "MainPage.ViewModelEvents.cs"));
+        var macSource = File.ReadAllText(Path.Combine(root, "Praxis", "MainPage.MacCatalystBehavior.cs"));
+        var fieldsSource = File.ReadAllText(Path.Combine(root, "Praxis", "MainPage.Fields.OverlayAndEditor.cs"));
+
+        Assert.Contains("private bool modalPrimaryFieldSelectAllPending;", fieldsSource);
+        Assert.Contains("modalPrimaryFieldSelectAllPending = !viewModel.Editor.IsExistingRecord;", viewModelEventsSource);
+        Assert.Contains("var shouldSelectAll = modalPrimaryFieldSelectAllPending;", pointerSource);
+        Assert.Contains("textBox.SelectAll();", pointerSource);
+        Assert.Contains("TryFocusModalPrimaryTarget(selectAllText: shouldSelectAll);", pointerSource);
+        Assert.Contains("private bool TryFocusModalPrimaryTarget(bool selectAllText = false)", macSource);
+        Assert.Contains("SelectAllMacEntryText(ModalButtonTextEntry);", macSource);
+    }
+
+    [Fact]
     public void MainPage_ModalCommandEntry_OptsIntoAsciiInputEnforcement_WhileMainCommandEntryDoesNot()
     {
         var root = ResolveRepositoryRoot();

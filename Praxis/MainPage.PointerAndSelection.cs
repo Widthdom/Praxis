@@ -1069,7 +1069,10 @@ public partial class MainPage
 
     private void FocusModalPrimaryEditorField()
     {
+        var shouldSelectAll = modalPrimaryFieldSelectAllPending;
+        modalPrimaryFieldSelectAllPending = false;
 #if WINDOWS
+        EnsureWindowsTextBoxHooks();
         try
         {
             ModalButtonTextEntry.Focus();
@@ -1078,8 +1081,15 @@ public partial class MainPage
         {
             return;
         }
+
+        if (shouldSelectAll &&
+            ResolveWindowsTextBoxForEntry(ModalButtonTextEntry) is Microsoft.UI.Xaml.Controls.TextBox textBox)
+        {
+            textBox.Focus(Microsoft.UI.Xaml.FocusState.Programmatic);
+            textBox.SelectAll();
+        }
 #elif MACCATALYST
-        TryFocusModalPrimaryTarget();
+        TryFocusModalPrimaryTarget(selectAllText: shouldSelectAll);
 #else
         ModalButtonTextEntry.Focus();
 #endif

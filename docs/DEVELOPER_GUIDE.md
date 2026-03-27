@@ -322,6 +322,7 @@ sequenceDiagram
   - Right-click on empty placement area opens create editor at clicked canvas coordinates (`Selection_PointerPressed` and `PlacementCanvas_SecondaryTapped` paths).
   - Right-click create flow seeds editor `Arguments` from clipboard.
   - Starting create flow clears `SearchText` (top-bar create and empty-area right-click).
+  - On new-button create, the first modal focus still lands on `ButtonText`, and the initial `ButtonText` value is selected on both Windows and macOS for immediate overwrite.
 - Quick Look preview:
   - Hovering a placement/dock button shows a minimal tooltip-style overlay.
   - Preview fields: `Command` / `Tool` / `Arguments` / `Clip Word` / `Note`.
@@ -335,6 +336,7 @@ sequenceDiagram
   - The modal field section uses `Auto` row sizing (not `*`) so cleared multiline content releases extra whitespace immediately.
   - On Windows Dark theme, `Clip Word` / `Note` text color is explicitly synchronized to theme-aware modal input text color to keep contrast readable.
   - On open, the editor modal focuses `ButtonText`, matching the topmost editable field after `GUID`.
+  - On new-button create, initial `ButtonText` focus selects the full text on both Windows and macOS; follow-up focus restores do not reselect automatically.
   - On Windows, when focus leaves all modal inputs/actions, focus is restored to modal `ButtonText` so modal shortcuts (`Esc` / `Ctrl+S`) remain active.
 - Conflict resolution dialog:
   - Replaces native action sheet with in-app overlay dialog (`ConflictOverlay`) for visual consistency.
@@ -684,6 +686,7 @@ sequenceDiagram
   - ボタン配置領域の空きスペース右クリックは、クリックしたキャンバス座標で新規作成モーダルを開く（`Selection_PointerPressed` と `PlacementCanvas_SecondaryTapped` の両経路）。
   - ボタン配置領域の空きスペース右クリック作成時のみ、エディタの `Arguments` にクリップボード値を初期設定する。
   - 新規作成開始時（上部 Create / ボタン配置領域の空きスペース右クリック）の両経路で `SearchText` をクリアする。
+  - 新規ボタン作成時の初回モーダルフォーカスは `ButtonText` のままとし、Windows / macOS とも初期値を全選択して即上書き入力できるようにする。
 - 編集モーダルの欄仕様:
   - `Clip Word` は `Note` と同様に複数行 `Editor` を使い、行数に応じて高さを調整する。
   - コピーアイコンボタンは各行で縦中央揃えとし、`Clip Word` / `Note` の複数行拡張時は入力欄と同じ高さに追従する。
@@ -693,6 +696,7 @@ sequenceDiagram
   - モーダル項目領域は `*` ではなく `Auto` 行サイズで構成し、複数行入力を消した際に余白を即時解放する。
   - Windows ダークテーマでは、`Clip Word` / `Note` の文字色をテーマ連動のモーダル入力文字色に明示同期し、コントラストを維持する。
   - 表示時の初期フォーカスは、`GUID` を除く先頭の編集可能欄である `ButtonText` とする。
+  - 新規ボタン作成時は、初回の `ButtonText` フォーカスで全文を選択し、以後のフォーカス復帰では自動再選択しない。
   - Windows では、モーダル入力欄/操作ボタンすべてからフォーカスが外れたとき、`ButtonText` へフォーカスを復帰して `Esc` / `Ctrl+S` ショートカットを維持する。
 - 競合解決ダイアログ:
   - OS 既定のアクションシートではなく、アプリ内オーバーレイ（`ConflictOverlay`）で表示してデザインを統一。

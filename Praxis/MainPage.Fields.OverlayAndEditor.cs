@@ -30,6 +30,7 @@ public partial class MainPage
     private TaskCompletionSource<EditorConflictResolution>? editorConflictTcs;
     private Guid? quickLookPendingItemId;
     private VisualElement? quickLookPendingAnchor;
+    private bool modalPrimaryFieldSelectAllPending;
 
     // Conflict dialog pseudo focus state.
     private ConflictDialogFocusTarget? conflictDialogPseudoFocusedTarget;

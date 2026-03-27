@@ -162,9 +162,19 @@ public partial class MainPage
         return IsModalFocusTargetActive(target);
     }
 
-    private bool TryFocusModalPrimaryTarget()
+    private bool TryFocusModalPrimaryTarget(bool selectAllText = false)
     {
-        return TryFocusModalVisual(ModalButtonTextEntry);
+        if (!TryFocusModalVisual(ModalButtonTextEntry))
+        {
+            return false;
+        }
+
+        if (selectAllText)
+        {
+            SelectAllMacEntryText(ModalButtonTextEntry);
+        }
+
+        return IsModalFocusTargetActive(ModalButtonTextEntry);
     }
 
     private bool TryFocusModalCommandTarget()

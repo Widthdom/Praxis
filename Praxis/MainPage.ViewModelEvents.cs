@@ -95,6 +95,10 @@ public partial class MainPage
             if (e.PropertyName == nameof(MainViewModel.IsEditorOpen))
             {
                 App.SetEditorOpenState(viewModel.IsEditorOpen);
+                if (!viewModel.IsEditorOpen)
+                {
+                    modalPrimaryFieldSelectAllPending = false;
+                }
                 ApplyTabPolicy();
                 UpdateModalEditorHeights();
 #if MACCATALYST
@@ -115,6 +119,7 @@ public partial class MainPage
 #if MACCATALYST
         macGuidLockedText = viewModel.Editor.GuidText ?? string.Empty;
 #endif
+        modalPrimaryFieldSelectAllPending = !viewModel.Editor.IsExistingRecord;
         Dispatcher.DispatchDelayed(UiTimingPolicy.EditorOpenFocusDelay, () =>
         {
             if (!viewModel.IsEditorOpen || IsConflictDialogOpen())
