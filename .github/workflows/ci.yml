@@ -62,7 +62,7 @@ jobs:
           dotnet-version: 10.0.100
 
       - name: Install MAUI workload
-        run: dotnet workload install maui
+        run: dotnet workload install maui --skip-manifest-update
 
       - name: Build app (Windows)
         run: dotnet build Praxis/Praxis.csproj -c Release -f net10.0-windows10.0.19041.0 -v minimal
@@ -82,7 +82,7 @@ jobs:
           dotnet-version: 10.0.100
 
       - name: Install MAUI workload
-        run: dotnet workload install maui
+        run: dotnet workload install maui --skip-manifest-update
 
       - name: Initialize Xcode
         run: sudo xcodebuild -runFirstLaunch
