@@ -1,5 +1,15 @@
 # Praxis
 
+[![CI](https://github.com/Widthdom/Praxis/actions/workflows/ci.yml/badge.svg)](https://github.com/Widthdom/Praxis/actions/workflows/ci.yml)
+[![CodeQL](https://github.com/Widthdom/Praxis/actions/workflows/codeql.yml/badge.svg)](https://github.com/Widthdom/Praxis/actions/workflows/codeql.yml)
+[![Delivery](https://github.com/Widthdom/Praxis/actions/workflows/delivery.yml/badge.svg)](https://github.com/Widthdom/Praxis/actions/workflows/delivery.yml)
+
+![.NET 10](https://img.shields.io/badge/.NET-10-512BD4?logo=dotnet&logoColor=white)
+![.NET_MAUI](https://img.shields.io/badge/.NET%20MAUI-Desktop-512BD4?logo=dotnet&logoColor=white)
+![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20macOS-lightgrey)
+![SQLite](https://img.shields.io/badge/Database-SQLite-003B57?logo=sqlite&logoColor=white)
+![License](https://img.shields.io/badge/License-MIT-blue)
+
 License: MIT (see [`LICENSE`](LICENSE)).
 
 ## Overview

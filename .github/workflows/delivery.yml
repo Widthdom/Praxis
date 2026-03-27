@@ -46,6 +46,10 @@ jobs:
       - name: Install MAUI workload
         run: dotnet workload install maui
 
+      - name: Initialize Xcode
+        if: matrix.name == 'maccatalyst'
+        run: sudo xcodebuild -runFirstLaunch
+
       - name: Check Xcode compatibility (Mac Catalyst)
         id: xcode_check
         if: matrix.name == 'maccatalyst'
