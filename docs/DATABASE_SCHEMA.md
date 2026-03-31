@@ -35,6 +35,7 @@ Notes:
 - `buttons.sync` is stored separately for multi-window signaling:
   - Windows: `%USERPROFILE%/AppData/Local/Praxis/buttons.sync`
   - macOS (Mac Catalyst): `~/Library/Application Support/Praxis/buttons.sync`
+- `crash.log` is stored in the same directory for crash-safe file-based logging (see [Crash Log File](#crash-log-file) section below).
 
 ## Table List
 - `LauncherButtonEntity`
@@ -135,23 +136,37 @@ Application-level behavior:
   - `DELETE FROM LaunchLogEntity WHERE TimestampUtc < threshold`
 
 ## Table: ErrorLogEntity
-Purpose: application error logs (exception and info logging).
+Purpose: application error logs (exception, warning, and info logging).
 
 | Column | SQLite type | Null | PK | Description |
 |---|---|---|---|---|
 | `Id` | `varchar` | No | Yes | GUID string (`ErrorLogEntry.Id`) |
-| `Level` | `varchar` | No | No | Severity level (`Error` / `Info`) |
+| `Level` | `varchar` | No | No | Severity level (`Error` / `Warning` / `Info`) |
 | `Context` | `varchar` | Yes | No | Code context where the entry was logged (e.g. method name) |
-| `ExceptionType` | `varchar` | Yes | No | Full exception type name (empty for Info entries) |
-| `Message` | `varchar` | Yes | No | Exception message or info message |
-| `StackTrace` | `varchar` | Yes | No | Exception stack trace (empty for Info entries) |
+| `ExceptionType` | `varchar` | Yes | No | Full exception type chain (e.g. `InvalidOperationException -> NullReferenceException`; empty for Info/Warning entries) |
+| `Message` | `varchar` | Yes | No | Exception message chain or info/warning message |
+| `StackTrace` | `varchar` | Yes | No | Full exception output via `Exception.ToString()` (empty for Info/Warning entries) |
 | `TimestampUtc` | `datetime` | Yes | No | Timestamp when the entry was logged (UTC) |
 
 Application-level behavior:
-- Error entries written by `DbErrorLogger` via `IErrorLogger.Log(exception, context)`.
+- Error entries written by `DbErrorLogger` via `IErrorLogger.Log(exception, context)`. Exception type chains, concatenated inner messages, and full stack traces (including inner exceptions) are captured.
+- Warning entries written by `DbErrorLogger` via `IErrorLogger.LogWarning(message, context)`.
 - Info entries written by `DbErrorLogger` via `IErrorLogger.LogInfo(message, context)`.
+- All log calls first write synchronously to a file-based crash log (`CrashFileLogger` → `crash.log`) for crash-safe persistence, then enqueue for async DB write.
 - Retention cleanup: `DELETE FROM ErrorLogEntity WHERE TimestampUtc < threshold` (30-day retention; cleanup is triggered only when Error entries are written, and deletes all rows older than the threshold regardless of Level).
-- Write failures are silently suppressed to avoid infinite error loops.
+- DB write failures are silently suppressed (the crash file already has the record).
+
+## Crash Log File
+Purpose: synchronous file-based fallback for crash-safe logging (not stored in SQLite).
+
+- File name: `crash.log`
+- Resolved locations:
+  - Windows: `%LOCALAPPDATA%\Praxis\crash.log`
+  - macOS (Mac Catalyst): `~/Library/Application Support/Praxis/crash.log`
+- Written synchronously by `CrashFileLogger` on every `IErrorLogger` call (Error/Warning/Info levels).
+- Automatic rotation at 512 KB (`crash.log` → `crash.log.old`).
+- Contains timestamped entries with full exception chains, stack traces, and `Exception.Data` dictionaries.
+- Intended as a diagnostic fallback when the SQLite database is unavailable or the process terminates before async DB writes complete.
 
 ## Table: AppSettingEntity
 Purpose: key-value app settings.
@@ -230,7 +245,12 @@ Praxis が使う SQLite テーブル設計を明文化します。
 - `UpdatedAtUtc` だけが異なり内容が一致する場合は非競合として扱います。
 - `LaunchLogEntity.Source` の現行値は `button` / `command` です。
 - `LaunchLogEntity` は保持期間超過分を `TimestampUtc` 条件で一括削除します。
-- `ErrorLogEntity` は `IErrorLogger.Log(exception, context)`（Error）および `IErrorLogger.LogInfo(message, context)`（Info）経由で `DbErrorLogger` が書き込みます。保持期間クリーンアップは Error エントリ書き込み時にのみ発動し、Level を問わず閾値より古い全行を削除します（30 日保持）。書き込み失敗は無限ループ防止のため握り潰します。
+- `ErrorLogEntity` は `IErrorLogger.Log(exception, context)`（Error）、`IErrorLogger.LogWarning(message, context)`（Warning）、および `IErrorLogger.LogInfo(message, context)`（Info）経由で `DbErrorLogger` が書き込みます。全ログ呼び出しはまず `CrashFileLogger` でファイルに同期書き込みし、その後 DB への非同期書き込みをキューイングします。保持期間クリーンアップは Error エントリ書き込み時にのみ発動し、Level を問わず閾値より古い全行を削除します（30 日保持）。DB 書き込み失敗はクラッシュファイルに記録済みのため握り潰します。
+- `crash.log` はクラッシュ安全ロギング用の同期ファイルベースフォールバックです（SQLite 外）:
+  - Windows: `%LOCALAPPDATA%\Praxis\crash.log`
+  - macOS（Mac Catalyst）: `~/Library/Application Support/Praxis/crash.log`
+  - 512 KB で自動ローテーション（`crash.log` → `crash.log.old`）
+  - SQLite が利用不可、または非同期 DB 書き込み完了前にプロセスが終了した場合の診断用フォールバックです。
 - `AppSettingEntity` の既知キー:
   - `theme`（`Light` / `Dark` / `System`）
   - `dock_order`（GUID の CSV）

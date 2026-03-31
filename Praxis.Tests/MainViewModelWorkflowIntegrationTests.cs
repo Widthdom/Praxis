@@ -393,6 +393,8 @@ public class MainViewModelWorkflowIntegrationTests
     private sealed class NullErrorLogger : IErrorLogger
     {
         public void Log(Exception exception, string context) { }
+        public void LogWarning(string message, string context) { }
         public void LogInfo(string message, string context) { }
+        public Task FlushAsync(TimeSpan timeout) => Task.CompletedTask;
     }
 }

@@ -1,4 +1,5 @@
 using Microsoft.UI.Xaml;
+using Praxis.Services;
 using System.Text;
 
 // To learn more about WinUI, the WinUI project structure,
@@ -34,16 +35,21 @@ public partial class App : MauiWinUIApplication
 	{
 		this.UnhandledException += (_, e) =>
 		{
+			CrashFileLogger.WriteException("WinUI.UnhandledException", e.Exception);
 			WriteStartupLog("WinUI.UnhandledException", e.Exception);
 		};
 
 		AppDomain.CurrentDomain.UnhandledException += (_, e) =>
 		{
+			CrashFileLogger.WriteException(
+				$"Win.AppDomain.UnhandledException (IsTerminating={e.IsTerminating})",
+				e.ExceptionObject as Exception);
 			WriteStartupLog("AppDomain.UnhandledException", e.ExceptionObject as Exception);
 		};
 
 		TaskScheduler.UnobservedTaskException += (_, e) =>
 		{
+			CrashFileLogger.WriteException("Win.TaskScheduler.UnobservedTaskException", e.Exception);
 			WriteStartupLog("TaskScheduler.UnobservedTaskException", e.Exception);
 		};
 	}
