@@ -6,6 +6,25 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 
 ## [Unreleased]
 
+### Added
+- Synchronous file-based crash logger (`CrashFileLogger`) that writes to `crash.log` immediately on every log call, surviving abrupt process termination where async DB writes would be lost
+  - Cross-platform: Windows `%LOCALAPPDATA%\Praxis\crash.log`, macOS `~/Library/Application Support/Praxis/crash.log`
+  - Automatic log rotation at 512 KB
+  - Full exception chain output including inner exceptions, `AggregateException` flattening, and `Exception.Data` dictionary
+- `IErrorLogger.LogWarning(message, context)` for warning-level log entries
+- `IErrorLogger.FlushAsync(timeout)` to drain pending async DB writes during graceful shutdown
+- `AppDomain.ProcessExit` handler that flushes logs before process exit
+- `UnhandledException` handler now attempts synchronous flush when `IsTerminating=true`
+- Mac Catalyst `AppDelegate` crash file logging hooks (`UnhandledException`, `UnobservedTaskException`, `MarshalManagedException`)
+- Windows platform exception handlers now write to both `startup.log` and `crash.log`
+- Non-Exception thrown objects are now captured in `UnhandledException` handler
+
+### Changed
+- `DbErrorLogger` rewritten: all `Log`/`LogInfo`/`LogWarning` calls write to crash file synchronously first, then enqueue for async DB write via `ConcurrentQueue` with single-writer drain loop (replaces fire-and-forget `_ = LogAsync()` pattern)
+- Error log entries now capture full exception type chains (e.g. `InvalidOperationException -> NullReferenceException`), concatenated inner messages, and complete stack traces via `Exception.ToString()`
+- `ErrorLogEntity.Level` column now accepts `Warning` in addition to `Error` and `Info`
+- `ResolveRootPage` failure now logged via `IErrorLogger` (was silently swallowed)
+
 ### [1.1.1] - 2026-03-28
 
 ### Fixed
@@ -88,6 +107,25 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 形式は Keep a Changelog に準拠し、バージョン管理は Semantic Versioning に従います。
 
 ## [Unreleased]
+
+### 追加
+- 同期ファイルベースのクラッシュロガー（`CrashFileLogger`）: 全ログ呼び出しで `crash.log` に即座に同期書き込みし、非同期 DB 書き込みが完了しないまま異常終了してもログを保持
+  - クロスプラットフォーム対応: Windows `%LOCALAPPDATA%\Praxis\crash.log`、macOS `~/Library/Application Support/Praxis/crash.log`
+  - 512 KB での自動ログローテーション
+  - InnerException、`AggregateException` 展開、`Exception.Data` 辞書を含む完全な例外チェーン出力
+- `IErrorLogger.LogWarning(message, context)` — 警告レベルのログエントリ追加
+- `IErrorLogger.FlushAsync(timeout)` — シャットダウン時に保留中の非同期 DB 書き込みをドレイン
+- `AppDomain.ProcessExit` ハンドラでプロセス終了前にログをフラッシュ
+- `UnhandledException` ハンドラで `IsTerminating=true` の場合に同期的フラッシュを試行
+- Mac Catalyst `AppDelegate` にクラッシュファイルログフック追加（`UnhandledException`、`UnobservedTaskException`、`MarshalManagedException`）
+- Windows プラットフォーム例外ハンドラが `startup.log` と `crash.log` の両方に出力
+- `UnhandledException` ハンドラで Exception 以外のスローオブジェクトも記録
+
+### 変更
+- `DbErrorLogger` を書き換え: 全 `Log`/`LogInfo`/`LogWarning` 呼び出しでまずクラッシュファイルに同期書き込みし、次に `ConcurrentQueue` 経由で非同期 DB 書き込みをキューイング（従来の fire-and-forget `_ = LogAsync()` パターンを置換）
+- エラーログエントリが完全な例外型チェーン（例: `InvalidOperationException -> NullReferenceException`）、連結された内部メッセージ、`Exception.ToString()` による完全スタックトレースを記録
+- `ErrorLogEntity.Level` 列が `Error`・`Info` に加えて `Warning` を受容
+- `ResolveRootPage` の失敗を `IErrorLogger` でログ出力（従来は無言で握り潰し）
 
 ### [1.1.1] - 2026-03-28
 
