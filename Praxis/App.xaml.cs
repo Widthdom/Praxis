@@ -48,6 +48,7 @@ public partial class App : Application
         errorLogger = services.GetRequiredService<IErrorLogger>();
 
         AppDomain.CurrentDomain.UnhandledException += OnUnhandledException;
+        AppDomain.CurrentDomain.ProcessExit += OnProcessExit;
         TaskScheduler.UnobservedTaskException += OnUnobservedTaskException;
 
         try
@@ -60,21 +61,46 @@ public partial class App : Application
             Resources = new ResourceDictionary();
         }
 
-        errorLogger?.LogInfo("App started.", nameof(App));
+        errorLogger?.LogInfo($"App started. CrashLog={CrashFileLogger.LogFilePath}", nameof(App));
     }
 
     private static void OnUnhandledException(object sender, UnhandledExceptionEventArgs e)
     {
+        var isTerminating = e.IsTerminating;
         if (e.ExceptionObject is Exception ex)
         {
-            errorLogger?.Log(ex, "AppDomain.UnhandledException");
+            // Always write to crash file synchronously first — DB write may not complete.
+            CrashFileLogger.WriteException(
+                $"AppDomain.UnhandledException (IsTerminating={isTerminating})", ex);
+            errorLogger?.Log(ex, $"AppDomain.UnhandledException (IsTerminating={isTerminating})");
+        }
+        else
+        {
+            CrashFileLogger.WriteWarning(
+                "AppDomain.UnhandledException",
+                $"Non-Exception object thrown (IsTerminating={isTerminating}): {e.ExceptionObject}");
+        }
+
+        if (isTerminating)
+        {
+            // Best-effort flush before process dies.
+            try { errorLogger?.FlushAsync(TimeSpan.FromSeconds(2)).GetAwaiter().GetResult(); }
+            catch { /* must not throw */ }
         }
     }
 
     private static void OnUnobservedTaskException(object? sender, UnobservedTaskExceptionEventArgs e)
     {
+        CrashFileLogger.WriteException("TaskScheduler.UnobservedTaskException", e.Exception);
         errorLogger?.Log(e.Exception, "TaskScheduler.UnobservedTaskException");
         e.SetObserved();
+    }
+
+    private static void OnProcessExit(object? sender, EventArgs e)
+    {
+        CrashFileLogger.WriteInfo("App", "Process exiting — flushing logs.");
+        try { errorLogger?.FlushAsync(TimeSpan.FromSeconds(3)).GetAwaiter().GetResult(); }
+        catch { /* must not throw */ }
     }
 
     protected override Window CreateWindow(IActivationState? activationState)
@@ -120,6 +146,7 @@ public partial class App : Application
         }
         catch (Exception ex)
         {
+            errorLogger?.Log(ex, nameof(ResolveRootPage));
             return new ContentPage
             {
                 Title = "Praxis",

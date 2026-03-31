@@ -3,6 +3,7 @@ using ObjCRuntime;
 using UIKit;
 using Praxis.Controls;
 using Praxis.Core.Logic;
+using Praxis.Services;
 
 namespace Praxis;
 
@@ -24,12 +25,40 @@ public class AppDelegate : MauiUIApplicationDelegate
 
     protected override MauiApp CreateMauiApp() => MauiProgram.CreateMauiApp();
 
+    private static void HookGlobalExceptionLogging()
+    {
+        AppDomain.CurrentDomain.UnhandledException += (_, e) =>
+        {
+            CrashFileLogger.WriteException(
+                $"Mac.AppDomain.UnhandledException (IsTerminating={e.IsTerminating})",
+                e.ExceptionObject as Exception);
+        };
+
+        TaskScheduler.UnobservedTaskException += (_, e) =>
+        {
+            CrashFileLogger.WriteException("Mac.TaskScheduler.UnobservedTaskException", e.Exception);
+        };
+
+        try
+        {
+            ObjCRuntime.Runtime.MarshalManagedException += (_, args) =>
+            {
+                CrashFileLogger.WriteException("Mac.ObjCRuntime.MarshalManagedException", args.Exception);
+            };
+        }
+        catch
+        {
+            // Not available on all runtimes — ignore.
+        }
+    }
+
     public override bool CanBecomeFirstResponder => true;
 
     public override UIKeyCommand[] KeyCommands => [ThemeLightCommand, ThemeDarkCommand, ThemeSystemCommand, UndoHistoryCommand, RedoHistoryCommand];
 
     public override bool FinishedLaunching(UIApplication application, NSDictionary? launchOptions)
     {
+        HookGlobalExceptionLogging();
         var result = base.FinishedLaunching(application, launchOptions);
         AttachActivationObservers();
         return result;
