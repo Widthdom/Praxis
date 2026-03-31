@@ -180,11 +180,23 @@ public partial class MainViewModel
         OpenCreateEditor(20, 20, string.Empty);
     }
 
+    /// <summary>
+    /// Maximum number of characters accepted from the clipboard when
+    /// populating the Arguments field of a new button.  Larger payloads
+    /// can freeze the UI because the single-line Entry control struggles
+    /// to measure / render extremely long strings.
+    /// </summary>
+    internal const int ClipboardArgumentMaxLength = 4096;
+
     public async Task OpenCreateEditorAtAsync(double x, double y, bool useClipboardForArguments)
     {
-        var args = useClipboardForArguments
+        var clipText = useClipboardForArguments
             ? await clipboardService.GetTextAsync() ?? string.Empty
             : string.Empty;
+
+        var args = clipText.Length > ClipboardArgumentMaxLength
+            ? clipText[..ClipboardArgumentMaxLength]
+            : clipText;
 
         OpenCreateEditor(x, y, args);
     }

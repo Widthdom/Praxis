@@ -132,6 +132,46 @@ public class MainViewModelWorkflowIntegrationTests
         }
     }
 
+    [Fact]
+    public async Task OpenCreateEditorAt_TruncatesLargeClipboardText()
+    {
+        var repository = new InMemoryAppRepository();
+        var executor = new RecordingCommandExecutor((true, "ok"));
+        var clipboard = new RecordingClipboardService();
+        var theme = new RecordingThemeService();
+        var syncNotifier = new TestStateSyncNotifier();
+        var viewModel = new MainViewModel(repository, executor, clipboard, theme, syncNotifier, new NullErrorLogger());
+
+        await viewModel.InitializeAsync();
+
+        clipboard.CurrentText = new string('A', MainViewModel.ClipboardArgumentMaxLength + 5000);
+
+        await viewModel.OpenCreateEditorAtAsync(100, 100, useClipboardForArguments: true);
+
+        Assert.True(viewModel.IsEditorOpen);
+        Assert.Equal(MainViewModel.ClipboardArgumentMaxLength, viewModel.Editor.Arguments.Length);
+    }
+
+    [Fact]
+    public async Task OpenCreateEditorAt_PreservesShortClipboardText()
+    {
+        var repository = new InMemoryAppRepository();
+        var executor = new RecordingCommandExecutor((true, "ok"));
+        var clipboard = new RecordingClipboardService();
+        var theme = new RecordingThemeService();
+        var syncNotifier = new TestStateSyncNotifier();
+        var viewModel = new MainViewModel(repository, executor, clipboard, theme, syncNotifier, new NullErrorLogger());
+
+        await viewModel.InitializeAsync();
+
+        clipboard.CurrentText = "short text";
+
+        await viewModel.OpenCreateEditorAtAsync(100, 100, useClipboardForArguments: true);
+
+        Assert.True(viewModel.IsEditorOpen);
+        Assert.Equal("short text", viewModel.Editor.Arguments);
+    }
+
     private sealed class InMemoryAppRepository : IAppRepository
     {
         private readonly object gate = new();
@@ -342,7 +382,7 @@ public class MainViewModelWorkflowIntegrationTests
 
     private sealed class RecordingClipboardService : IClipboardService
     {
-        public string CurrentText { get; private set; } = string.Empty;
+        public string CurrentText { get; set; } = string.Empty;
 
         public Task<string> GetTextAsync(CancellationToken cancellationToken = default)
             => Task.FromResult(CurrentText);
