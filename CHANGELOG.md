@@ -6,6 +6,8 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 
 ## [Unreleased]
 
+### [1.1.2] - 2026-03-31
+
 ### Added
 - Synchronous file-based crash logger (`CrashFileLogger`) that writes to `crash.log` immediately on every log call, surviving abrupt process termination where async DB writes would be lost
   - Cross-platform: Windows `%LOCALAPPDATA%\Praxis\crash.log`, macOS `~/Library/Application Support/Praxis/crash.log`
@@ -108,6 +110,8 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 
 ## [Unreleased]
 
+### [1.1.2] - 2026-03-31
+
 ### 追加
 - 同期ファイルベースのクラッシュロガー（`CrashFileLogger`）: 全ログ呼び出しで `crash.log` に即座に同期書き込みし、非同期 DB 書き込みが完了しないまま異常終了してもログを保持
   - クロスプラットフォーム対応: Windows `%LOCALAPPDATA%\Praxis\crash.log`、macOS `~/Library/Application Support/Praxis/crash.log`
@@ -200,7 +204,8 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - 重複 `using` ディレクティブの削除と `using` 順序の正規化
 - `MainViewModel` と各 partial クラスに主要ライフサイクルイベントの `LogInfo` 呼び出しを追加
 
-[Unreleased]: https://github.com/Widthdom/Praxis/compare/v1.1.1...HEAD
+[Unreleased]: https://github.com/Widthdom/Praxis/compare/v1.1.2...HEAD
+[1.1.2]: https://github.com/Widthdom/Praxis/compare/v1.1.1...v1.1.2
 [1.1.1]: https://github.com/Widthdom/Praxis/compare/v1.1.0...v1.1.1
 [1.1.0]: https://github.com/Widthdom/Praxis/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/Widthdom/Praxis/tree/v1.0.0
