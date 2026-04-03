@@ -1,5 +1,7 @@
 # Praxis
 
+> **[日本語はこちら / Japanese](#praxis日本語)**
+
 [![CI](https://github.com/Widthdom/Praxis/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Widthdom/Praxis/actions/workflows/ci.yml)
 [![CodeQL](https://img.shields.io/badge/CodeQL-GitHub%20default-2EA44F)](https://github.com/Widthdom/Praxis/security/code-scanning)
 [![Delivery](https://img.shields.io/badge/Delivery-tags%20%7C%20manual-2EA44F)](https://github.com/Widthdom/Praxis/actions/workflows/delivery.yml)
@@ -118,6 +120,8 @@ open Praxis/bin/Debug/net10.0-maccatalyst/maccatalyst-arm64/Praxis.app
 ---
 
 # Praxis（日本語）
+
+> **[English / 英語はこちら](#praxis)**
 
 ライセンス: MIT（[`LICENSE`](LICENSE) を参照）。
 
