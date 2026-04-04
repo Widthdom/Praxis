@@ -11,6 +11,9 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 ### Added
 - Automatic GitHub Release creation on `v*` tag push — delivery workflow now zips OS-specific artifacts (Windows / macOS) and publishes them with auto-generated release notes
 
+### Fixed
+- .NET 10 preview runtime package restore failure (`NU1102: Unable to find package Microsoft.NETCore.App.Runtime.Mono.win-x64 with version (= 10.0.5)`) in CI and Delivery workflows — replaced pinned `dotnet-version: 10.0.100` with `10.0.x` + `dotnet-quality: preview` to enable the preview NuGet feed
+
 ### [1.1.2] - 2026-03-31
 
 ### Added
@@ -119,6 +122,9 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 
 ### 追加
 - `v*` タグ push 時に GitHub Release を自動作成 — delivery ワークフローが OS 別アーティファクト（Windows / macOS）を zip 化し、自動生成リリースノート付きで公開
+
+### 修正
+- CI および Delivery ワークフローで .NET 10 プレビューランタイムパッケージの復元が失敗する問題を修正（`NU1102: Unable to find package Microsoft.NETCore.App.Runtime.Mono.win-x64 with version (= 10.0.5)`）— 固定指定の `dotnet-version: 10.0.100` を `10.0.x` + `dotnet-quality: preview` に変更しプレビュー NuGet フィードを有効化
 
 ### [1.1.2] - 2026-03-31
 
