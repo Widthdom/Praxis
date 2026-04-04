@@ -30,7 +30,8 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: 10.0.100
+          dotnet-version: 10.0.x
+          dotnet-quality: preview
 
       - name: Restore tests
         run: dotnet restore Praxis.Tests/Praxis.Tests.csproj
@@ -59,7 +60,8 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: 10.0.100
+          dotnet-version: 10.0.x
+          dotnet-quality: preview
 
       - name: Install MAUI workload
         run: dotnet workload install maui --skip-manifest-update
@@ -79,7 +81,8 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: 10.0.100
+          dotnet-version: 10.0.x
+          dotnet-quality: preview
 
       - name: Install MAUI workload
         run: dotnet workload install maui --skip-manifest-update
