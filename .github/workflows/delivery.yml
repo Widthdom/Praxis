@@ -47,7 +47,7 @@ jobs:
           dotnet-quality: preview
 
       - name: Install MAUI workload
-        run: dotnet workload install maui --skip-manifest-update
+        run: dotnet workload install maui
 
       - name: Initialize Xcode
         if: matrix.name == 'maccatalyst'
