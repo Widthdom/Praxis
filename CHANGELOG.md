@@ -6,6 +6,8 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 
 ## [Unreleased]
 
+### [1.1.3] - 2026-04-05
+
 ### Added
 - Automatic GitHub Release creation on `v*` tag push — delivery workflow now zips OS-specific artifacts (Windows / macOS) and publishes them with auto-generated release notes
 
@@ -113,6 +115,8 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 
 ## [Unreleased]
 
+### [1.1.3] - 2026-04-05
+
 ### 追加
 - `v*` タグ push 時に GitHub Release を自動作成 — delivery ワークフローが OS 別アーティファクト（Windows / macOS）を zip 化し、自動生成リリースノート付きで公開
 
@@ -210,7 +214,8 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - 重複 `using` ディレクティブの削除と `using` 順序の正規化
 - `MainViewModel` と各 partial クラスに主要ライフサイクルイベントの `LogInfo` 呼び出しを追加
 
-[Unreleased]: https://github.com/Widthdom/Praxis/compare/v1.1.2...HEAD
+[Unreleased]: https://github.com/Widthdom/Praxis/compare/v1.1.3...HEAD
+[1.1.3]: https://github.com/Widthdom/Praxis/compare/v1.1.2...v1.1.3
 [1.1.2]: https://github.com/Widthdom/Praxis/compare/v1.1.1...v1.1.2
 [1.1.1]: https://github.com/Widthdom/Praxis/compare/v1.1.0...v1.1.1
 [1.1.0]: https://github.com/Widthdom/Praxis/compare/v1.0.0...v1.1.0
