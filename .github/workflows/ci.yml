@@ -31,7 +31,7 @@ jobs:
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 10.0.x
-          dotnet-quality: preview
+          dotnet-quality: ga
 
       - name: Restore tests
         run: dotnet restore Praxis.Tests/Praxis.Tests.csproj
@@ -61,7 +61,7 @@ jobs:
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 10.0.x
-          dotnet-quality: preview
+          dotnet-quality: ga
 
       - name: Install MAUI workload
         run: dotnet workload install maui
@@ -82,7 +82,7 @@ jobs:
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 10.0.x
-          dotnet-quality: preview
+          dotnet-quality: ga
 
       - name: Install MAUI workload
         run: dotnet workload install maui
