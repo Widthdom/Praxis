@@ -24,8 +24,8 @@ jobs:
           - name: windows
             os: windows-latest
             tfm: net10.0-windows10.0.19041.0
-            rid: win-x64
-            props: ""
+            rid: ""
+            props: -p:WindowsPackageType=None
             output: artifacts/windows
           - name: maccatalyst
             os: macos-latest
@@ -72,7 +72,13 @@ jobs:
 
       - name: Publish app
         if: matrix.name != 'maccatalyst' || steps.xcode_check.outputs.compatible == 'true'
-        run: dotnet publish Praxis/Praxis.csproj -c Release -f ${{ matrix.tfm }} -r ${{ matrix.rid }} -o ${{ matrix.output }} -v minimal ${{ matrix.props }}
+        shell: bash
+        run: |
+          RID_FLAG=""
+          if [ -n "${{ matrix.rid }}" ]; then
+            RID_FLAG="-r ${{ matrix.rid }}"
+          fi
+          dotnet publish Praxis/Praxis.csproj -c Release -f ${{ matrix.tfm }} $RID_FLAG -o ${{ matrix.output }} -v minimal ${{ matrix.props }}
 
       - name: Mac publish skipped
         if: matrix.name == 'maccatalyst' && steps.xcode_check.outputs.compatible != 'true'
