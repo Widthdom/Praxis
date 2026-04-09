@@ -6,6 +6,9 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 
 ## [Unreleased]
 
+### Added
+- add .codex & CLAUDE.md
+
 ### [1.1.3] - 2026-04-05
 
 ### Added
@@ -117,6 +120,9 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 形式は Keep a Changelog に準拠し、バージョン管理は Semantic Versioning に従います。
 
 ## [Unreleased]
+
+### 追加
+- .codex および CLAUDE.md を追加
 
 ### [1.1.3] - 2026-04-05
 
