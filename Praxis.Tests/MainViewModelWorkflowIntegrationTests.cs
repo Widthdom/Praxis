@@ -283,6 +283,7 @@ public class MainViewModelWorkflowIntegrationTests
         Assert.Equal(ThemeMode.System, theme.Current);
         Assert.Single(viewModel.VisibleButtons);
         Assert.Contains(logger.Warnings, x => x.Context == "InitializeAsync" && x.Message.Contains("theme boom", StringComparison.Ordinal));
+        Assert.Contains(logger.Exceptions, x => x.Context == "InitializeAsync" && x.Exception.Message.Contains("theme boom", StringComparison.Ordinal));
     }
 
     [Fact]
@@ -313,6 +314,7 @@ public class MainViewModelWorkflowIntegrationTests
         Assert.Single(viewModel.VisibleButtons);
         Assert.Empty(viewModel.DockButtons);
         Assert.Contains(logger.Warnings, x => x.Context == "InitializeAsync" && x.Message.Contains("dock boom", StringComparison.Ordinal));
+        Assert.Contains(logger.Exceptions, x => x.Context == "InitializeAsync" && x.Exception.Message.Contains("dock boom", StringComparison.Ordinal));
     }
 
     [Fact]
@@ -347,6 +349,7 @@ public class MainViewModelWorkflowIntegrationTests
         await WaitUntilAsync(() => viewModel.StatusText == "Synced from another window.");
         Assert.Equal("Build Synced", Assert.Single(viewModel.VisibleButtons).ButtonText);
         Assert.Contains(logger.Warnings, x => x.Context == "ReloadOnMainThreadAsync" && x.Message.Contains("dock boom", StringComparison.Ordinal));
+        Assert.Contains(logger.Exceptions, x => x.Context == "ReloadOnMainThreadAsync" && x.Exception.Message.Contains("dock boom", StringComparison.Ordinal));
     }
 
     [Fact]
@@ -381,6 +384,7 @@ public class MainViewModelWorkflowIntegrationTests
         await WaitUntilAsync(() => viewModel.StatusText == "Synced from another window.");
         Assert.Equal("Build Synced", Assert.Single(viewModel.VisibleButtons).ButtonText);
         Assert.Contains(logger.Warnings, x => x.Context == "ReloadOnMainThreadAsync" && x.Message.Contains("theme boom", StringComparison.Ordinal));
+        Assert.Contains(logger.Exceptions, x => x.Context == "ReloadOnMainThreadAsync" && x.Exception.Message.Contains("theme boom", StringComparison.Ordinal));
     }
 
     [Fact]

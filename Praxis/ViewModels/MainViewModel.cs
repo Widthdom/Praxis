@@ -301,6 +301,7 @@ public partial class MainViewModel : ObservableObject
         }
         catch (Exception ex)
         {
+            errorLogger.Log(ex, context);
             errorLogger.LogWarning($"{operation} failed: {ex.Message}", context);
             return fallback;
         }
@@ -314,6 +315,7 @@ public partial class MainViewModel : ObservableObject
         }
         catch (Exception ex)
         {
+            errorLogger.Log(ex, context);
             errorLogger.LogWarning($"Dock restore failed: {ex.Message}", context);
             PruneDockButtonsToExistingButtons();
         }
