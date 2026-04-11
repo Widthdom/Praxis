@@ -6,6 +6,9 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 
 ## [Unreleased]
 
+### Fixed
+- `FileAppConfigService` now continues to later config candidates when an earlier config file is readable but omits `theme` or contains an invalid theme value, instead of prematurely defaulting to `System`
+
 ### [1.1.5] - 2026-04-11
 
 ### Fixed
@@ -164,6 +167,9 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 形式は Keep a Changelog に準拠し、バージョン管理は Semantic Versioning に従います。
 
 ## [Unreleased]
+
+### 修正
+- `FileAppConfigService` は先頭設定ファイルが読めても `theme` 欠落または不正値だった場合にそこで `System` へ確定せず、後続候補へフォールバックするよう修正
 
 ### [1.1.5] - 2026-04-11
 

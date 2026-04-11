@@ -12,20 +12,33 @@ public static class ThemeModeParser
             : defaultMode;
     }
 
-    public static ThemeMode ParseOrDefault(string? value, ThemeMode defaultMode = ThemeMode.System)
+    public static bool TryParse(string? value, out ThemeMode parsed)
     {
+        parsed = default;
+
         if (string.IsNullOrWhiteSpace(value))
         {
-            return defaultMode;
+            return false;
         }
 
         var candidate = value.Trim();
         if (int.TryParse(candidate, NumberStyles.Integer, CultureInfo.InvariantCulture, out _))
         {
-            return defaultMode;
+            return false;
         }
 
-        return Enum.TryParse<ThemeMode>(candidate, true, out var parsed) && Enum.IsDefined(parsed)
+        if (!Enum.TryParse<ThemeMode>(candidate, true, out var candidateMode) || !Enum.IsDefined(candidateMode))
+        {
+            return false;
+        }
+
+        parsed = candidateMode;
+        return true;
+    }
+
+    public static ThemeMode ParseOrDefault(string? value, ThemeMode defaultMode = ThemeMode.System)
+    {
+        return TryParse(value, out var parsed)
             ? parsed
             : defaultMode;
     }

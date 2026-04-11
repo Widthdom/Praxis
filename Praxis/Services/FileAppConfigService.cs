@@ -37,7 +37,10 @@ public sealed class FileAppConfigService : IAppConfigService
             {
                 var json = File.ReadAllText(path);
                 var config = JsonSerializer.Deserialize<AppConfigFile>(json, options);
-                return ThemeModeParser.ParseOrDefault(config?.Theme, ThemeMode.System);
+                if (ThemeModeParser.TryParse(config?.Theme, out var themeMode))
+                {
+                    return themeMode;
+                }
             }
             catch (IOException)
             {

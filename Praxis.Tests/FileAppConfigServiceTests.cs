@@ -36,6 +36,62 @@ public class FileAppConfigServiceTests
     }
 
     [Fact]
+    public void ResolveThemeModeFromCandidates_FallsBackToLaterValidConfig_WhenEarlierThemeIsMissing()
+    {
+        var root = Path.Combine(Path.GetTempPath(), $"praxis-config-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(root);
+        try
+        {
+            var basePath = Path.Combine(root, "base");
+            var appDataPath = Path.Combine(root, "appdata");
+            Directory.CreateDirectory(basePath);
+            Directory.CreateDirectory(appDataPath);
+
+            File.WriteAllText(Path.Combine(basePath, "praxis.config.json"), "{}");
+            File.WriteAllText(Path.Combine(appDataPath, "praxis.config.json"), "{\"theme\":\"Dark\"}");
+
+            var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+            var result = InvokeResolveThemeModeFromCandidates(
+                [Path.Combine(basePath, "praxis.config.json"), Path.Combine(appDataPath, "praxis.config.json")],
+                options);
+
+            Assert.Equal(ThemeMode.Dark, result);
+        }
+        finally
+        {
+            Directory.Delete(root, recursive: true);
+        }
+    }
+
+    [Fact]
+    public void ResolveThemeModeFromCandidates_FallsBackToLaterValidConfig_WhenEarlierThemeIsInvalid()
+    {
+        var root = Path.Combine(Path.GetTempPath(), $"praxis-config-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(root);
+        try
+        {
+            var basePath = Path.Combine(root, "base");
+            var appDataPath = Path.Combine(root, "appdata");
+            Directory.CreateDirectory(basePath);
+            Directory.CreateDirectory(appDataPath);
+
+            File.WriteAllText(Path.Combine(basePath, "praxis.config.json"), "{\"theme\":\"Bogus\"}");
+            File.WriteAllText(Path.Combine(appDataPath, "praxis.config.json"), "{\"theme\":\"Dark\"}");
+
+            var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+            var result = InvokeResolveThemeModeFromCandidates(
+                [Path.Combine(basePath, "praxis.config.json"), Path.Combine(appDataPath, "praxis.config.json")],
+                options);
+
+            Assert.Equal(ThemeMode.Dark, result);
+        }
+        finally
+        {
+            Directory.Delete(root, recursive: true);
+        }
+    }
+
+    [Fact]
     public void EnumerateCandidatePaths_DeduplicatesEquivalentDirectories()
     {
         var path = "/tmp/praxis-config";

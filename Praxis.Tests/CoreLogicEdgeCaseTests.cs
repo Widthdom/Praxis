@@ -21,6 +21,25 @@ public class CoreLogicEdgeCaseTests
     }
 
     [Fact]
+    public void ThemeModeParser_TryParse_ReturnsFalse_ForBlankOrInvalidValues()
+    {
+        Assert.False(ThemeModeParser.TryParse(null, out _));
+        Assert.False(ThemeModeParser.TryParse("   ", out _));
+        Assert.False(ThemeModeParser.TryParse("invalid", out _));
+        Assert.False(ThemeModeParser.TryParse("1", out _));
+    }
+
+    [Fact]
+    public void ThemeModeParser_TryParse_ReturnsParsedTheme_ForNamedValues()
+    {
+        Assert.True(ThemeModeParser.TryParse("dark", out var darkMode));
+        Assert.Equal(ThemeMode.Dark, darkMode);
+
+        Assert.True(ThemeModeParser.TryParse("  Light  ", out var lightMode));
+        Assert.Equal(ThemeMode.Light, lightMode);
+    }
+
+    [Fact]
     public void ThemeModeParser_TrimsWhitespace_ForSystemValue()
     {
         Assert.Equal(ThemeMode.System, ThemeModeParser.ParseOrDefault("  system  "));

@@ -106,7 +106,7 @@ dotnet test Praxis.Tests/Praxis.Tests.csproj --collect:"XPlat Code Coverage"
 - [`WindowsPathPolicyTests.cs`](../Praxis.Tests/WindowsPathPolicyTests.cs): UNC (`\\\\server\\share`) path detection used by Windows auth-first launch flow.
 - [`AppStoragePathLayoutResolverTests.cs`](../Praxis.Tests/AppStoragePathLayoutResolverTests.cs): platform-specific storage layout policy.
 - [`AppStoragePathsTests.cs`](../Praxis.Tests/AppStoragePathsTests.cs): linked-source coverage for quoted `%LOCALAPPDATA%` normalization and rejection of blank/relative legacy migration roots.
-- [`FileAppConfigServiceTests.cs`](../Praxis.Tests/FileAppConfigServiceTests.cs): linked-source coverage for config-path candidate enumeration and fallback to later valid config files when earlier JSON is malformed.
+- [`FileAppConfigServiceTests.cs`](../Praxis.Tests/FileAppConfigServiceTests.cs): linked-source coverage for config-path candidate enumeration and fallback to later valid config files when earlier JSON is malformed, missing a `theme`, or specifies an invalid theme value.
 - [`DockOrderValueCodecTests.cs`](../Praxis.Tests/DockOrderValueCodecTests.cs): dock-order CSV parsing/serialization, including duplicate/empty/invalid GUID filtering while preserving first occurrence order.
 - [`DatabaseSchemaVersionPolicyTests.cs`](../Praxis.Tests/DatabaseSchemaVersionPolicyTests.cs): schema-version upgrade-path resolution (`PRAGMA user_version` migration sequencing, unsupported/future version rejection), including v1->v2->v3->v4 and unversioned->current multi-step upgrades.
 - [`NonPublicPropertySetterTests.cs`](../Praxis.Tests/NonPublicPropertySetterTests.cs): reflection-based writable property assignment behavior.
@@ -227,7 +227,7 @@ dotnet test Praxis.Tests/Praxis.Tests.csproj --collect:"XPlat Code Coverage"
 - [`WindowsPathPolicyTests.cs`](../Praxis.Tests/WindowsPathPolicyTests.cs): Windows の認証先行起動フローで使う UNC（`\\\\server\\share`）判定。
 - [`AppStoragePathLayoutResolverTests.cs`](../Praxis.Tests/AppStoragePathLayoutResolverTests.cs): プラットフォーム別ストレージ配置ルール。
 - [`AppStoragePathsTests.cs`](../Praxis.Tests/AppStoragePathsTests.cs): linked-source の `AppStoragePaths` テスト。quote 付き `%LOCALAPPDATA%` 正規化と、空/相対 legacy migration root を除外することを確認。
-- [`FileAppConfigServiceTests.cs`](../Praxis.Tests/FileAppConfigServiceTests.cs): linked-source の `FileAppConfigService` テスト。config 候補列挙と、先頭候補の JSON が壊れている場合に後続の正常設定へフォールバックすることを確認。
+- [`FileAppConfigServiceTests.cs`](../Praxis.Tests/FileAppConfigServiceTests.cs): linked-source の `FileAppConfigService` テスト。config 候補列挙と、先頭候補の JSON が壊れている場合、`theme` が欠落している場合、不正な theme 値を持つ場合に後続の正常設定へフォールバックすることを確認。
 - [`DockOrderValueCodecTests.cs`](../Praxis.Tests/DockOrderValueCodecTests.cs): Dock 順序 CSV の解析/直列化テスト。重複/空/不正 GUID を除外しつつ、最初の有効順序を維持することを確認。
 - [`DatabaseSchemaVersionPolicyTests.cs`](../Praxis.Tests/DatabaseSchemaVersionPolicyTests.cs): スキーマバージョンのアップグレード経路解決（`PRAGMA user_version` の段階適用順序、未対応/未来バージョン拒否）を検証。`v1 -> v2 -> v3 -> v4` と `未バージョン -> 現行` の段階適用も確認する。
 - [`NonPublicPropertySetterTests.cs`](../Praxis.Tests/NonPublicPropertySetterTests.cs): リフレクションによる書き込み可能プロパティ設定。
