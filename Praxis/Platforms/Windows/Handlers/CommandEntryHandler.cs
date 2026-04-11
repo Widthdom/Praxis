@@ -168,7 +168,7 @@ public class CommandEntryHandler : EntryHandler
             {
                 await Task.Delay(interval, cancellationToken).ConfigureAwait(false);
             }
-            catch (OperationCanceledException)
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {
                 return;
             }
