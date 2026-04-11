@@ -10,6 +10,11 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - add .codex & CLAUDE.md
 
 ### Fixed
+- Base `App` global unhandled-exception/process-exit hooks are now registered only once, preventing duplicate crash/log flush handlers from stacking if app initialization is re-entered
+- `MainViewModel.SyncThemeFromExternalChangeAsync()` now warning-logs failures thrown from the dispatched main-thread apply path, and external reload uses `RunContinuationsAsynchronously` for its bridge `TaskCompletionSource`
+- `FileStateSyncNotifier.NotifyButtonsChangedAsync()` now no-ops after disposal instead of trying to write stale sync files during teardown
+- `AppStoragePaths.TryMigrateLegacyDatabase()` now warning-logs copy failures and continues scanning other legacy candidates instead of aborting migration on the first unreadable source
+- `FileAppConfigService` now falls back to later config candidates when an earlier config file is inaccessible with `UnauthorizedAccessException`
 - `MainPage.OnDisappearing()` now detaches window-activation hooks, and the detach path also releases Mac activation observers so disappearing pages do not keep stale activation callbacks alive
 - `CommandExecutor` now expands home-prefixed tool paths (`~`, `~/...`, `~\\...`) before deciding whether a tool is executable, so direct tool launches can use the same home shorthand as empty-tool path launches
 - Windows `startup.log` now uses the normalized shared app-storage root instead of the raw local-app-data special-folder string, avoiding malformed startup-log paths when the environment value is quoted or missing
@@ -156,6 +161,11 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - .codex および CLAUDE.md を追加
 
 ### 修正
+- ベース `App` のグローバル unhandled-exception / process-exit hook は一度だけ登録するようにし、アプリ初期化が再入した場合でも crash / flush handler が多重化しないよう修正
+- `MainViewModel.SyncThemeFromExternalChangeAsync()` は dispatch 先メインスレッド適用で発生した失敗も warning ログ化するようにし、外部 reload の `TaskCompletionSource` には `RunContinuationsAsynchronously` を付けて継続の再入を抑制
+- `FileStateSyncNotifier.NotifyButtonsChangedAsync()` は dispose 後は no-op にし、teardown 中に stale な sync file 書き込みを試みないよう修正
+- `AppStoragePaths.TryMigrateLegacyDatabase()` はコピー失敗を warning 記録しつつ次の legacy 候補探索を継続するようにし、最初の読めない DB で移行全体が止まらないよう修正
+- `FileAppConfigService` は先頭設定ファイルが `UnauthorizedAccessException` で読めない場合でも後続候補へフォールバックするよう修正
 - `MainPage.OnDisappearing()` は window activation hook を解除し、解除経路では Mac の activation observer も解放するようにして、非表示ページへ stale な activation callback が残らないよう修正
 - `CommandExecutor` は `~` / `~/...` / `~\\...` のような home 省略つき `tool` も実行可否判定前に展開するようにし、empty-tool path launch と同じ shorthand を direct tool launch でも使えるよう修正
 - Windows の `startup.log` は raw な local-app-data special folder 文字列ではなく正規化済み共有 app-storage root を使うようにし、quote 付きや欠落した環境値でパスが壊れにくいよう修正

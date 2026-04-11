@@ -35,6 +35,11 @@ public sealed class FileStateSyncNotifier : IStateSyncNotifier
 
     public async Task NotifyButtonsChangedAsync(CancellationToken cancellationToken = default)
     {
+        if (disposed)
+        {
+            return;
+        }
+
         var payload = $"{instanceId}|{DateTime.UtcNow.Ticks.ToString(CultureInfo.InvariantCulture)}";
         lock (gate)
         {

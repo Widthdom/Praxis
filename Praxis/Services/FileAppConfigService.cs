@@ -43,6 +43,10 @@ public sealed class FileAppConfigService : IAppConfigService
             {
                 continue;
             }
+            catch (UnauthorizedAccessException)
+            {
+                continue;
+            }
             catch (JsonException)
             {
                 continue;

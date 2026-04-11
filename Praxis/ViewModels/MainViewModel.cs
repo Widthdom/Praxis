@@ -209,8 +209,15 @@ public partial class MainViewModel : ObservableObject
 
             MainThread.BeginInvokeOnMainThread(() =>
             {
-                apply();
-                errorLogger.LogInfo($"External theme sync applied via dispatched main thread. Theme={latestTheme}", nameof(SyncThemeFromExternalChangeAsync));
+                try
+                {
+                    apply();
+                    errorLogger.LogInfo($"External theme sync applied via dispatched main thread. Theme={latestTheme}", nameof(SyncThemeFromExternalChangeAsync));
+                }
+                catch (Exception ex)
+                {
+                    errorLogger.LogWarning($"External theme sync dispatch failed: {ex.Message}", nameof(SyncThemeFromExternalChangeAsync));
+                }
             });
         }
         catch (Exception ex)
@@ -236,7 +243,7 @@ public partial class MainViewModel : ObservableObject
                 return;
             }
 
-            var tcs = new TaskCompletionSource<bool>();
+            var tcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
             MainThread.BeginInvokeOnMainThread(async () =>
             {
                 try

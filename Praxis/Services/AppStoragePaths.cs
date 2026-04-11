@@ -63,8 +63,19 @@ public static class AppStoragePaths
                 continue;
             }
 
-            File.Copy(sourcePath, DatabasePath, overwrite: false);
-            return;
+            try
+            {
+                File.Copy(sourcePath, DatabasePath, overwrite: false);
+                return;
+            }
+            catch (IOException ex)
+            {
+                CrashFileLogger.WriteWarning(nameof(AppStoragePaths), $"Legacy database migration failed from '{sourcePath}': {ex.Message}");
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                CrashFileLogger.WriteWarning(nameof(AppStoragePaths), $"Legacy database migration failed from '{sourcePath}': {ex.Message}");
+            }
         }
     }
 

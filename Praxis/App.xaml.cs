@@ -8,6 +8,7 @@ public partial class App : Application
 {
     private readonly IServiceProvider services;
     private static IErrorLogger? errorLogger;
+    private static int globalExceptionHandlersRegistered;
     private Page? rootPage;
     private static volatile bool isEditorOpen;
     private static volatile bool isContextMenuOpen;
@@ -48,9 +49,12 @@ public partial class App : Application
         errorLogger = services.GetRequiredService<IErrorLogger>();
         errorLogger?.LogInfo("App constructor started.", nameof(App));
 
-        AppDomain.CurrentDomain.UnhandledException += OnUnhandledException;
-        AppDomain.CurrentDomain.ProcessExit += OnProcessExit;
-        TaskScheduler.UnobservedTaskException += OnUnobservedTaskException;
+        if (Interlocked.Exchange(ref globalExceptionHandlersRegistered, 1) == 0)
+        {
+            AppDomain.CurrentDomain.UnhandledException += OnUnhandledException;
+            AppDomain.CurrentDomain.ProcessExit += OnProcessExit;
+            TaskScheduler.UnobservedTaskException += OnUnobservedTaskException;
+        }
 
         try
         {

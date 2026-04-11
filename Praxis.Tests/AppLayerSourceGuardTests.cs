@@ -92,12 +92,28 @@ public class AppLayerSourceGuardTests
     }
 
     [Fact]
+    public void App_GlobalExceptionHandlers_AreRegisteredOnlyOnce()
+    {
+        var source = ReadRepositoryFile("Praxis", "App.xaml.cs");
+
+        Assert.Contains("private static int globalExceptionHandlersRegistered;", source);
+        Assert.Contains("if (Interlocked.Exchange(ref globalExceptionHandlersRegistered, 1) == 0)", source);
+    }
+
+    [Fact]
     public void FileStateSyncNotifier_ReadRetryExhaustion_IsCrashLogged()
     {
         var source = ReadRepositoryFile("Praxis", "Services", "FileStateSyncNotifier.cs");
 
         Assert.Contains("Exception? readFailure = null;", source);
         Assert.Contains("CrashFileLogger.WriteWarning(nameof(FileStateSyncNotifier), $\"Failed to read sync payload after retries: {readFailure.Message}\");", source);
+    }
+
+    [Fact]
+    public void FileStateSyncNotifier_IgnoresNotifyRequestsAfterDispose()
+    {
+        var source = ReadRepositoryFile("Praxis", "Services", "FileStateSyncNotifier.cs");
+        Assert.Contains("if (disposed)", source);
     }
 
     [Fact]
@@ -125,6 +141,30 @@ public class AppLayerSourceGuardTests
         Assert.Contains("private static bool globalExceptionLoggingHooked;", source);
         Assert.Contains("if (globalExceptionLoggingHooked)", source);
         Assert.Contains("globalExceptionLoggingHooked = true;", source);
+    }
+
+    [Fact]
+    public void MainViewModel_ExternalThemeSync_DispatchFailuresAreLogged()
+    {
+        var source = ReadRepositoryFile("Praxis", "ViewModels", "MainViewModel.cs");
+
+        Assert.Contains("External theme sync dispatch failed:", source);
+        Assert.Contains("TaskCreationOptions.RunContinuationsAsynchronously", source);
+    }
+
+    [Fact]
+    public void AppStoragePaths_LegacyMigrationFailures_AreWarningLogged_AndSkipped()
+    {
+        var source = ReadRepositoryFile("Praxis", "Services", "AppStoragePaths.cs");
+
+        Assert.Equal(2, CountOccurrences(source, "CrashFileLogger.WriteWarning(nameof(AppStoragePaths), $\"Legacy database migration failed from '{sourcePath}': {ex.Message}\");"));
+    }
+
+    [Fact]
+    public void FileAppConfigService_FallsBackOnUnauthorizedAccess()
+    {
+        var source = ReadRepositoryFile("Praxis", "Services", "FileAppConfigService.cs");
+        Assert.Contains("catch (UnauthorizedAccessException)", source);
     }
 
     private static string ReadRepositoryFile(params string[] segments)
