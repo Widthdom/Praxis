@@ -7,6 +7,10 @@ public static class ThemeModeParser
 {
     public static ThemeMode NormalizeOrDefault(ThemeMode value, ThemeMode defaultMode = ThemeMode.System)
     {
+        defaultMode = Enum.IsDefined(defaultMode)
+            ? defaultMode
+            : ThemeMode.System;
+
         return Enum.IsDefined(value)
             ? value
             : defaultMode;

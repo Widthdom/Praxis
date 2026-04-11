@@ -1,6 +1,7 @@
 using System.Reflection;
 using Praxis.Behaviors;
 using Praxis.Core.Logic;
+using Praxis.Services;
 using Praxis.ViewModels;
 
 namespace Praxis;
@@ -1077,8 +1078,9 @@ public partial class MainPage
         {
             ModalButtonTextEntry.Focus();
         }
-        catch
+        catch (Exception ex)
         {
+            CrashFileLogger.WriteWarning(nameof(FocusModalPrimaryEditorField), $"Failed to focus modal ButtonText entry: {ex.Message}");
             return;
         }
 

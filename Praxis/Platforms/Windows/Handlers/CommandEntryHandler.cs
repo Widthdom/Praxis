@@ -5,6 +5,7 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using Praxis.Core.Logic;
+using Praxis.Services;
 using WinRT.Interop;
 
 namespace Praxis.Controls;
@@ -60,10 +61,12 @@ public class CommandEntryHandler : EntryHandler
             // Some WinUI environments throw (for example E_RUNTIME_SETVALUE) when InputScope is assigned.
             // Mark as unsupported so later focuses skip InputScope writes and rely only on imm32 IME fallback.
             inputScopeUnsupported = true;
+            CrashFileLogger.WriteWarning(nameof(CommandEntryHandler), $"InputScope assignment disabled after compatibility failure: {ex.Message}");
             return false;
         }
-        catch
+        catch (Exception ex)
         {
+            CrashFileLogger.WriteWarning(nameof(CommandEntryHandler), $"InputScope assignment failed unexpectedly: {ex.Message}");
             return false;
         }
     }

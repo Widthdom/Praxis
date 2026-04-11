@@ -119,10 +119,9 @@ public sealed class DbErrorLogger : IErrorLogger
                 await WriteToDatabaseAsync(entry, CancellationToken.None);
             }
         }
-        catch
+        catch (Exception ex)
         {
-            // Swallow write failures to avoid infinite logging loops.
-            // The crash file already has the data.
+            CrashFileLogger.WriteWarning(nameof(DbErrorLogger), $"Drain loop failed unexpectedly: {ex.Message}");
         }
         finally
         {

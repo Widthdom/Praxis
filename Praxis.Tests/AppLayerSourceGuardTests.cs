@@ -110,6 +110,14 @@ public class AppLayerSourceGuardTests
     }
 
     [Fact]
+    public void FileStateSyncNotifier_WriteFailures_AreCrashLogged()
+    {
+        var source = ReadRepositoryFile("Praxis", "Services", "FileStateSyncNotifier.cs");
+
+        Assert.Contains("CrashFileLogger.WriteWarning(nameof(FileStateSyncNotifier), $\"Failed to write sync payload '{signalPath}': {ex.Message}\");", source);
+    }
+
+    [Fact]
     public void FileStateSyncNotifier_IgnoresNotifyRequestsAfterDispose()
     {
         var source = ReadRepositoryFile("Praxis", "Services", "FileStateSyncNotifier.cs");
@@ -160,14 +168,36 @@ public class AppLayerSourceGuardTests
     }
 
     [Fact]
+    public void DbErrorLogger_DrainFailures_AreCrashLogged()
+    {
+        var source = ReadRepositoryFile("Praxis", "Services", "DbErrorLogger.cs");
+
+        Assert.Contains("CrashFileLogger.WriteWarning(nameof(DbErrorLogger), $\"Drain loop failed unexpectedly: {ex.Message}\");", source);
+    }
+
+    [Fact]
     public void WindowsCommandEntryHandler_DisablesInputScopeAfterCompatibilityException()
     {
         var source = ReadRepositoryFile("Praxis", "Platforms", "Windows", "Handlers", "CommandEntryHandler.cs");
 
         Assert.Contains("catch (Exception ex) when (WindowsInputScopeCompatibilityPolicy.ShouldDisableInputScopeOnException(ex))", source);
         Assert.Contains("inputScopeUnsupported = true;", source);
+        Assert.Contains("CrashFileLogger.WriteWarning(nameof(CommandEntryHandler), $\"InputScope assignment disabled after compatibility failure: {ex.Message}\");", source);
+        Assert.Contains("CrashFileLogger.WriteWarning(nameof(CommandEntryHandler), $\"InputScope assignment failed unexpectedly: {ex.Message}\");", source);
         Assert.Contains("catch", source);
         Assert.Contains("return false;", source);
+    }
+
+    [Fact]
+    public void MainPage_WindowsReflectionAndFocusFallbackFailures_AreCrashLogged()
+    {
+        var focusSource = ReadRepositoryFile("Praxis", "MainPage.FocusAndContext.cs");
+        var pointerSource = ReadRepositoryFile("Praxis", "MainPage.PointerAndSelection.cs");
+        var layoutSource = ReadRepositoryFile("Praxis", "MainPage.LayoutUtilities.cs");
+
+        Assert.Contains("CrashFileLogger.WriteWarning(nameof(DisableWindowsSystemFocusVisual), $\"Failed to disable UseSystemFocusVisuals: {ex.Message}\");", focusSource);
+        Assert.Contains("CrashFileLogger.WriteWarning(nameof(FocusModalPrimaryEditorField), $\"Failed to focus modal ButtonText entry: {ex.Message}\");", pointerSource);
+        Assert.Contains("CrashFileLogger.WriteWarning(nameof(SetTabStop), $\"Failed to set IsTabStop={isTabStop}: {ex.Message}\");", layoutSource);
     }
 
     [Fact]
@@ -244,6 +274,17 @@ public class AppLayerSourceGuardTests
         Assert.Contains("if (process is null)", source);
         Assert.Contains("CrashFileLogger.WriteWarning(nameof(Program), $\"LaunchServices relay returned no process for bundle '{bundlePath}'.\");", source);
         Assert.Contains("CrashFileLogger.WriteWarning(nameof(Program), $\"LaunchServices relay failed for bundle '{bundlePath}': {ex.Message}\");", source);
+    }
+
+    [Fact]
+    public void MacMiddleClickAndKeyCommandFallbackFailures_AreCrashLogged()
+    {
+        var behaviorSource = ReadRepositoryFile("Praxis", "Behaviors", "MiddleClickBehavior.cs");
+        var macSource = ReadRepositoryFile("Praxis", "MainPage.MacCatalystBehavior.cs");
+
+        Assert.Contains("CrashFileLogger.WriteWarning(nameof(MiddleClickBehavior), $\"Failed to set buttonMaskRequired={mask}: {ex.Message}\");", behaviorSource);
+        Assert.Contains("CrashFileLogger.WriteWarning(nameof(TryCreateMacEditorKeyCommand), $\"Failed to create Mac editor key command '{selectorName}' for input '{keyInput}': {ex.Message}\");", macSource);
+        Assert.Contains("CrashFileLogger.WriteWarning(nameof(IsMacMiddleButtonCurrentlyDown), $\"Failed to query middle button state from CoreGraphics: {ex.Message}\");", macSource);
     }
 
     [Fact]

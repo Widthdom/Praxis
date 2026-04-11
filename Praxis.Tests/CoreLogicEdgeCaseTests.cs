@@ -64,6 +64,14 @@ public class CoreLogicEdgeCaseTests
     }
 
     [Fact]
+    public void ThemeModeParser_NormalizeOrDefault_FallsBackToSystem_WhenValueAndDefaultAreUndefined()
+    {
+        var parsed = ThemeModeParser.NormalizeOrDefault((ThemeMode)999, (ThemeMode)123);
+
+        Assert.Equal(ThemeMode.System, parsed);
+    }
+
+    [Fact]
     public void CommandLineBuilder_ReturnsEmpty_WhenToolIsBlank()
     {
         Assert.Equal(string.Empty, CommandLineBuilder.Build("   ", "status"));

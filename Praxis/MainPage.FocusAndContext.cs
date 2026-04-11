@@ -1,6 +1,7 @@
 using System.Reflection;
 using System.Runtime.InteropServices;
 using Praxis.Core.Logic;
+using Praxis.Services;
 #if MACCATALYST
 using UIKit;
 #endif
@@ -295,8 +296,9 @@ public partial class MainPage
             {
                 prop.SetValue(control, false);
             }
-            catch
+            catch (Exception ex)
             {
+                CrashFileLogger.WriteWarning(nameof(DisableWindowsSystemFocusVisual), $"Failed to disable UseSystemFocusVisuals: {ex.Message}");
             }
         }
     }

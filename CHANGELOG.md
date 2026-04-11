@@ -7,6 +7,12 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 ## [Unreleased]
 
 ### Fixed
+- `ThemeModeParser.NormalizeOrDefault` now sanitizes invalid fallback enum values back to `System` instead of returning an out-of-range theme when both the parsed value and caller-supplied default are invalid
+- `DbErrorLogger` now warning-logs unexpected drain-loop failures to `crash.log` so background log persistence does not fail silently after enqueue succeeds
+- `FileStateSyncNotifier.NotifyButtonsChangedAsync` now warning-logs sync-payload write failures before rethrowing so local save/delete success paths leave a breadcrumb when file signaling breaks
+- `MainPage` now warning-logs Windows focus-visual reflection failures, modal primary-editor focus failures, and `IsTabStop` reflection failures instead of swallowing those fallback-path errors silently
+- Mac middle-click/button-mask and editor-key-command/CoreGraphics fallback paths now warning-log failures so native pointer or shortcut bridging issues leave local diagnostics instead of quietly degrading
+- Windows `CommandEntryHandler` now warning-logs both compatibility-triggered and unexpected `InputScope` assignment failures before disabling or rejecting the write
 - `FileAppConfigService` now continues to later config candidates when an earlier config file is readable but omits `theme` or contains an invalid theme value, instead of prematurely defaulting to `System`
 - `FileAppConfigService` now warning-logs skipped config candidates so malformed, unreadable, or invalid theme configs leave a crash-log breadcrumb before fallback continues
 - `DbErrorLogger` now warning-logs DB persistence and retention-purge failures to `crash.log` so non-fatal repository errors still leave diagnostics during shutdown or degraded logging paths
@@ -185,6 +191,12 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 ## [Unreleased]
 
 ### 修正
+- `ThemeModeParser.NormalizeOrDefault` は、解析値と呼び出し元既定値の両方が不正 enum でも out-of-range 値を返さず `System` へ安全化するよう修正
+- `DbErrorLogger` は background drain loop の予期しない失敗も `crash.log` に warning 記録するようにし、enqueue 済みでも以後のログ永続化失敗が無音にならないよう修正
+- `FileStateSyncNotifier.NotifyButtonsChangedAsync` は sync payload の書込失敗も再送出前に warning 記録するようにし、ローカル save/delete 成功後に file signaling が壊れても breadcrumb を残すよう修正
+- `MainPage` は Windows の focus-visual reflection 失敗、モーダル primary editor focus 失敗、`IsTabStop` reflection 失敗も warning 記録するようにし、フォールバック経路の silent failure をなくすよう修正
+- Mac の middle-click/button-mask と editor key-command/CoreGraphics fallback は失敗時も warning 記録するようにし、native pointer / shortcut bridge 劣化時にローカル診断痕跡を残すよう修正
+- Windows `CommandEntryHandler` は `InputScope` 代入の互換性由来失敗と予期しない失敗の両方を warning 記録したうえで無効化または拒否するよう修正
 - `FileAppConfigService` は先頭設定ファイルが読めても `theme` 欠落または不正値だった場合にそこで `System` へ確定せず、後続候補へフォールバックするよう修正
 - `FileAppConfigService` は壊れた設定・読めない設定・不正な theme 設定をスキップした理由を warning として残すようにし、後続候補へのフォールバック前に `crash.log` に診断 breadcrumb を残すよう修正
 - `DbErrorLogger` は DB への永続化失敗や保持期間 purge 失敗も `crash.log` に warning 記録するようにし、非致命なリポジトリエラーでも shutdown / 劣化動作時の診断痕跡を残すよう修正
