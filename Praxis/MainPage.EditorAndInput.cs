@@ -1,6 +1,7 @@
 using System.Runtime.InteropServices;
 
 using Praxis.Core.Logic;
+using Praxis.Services;
 using Praxis.ViewModels;
 #if MACCATALYST
 using UIKit;
@@ -246,8 +247,9 @@ public partial class MainPage
             textBox!.Focus(Microsoft.UI.Xaml.FocusState.Programmatic);
             PlaceWindowsTextBoxCaretAtEnd(textBox);
         }
-        catch
+        catch (Exception ex)
         {
+            CrashFileLogger.WriteException(nameof(ApplyEntryFocusAfterClearButtonTap), ex);
         }
 #endif
     }

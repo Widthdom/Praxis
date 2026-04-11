@@ -21,6 +21,9 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - `SqliteAppRepository` now normalizes cached button order to placement order after load/reload/upsert paths, and dock-order persistence now discards duplicate or empty GUIDs while preserving first occurrence order
 - Config/storage path handling is stricter: malformed base `praxis.config.json` now falls back to later valid candidates, quoted `%LOCALAPPDATA%` values are normalized, and blank/relative storage roots no longer degrade into working-directory-relative DB/crash-log paths
 - `DbErrorLogger` now preserves nested inner exception type/message chains inside `AggregateException` entries instead of truncating at the direct children
+- `SqliteAppRepository.SetThemeAsync` now normalizes out-of-range `ThemeMode` values to `System`, and external empty `dock_order` sync now clears stale Dock UI state instead of leaving old buttons visible
+- `MainViewModel` now warning-logs external reload/theme sync failures, command-suggestion refresh failures, and conflict-dialog callback failures instead of swallowing them silently
+- Windows clear-button native refocus failures now write directly to `crash.log`, improving diagnostics for freeze/abort paths where async DB logging may never complete
 
 ### [1.1.3] - 2026-04-05
 
@@ -136,6 +139,11 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 
 ### 追加
 - .codex および CLAUDE.md を追加
+
+### 修正
+- `SqliteAppRepository.SetThemeAsync` は範囲外の `ThemeMode` 値を `System` へ正規化して保存し、外部同期で `dock_order` が空になった場合は古い Dock 表示を残さず明示的にクリアするよう修正
+- `MainViewModel` は外部 reload/theme 同期失敗、command 候補再計算失敗、競合ダイアログ callback 失敗を無言で握り潰さず warning ログへ残すよう修正
+- Windows のクリアボタン後 native refocus 失敗は `crash.log` へ直接同期記録するようにし、freeze/abort 系の診断痕跡を残しやすくした
 
 ### [1.1.3] - 2026-04-05
 

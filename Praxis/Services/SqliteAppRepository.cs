@@ -277,10 +277,11 @@ public sealed class SqliteAppRepository : IAppRepository
         try
         {
             await InitializeCoreAsync();
+            var normalized = ThemeModeParser.NormalizeOrDefault(themeMode, ThemeMode.System);
             await Connection.InsertOrReplaceAsync(new AppSettingEntity
             {
                 Key = ThemeKey,
-                Value = themeMode.ToString(),
+                Value = normalized.ToString(),
             });
         }
         finally

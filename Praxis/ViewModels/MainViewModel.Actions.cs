@@ -332,8 +332,9 @@ public partial class MainViewModel
             errorLogger.LogInfo($"Conflict dialog: type={context.ConflictType}, resolution={resolution}, button=\"{context.EditingRecord.ButtonText}\" [{context.EditingRecord.Id}]", nameof(ResolveConflictAsync));
             return resolution;
         }
-        catch
+        catch (Exception ex)
         {
+            errorLogger.LogWarning($"Conflict resolution callback failed: {ex.Message}", nameof(ResolveConflictAsync));
             return EditorConflictResolution.Cancel;
         }
     }
@@ -696,12 +697,12 @@ public partial class MainViewModel
     private async Task RestoreDockAsync()
     {
         var order = await repository.GetDockButtonIdsAsync();
+        DockButtons.Clear();
         if (order.Count == 0)
         {
             return;
         }
 
-        DockButtons.Clear();
         foreach (var id in order)
         {
             var item = allButtons.FirstOrDefault(x => x.Id == id);

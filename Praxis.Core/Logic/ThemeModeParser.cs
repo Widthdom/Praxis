@@ -5,6 +5,13 @@ namespace Praxis.Core.Logic;
 
 public static class ThemeModeParser
 {
+    public static ThemeMode NormalizeOrDefault(ThemeMode value, ThemeMode defaultMode = ThemeMode.System)
+    {
+        return Enum.IsDefined(value)
+            ? value
+            : defaultMode;
+    }
+
     public static ThemeMode ParseOrDefault(string? value, ThemeMode defaultMode = ThemeMode.System)
     {
         if (string.IsNullOrWhiteSpace(value))

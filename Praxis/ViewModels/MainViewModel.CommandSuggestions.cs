@@ -198,8 +198,9 @@ public partial class MainViewModel
         catch (OperationCanceledException)
         {
         }
-        catch
+        catch (Exception ex)
         {
+            errorLogger.LogWarning($"Debounced command suggestion refresh failed: {ex.Message}", nameof(DebouncedRefreshCommandSuggestionsAsync));
             MainThread.BeginInvokeOnMainThread(CloseCommandSuggestions);
         }
     }
@@ -254,8 +255,9 @@ public partial class MainViewModel
             CommandSuggestionPopupHeight = Math.Min(280, Math.Max(44, 12 + CommandSuggestions.Count * 38));
             IsCommandSuggestionOpen = true;
         }
-        catch
+        catch (Exception ex)
         {
+            errorLogger.LogWarning($"Command suggestion refresh failed: {ex.Message}", nameof(RefreshCommandSuggestions));
             CloseCommandSuggestions();
         }
     }

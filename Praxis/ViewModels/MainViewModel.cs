@@ -197,8 +197,9 @@ public partial class MainViewModel : ObservableObject
 
             MainThread.BeginInvokeOnMainThread(apply);
         }
-        catch
+        catch (Exception ex)
         {
+            errorLogger.LogWarning($"External theme sync failed: {ex.Message}", nameof(SyncThemeFromExternalChangeAsync));
         }
     }
 
@@ -231,6 +232,10 @@ public partial class MainViewModel : ObservableObject
                 }
             });
             await tcs.Task;
+        }
+        catch (Exception ex)
+        {
+            errorLogger.LogWarning($"External reload failed: {ex.Message}", nameof(ReloadFromExternalChangeAsync));
         }
         finally
         {
