@@ -93,11 +93,11 @@ dotnet test Praxis.Tests/Praxis.Tests.csproj --collect:"XPlat Code Coverage"
 - [`ClearButtonGlyphAlignmentPolicyTests.cs`](../Praxis.Tests/ClearButtonGlyphAlignmentPolicyTests.cs): clear glyph translation policy.
 - [`ClearButtonRefocusPolicyTests.cs`](../Praxis.Tests/ClearButtonRefocusPolicyTests.cs): clear-button focus retry schedule by platform, including deferred retries on Mac Catalyst.
 - [`WindowsNativeFocusSafetyPolicyTests.cs`](../Praxis.Tests/WindowsNativeFocusSafetyPolicyTests.cs): guard conditions for applying native WinUI `TextBox` refocus/caret restore only to live controls, with exhaustive three-flag truth-table coverage.
-- [`ButtonFocusVisualPolicyTests.cs`](../Praxis.Tests/ButtonFocusVisualPolicyTests.cs): focus-border style resolution.
+- [`ButtonFocusVisualPolicyTests.cs`](../Praxis.Tests/ButtonFocusVisualPolicyTests.cs): focus-border style resolution, including positive constant width and transparent unfocused color regardless of theme.
 - [`ModalEditorHeightResolverTests.cs`](../Praxis.Tests/ModalEditorHeightResolverTests.cs): multiline editor height calculation and clamping, including trailing CRLF handling and preserved blank lines.
 - [`ModalEditorScrollHeightResolverTests.cs`](../Praxis.Tests/ModalEditorScrollHeightResolverTests.cs): modal scroll height clamping with non-finite input safety plus zero/negative-max fallback and finite-side preservation.
-- [`ThemeTextColorPolicyTests.cs`](../Praxis.Tests/ThemeTextColorPolicyTests.cs): theme text color policy.
-- [`ThemeDarkStateResolverTests.cs`](../Praxis.Tests/ThemeDarkStateResolverTests.cs): effective dark-mode resolution.
+- [`ThemeTextColorPolicyTests.cs`](../Praxis.Tests/ThemeTextColorPolicyTests.cs): theme text color policy, including palette stability and distinct light/dark outputs.
+- [`ThemeDarkStateResolverTests.cs`](../Praxis.Tests/ThemeDarkStateResolverTests.cs): effective dark-mode resolution, including explicit dark/light precedence over requested/platform values and undefined-enum fallback behavior.
 - [`ThemeShortcutModeResolverTests.cs`](../Praxis.Tests/ThemeShortcutModeResolverTests.cs): macOS key-input to theme-mode mapping.
 - [`TextCaretPositionResolverTests.cs`](../Praxis.Tests/TextCaretPositionResolverTests.cs): caret-tail placement resolution.
 - [`UiTimingPolicyTests.cs`](../Praxis.Tests/UiTimingPolicyTests.cs): named UI timing constants (focus restore, activation windows, polling interval) and ordering constraints.
@@ -213,11 +213,11 @@ dotnet test Praxis.Tests/Praxis.Tests.csproj --collect:"XPlat Code Coverage"
 - [`ClearButtonGlyphAlignmentPolicyTests.cs`](../Praxis.Tests/ClearButtonGlyphAlignmentPolicyTests.cs): クリアボタン `x` の座標補正。
 - [`ClearButtonRefocusPolicyTests.cs`](../Praxis.Tests/ClearButtonRefocusPolicyTests.cs): クリア後フォーカス復帰リトライ間隔。Mac Catalyst の遅延再試行も検証する。
 - [`WindowsNativeFocusSafetyPolicyTests.cs`](../Praxis.Tests/WindowsNativeFocusSafetyPolicyTests.cs): WinUI の native `TextBox` 再フォーカス/キャレット復帰を live control に限定する安全条件を検証する。3 フラグの全組み合わせも固定する。
-- [`ButtonFocusVisualPolicyTests.cs`](../Praxis.Tests/ButtonFocusVisualPolicyTests.cs): フォーカス枠スタイル判定。
+- [`ButtonFocusVisualPolicyTests.cs`](../Praxis.Tests/ButtonFocusVisualPolicyTests.cs): フォーカス枠スタイル判定。正の固定線幅と、非フォーカス時にテーマ非依存で透明色になることも検証する。
 - [`ModalEditorHeightResolverTests.cs`](../Praxis.Tests/ModalEditorHeightResolverTests.cs): 複数行エディタ高さ算出とクランプ。末尾 CRLF と空行保持も検証する。
 - [`ModalEditorScrollHeightResolverTests.cs`](../Praxis.Tests/ModalEditorScrollHeightResolverTests.cs): モーダル項目スクロール高さクランプと非有限入力の安全化に加え、`maxHeight <= 0` フォールバックと片側のみ非有限な入力の扱いも検証する。
-- [`ThemeTextColorPolicyTests.cs`](../Praxis.Tests/ThemeTextColorPolicyTests.cs): テーマ連動文字色判定。
-- [`ThemeDarkStateResolverTests.cs`](../Praxis.Tests/ThemeDarkStateResolverTests.cs): 実効ダーク判定。
+- [`ThemeTextColorPolicyTests.cs`](../Praxis.Tests/ThemeTextColorPolicyTests.cs): テーマ連動文字色判定。パレット固定と light/dark の差異も検証する。
+- [`ThemeDarkStateResolverTests.cs`](../Praxis.Tests/ThemeDarkStateResolverTests.cs): 実効ダーク判定。Dark/Light の優先、requested/platform のフォールバック、未定義 enum の扱いも検証する。
 - [`ThemeShortcutModeResolverTests.cs`](../Praxis.Tests/ThemeShortcutModeResolverTests.cs): macOS キー入力からテーマモード解決。
 - [`TextCaretPositionResolverTests.cs`](../Praxis.Tests/TextCaretPositionResolverTests.cs): キャレット末尾配置判定。
 - [`UiTimingPolicyTests.cs`](../Praxis.Tests/UiTimingPolicyTests.cs): フォーカス復帰・アクティベーション・ポーリングの UI タイミング定数と順序条件。
