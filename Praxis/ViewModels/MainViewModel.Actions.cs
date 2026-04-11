@@ -106,7 +106,7 @@ public partial class MainViewModel
         }
 
         UpdateCanvasSize();
-        await PersistDockAsync();
+        await TryPersistDockAsync(nameof(DeleteButtonsAsync), "Delete");
         await TryNotifyButtonsChangedAsync(nameof(DeleteButtonsAsync), "Delete");
         RecordHistoryAction("delete", snapshots.Select(x => new ButtonHistoryMutation
         {
@@ -359,7 +359,7 @@ public partial class MainViewModel
         errorLogger.LogInfo($"Theme set to {parsed}", nameof(SetThemeAsync));
         SelectedTheme = parsed;
         themeService.Apply(parsed);
-        await repository.SetThemeAsync(parsed);
+        await TryPersistThemeAsync(parsed, nameof(SetThemeAsync), "Theme change");
         await TryNotifyButtonsChangedAsync(nameof(SetThemeAsync), "Theme change");
     }
 
@@ -609,7 +609,7 @@ public partial class MainViewModel
         var dockOrder = isUndo ? action.DockOrderBefore : action.DockOrderAfter;
         if (dockOrder is not null)
         {
-            await repository.SetDockButtonIdsAsync(dockOrder);
+            await TryPersistDockOrderAsync(dockOrder, nameof(ApplyHistoryActionAsync), isUndo ? "Undo dock restore" : "Redo dock restore");
         }
 
         await LoadButtonsFromRepositoryAsync(forceReload: true);
@@ -645,7 +645,7 @@ public partial class MainViewModel
             (result.Success ? string.Empty : $" error=\"{result.Message}\""),
             nameof(ExecuteRecordAsync));
 
-        await repository.AddLogAsync(new LaunchLogEntry
+        await TryAddLaunchLogAsync(new LaunchLogEntry
         {
             ButtonId = record.Id,
             Source = source,
@@ -654,9 +654,9 @@ public partial class MainViewModel
             Succeeded = result.Success,
             Message = result.Message,
             TimestampUtc = DateTime.UtcNow,
-        });
+        }, nameof(ExecuteRecordAsync), $"Launch log write for \"{record.ButtonText}\" [{record.Id}]");
 
-        await repository.PurgeOldLogsAsync(30);
+        await TryPurgeLaunchLogsAsync(30, nameof(ExecuteRecordAsync), $"Launch log purge after \"{record.ButtonText}\" [{record.Id}]");
         if (updateStatus)
         {
             SetStatus(result.Success ? "Executed." : $"Failed: {result.Message}");
@@ -679,7 +679,7 @@ public partial class MainViewModel
             DockButtons.RemoveAt(DockButtons.Count - 1);
         }
 
-        await PersistDockAsync();
+        await TryPersistDockAsync(nameof(AddToDockAsync), "Dock update");
         await TryNotifyButtonsChangedAsync(nameof(AddToDockAsync), "Dock update");
     }
 
@@ -720,6 +720,65 @@ public partial class MainViewModel
         catch (Exception ex)
         {
             errorLogger.LogWarning($"{operation} completed locally, but window sync notification failed: {ex.Message}", context);
+            return false;
+        }
+    }
+
+    private async Task<bool> TryPersistThemeAsync(ThemeMode mode, string context, string operation)
+    {
+        try
+        {
+            await repository.SetThemeAsync(mode);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            errorLogger.LogWarning($"{operation} applied locally, but theme persistence failed: {ex.Message}", context);
+            return false;
+        }
+    }
+
+    private async Task<bool> TryPersistDockAsync(string context, string operation)
+        => await TryPersistDockOrderAsync(DockButtons.Select(x => x.Id).ToList(), context, operation);
+
+    private async Task<bool> TryPersistDockOrderAsync(IReadOnlyList<Guid> ids, string context, string operation)
+    {
+        try
+        {
+            await repository.SetDockButtonIdsAsync(ids);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            errorLogger.LogWarning($"{operation} completed locally, but dock persistence failed: {ex.Message}", context);
+            return false;
+        }
+    }
+
+    private async Task<bool> TryAddLaunchLogAsync(LaunchLogEntry entry, string context, string operation)
+    {
+        try
+        {
+            await repository.AddLogAsync(entry);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            errorLogger.LogWarning($"{operation} failed: {ex.Message}", context);
+            return false;
+        }
+    }
+
+    private async Task<bool> TryPurgeLaunchLogsAsync(int retentionDays, string context, string operation)
+    {
+        try
+        {
+            await repository.PurgeOldLogsAsync(retentionDays);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            errorLogger.LogWarning($"{operation} failed: {ex.Message}", context);
             return false;
         }
     }

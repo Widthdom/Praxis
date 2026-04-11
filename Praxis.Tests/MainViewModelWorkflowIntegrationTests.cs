@@ -479,6 +479,151 @@ public class MainViewModelWorkflowIntegrationTests
         Assert.Contains(logger.Warnings, x => x.Context == "SetThemeAsync" && x.Message.Contains("sync boom", StringComparison.Ordinal));
     }
 
+    [Fact]
+    public async Task ExecuteButton_WhenLaunchLogWriteFails_StillSucceedsAndLogsWarning()
+    {
+        var repository = new InMemoryAppRepository
+        {
+            ThrowOnAddLog = new InvalidOperationException("log boom"),
+        };
+        await repository.UpsertButtonAsync(new LauncherButtonRecord
+        {
+            Id = Guid.NewGuid(),
+            Command = "build",
+            ButtonText = "Build",
+            Tool = "echo",
+            Arguments = "one",
+        });
+
+        var executor = new RecordingCommandExecutor((true, "ok"));
+        var clipboard = new RecordingClipboardService();
+        var theme = new RecordingThemeService();
+        var syncNotifier = new TestStateSyncNotifier();
+        var logger = new RecordingErrorLogger();
+        var viewModel = new MainViewModel(repository, executor, clipboard, theme, syncNotifier, logger);
+        await viewModel.InitializeAsync();
+
+        await viewModel.ExecuteButtonCommand.ExecuteAsync(Assert.Single(viewModel.VisibleButtons));
+
+        Assert.Equal("Executed.", viewModel.StatusText);
+        Assert.Empty(repository.Logs);
+        Assert.Contains(logger.Warnings, x => x.Context == "ExecuteRecordAsync" && x.Message.Contains("log boom", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task ExecuteButton_WhenLaunchLogPurgeFails_StillSucceedsAndLogsWarning()
+    {
+        var repository = new InMemoryAppRepository
+        {
+            ThrowOnPurgeLogs = new InvalidOperationException("purge boom"),
+        };
+        await repository.UpsertButtonAsync(new LauncherButtonRecord
+        {
+            Id = Guid.NewGuid(),
+            Command = "build",
+            ButtonText = "Build",
+            Tool = "echo",
+            Arguments = "one",
+        });
+
+        var executor = new RecordingCommandExecutor((true, "ok"));
+        var clipboard = new RecordingClipboardService();
+        var theme = new RecordingThemeService();
+        var syncNotifier = new TestStateSyncNotifier();
+        var logger = new RecordingErrorLogger();
+        var viewModel = new MainViewModel(repository, executor, clipboard, theme, syncNotifier, logger);
+        await viewModel.InitializeAsync();
+
+        await viewModel.ExecuteButtonCommand.ExecuteAsync(Assert.Single(viewModel.VisibleButtons));
+
+        Assert.Equal("Executed.", viewModel.StatusText);
+        Assert.Single(repository.Logs);
+        Assert.Contains(logger.Warnings, x => x.Context == "ExecuteRecordAsync" && x.Message.Contains("purge boom", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task ExecuteButton_WhenDockPersistFails_StillSucceedsAndLogsWarning()
+    {
+        var repository = new InMemoryAppRepository
+        {
+            ThrowOnSetDockOrder = new InvalidOperationException("dock boom"),
+        };
+        await repository.UpsertButtonAsync(new LauncherButtonRecord
+        {
+            Id = Guid.NewGuid(),
+            Command = "build",
+            ButtonText = "Build",
+            Tool = "echo",
+            Arguments = "one",
+        });
+
+        var executor = new RecordingCommandExecutor((true, "ok"));
+        var clipboard = new RecordingClipboardService();
+        var theme = new RecordingThemeService();
+        var syncNotifier = new TestStateSyncNotifier();
+        var logger = new RecordingErrorLogger();
+        var viewModel = new MainViewModel(repository, executor, clipboard, theme, syncNotifier, logger);
+        await viewModel.InitializeAsync();
+
+        await viewModel.ExecuteButtonCommand.ExecuteAsync(Assert.Single(viewModel.VisibleButtons));
+
+        Assert.Equal("Executed.", viewModel.StatusText);
+        Assert.Single(viewModel.DockButtons);
+        Assert.Contains(logger.Warnings, x => x.Context == "AddToDockAsync" && x.Message.Contains("dock boom", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task DeleteButton_WhenDockPersistFails_StillDeletesAndLogsWarning()
+    {
+        var repository = new InMemoryAppRepository();
+        var record = new LauncherButtonRecord
+        {
+            Id = Guid.NewGuid(),
+            Command = "build",
+            ButtonText = "Build",
+            Tool = "echo",
+            Arguments = "one",
+        };
+        await repository.UpsertButtonAsync(record);
+
+        var executor = new RecordingCommandExecutor((true, "ok"));
+        var clipboard = new RecordingClipboardService();
+        var theme = new RecordingThemeService();
+        var syncNotifier = new TestStateSyncNotifier();
+        var logger = new RecordingErrorLogger();
+        var viewModel = new MainViewModel(repository, executor, clipboard, theme, syncNotifier, logger);
+        await viewModel.InitializeAsync();
+        repository.ThrowOnSetDockOrder = new InvalidOperationException("dock boom");
+
+        await viewModel.DeleteButtonCommand.ExecuteAsync(Assert.Single(viewModel.VisibleButtons));
+
+        Assert.Empty(await repository.GetButtonsAsync());
+        Assert.Equal("Button deleted.", viewModel.StatusText);
+        Assert.Contains(logger.Warnings, x => x.Context == "DeleteButtonsAsync" && x.Message.Contains("dock boom", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task SetTheme_WhenThemePersistFails_StillAppliesLocallyAndLogsWarning()
+    {
+        var repository = new InMemoryAppRepository
+        {
+            ThrowOnSetTheme = new InvalidOperationException("theme save boom"),
+        };
+        var executor = new RecordingCommandExecutor((true, "ok"));
+        var clipboard = new RecordingClipboardService();
+        var theme = new RecordingThemeService();
+        var syncNotifier = new TestStateSyncNotifier();
+        var logger = new RecordingErrorLogger();
+        var viewModel = new MainViewModel(repository, executor, clipboard, theme, syncNotifier, logger);
+        await viewModel.InitializeAsync();
+
+        await viewModel.SetThemeCommand.ExecuteAsync("Dark");
+
+        Assert.Equal(ThemeMode.Dark, viewModel.SelectedTheme);
+        Assert.Equal(ThemeMode.Dark, theme.Current);
+        Assert.Contains(logger.Warnings, x => x.Context == "SetThemeAsync" && x.Message.Contains("theme save boom", StringComparison.Ordinal));
+    }
+
     private static async Task WaitUntilAsync(Func<bool> condition, int timeoutMs = 2000)
     {
         var started = DateTime.UtcNow;
@@ -502,6 +647,10 @@ public class MainViewModelWorkflowIntegrationTests
         private ThemeMode themeMode = ThemeMode.System;
         public Exception? ThrowOnReloadButtons { get; set; }
         public Exception? ThrowOnGetTheme { get; set; }
+        public Exception? ThrowOnAddLog { get; set; }
+        public Exception? ThrowOnPurgeLogs { get; set; }
+        public Exception? ThrowOnSetDockOrder { get; set; }
+        public Exception? ThrowOnSetTheme { get; set; }
 
         public IReadOnlyList<LaunchLogEntry> Logs
         {
@@ -596,6 +745,11 @@ public class MainViewModelWorkflowIntegrationTests
 
         public Task AddLogAsync(LaunchLogEntry entry, CancellationToken cancellationToken = default)
         {
+            if (ThrowOnAddLog is not null)
+            {
+                return Task.FromException(ThrowOnAddLog);
+            }
+
             lock (gate)
             {
                 logs.Add(CloneLog(entry));
@@ -606,6 +760,11 @@ public class MainViewModelWorkflowIntegrationTests
 
         public Task PurgeOldLogsAsync(int retentionDays, CancellationToken cancellationToken = default)
         {
+            if (ThrowOnPurgeLogs is not null)
+            {
+                return Task.FromException(ThrowOnPurgeLogs);
+            }
+
             if (retentionDays < 1)
             {
                 retentionDays = 1;
@@ -628,6 +787,11 @@ public class MainViewModelWorkflowIntegrationTests
 
         public Task SetThemeAsync(ThemeMode mode, CancellationToken cancellationToken = default)
         {
+            if (ThrowOnSetTheme is not null)
+            {
+                return Task.FromException(ThrowOnSetTheme);
+            }
+
             lock (gate)
             {
                 themeMode = mode;
@@ -659,6 +823,11 @@ public class MainViewModelWorkflowIntegrationTests
 
         public Task SetDockButtonIdsAsync(IReadOnlyList<Guid> ids, CancellationToken cancellationToken = default)
         {
+            if (ThrowOnSetDockOrder is not null)
+            {
+                return Task.FromException(ThrowOnSetDockOrder);
+            }
+
             lock (gate)
             {
                 dockOrder.Clear();
