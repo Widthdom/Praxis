@@ -119,6 +119,49 @@ public class MainViewModelWorkflowIntegrationTests
     }
 
     [Fact]
+    public async Task PickSuggestionCommand_ClosesPopup_UpdatesInput_AndExecutesSelection()
+    {
+        var repository = new InMemoryAppRepository();
+        await repository.UpsertButtonAsync(new LauncherButtonRecord
+        {
+            Id = Guid.NewGuid(),
+            Command = "build",
+            ButtonText = "Build",
+            Tool = "echo",
+            Arguments = "one",
+        });
+        await repository.UpsertButtonAsync(new LauncherButtonRecord
+        {
+            Id = Guid.NewGuid(),
+            Command = "bundle",
+            ButtonText = "Bundle",
+            Tool = "echo",
+            Arguments = "two",
+        });
+
+        var executor = new RecordingCommandExecutor((true, "ok"));
+        var clipboard = new RecordingClipboardService();
+        var theme = new RecordingThemeService();
+        var syncNotifier = new TestStateSyncNotifier();
+        var logger = new RecordingErrorLogger();
+        var viewModel = new MainViewModel(repository, executor, clipboard, theme, syncNotifier, logger);
+        await viewModel.InitializeAsync();
+
+        viewModel.CommandInput = "bu";
+        await WaitUntilAsync(() => viewModel.IsCommandSuggestionOpen && viewModel.CommandSuggestions.Count == 2);
+
+        await viewModel.PickSuggestionCommand.ExecuteAsync(viewModel.CommandSuggestions[0]);
+
+        Assert.Equal("build", viewModel.CommandInput);
+        Assert.False(viewModel.IsCommandSuggestionOpen);
+        Assert.Equal(-1, viewModel.SelectedCommandSuggestionIndex);
+        Assert.Single(executor.Calls);
+        Assert.Equal(("echo", "one"), executor.Calls[0]);
+        Assert.Equal("Executed.", viewModel.StatusText);
+        Assert.Contains(logger.Infos, x => x.Context == "PickSuggestionAsync" && x.Message.Contains("Command suggestion selected", StringComparison.Ordinal));
+    }
+
+    [Fact]
     public async Task SetThemeCommand_InvalidNumericInput_FallsBackToSystem()
     {
         var repository = new InMemoryAppRepository();
@@ -405,6 +448,84 @@ public class MainViewModelWorkflowIntegrationTests
         Assert.Contains(logger.Infos, x => x.Context == "ExecuteRecordAsync" && x.Message.Contains("Execution requested (button)", StringComparison.Ordinal));
         Assert.Contains(logger.Infos, x => x.Context == "ExecuteRecordAsync" && x.Message.Contains("Clipboard updated", StringComparison.Ordinal));
         Assert.Contains(logger.Infos, x => x.Context == "ExecuteRecordAsync" && x.Message.Contains("Executed (button)", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task ExecuteCommandInput_WhenMultipleMatchesSucceed_ExecutesAllAndSetsAggregateStatus()
+    {
+        var repository = new InMemoryAppRepository();
+        await repository.UpsertButtonAsync(new LauncherButtonRecord
+        {
+            Id = Guid.NewGuid(),
+            Command = "build",
+            ButtonText = "Build One",
+            Tool = "echo",
+            Arguments = "one",
+        });
+        await repository.UpsertButtonAsync(new LauncherButtonRecord
+        {
+            Id = Guid.NewGuid(),
+            Command = " build ",
+            ButtonText = "Build Two",
+            Tool = "pwsh",
+            Arguments = "two",
+        });
+
+        var executor = new RecordingCommandExecutor((true, "ok"));
+        var clipboard = new RecordingClipboardService();
+        var theme = new RecordingThemeService();
+        var syncNotifier = new TestStateSyncNotifier();
+        var logger = new RecordingErrorLogger();
+        var viewModel = new MainViewModel(repository, executor, clipboard, theme, syncNotifier, logger);
+        await viewModel.InitializeAsync();
+        viewModel.CommandInput = "build";
+
+        await viewModel.ExecuteCommandInputCommand.ExecuteAsync(null);
+
+        Assert.Equal(2, executor.Calls.Count);
+        Assert.Equal(("echo", "one"), executor.Calls[0]);
+        Assert.Equal(("pwsh", "two"), executor.Calls[1]);
+        Assert.Equal("Executed 2 commands.", viewModel.StatusText);
+        Assert.Equal(2, repository.Logs.Count);
+        Assert.Contains(logger.Infos, x => x.Context == "ExecuteCommandMatchesAsync" && x.Message.Contains("resolved 2 target(s)", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task ExecuteCommandInput_WhenMultipleMatchesPartiallyFail_SetsPartialFailureStatus()
+    {
+        var repository = new InMemoryAppRepository();
+        await repository.UpsertButtonAsync(new LauncherButtonRecord
+        {
+            Id = Guid.NewGuid(),
+            Command = "build",
+            ButtonText = "Build One",
+            Tool = "echo",
+            Arguments = "one",
+        });
+        await repository.UpsertButtonAsync(new LauncherButtonRecord
+        {
+            Id = Guid.NewGuid(),
+            Command = "build",
+            ButtonText = "Build Two",
+            Tool = "pwsh",
+            Arguments = "two",
+        });
+
+        var executor = new SequenceCommandExecutor([(true, "ok"), (false, "boom")]);
+        var clipboard = new RecordingClipboardService();
+        var theme = new RecordingThemeService();
+        var syncNotifier = new TestStateSyncNotifier();
+        var logger = new RecordingErrorLogger();
+        var viewModel = new MainViewModel(repository, executor, clipboard, theme, syncNotifier, logger);
+        await viewModel.InitializeAsync();
+        viewModel.CommandInput = "build";
+
+        await viewModel.ExecuteCommandInputCommand.ExecuteAsync(null);
+
+        Assert.Equal(2, executor.Calls.Count);
+        Assert.Equal("Executed 1/2. Last error: boom", viewModel.StatusText);
+        Assert.Equal(2, repository.Logs.Count);
+        Assert.Contains(repository.Logs, x => !x.Succeeded && x.Message == "boom");
     }
 
     [Fact]
@@ -1052,6 +1173,20 @@ public class MainViewModelWorkflowIntegrationTests
         public Task<(bool Success, string Message)> ExecuteAsync(string tool, string arguments, CancellationToken cancellationToken = default)
         {
             Calls.Add((tool, arguments));
+            return Task.FromResult(result);
+        }
+    }
+
+    private sealed class SequenceCommandExecutor(IReadOnlyList<(bool Success, string Message)> results) : ICommandExecutor
+    {
+        private readonly Queue<(bool Success, string Message)> remaining = new(results);
+
+        public List<(string Tool, string Arguments)> Calls { get; } = [];
+
+        public Task<(bool Success, string Message)> ExecuteAsync(string tool, string arguments, CancellationToken cancellationToken = default)
+        {
+            Calls.Add((tool, arguments));
+            var result = remaining.Count > 0 ? remaining.Dequeue() : (true, "ok");
             return Task.FromResult(result);
         }
     }
