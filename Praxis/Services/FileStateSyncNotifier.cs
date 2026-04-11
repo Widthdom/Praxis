@@ -70,82 +70,90 @@ public sealed class FileStateSyncNotifier : IStateSyncNotifier
 
     private async Task TryPublishAsync()
     {
-        if (disposed)
+        try
         {
-            return;
-        }
-
-        string payload = string.Empty;
-        Exception? readFailure = null;
-        for (var i = 0; i < 3; i++)
-        {
-            try
-            {
-                if (File.Exists(signalPath))
-                {
-                    payload = await File.ReadAllTextAsync(signalPath);
-                }
-
-                readFailure = null;
-                break;
-            }
-            catch (IOException ex)
-            {
-                readFailure = ex;
-                await Task.Delay(20);
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                readFailure = ex;
-                await Task.Delay(20);
-            }
-        }
-
-        payload = payload.Trim();
-        if (string.IsNullOrWhiteSpace(payload))
-        {
-            if (readFailure is not null)
-            {
-                CrashFileLogger.WriteWarning(nameof(FileStateSyncNotifier), $"Failed to read sync payload after retries: {readFailure.Message}");
-            }
-
-            return;
-        }
-
-        lock (gate)
-        {
-            if (string.Equals(payload, lastObservedPayload, StringComparison.Ordinal))
+            if (disposed)
             {
                 return;
             }
 
-            lastObservedPayload = payload;
-        }
-
-        if (!StateSyncPayloadParser.TryParse(payload, out var source, out var timestamp))
-        {
-            CrashFileLogger.WriteWarning(nameof(FileStateSyncNotifier), $"Ignored malformed sync payload: \"{payload}\"");
-            return;
-        }
-
-        if (string.Equals(source, instanceId, StringComparison.Ordinal))
-        {
-            return;
-        }
-
-        CrashFileLogger.WriteInfo(nameof(FileStateSyncNotifier), $"Signal observed. Source={source} TimestampUtc={timestamp:O}");
-
-        try
-        {
-            ButtonsChanged?.Invoke(this, new StateSyncChangedEventArgs
+            string payload = string.Empty;
+            Exception? readFailure = null;
+            for (var i = 0; i < 3; i++)
             {
-                SourceInstanceId = source,
-                TimestampUtc = timestamp,
-            });
+                try
+                {
+                    if (File.Exists(signalPath))
+                    {
+                        payload = await File.ReadAllTextAsync(signalPath);
+                    }
+
+                    readFailure = null;
+                    break;
+                }
+                catch (IOException ex)
+                {
+                    readFailure = ex;
+                    await Task.Delay(20);
+                }
+                catch (UnauthorizedAccessException ex)
+                {
+                    readFailure = ex;
+                    await Task.Delay(20);
+                }
+            }
+
+            payload = payload.Trim();
+            if (string.IsNullOrWhiteSpace(payload))
+            {
+                if (readFailure is not null)
+                {
+                    CrashFileLogger.WriteWarning(nameof(FileStateSyncNotifier), $"Failed to read sync payload after retries: {readFailure.Message}");
+                }
+
+                return;
+            }
+
+            lock (gate)
+            {
+                if (string.Equals(payload, lastObservedPayload, StringComparison.Ordinal))
+                {
+                    return;
+                }
+
+                lastObservedPayload = payload;
+            }
+
+            if (!StateSyncPayloadParser.TryParse(payload, out var source, out var timestamp))
+            {
+                CrashFileLogger.WriteWarning(nameof(FileStateSyncNotifier), $"Ignored malformed sync payload: \"{payload}\"");
+                return;
+            }
+
+            if (string.Equals(source, instanceId, StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            CrashFileLogger.WriteInfo(nameof(FileStateSyncNotifier), $"Signal observed. Source={source} TimestampUtc={timestamp:O}");
+
+            try
+            {
+                ButtonsChanged?.Invoke(this, new StateSyncChangedEventArgs
+                {
+                    SourceInstanceId = source,
+                    TimestampUtc = timestamp,
+                });
+            }
+            catch (Exception ex)
+            {
+                CrashFileLogger.WriteException(nameof(FileStateSyncNotifier), ex);
+            }
         }
         catch (Exception ex)
         {
             CrashFileLogger.WriteException(nameof(FileStateSyncNotifier), ex);
+            CrashFileLogger.WriteWarning(nameof(FileStateSyncNotifier), $"Unexpected sync publish failure: {ex.Message}");
         }
     }
 

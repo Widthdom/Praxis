@@ -107,6 +107,7 @@ public class AppLayerSourceGuardTests
 
         Assert.Contains("Exception? readFailure = null;", source);
         Assert.Contains("CrashFileLogger.WriteWarning(nameof(FileStateSyncNotifier), $\"Failed to read sync payload after retries: {readFailure.Message}\");", source);
+        Assert.Contains("CrashFileLogger.WriteWarning(nameof(FileStateSyncNotifier), $\"Unexpected sync publish failure: {ex.Message}\");", source);
     }
 
     [Fact]
