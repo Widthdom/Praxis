@@ -117,6 +117,13 @@ public class AppLayerSourceGuardTests
     }
 
     [Fact]
+    public void FileStateSyncNotifier_Dispose_DisablesWatcherBeforeReleasingIt()
+    {
+        var source = ReadRepositoryFile("Praxis", "Services", "FileStateSyncNotifier.cs");
+        Assert.Contains("watcher.EnableRaisingEvents = false;", source);
+    }
+
+    [Fact]
     public void CommandExecutor_ExpandsHomePathBeforeCheckingToolUsability()
     {
         var source = ReadRepositoryFile("Praxis", "Services", "CommandExecutor.cs");
@@ -153,6 +160,15 @@ public class AppLayerSourceGuardTests
     }
 
     [Fact]
+    public void MainViewModel_CommandSuggestionDispatchFailures_AreLogged()
+    {
+        var source = ReadRepositoryFile("Praxis", "ViewModels", "MainViewModel.CommandSuggestions.cs");
+
+        Assert.Contains("Command suggestion close dispatch failed:", source);
+        Assert.Contains("Command suggestion refresh dispatch failed:", source);
+    }
+
+    [Fact]
     public void AppStoragePaths_LegacyMigrationFailures_AreWarningLogged_AndSkipped()
     {
         var source = ReadRepositoryFile("Praxis", "Services", "AppStoragePaths.cs");
@@ -165,6 +181,26 @@ public class AppLayerSourceGuardTests
     {
         var source = ReadRepositoryFile("Praxis", "Services", "FileAppConfigService.cs");
         Assert.Contains("catch (UnauthorizedAccessException)", source);
+    }
+
+    [Fact]
+    public void MauiThemeService_SkipsNoOpApplies_AndCrashLogsDispatchFailures()
+    {
+        var source = ReadRepositoryFile("Praxis", "Services", "MauiThemeService.cs");
+
+        Assert.Contains("if (Application.Current.UserAppTheme == appTheme)", source);
+        Assert.Contains("CrashFileLogger.WriteWarning(nameof(MauiThemeService), $\"ApplyMacWindowStyle dispatch failed: {ex.Message}\");", source);
+    }
+
+    [Fact]
+    public void MacProgram_RelayFailures_AreCrashLogged_AndNullProcessIsRejected()
+    {
+        var source = ReadRepositoryFile("Praxis", "Platforms", "MacCatalyst", "Program.cs");
+
+        Assert.Contains("var process = Process.Start(startInfo);", source);
+        Assert.Contains("if (process is null)", source);
+        Assert.Contains("CrashFileLogger.WriteWarning(nameof(Program), $\"LaunchServices relay returned no process for bundle '{bundlePath}'.\");", source);
+        Assert.Contains("CrashFileLogger.WriteWarning(nameof(Program), $\"LaunchServices relay failed for bundle '{bundlePath}': {ex.Message}\");", source);
     }
 
     private static string ReadRepositoryFile(params string[] segments)

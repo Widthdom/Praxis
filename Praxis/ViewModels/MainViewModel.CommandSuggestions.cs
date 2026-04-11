@@ -201,7 +201,14 @@ public partial class MainViewModel
         catch (Exception ex)
         {
             errorLogger.LogWarning($"Debounced command suggestion refresh failed: {ex.Message}", nameof(DebouncedRefreshCommandSuggestionsAsync));
-            MainThread.BeginInvokeOnMainThread(CloseCommandSuggestions);
+            try
+            {
+                MainThread.BeginInvokeOnMainThread(CloseCommandSuggestions);
+            }
+            catch (Exception dispatchEx)
+            {
+                errorLogger.LogWarning($"Command suggestion close dispatch failed: {dispatchEx.Message}", nameof(DebouncedRefreshCommandSuggestionsAsync));
+            }
         }
     }
 
@@ -213,7 +220,14 @@ public partial class MainViewModel
             return;
         }
 
-        MainThread.BeginInvokeOnMainThread(() => RefreshCommandSuggestions(value));
+        try
+        {
+            MainThread.BeginInvokeOnMainThread(() => RefreshCommandSuggestions(value));
+        }
+        catch (Exception ex)
+        {
+            errorLogger.LogWarning($"Command suggestion refresh dispatch failed: {ex.Message}", nameof(RefreshCommandSuggestionsOnMainThread));
+        }
     }
 
     private void RefreshCommandSuggestions(string value)

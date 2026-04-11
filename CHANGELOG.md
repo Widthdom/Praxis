@@ -10,6 +10,10 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - add .codex & CLAUDE.md
 
 ### Fixed
+- `MainViewModel.CommandSuggestions` now warning-logs failures to dispatch popup close/refresh work onto the main thread instead of letting those scheduling errors vanish silently
+- `MauiThemeService.Apply()` now skips no-op theme reapplication when the target theme is already active, and Mac window-style dispatch failures are crash-logged
+- Mac Catalyst open-relay startup now treats `Process.Start(...) == null` as failure and crash-logs LaunchServices relay failures instead of silently falling back
+- `FileStateSyncNotifier.Dispose()` now disables `EnableRaisingEvents` before unsubscribing/disposing the watcher to reduce late callback races during teardown
 - Base `App` global unhandled-exception/process-exit hooks are now registered only once, preventing duplicate crash/log flush handlers from stacking if app initialization is re-entered
 - `MainViewModel.SyncThemeFromExternalChangeAsync()` now warning-logs failures thrown from the dispatched main-thread apply path, and external reload uses `RunContinuationsAsynchronously` for its bridge `TaskCompletionSource`
 - `FileStateSyncNotifier.NotifyButtonsChangedAsync()` now no-ops after disposal instead of trying to write stale sync files during teardown
@@ -161,6 +165,10 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - .codex および CLAUDE.md を追加
 
 ### 修正
+- `MainViewModel.CommandSuggestions` は候補ポップアップ close / refresh の main-thread dispatch 失敗も warning ログに残すようにし、スケジューリング失敗を無言で消さないよう修正
+- `MauiThemeService.Apply()` は適用済み theme への no-op 再適用を避けるようにし、Mac の window-style dispatch 失敗は `crash.log` に残すよう修正
+- Mac Catalyst の open relay 起動は `Process.Start(...) == null` も失敗扱いにし、LaunchServices relay 失敗を無言で握り潰さず `crash.log` へ記録するよう修正
+- `FileStateSyncNotifier.Dispose()` は watcher の unsubscribe / dispose 前に `EnableRaisingEvents` を false にし、teardown 中の遅延 callback race を減らすよう修正
 - ベース `App` のグローバル unhandled-exception / process-exit hook は一度だけ登録するようにし、アプリ初期化が再入した場合でも crash / flush handler が多重化しないよう修正
 - `MainViewModel.SyncThemeFromExternalChangeAsync()` は dispatch 先メインスレッド適用で発生した失敗も warning ログ化するようにし、外部 reload の `TaskCompletionSource` には `RunContinuationsAsynchronously` を付けて継続の再入を抑制
 - `FileStateSyncNotifier.NotifyButtonsChangedAsync()` は dispose 後は no-op にし、teardown 中に stale な sync file 書き込みを試みないよう修正

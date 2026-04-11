@@ -145,6 +145,7 @@ public sealed class FileStateSyncNotifier : IStateSyncNotifier
         }
 
         disposed = true;
+        watcher.EnableRaisingEvents = false;
         watcher.Changed -= OnSignalChanged;
         watcher.Created -= OnSignalChanged;
         watcher.Renamed -= OnSignalChanged;
