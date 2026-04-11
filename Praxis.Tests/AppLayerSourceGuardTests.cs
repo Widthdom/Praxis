@@ -131,6 +131,46 @@ public class AppLayerSourceGuardTests
     }
 
     [Fact]
+    public void CommandExecutor_FailureBreadcrumbs_ArePresent_ForProcessAndResolutionFailures()
+    {
+        var source = ReadRepositoryFile("Praxis", "Services", "CommandExecutor.cs");
+
+        Assert.Contains("CrashFileLogger.WriteWarning(nameof(CommandExecutor), $\"Launch target resolution failed for '{arguments}': {ex.Message}\");", source);
+        Assert.Contains("CrashFileLogger.WriteWarning(nameof(CommandExecutor), $\"{failurePrefix} {ex.Message}\");", source);
+        Assert.Contains("CrashFileLogger.WriteWarning(nameof(CommandExecutor), $\"{failurePrefix} No process handle was returned.\");", source);
+    }
+
+    [Fact]
+    public void DbErrorLogger_WritesCrashFileBeforeEnqueueingDatabaseWrites()
+    {
+        var source = ReadRepositoryFile("Praxis", "Services", "DbErrorLogger.cs");
+
+        AssertMethodContainsInOrder(source,
+            "public void Log(Exception exception, string context)",
+            "CrashFileLogger.WriteException($\"ERROR [{context}]\", exception);",
+            "pendingWrites.Enqueue(entry);");
+        AssertMethodContainsInOrder(source,
+            "public void LogWarning(string message, string context)",
+            "CrashFileLogger.WriteWarning(context, message);",
+            "pendingWrites.Enqueue(entry);");
+        AssertMethodContainsInOrder(source,
+            "public void LogInfo(string message, string context)",
+            "CrashFileLogger.WriteInfo(context, message);",
+            "pendingWrites.Enqueue(entry);");
+    }
+
+    [Fact]
+    public void WindowsCommandEntryHandler_DisablesInputScopeAfterCompatibilityException()
+    {
+        var source = ReadRepositoryFile("Praxis", "Platforms", "Windows", "Handlers", "CommandEntryHandler.cs");
+
+        Assert.Contains("catch (Exception ex) when (WindowsInputScopeCompatibilityPolicy.ShouldDisableInputScopeOnException(ex))", source);
+        Assert.Contains("inputScopeUnsupported = true;", source);
+        Assert.Contains("catch", source);
+        Assert.Contains("return false;", source);
+    }
+
+    [Fact]
     public void WindowsStartupLog_UsesNormalizedAppStorageRoot_AndGuardsDuplicateHookRegistration()
     {
         var source = ReadRepositoryFile("Praxis", "Platforms", "Windows", "App.xaml.cs");
@@ -244,5 +284,18 @@ public class AppLayerSourceGuardTests
         }
 
         return count;
+    }
+
+    private static void AssertMethodContainsInOrder(string text, string methodSignature, string first, string second)
+    {
+        var methodStart = text.IndexOf(methodSignature, StringComparison.Ordinal);
+        Assert.True(methodStart >= 0, $"Missing method: {methodSignature}");
+
+        var methodBody = text[methodStart..];
+        var firstIndex = methodBody.IndexOf(first, StringComparison.Ordinal);
+        var secondIndex = methodBody.IndexOf(second, StringComparison.Ordinal);
+
+        Assert.True(firstIndex >= 0, $"Missing marker: {first}");
+        Assert.True(secondIndex > firstIndex, $"Expected '{first}' to appear before '{second}'.");
     }
 }
