@@ -216,6 +216,7 @@ public partial class MainViewModel : ObservableObject
                 }
                 catch (Exception ex)
                 {
+                    errorLogger.Log(ex, nameof(SyncThemeFromExternalChangeAsync));
                     errorLogger.LogWarning($"External theme sync dispatch failed: {ex.Message}", nameof(SyncThemeFromExternalChangeAsync));
                 }
             });

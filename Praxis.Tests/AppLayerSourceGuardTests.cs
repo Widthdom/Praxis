@@ -232,6 +232,7 @@ public class AppLayerSourceGuardTests
     {
         var source = ReadRepositoryFile("Praxis", "ViewModels", "MainViewModel.cs");
 
+        Assert.Contains("errorLogger.Log(ex, nameof(SyncThemeFromExternalChangeAsync));", source);
         Assert.Contains("External theme sync dispatch failed:", source);
         Assert.Contains("TaskCreationOptions.RunContinuationsAsynchronously", source);
     }
