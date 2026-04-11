@@ -76,6 +76,139 @@ public class MainViewModelWorkflowIntegrationTests
     }
 
     [Fact]
+    public async Task UndoRedo_CreateAction_RemovesAndRestoresButton()
+    {
+        var repository = new InMemoryAppRepository();
+        var executor = new RecordingCommandExecutor((true, "ok"));
+        var clipboard = new RecordingClipboardService();
+        var theme = new RecordingThemeService();
+        var syncNotifier = new TestStateSyncNotifier();
+        var logger = new RecordingErrorLogger();
+        var viewModel = new MainViewModel(repository, executor, clipboard, theme, syncNotifier, logger);
+        await viewModel.InitializeAsync();
+
+        viewModel.CreateNewCommand.Execute(null);
+        viewModel.Editor.Command = "build";
+        viewModel.Editor.ButtonText = "Build";
+        viewModel.Editor.Tool = "echo";
+        viewModel.Editor.Arguments = "one";
+
+        await viewModel.SaveEditorCommand.ExecuteAsync(null);
+
+        var created = Assert.Single(await repository.GetButtonsAsync());
+        Assert.Equal("Build", created.ButtonText);
+        Assert.Equal(1, syncNotifier.NotifyCount);
+
+        await viewModel.UndoCommand.ExecuteAsync(null);
+
+        Assert.Empty(await repository.GetButtonsAsync());
+        Assert.Empty(viewModel.VisibleButtons);
+        Assert.Equal("Undid create.", viewModel.StatusText);
+        Assert.Equal(2, syncNotifier.NotifyCount);
+        Assert.Contains(logger.Infos, x => x.Context == "UndoAsync" && x.Message.Contains("Undo: create, applied=True", StringComparison.Ordinal));
+
+        await viewModel.RedoCommand.ExecuteAsync(null);
+
+        var restored = Assert.Single(await repository.GetButtonsAsync());
+        Assert.Equal(created.Id, restored.Id);
+        Assert.Equal("Build", restored.ButtonText);
+        Assert.Equal("Redid create.", viewModel.StatusText);
+        Assert.Equal(3, syncNotifier.NotifyCount);
+        Assert.Contains(logger.Infos, x => x.Context == "RedoAsync" && x.Message.Contains("Redo: create, applied=True", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task Undo_DeleteAction_RestoresButtonAndDockOrder()
+    {
+        var repository = new InMemoryAppRepository();
+        var record = new LauncherButtonRecord
+        {
+            Id = Guid.NewGuid(),
+            Command = "build",
+            ButtonText = "Build",
+            Tool = "echo",
+            Arguments = "one",
+        };
+        await repository.UpsertButtonAsync(record);
+
+        var executor = new RecordingCommandExecutor((true, "ok"));
+        var clipboard = new RecordingClipboardService();
+        var theme = new RecordingThemeService();
+        var syncNotifier = new TestStateSyncNotifier();
+        var logger = new RecordingErrorLogger();
+        var viewModel = new MainViewModel(repository, executor, clipboard, theme, syncNotifier, logger);
+        await viewModel.InitializeAsync();
+
+        await viewModel.ExecuteButtonCommand.ExecuteAsync(Assert.Single(viewModel.VisibleButtons));
+        Assert.Equal(record.Id, Assert.Single(viewModel.DockButtons).Id);
+
+        await viewModel.DeleteButtonCommand.ExecuteAsync(Assert.Single(viewModel.VisibleButtons));
+
+        Assert.Empty(await repository.GetButtonsAsync());
+        Assert.Empty(viewModel.DockButtons);
+
+        await viewModel.UndoCommand.ExecuteAsync(null);
+
+        var restored = Assert.Single(await repository.GetButtonsAsync());
+        Assert.Equal(record.Id, restored.Id);
+        Assert.Equal(record.ButtonText, restored.ButtonText);
+        Assert.Equal(record.Id, Assert.Single(viewModel.DockButtons).Id);
+        Assert.Equal(record.Id, Assert.Single(await repository.GetDockButtonIdsAsync()));
+        Assert.Equal("Undid delete.", viewModel.StatusText);
+        Assert.Equal(3, syncNotifier.NotifyCount);
+        Assert.Contains(logger.Infos, x => x.Context == "UndoAsync" && x.Message.Contains("Undo: delete, applied=True", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task Undo_WhenAffectedButtonChangedExternally_CancelsAndKeepsCurrentState()
+    {
+        var repository = new InMemoryAppRepository();
+        var record = new LauncherButtonRecord
+        {
+            Id = Guid.NewGuid(),
+            Command = "build",
+            ButtonText = "Build",
+            Tool = "echo",
+            Arguments = "one",
+        };
+        await repository.UpsertButtonAsync(record);
+
+        var executor = new RecordingCommandExecutor((true, "ok"));
+        var clipboard = new RecordingClipboardService();
+        var theme = new RecordingThemeService();
+        var syncNotifier = new TestStateSyncNotifier();
+        var logger = new RecordingErrorLogger();
+        var viewModel = new MainViewModel(repository, executor, clipboard, theme, syncNotifier, logger);
+        await viewModel.InitializeAsync();
+
+        var existing = Assert.Single(viewModel.VisibleButtons);
+        viewModel.OpenEditorCommand.Execute(existing);
+        viewModel.Editor.ButtonText = "Build Updated";
+
+        await viewModel.SaveEditorCommand.ExecuteAsync(null);
+
+        repository.UpsertForExternalChange(new LauncherButtonRecord
+        {
+            Id = record.Id,
+            Command = "build",
+            ButtonText = "Build External",
+            Tool = "echo",
+            Arguments = "external",
+            CreatedAtUtc = record.CreatedAtUtc,
+        });
+
+        await viewModel.UndoCommand.ExecuteAsync(null);
+
+        var current = Assert.Single(await repository.GetButtonsAsync());
+        Assert.Equal("Build External", current.ButtonText);
+        Assert.Equal("external", current.Arguments);
+        Assert.Equal("Build Updated", Assert.Single(viewModel.VisibleButtons).ButtonText);
+        Assert.Equal("Undo canceled: affected buttons changed in another window.", viewModel.StatusText);
+        Assert.Equal(1, syncNotifier.NotifyCount);
+        Assert.Contains(logger.Infos, x => x.Context == "UndoAsync" && x.Message.Contains("Undo: edit, applied=False", StringComparison.Ordinal));
+    }
+
+    [Fact]
     public async Task CommandSuggestions_DoNotAutoSelect_AndDownSelectsFirstItem()
     {
         var repository = new InMemoryAppRepository();
@@ -228,6 +361,7 @@ public class MainViewModelWorkflowIntegrationTests
 
         await WaitUntilAsync(() => logger.Warnings.Any(x => x.Context == "ReloadFromExternalChangeAsync"));
         Assert.Contains(logger.Warnings, x => x.Message.Contains("reload boom", StringComparison.Ordinal));
+        Assert.Contains(logger.Exceptions, x => x.Context == "ReloadFromExternalChangeAsync" && x.Exception.Message.Contains("reload boom", StringComparison.Ordinal));
     }
 
     [Fact]
@@ -250,6 +384,7 @@ public class MainViewModelWorkflowIntegrationTests
 
         await WaitUntilAsync(() => logger.Warnings.Any(x => x.Context == "SyncThemeFromExternalChangeAsync"));
         Assert.Contains(logger.Warnings, x => x.Message.Contains("theme boom", StringComparison.Ordinal));
+        Assert.Contains(logger.Exceptions, x => x.Context == "SyncThemeFromExternalChangeAsync" && x.Exception.Message.Contains("theme boom", StringComparison.Ordinal));
     }
 
     [Fact]
@@ -281,6 +416,7 @@ public class MainViewModelWorkflowIntegrationTests
         Assert.Equal(ThemeMode.System, theme.Current);
         Assert.Single(viewModel.VisibleButtons);
         Assert.Contains(logger.Warnings, x => x.Context == "InitializeAsync" && x.Message.Contains("theme boom", StringComparison.Ordinal));
+        Assert.Contains(logger.Exceptions, x => x.Context == "InitializeAsync" && x.Exception.Message.Contains("theme boom", StringComparison.Ordinal));
     }
 
     [Fact]
@@ -311,6 +447,7 @@ public class MainViewModelWorkflowIntegrationTests
         Assert.Single(viewModel.VisibleButtons);
         Assert.Empty(viewModel.DockButtons);
         Assert.Contains(logger.Warnings, x => x.Context == "InitializeAsync" && x.Message.Contains("dock boom", StringComparison.Ordinal));
+        Assert.Contains(logger.Exceptions, x => x.Context == "InitializeAsync" && x.Exception.Message.Contains("dock boom", StringComparison.Ordinal));
     }
 
     [Fact]
@@ -345,6 +482,7 @@ public class MainViewModelWorkflowIntegrationTests
         await WaitUntilAsync(() => viewModel.StatusText == "Synced from another window.");
         Assert.Equal("Build Synced", Assert.Single(viewModel.VisibleButtons).ButtonText);
         Assert.Contains(logger.Warnings, x => x.Context == "ReloadOnMainThreadAsync" && x.Message.Contains("dock boom", StringComparison.Ordinal));
+        Assert.Contains(logger.Exceptions, x => x.Context == "ReloadOnMainThreadAsync" && x.Exception.Message.Contains("dock boom", StringComparison.Ordinal));
     }
 
     [Fact]
@@ -379,6 +517,7 @@ public class MainViewModelWorkflowIntegrationTests
         await WaitUntilAsync(() => viewModel.StatusText == "Synced from another window.");
         Assert.Equal("Build Synced", Assert.Single(viewModel.VisibleButtons).ButtonText);
         Assert.Contains(logger.Warnings, x => x.Context == "ReloadOnMainThreadAsync" && x.Message.Contains("theme boom", StringComparison.Ordinal));
+        Assert.Contains(logger.Exceptions, x => x.Context == "ReloadOnMainThreadAsync" && x.Exception.Message.Contains("theme boom", StringComparison.Ordinal));
     }
 
     [Fact]
@@ -566,6 +705,7 @@ public class MainViewModelWorkflowIntegrationTests
         Assert.True(viewModel.IsEditorOpen);
         Assert.Equal("Save canceled due to conflict.", viewModel.StatusText);
         Assert.Contains(logger.Warnings, x => x.Context == "ResolveConflictAsync" && x.Message.Contains("dialog boom", StringComparison.Ordinal));
+        Assert.Contains(logger.Exceptions, x => x.Context == "ResolveConflictAsync" && x.Exception.Message.Contains("dialog boom", StringComparison.Ordinal));
     }
 
     [Fact]
@@ -588,6 +728,7 @@ public class MainViewModelWorkflowIntegrationTests
         Assert.True(viewModel.IsEditorOpen);
         Assert.Equal(string.Empty, viewModel.Editor.Arguments);
         Assert.Contains(logger.Warnings, x => x.Context == "OpenCreateEditorAtAsync" && x.Message.Contains("clipboard read boom", StringComparison.Ordinal));
+        Assert.Contains(logger.Exceptions, x => x.Context == "OpenCreateEditorAtAsync" && x.Exception.Message.Contains("clipboard read boom", StringComparison.Ordinal));
     }
 
     [Fact]
@@ -609,6 +750,7 @@ public class MainViewModelWorkflowIntegrationTests
 
         Assert.Equal("Clipboard copy failed.", viewModel.StatusText);
         Assert.Contains(logger.Warnings, x => x.Context == "CopyFieldAsync" && x.Message.Contains("clipboard write boom", StringComparison.Ordinal));
+        Assert.Contains(logger.Exceptions, x => x.Context == "CopyFieldAsync" && x.Exception.Message.Contains("clipboard write boom", StringComparison.Ordinal));
     }
 
     [Fact]
@@ -642,6 +784,7 @@ public class MainViewModelWorkflowIntegrationTests
         Assert.Single(repository.Logs);
         Assert.Equal("Executed.", viewModel.StatusText);
         Assert.Contains(logger.Warnings, x => x.Context == "ExecuteRecordAsync" && x.Message.Contains("clipboard write boom", StringComparison.Ordinal));
+        Assert.Contains(logger.Exceptions, x => x.Context == "ExecuteRecordAsync" && x.Exception.Message.Contains("clipboard write boom", StringComparison.Ordinal));
         Assert.Contains(logger.Infos, x => x.Context == "ExecuteRecordAsync" && x.Message.Contains("Executed (button)", StringComparison.Ordinal));
     }
 
@@ -672,6 +815,7 @@ public class MainViewModelWorkflowIntegrationTests
         Assert.False(viewModel.IsEditorOpen);
         Assert.Equal("Saved.", viewModel.StatusText);
         Assert.Contains(logger.Warnings, x => x.Context == "SaveEditorAsync" && x.Message.Contains("sync boom", StringComparison.Ordinal));
+        Assert.Contains(logger.Exceptions, x => x.Context == "SaveEditorAsync" && x.Exception.Message.Contains("sync boom", StringComparison.Ordinal));
     }
 
     [Fact]
@@ -704,6 +848,7 @@ public class MainViewModelWorkflowIntegrationTests
         Assert.Empty(await repository.GetButtonsAsync());
         Assert.Equal("Button deleted.", viewModel.StatusText);
         Assert.Contains(logger.Warnings, x => x.Context == "DeleteButtonsAsync" && x.Message.Contains("sync boom", StringComparison.Ordinal));
+        Assert.Contains(logger.Exceptions, x => x.Context == "DeleteButtonsAsync" && x.Exception.Message.Contains("sync boom", StringComparison.Ordinal));
     }
 
     [Fact]
@@ -727,6 +872,7 @@ public class MainViewModelWorkflowIntegrationTests
         Assert.Equal(ThemeMode.Dark, theme.Current);
         Assert.Equal(ThemeMode.Dark, await repository.GetThemeAsync());
         Assert.Contains(logger.Warnings, x => x.Context == "SetThemeAsync" && x.Message.Contains("sync boom", StringComparison.Ordinal));
+        Assert.Contains(logger.Exceptions, x => x.Context == "SetThemeAsync" && x.Exception.Message.Contains("sync boom", StringComparison.Ordinal));
     }
 
     [Fact]
@@ -758,6 +904,7 @@ public class MainViewModelWorkflowIntegrationTests
         Assert.Equal("Executed.", viewModel.StatusText);
         Assert.Empty(repository.Logs);
         Assert.Contains(logger.Warnings, x => x.Context == "ExecuteRecordAsync" && x.Message.Contains("log boom", StringComparison.Ordinal));
+        Assert.Contains(logger.Exceptions, x => x.Context == "ExecuteRecordAsync" && x.Exception.Message.Contains("log boom", StringComparison.Ordinal));
     }
 
     [Fact]
@@ -789,6 +936,7 @@ public class MainViewModelWorkflowIntegrationTests
         Assert.Equal("Executed.", viewModel.StatusText);
         Assert.Single(repository.Logs);
         Assert.Contains(logger.Warnings, x => x.Context == "ExecuteRecordAsync" && x.Message.Contains("purge boom", StringComparison.Ordinal));
+        Assert.Contains(logger.Exceptions, x => x.Context == "ExecuteRecordAsync" && x.Exception.Message.Contains("purge boom", StringComparison.Ordinal));
     }
 
     [Fact]
@@ -820,6 +968,7 @@ public class MainViewModelWorkflowIntegrationTests
         Assert.Equal("Executed.", viewModel.StatusText);
         Assert.Single(viewModel.DockButtons);
         Assert.Contains(logger.Warnings, x => x.Context == "AddToDockAsync" && x.Message.Contains("dock boom", StringComparison.Ordinal));
+        Assert.Contains(logger.Exceptions, x => x.Context == "AddToDockAsync" && x.Exception.Message.Contains("dock boom", StringComparison.Ordinal));
     }
 
     [Fact]
@@ -850,6 +999,7 @@ public class MainViewModelWorkflowIntegrationTests
         Assert.Empty(await repository.GetButtonsAsync());
         Assert.Equal("Button deleted.", viewModel.StatusText);
         Assert.Contains(logger.Warnings, x => x.Context == "DeleteButtonsAsync" && x.Message.Contains("dock boom", StringComparison.Ordinal));
+        Assert.Contains(logger.Exceptions, x => x.Context == "DeleteButtonsAsync" && x.Exception.Message.Contains("dock boom", StringComparison.Ordinal));
     }
 
     [Fact]
@@ -872,6 +1022,7 @@ public class MainViewModelWorkflowIntegrationTests
         Assert.Equal(ThemeMode.Dark, viewModel.SelectedTheme);
         Assert.Equal(ThemeMode.Dark, theme.Current);
         Assert.Contains(logger.Warnings, x => x.Context == "SetThemeAsync" && x.Message.Contains("theme save boom", StringComparison.Ordinal));
+        Assert.Contains(logger.Exceptions, x => x.Context == "SetThemeAsync" && x.Exception.Message.Contains("theme save boom", StringComparison.Ordinal));
     }
 
     [Fact]
@@ -894,6 +1045,7 @@ public class MainViewModelWorkflowIntegrationTests
 
         Assert.Equal("Command not found: missing", viewModel.StatusText);
         Assert.Contains(logger.Warnings, x => x.Context == "ExecuteCommandMatchesAsync" && x.Message.Contains("lookup boom", StringComparison.Ordinal));
+        Assert.Contains(logger.Exceptions, x => x.Context == "ExecuteCommandMatchesAsync" && x.Exception.Message.Contains("lookup boom", StringComparison.Ordinal));
     }
 
     private static async Task WaitUntilAsync(Func<bool> condition, int timeoutMs = 2000)
@@ -1273,9 +1425,11 @@ public class MainViewModelWorkflowIntegrationTests
     {
         public List<(string Message, string Context)> Infos { get; } = [];
         public List<(string Message, string Context)> Warnings { get; } = [];
+        public List<(Exception Exception, string Context)> Exceptions { get; } = [];
 
         public void Log(Exception exception, string context)
         {
+            Exceptions.Add((exception, context));
         }
 
         public void LogWarning(string message, string context)

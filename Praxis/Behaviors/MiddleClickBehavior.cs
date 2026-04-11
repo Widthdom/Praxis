@@ -229,8 +229,12 @@ public sealed class MiddleClickBehavior : Behavior<View>
                 }
                 ExecuteBoundCommand();
             }
-            catch (OperationCanceledException)
+            catch (OperationCanceledException) when (token.IsCancellationRequested)
             {
+            }
+            catch (Exception ex)
+            {
+                CrashFileLogger.WriteWarning(nameof(MiddleClickBehavior), $"Deferred middle-click execution failed: {ex.Message}");
             }
         });
     }

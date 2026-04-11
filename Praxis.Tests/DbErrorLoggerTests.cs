@@ -16,6 +16,29 @@ public class DbErrorLoggerTests
     }
 
     [Fact]
+    public async Task Log_DoesNotThrow_WhenExceptionPayloadIsNull()
+    {
+        var repo = new FakeAppRepository();
+        var logger = new DbErrorLogger(repo);
+
+        var ex = Record.Exception(() => logger.Log(null!, "null-context"));
+        Assert.Null(ex);
+
+        await logger.FlushAsync(TimeSpan.FromSeconds(5));
+
+        var entry = Assert.Single(repo.ErrorLogs);
+        Assert.Equal("Error", entry.Level);
+        Assert.Equal("null-context", entry.Context);
+        Assert.Equal("(no exception payload)", entry.Message);
+        Assert.Equal(string.Empty, entry.ExceptionType);
+        Assert.Equal(string.Empty, entry.StackTrace);
+
+        var content = File.ReadAllText(CrashFileLogger.LogFilePath);
+        Assert.Contains("ERROR [null-context]", content);
+        Assert.Contains("(no exception payload)", content);
+    }
+
+    [Fact]
     public void LogInfo_DoesNotThrow()
     {
         var repo = new FakeAppRepository();
@@ -289,6 +312,7 @@ public class DbErrorLoggerTests
 
         var content = File.ReadAllText(CrashFileLogger.LogFilePath);
         Assert.Contains($"Failed to persist Error log for '{context}': Simulated DB failure", content);
+        Assert.Contains("Type: System.Exception", content);
     }
 
     [Fact]
@@ -323,6 +347,7 @@ public class DbErrorLoggerTests
 
         var content = File.ReadAllText(CrashFileLogger.LogFilePath);
         Assert.Contains($"Failed to purge old error logs after persisting '{context}': Simulated purge failure", content);
+        Assert.Contains("Type: System.Exception", content);
     }
 
     private sealed class FakeAppRepository : IAppRepository

@@ -29,14 +29,12 @@ public partial class App : Application
     public static void SetMacApplicationActive(bool value) => isMacApplicationActive = value;
     public static void RaiseMacApplicationDeactivating()
     {
-        try { MacApplicationDeactivating?.Invoke(); }
-        catch (Exception ex) { errorLogger?.Log(ex, nameof(RaiseMacApplicationDeactivating)); }
+        TryRaise(MacApplicationDeactivating, nameof(RaiseMacApplicationDeactivating));
     }
 
     public static void RaiseMacApplicationActivated()
     {
-        try { MacApplicationActivated?.Invoke(); }
-        catch (Exception ex) { errorLogger?.Log(ex, nameof(RaiseMacApplicationActivated)); }
+        TryRaise(MacApplicationActivated, nameof(RaiseMacApplicationActivated));
     }
 #endif
 #if WINDOWS
@@ -302,61 +300,50 @@ public partial class App : Application
 
     public static void RaiseThemeShortcut(string mode)
     {
-        try
-        {
-            ThemeShortcutRequested?.Invoke(mode);
-        }
-        catch (Exception ex)
-        {
-            errorLogger?.Log(ex, nameof(RaiseThemeShortcut));
-        }
+        TryRaise(ThemeShortcutRequested, mode, nameof(RaiseThemeShortcut));
     }
 
     public static void RaiseEditorShortcut(string action)
     {
-        try
-        {
-            EditorShortcutRequested?.Invoke(action);
-        }
-        catch (Exception ex)
-        {
-            errorLogger?.Log(ex, nameof(RaiseEditorShortcut));
-        }
+        TryRaise(EditorShortcutRequested, action, nameof(RaiseEditorShortcut));
     }
 
     public static void RaiseCommandInputShortcut(string action)
     {
-        try
-        {
-            CommandInputShortcutRequested?.Invoke(action);
-        }
-        catch (Exception ex)
-        {
-            errorLogger?.Log(ex, nameof(RaiseCommandInputShortcut));
-        }
+        TryRaise(CommandInputShortcutRequested, action, nameof(RaiseCommandInputShortcut));
     }
 
     public static void RaiseHistoryShortcut(string action)
     {
-        try
-        {
-            HistoryShortcutRequested?.Invoke(action);
-        }
-        catch (Exception ex)
-        {
-            errorLogger?.Log(ex, nameof(RaiseHistoryShortcut));
-        }
+        TryRaise(HistoryShortcutRequested, action, nameof(RaiseHistoryShortcut));
     }
 
     public static void RaiseMiddleMouseClick()
     {
+        TryRaise(MiddleMouseClickRequested, nameof(RaiseMiddleMouseClick));
+    }
+
+    private static void TryRaise(Action? handler, string context)
+    {
         try
         {
-            MiddleMouseClickRequested?.Invoke();
+            handler?.Invoke();
         }
         catch (Exception ex)
         {
-            errorLogger?.Log(ex, nameof(RaiseMiddleMouseClick));
+            errorLogger?.Log(ex, context);
+        }
+    }
+
+    private static void TryRaise<T>(Action<T>? handler, T argument, string context)
+    {
+        try
+        {
+            handler?.Invoke(argument);
+        }
+        catch (Exception ex)
+        {
+            errorLogger?.Log(ex, context);
         }
     }
 

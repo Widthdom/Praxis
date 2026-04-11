@@ -195,11 +195,12 @@ public partial class MainViewModel
 
             RefreshCommandSuggestionsOnMainThread(CommandInput);
         }
-        catch (OperationCanceledException)
+        catch (OperationCanceledException) when (token.IsCancellationRequested)
         {
         }
         catch (Exception ex)
         {
+            errorLogger.Log(ex, nameof(DebouncedRefreshCommandSuggestionsAsync));
             errorLogger.LogWarning($"Debounced command suggestion refresh failed: {ex.Message}", nameof(DebouncedRefreshCommandSuggestionsAsync));
             try
             {
@@ -226,6 +227,7 @@ public partial class MainViewModel
         }
         catch (Exception ex)
         {
+            errorLogger.Log(ex, nameof(RefreshCommandSuggestionsOnMainThread));
             errorLogger.LogWarning($"Command suggestion refresh dispatch failed: {ex.Message}", nameof(RefreshCommandSuggestionsOnMainThread));
         }
     }
@@ -316,6 +318,7 @@ public partial class MainViewModel
             }
             catch (Exception ex)
             {
+                errorLogger.Log(ex, nameof(ExecuteCommandMatchesAsync));
                 errorLogger.LogWarning($"Command lookup fallback failed: {ex.Message}", nameof(ExecuteCommandMatchesAsync));
             }
 

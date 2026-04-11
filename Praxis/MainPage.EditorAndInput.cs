@@ -74,7 +74,14 @@ public partial class MainPage
 
         if (viewModel.ExecuteButtonCommand.CanExecute(item))
         {
-            await viewModel.ExecuteButtonCommand.ExecuteAsync(item);
+            try
+            {
+                await viewModel.ExecuteButtonCommand.ExecuteAsync(item);
+            }
+            catch (Exception ex)
+            {
+                CrashFileLogger.WriteWarning(nameof(Draggable_Tapped), $"Button tap execution failed for '{item.ButtonText}': {ex.Message}");
+            }
         }
     }
 

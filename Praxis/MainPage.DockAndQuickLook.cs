@@ -1,4 +1,5 @@
 using Praxis.Core.Logic;
+using Praxis.Services;
 using Praxis.ViewModels;
 #if MACCATALYST
 using UIKit;
@@ -68,18 +69,22 @@ public partial class MainPage
         try
         {
             await Task.Delay(DockHoverExitHideDelayMs, token);
+            if (token.IsCancellationRequested)
+            {
+                return;
+            }
+
+            SetDockScrollBarVisibility(isPointerOverDockRegion: false);
         }
-        catch (OperationCanceledException)
+        catch (OperationCanceledException) when (token.IsCancellationRequested)
         {
             return;
         }
-
-        if (token.IsCancellationRequested)
+        catch (Exception ex)
         {
+            CrashFileLogger.WriteWarning(nameof(HideDockScrollBarAfterExitDelayAsync), $"Dock hover-exit hide failed: {ex.Message}");
             return;
         }
-
-        SetDockScrollBarVisibility(isPointerOverDockRegion: false);
     }
 
     private void ApplyNativeDockScrollBarVisibility(bool showHorizontalScrollBar)
@@ -188,45 +193,49 @@ public partial class MainPage
         try
         {
             await Task.Delay(QuickLookShowDelayMs, token);
+            if (token.IsCancellationRequested ||
+                quickLookPendingItemId != item.Id ||
+                !ReferenceEquals(quickLookPendingAnchor, anchor))
+            {
+                return;
+            }
+
+            if (viewModel.IsEditorOpen || viewModel.IsContextMenuOpen || IsConflictDialogOpen())
+            {
+                return;
+            }
+
+            QuickLookCommandLabel.Text = QuickLookPreviewFormatter.BuildLine("Command", item.Command);
+            QuickLookToolLabel.Text = QuickLookPreviewFormatter.BuildLine("Tool", item.Tool);
+            QuickLookArgumentsLabel.Text = QuickLookPreviewFormatter.BuildLine("Arguments", item.Arguments);
+            QuickLookClipWordLabel.Text = QuickLookPreviewFormatter.BuildLine("Clip Word", item.ClipText);
+            QuickLookNoteLabel.Text = QuickLookPreviewFormatter.BuildLine("Note", item.Note);
+            PositionQuickLookPopup(anchor);
+
+            QuickLookPopup.CancelAnimations();
+            if (!QuickLookPopup.IsVisible)
+            {
+                QuickLookPopup.Opacity = 0;
+                QuickLookPopup.IsVisible = true;
+            }
+
+            if (QuickLookPopup.Opacity < 1)
+            {
+                await QuickLookPopup.FadeToAsync(1, QuickLookFadeDurationMs, Easing.CubicOut);
+            }
+
+            if (token.IsCancellationRequested)
+            {
+                return;
+            }
         }
-        catch (OperationCanceledException)
+        catch (OperationCanceledException) when (token.IsCancellationRequested)
         {
             return;
         }
-
-        if (token.IsCancellationRequested ||
-            quickLookPendingItemId != item.Id ||
-            !ReferenceEquals(quickLookPendingAnchor, anchor))
+        catch (Exception ex)
         {
-            return;
-        }
-
-        if (viewModel.IsEditorOpen || viewModel.IsContextMenuOpen || IsConflictDialogOpen())
-        {
-            return;
-        }
-
-        QuickLookCommandLabel.Text = QuickLookPreviewFormatter.BuildLine("Command", item.Command);
-        QuickLookToolLabel.Text = QuickLookPreviewFormatter.BuildLine("Tool", item.Tool);
-        QuickLookArgumentsLabel.Text = QuickLookPreviewFormatter.BuildLine("Arguments", item.Arguments);
-        QuickLookClipWordLabel.Text = QuickLookPreviewFormatter.BuildLine("Clip Word", item.ClipText);
-        QuickLookNoteLabel.Text = QuickLookPreviewFormatter.BuildLine("Note", item.Note);
-        PositionQuickLookPopup(anchor);
-
-        QuickLookPopup.CancelAnimations();
-        if (!QuickLookPopup.IsVisible)
-        {
-            QuickLookPopup.Opacity = 0;
-            QuickLookPopup.IsVisible = true;
-        }
-
-        if (QuickLookPopup.Opacity < 1)
-        {
-            await QuickLookPopup.FadeToAsync(1, QuickLookFadeDurationMs, Easing.CubicOut);
-        }
-
-        if (token.IsCancellationRequested)
-        {
+            CrashFileLogger.WriteWarning(nameof(ShowQuickLookAfterDelayAsync), $"Quick Look show failed: {ex.Message}");
             return;
         }
     }
@@ -245,30 +254,34 @@ public partial class MainPage
         try
         {
             await Task.Delay(QuickLookHideDelayMs, token);
+            if (token.IsCancellationRequested || !xamlLoaded || !QuickLookPopup.IsVisible)
+            {
+                return;
+            }
+
+            QuickLookPopup.CancelAnimations();
+            if (QuickLookPopup.Opacity > 0)
+            {
+                await QuickLookPopup.FadeToAsync(0, QuickLookFadeDurationMs, Easing.CubicIn);
+            }
+
+            if (token.IsCancellationRequested)
+            {
+                return;
+            }
+
+            QuickLookPopup.IsVisible = false;
+            QuickLookPopup.Opacity = 0;
         }
-        catch (OperationCanceledException)
+        catch (OperationCanceledException) when (token.IsCancellationRequested)
         {
             return;
         }
-
-        if (token.IsCancellationRequested || !xamlLoaded || !QuickLookPopup.IsVisible)
+        catch (Exception ex)
         {
+            CrashFileLogger.WriteWarning(nameof(HideQuickLookAfterDelayAsync), $"Quick Look hide failed: {ex.Message}");
             return;
         }
-
-        QuickLookPopup.CancelAnimations();
-        if (QuickLookPopup.Opacity > 0)
-        {
-            await QuickLookPopup.FadeToAsync(0, QuickLookFadeDurationMs, Easing.CubicIn);
-        }
-
-        if (token.IsCancellationRequested)
-        {
-            return;
-        }
-
-        QuickLookPopup.IsVisible = false;
-        QuickLookPopup.Opacity = 0;
     }
 
     private void PositionQuickLookPopup(VisualElement anchor)
