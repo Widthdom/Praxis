@@ -908,6 +908,7 @@ public class MainViewModelWorkflowIntegrationTests
 
         Assert.Equal("Command not found: missing", viewModel.StatusText);
         Assert.Contains(logger.Warnings, x => x.Context == "ExecuteCommandMatchesAsync" && x.Message.Contains("lookup boom", StringComparison.Ordinal));
+        Assert.Contains(logger.Exceptions, x => x.Context == "ExecuteCommandMatchesAsync" && x.Exception.Message.Contains("lookup boom", StringComparison.Ordinal));
     }
 
     private static async Task WaitUntilAsync(Func<bool> condition, int timeoutMs = 2000)

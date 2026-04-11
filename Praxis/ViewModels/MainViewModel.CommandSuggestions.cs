@@ -318,6 +318,7 @@ public partial class MainViewModel
             }
             catch (Exception ex)
             {
+                errorLogger.Log(ex, nameof(ExecuteCommandMatchesAsync));
                 errorLogger.LogWarning($"Command lookup fallback failed: {ex.Message}", nameof(ExecuteCommandMatchesAsync));
             }
 
