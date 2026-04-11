@@ -180,7 +180,9 @@ public class AppLayerSourceGuardTests
     public void FileAppConfigService_FallsBackOnUnauthorizedAccess()
     {
         var source = ReadRepositoryFile("Praxis", "Services", "FileAppConfigService.cs");
-        Assert.Contains("catch (UnauthorizedAccessException)", source);
+        Assert.Contains("catch (UnauthorizedAccessException ex)", source);
+        Assert.Contains("CrashFileLogger.WriteWarning(nameof(FileAppConfigService), $\"Skipping config '{path}': {ex.Message}\");", source);
+        Assert.Contains("CrashFileLogger.WriteWarning(nameof(FileAppConfigService), $\"Skipping config '{path}' because it does not specify a valid theme.\");", source);
     }
 
     [Fact]

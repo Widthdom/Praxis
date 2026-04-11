@@ -8,6 +8,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 
 ### Fixed
 - `FileAppConfigService` now continues to later config candidates when an earlier config file is readable but omits `theme` or contains an invalid theme value, instead of prematurely defaulting to `System`
+- `FileAppConfigService` now warning-logs skipped config candidates so malformed, unreadable, or invalid theme configs leave a crash-log breadcrumb before fallback continues
 
 ### [1.1.5] - 2026-04-11
 
@@ -170,6 +171,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 
 ### 修正
 - `FileAppConfigService` は先頭設定ファイルが読めても `theme` 欠落または不正値だった場合にそこで `System` へ確定せず、後続候補へフォールバックするよう修正
+- `FileAppConfigService` は壊れた設定・読めない設定・不正な theme 設定をスキップした理由を warning として残すようにし、後続候補へのフォールバック前に `crash.log` に診断 breadcrumb を残すよう修正
 
 ### [1.1.5] - 2026-04-11
 

@@ -41,17 +41,22 @@ public sealed class FileAppConfigService : IAppConfigService
                 {
                     return themeMode;
                 }
+
+                CrashFileLogger.WriteWarning(nameof(FileAppConfigService), $"Skipping config '{path}' because it does not specify a valid theme.");
             }
-            catch (IOException)
+            catch (IOException ex)
             {
+                CrashFileLogger.WriteWarning(nameof(FileAppConfigService), $"Skipping config '{path}': {ex.Message}");
                 continue;
             }
-            catch (UnauthorizedAccessException)
+            catch (UnauthorizedAccessException ex)
             {
+                CrashFileLogger.WriteWarning(nameof(FileAppConfigService), $"Skipping config '{path}': {ex.Message}");
                 continue;
             }
-            catch (JsonException)
+            catch (JsonException ex)
             {
+                CrashFileLogger.WriteWarning(nameof(FileAppConfigService), $"Skipping config '{path}': {ex.Message}");
                 continue;
             }
         }
