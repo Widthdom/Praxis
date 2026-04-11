@@ -43,6 +43,7 @@ public sealed class FileStateSyncNotifier : IStateSyncNotifier
 
         Directory.CreateDirectory(directoryPath);
         await File.WriteAllTextAsync(signalPath, payload, cancellationToken);
+        CrashFileLogger.WriteInfo(nameof(FileStateSyncNotifier), $"Signal written. Source={instanceId} Path={signalPath}");
     }
 
     private void OnSignalChanged(object sender, FileSystemEventArgs e)
@@ -96,6 +97,7 @@ public sealed class FileStateSyncNotifier : IStateSyncNotifier
 
         if (!StateSyncPayloadParser.TryParse(payload, out var source, out var timestamp))
         {
+            CrashFileLogger.WriteWarning(nameof(FileStateSyncNotifier), $"Ignored malformed sync payload: \"{payload}\"");
             return;
         }
 
@@ -103,6 +105,8 @@ public sealed class FileStateSyncNotifier : IStateSyncNotifier
         {
             return;
         }
+
+        CrashFileLogger.WriteInfo(nameof(FileStateSyncNotifier), $"Signal observed. Source={source} TimestampUtc={timestamp:O}");
 
         try
         {

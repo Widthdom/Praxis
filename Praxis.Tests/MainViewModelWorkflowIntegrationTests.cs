@@ -210,6 +210,75 @@ public class MainViewModelWorkflowIntegrationTests
     }
 
     [Fact]
+    public async Task ExternalSync_WhileEditorOpen_LogsDeferredAndAppliesAfterClose()
+    {
+        var repository = new InMemoryAppRepository();
+        await repository.UpsertButtonAsync(new LauncherButtonRecord
+        {
+            Id = Guid.NewGuid(),
+            Command = "build",
+            ButtonText = "Build",
+            Tool = "echo",
+            Arguments = "one",
+        });
+
+        var executor = new RecordingCommandExecutor((true, "ok"));
+        var clipboard = new RecordingClipboardService();
+        var theme = new RecordingThemeService();
+        var syncNotifier = new TestStateSyncNotifier();
+        var logger = new RecordingErrorLogger();
+        var viewModel = new MainViewModel(repository, executor, clipboard, theme, syncNotifier, logger);
+        await viewModel.InitializeAsync();
+
+        viewModel.CreateNewCommand.Execute(null);
+        Assert.True(viewModel.IsEditorOpen);
+
+        repository.UpsertForExternalChange(new LauncherButtonRecord((await repository.GetButtonsAsync()).Single())
+        {
+            ButtonText = "Build Synced",
+        });
+
+        syncNotifier.RaiseExternalChange();
+
+        await WaitUntilAsync(() => logger.Infos.Any(x => x.Context == "StateSyncNotifierOnButtonsChanged" && x.Message.Contains("deferred", StringComparison.OrdinalIgnoreCase)));
+
+        viewModel.CancelEditorCommand.Execute(null);
+
+        await WaitUntilAsync(() => viewModel.StatusText == "Synced from another window.");
+        Assert.Equal("Build Synced", Assert.Single(viewModel.VisibleButtons).ButtonText);
+        Assert.Contains(logger.Infos, x => x.Context == "OnIsEditorOpenChanged" && x.Message.Contains("deferred sync", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
+    public async Task ExecuteButtonCommand_LogsExecutionRequestAndCompletion()
+    {
+        var repository = new InMemoryAppRepository();
+        await repository.UpsertButtonAsync(new LauncherButtonRecord
+        {
+            Id = Guid.NewGuid(),
+            Command = "build",
+            ButtonText = "Build",
+            Tool = "echo",
+            Arguments = "one",
+            ClipText = "copied",
+        });
+
+        var executor = new RecordingCommandExecutor((true, "ok"));
+        var clipboard = new RecordingClipboardService();
+        var theme = new RecordingThemeService();
+        var syncNotifier = new TestStateSyncNotifier();
+        var logger = new RecordingErrorLogger();
+        var viewModel = new MainViewModel(repository, executor, clipboard, theme, syncNotifier, logger);
+        await viewModel.InitializeAsync();
+
+        await viewModel.ExecuteButtonCommand.ExecuteAsync(Assert.Single(viewModel.VisibleButtons));
+
+        Assert.Contains(logger.Infos, x => x.Context == "ExecuteRecordAsync" && x.Message.Contains("Execution requested (button)", StringComparison.Ordinal));
+        Assert.Contains(logger.Infos, x => x.Context == "ExecuteRecordAsync" && x.Message.Contains("Clipboard updated", StringComparison.Ordinal));
+        Assert.Contains(logger.Infos, x => x.Context == "ExecuteRecordAsync" && x.Message.Contains("Executed (button)", StringComparison.Ordinal));
+    }
+
+    [Fact]
     public async Task SaveEditor_WhenConflictDialogThrows_LogsWarningAndCancels()
     {
         var repository = new InMemoryAppRepository();
@@ -554,6 +623,7 @@ public class MainViewModelWorkflowIntegrationTests
 
     private sealed class RecordingErrorLogger : IErrorLogger
     {
+        public List<(string Message, string Context)> Infos { get; } = [];
         public List<(string Message, string Context)> Warnings { get; } = [];
 
         public void Log(Exception exception, string context)
@@ -567,6 +637,7 @@ public class MainViewModelWorkflowIntegrationTests
 
         public void LogInfo(string message, string context)
         {
+            Infos.Add((message, context));
         }
 
         public Task FlushAsync(TimeSpan timeout) => Task.CompletedTask;

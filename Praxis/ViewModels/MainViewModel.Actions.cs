@@ -621,14 +621,18 @@ public partial class MainViewModel
 
     private async Task<(bool Success, string Message)> ExecuteRecordAsync(LauncherButtonRecord record, bool fromButton, bool updateStatus = true)
     {
+        var source = fromButton ? "button" : "command";
+        errorLogger.LogInfo(
+            $"Execution requested ({source}): \"{record.ButtonText}\" [{record.Id}] tool={record.Tool} args=\"{record.Arguments}\" clipTextPresent={!string.IsNullOrWhiteSpace(record.ClipText)}",
+            nameof(ExecuteRecordAsync));
         var result = await commandExecutor.ExecuteAsync(record.Tool, record.Arguments);
 
         if (!string.IsNullOrWhiteSpace(record.ClipText))
         {
             await clipboardService.SetTextAsync(record.ClipText);
+            errorLogger.LogInfo($"Clipboard updated for \"{record.ButtonText}\" [{record.Id}]", nameof(ExecuteRecordAsync));
         }
 
-        var source = fromButton ? "button" : "command";
         errorLogger.LogInfo(
             $"Executed ({source}): \"{record.ButtonText}\" [{record.Id}] tool={record.Tool} args=\"{record.Arguments}\" succeeded={result.Success}" +
             (result.Success ? string.Empty : $" error=\"{result.Message}\""),

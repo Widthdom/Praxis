@@ -309,6 +309,8 @@ public partial class MainViewModel
             return;
         }
 
+        errorLogger.LogInfo($"Command execution resolved {targets.Count} target(s) for \"{cmd}\"", nameof(ExecuteCommandMatchesAsync));
+
         if (targets.Count == 1)
         {
             await ExecuteRecordAsync(targets[0], false);

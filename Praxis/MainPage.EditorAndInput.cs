@@ -185,6 +185,7 @@ public partial class MainPage
 
     private void CommandClearButton_Tapped(object? sender, TappedEventArgs e)
     {
+        CrashFileLogger.WriteInfo(nameof(CommandClearButton_Tapped), $"Command clear tapped. PreviousLength={MainCommandEntry.Text?.Length ?? 0}");
         if (viewModel.ClearCommandInputCommand.CanExecute(null))
         {
             viewModel.ClearCommandInputCommand.Execute(null);
@@ -198,6 +199,7 @@ public partial class MainPage
 #if MACCATALYST
         MarkMacSearchFocusUserIntent("SearchClearButton.Tapped");
 #endif
+        CrashFileLogger.WriteInfo(nameof(SearchClearButton_Tapped), $"Search clear tapped. PreviousLength={MainSearchEntry.Text?.Length ?? 0}");
         if (viewModel.ClearSearchTextCommand.CanExecute(null))
         {
             viewModel.ClearSearchTextCommand.Execute(null);

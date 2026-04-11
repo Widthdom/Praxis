@@ -46,6 +46,7 @@ public partial class App : Application
     {
         this.services = services;
         errorLogger = services.GetRequiredService<IErrorLogger>();
+        errorLogger?.LogInfo("App constructor started.", nameof(App));
 
         AppDomain.CurrentDomain.UnhandledException += OnUnhandledException;
         AppDomain.CurrentDomain.ProcessExit += OnProcessExit;
@@ -107,6 +108,7 @@ public partial class App : Application
 
     protected override Window CreateWindow(IActivationState? activationState)
     {
+        errorLogger?.LogInfo($"CreateWindow called. ExistingRootPage={rootPage is not null}", nameof(CreateWindow));
         rootPage ??= ResolveRootPage();
 
         var window = new Window(rootPage)
@@ -137,6 +139,7 @@ public partial class App : Application
             }
         };
 #endif
+        errorLogger?.LogInfo($"Window created. RootPage={rootPage.GetType().Name}", nameof(CreateWindow));
         return window;
     }
 
@@ -144,7 +147,9 @@ public partial class App : Application
     {
         try
         {
-            return services.GetRequiredService<MainPage>();
+            var page = services.GetRequiredService<MainPage>();
+            errorLogger?.LogInfo($"Resolved root page: {page.GetType().Name}", nameof(ResolveRootPage));
+            return page;
         }
         catch (Exception ex)
         {
