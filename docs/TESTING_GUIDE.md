@@ -88,10 +88,10 @@ dotnet test Praxis.Tests/Praxis.Tests.csproj --collect:"XPlat Code Coverage"
 - [`FocusRingNavigatorTests.cs`](../Praxis.Tests/FocusRingNavigatorTests.cs): wrap-around navigation index behavior, including negative item counts, four-item rings, and far-out-of-range index normalization.
 
 ### UI-Agnostic Visual / Layout Policies
-- [`InputClearButtonVisibilityPolicyTests.cs`](../Praxis.Tests/InputClearButtonVisibilityPolicyTests.cs): clear button visibility rule.
+- [`InputClearButtonVisibilityPolicyTests.cs`](../Praxis.Tests/InputClearButtonVisibilityPolicyTests.cs): clear button visibility rule, including whitespace/control-character visibility and the exact `!string.IsNullOrEmpty` contract.
 - [`DockScrollBarVisibilityPolicyTests.cs`](../Praxis.Tests/DockScrollBarVisibilityPolicyTests.cs): dock scrollbar visibility rule from pointer hover state + horizontal-overflow state, and mask-visibility inversion rule.
-- [`ClearButtonGlyphAlignmentPolicyTests.cs`](../Praxis.Tests/ClearButtonGlyphAlignmentPolicyTests.cs): clear glyph translation policy.
-- [`ClearButtonRefocusPolicyTests.cs`](../Praxis.Tests/ClearButtonRefocusPolicyTests.cs): clear-button focus retry schedule by platform, including deferred retries on Mac Catalyst.
+- [`ClearButtonGlyphAlignmentPolicyTests.cs`](../Praxis.Tests/ClearButtonGlyphAlignmentPolicyTests.cs): clear glyph translation policy, including per-platform offsets and repeat-call stability.
+- [`ClearButtonRefocusPolicyTests.cs`](../Praxis.Tests/ClearButtonRefocusPolicyTests.cs): clear-button focus retry schedule by platform, including exact Windows/Mac Catalyst delays and Windows precedence when both platform flags are set.
 - [`WindowsNativeFocusSafetyPolicyTests.cs`](../Praxis.Tests/WindowsNativeFocusSafetyPolicyTests.cs): guard conditions for applying native WinUI `TextBox` refocus/caret restore only to live controls, with exhaustive three-flag truth-table coverage.
 - [`ButtonFocusVisualPolicyTests.cs`](../Praxis.Tests/ButtonFocusVisualPolicyTests.cs): focus-border style resolution, including positive constant width and transparent unfocused color regardless of theme.
 - [`ModalEditorHeightResolverTests.cs`](../Praxis.Tests/ModalEditorHeightResolverTests.cs): multiline editor height calculation and clamping, including trailing CRLF handling and preserved blank lines.
@@ -208,10 +208,10 @@ dotnet test Praxis.Tests/Praxis.Tests.csproj --collect:"XPlat Code Coverage"
 - [`FocusRingNavigatorTests.cs`](../Praxis.Tests/FocusRingNavigatorTests.cs): ラップ付きフォーカスインデックス遷移。負の item 数、4 要素リング、極端な範囲外 index 正規化も検証する。
 
 ### UI 非依存の見た目 / レイアウトポリシー
-- [`InputClearButtonVisibilityPolicyTests.cs`](../Praxis.Tests/InputClearButtonVisibilityPolicyTests.cs): クリアボタン表示条件。
+- [`InputClearButtonVisibilityPolicyTests.cs`](../Praxis.Tests/InputClearButtonVisibilityPolicyTests.cs): クリアボタン表示条件。空白/制御文字の表示と `!string.IsNullOrEmpty` 契約も固定する。
 - [`DockScrollBarVisibilityPolicyTests.cs`](../Praxis.Tests/DockScrollBarVisibilityPolicyTests.cs): ポインターホバー状態 + 横オーバーフロー状態に基づく Dock スクロールバー表示判定と、マスク表示の反転ルール判定。
-- [`ClearButtonGlyphAlignmentPolicyTests.cs`](../Praxis.Tests/ClearButtonGlyphAlignmentPolicyTests.cs): クリアボタン `x` の座標補正。
-- [`ClearButtonRefocusPolicyTests.cs`](../Praxis.Tests/ClearButtonRefocusPolicyTests.cs): クリア後フォーカス復帰リトライ間隔。Mac Catalyst の遅延再試行も検証する。
+- [`ClearButtonGlyphAlignmentPolicyTests.cs`](../Praxis.Tests/ClearButtonGlyphAlignmentPolicyTests.cs): クリアボタン `x` の座標補正。プラットフォーム別オフセットと再呼び出し安定性も検証する。
+- [`ClearButtonRefocusPolicyTests.cs`](../Praxis.Tests/ClearButtonRefocusPolicyTests.cs): クリア後フォーカス復帰リトライ間隔。Windows/Mac Catalyst の正確な遅延値と、両フラグ指定時の Windows 優先も検証する。
 - [`WindowsNativeFocusSafetyPolicyTests.cs`](../Praxis.Tests/WindowsNativeFocusSafetyPolicyTests.cs): WinUI の native `TextBox` 再フォーカス/キャレット復帰を live control に限定する安全条件を検証する。3 フラグの全組み合わせも固定する。
 - [`ButtonFocusVisualPolicyTests.cs`](../Praxis.Tests/ButtonFocusVisualPolicyTests.cs): フォーカス枠スタイル判定。正の固定線幅と、非フォーカス時にテーマ非依存で透明色になることも検証する。
 - [`ModalEditorHeightResolverTests.cs`](../Praxis.Tests/ModalEditorHeightResolverTests.cs): 複数行エディタ高さ算出とクランプ。末尾 CRLF と空行保持も検証する。

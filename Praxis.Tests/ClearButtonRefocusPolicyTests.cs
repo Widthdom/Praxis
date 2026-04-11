@@ -19,8 +19,8 @@ public class ClearButtonRefocusPolicyTests
         var delays = ClearButtonRefocusPolicy.ResolveRetryDelays(isWindows: false, isMacCatalyst: true);
 
         Assert.Equal(2, delays.Count);
-        Assert.True(delays[0] > TimeSpan.Zero);
-        Assert.True(delays[1] > delays[0]);
+        Assert.Equal(TimeSpan.FromMilliseconds(16), delays[0]);
+        Assert.Equal(TimeSpan.FromMilliseconds(48), delays[1]);
     }
 
     [Fact]
@@ -30,6 +30,16 @@ public class ClearButtonRefocusPolicyTests
 
         Assert.Equal(2, delays.Count);
         Assert.Equal(TimeSpan.Zero, delays[0]);
-        Assert.True(delays[1] > TimeSpan.Zero);
+        Assert.Equal(TimeSpan.FromMilliseconds(28), delays[1]);
+    }
+
+    [Fact]
+    public void ResolveRetryDelays_PrefersWindowsSchedule_WhenBothWindowsAndMacFlagsAreSet()
+    {
+        var delays = ClearButtonRefocusPolicy.ResolveRetryDelays(isWindows: true, isMacCatalyst: true);
+
+        Assert.Equal(2, delays.Count);
+        Assert.Equal(TimeSpan.Zero, delays[0]);
+        Assert.Equal(TimeSpan.FromMilliseconds(28), delays[1]);
     }
 }

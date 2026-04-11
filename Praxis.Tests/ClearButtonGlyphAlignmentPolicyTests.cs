@@ -4,19 +4,21 @@ namespace Praxis.Tests;
 
 public class ClearButtonGlyphAlignmentPolicyTests
 {
-    [Fact]
-    public void ResolveTranslation_ReturnsHalfPixelOffset_ForWindows()
+    [Theory]
+    [InlineData(true, -0.5)]
+    [InlineData(false, 0)]
+    public void ResolveTranslation_ReturnsExpectedOffset(bool isWindows, double expected)
     {
-        var translation = ClearButtonGlyphAlignmentPolicy.ResolveTranslation(isWindows: true);
-
-        Assert.Equal(-0.5, translation);
+        var translation = ClearButtonGlyphAlignmentPolicy.ResolveTranslation(isWindows);
+        Assert.Equal(expected, translation);
     }
 
     [Fact]
-    public void ResolveTranslation_ReturnsNoOffset_ForNonWindows()
+    public void ResolveTranslation_IsStableAcrossCalls()
     {
-        var translation = ClearButtonGlyphAlignmentPolicy.ResolveTranslation(isWindows: false);
+        var first = ClearButtonGlyphAlignmentPolicy.ResolveTranslation(isWindows: true);
+        var second = ClearButtonGlyphAlignmentPolicy.ResolveTranslation(isWindows: true);
 
-        Assert.Equal(0, translation);
+        Assert.Equal(first, second);
     }
 }
