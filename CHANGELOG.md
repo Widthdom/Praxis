@@ -6,6 +6,8 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 
 ## [Unreleased]
 
+### [1.1.6] - 2026-04-12
+
 ### Fixed
 - `ThemeModeParser.ParseOrDefault()` now sanitizes invalid caller-supplied fallback enum values back to `System` instead of returning an out-of-range theme when both the input string and default are invalid
 - `CommandExecutor` now expands environment-variable-backed tool paths and trims quotes after expansion, so `%ComSpec%` / quoted `%...%` tools execute with the same normalized path logic as literal tool values
@@ -200,6 +202,8 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 
 ## [Unreleased]
 
+### [1.1.6] - 2026-04-12
+
 ### 修正
 - `DockOrderValueCodec.Parse()` は CSV 全体や各 GUID 要素を囲む quote も除去するようにし、quote 付きで保存された Dock 順序でも意図した並びを復元できるよう修正
 - `WindowsPathPolicy.IsUncPath()` は quote 付き UNC を受理しつつ `\\\\?\\` と `\\\\.\\` のローカルデバイス接頭辞は共有パスとして誤判定しないよう修正
@@ -368,7 +372,8 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - 重複 `using` ディレクティブの削除と `using` 順序の正規化
 - `MainViewModel` と各 partial クラスに主要ライフサイクルイベントの `LogInfo` 呼び出しを追加
 
-[Unreleased]: https://github.com/Widthdom/Praxis/compare/v1.1.5...HEAD
+[Unreleased]: https://github.com/Widthdom/Praxis/compare/v1.1.6...HEAD
+[1.1.6]: https://github.com/Widthdom/Praxis/compare/v1.1.5...v1.1.6
 [1.1.5]: https://github.com/Widthdom/Praxis/compare/v1.1.4...v1.1.5
 [1.1.4]: https://github.com/Widthdom/Praxis/compare/v1.1.3...v1.1.4
 [1.1.3]: https://github.com/Widthdom/Praxis/compare/v1.1.2...v1.1.3
