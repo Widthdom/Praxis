@@ -147,7 +147,18 @@ public sealed class DbErrorLogger : IErrorLogger
             // Purge only on Error-level writes to avoid excessive cleanup.
             if (entry.Level == "Error")
             {
-                await repository.PurgeOldErrorLogsAsync(RetentionDays, cancellationToken);
+                try
+                {
+                    await repository.PurgeOldErrorLogsAsync(RetentionDays, cancellationToken);
+                }
+                catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+                {
+                    throw;
+                }
+                catch (Exception ex)
+                {
+                    CrashFileLogger.WriteWarning(nameof(DbErrorLogger), $"Failed to purge old error logs after persisting '{entry.Context}': {ex.Message}");
+                }
             }
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
@@ -157,9 +168,9 @@ public sealed class DbErrorLogger : IErrorLogger
                 pendingWrites.Enqueue(entry);
             }
         }
-        catch
+        catch (Exception ex)
         {
-            // Swallow — the crash file already has the record.
+            CrashFileLogger.WriteWarning(nameof(DbErrorLogger), $"Failed to persist {entry.Level} log for '{entry.Context}': {ex.Message}");
         }
         finally
         {
