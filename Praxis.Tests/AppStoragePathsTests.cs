@@ -41,6 +41,22 @@ public class AppStoragePathsTests
     }
 
     [Fact]
+    public void CombineAbsoluteFilePath_TrimsSingleQuotes_ForAbsoluteDirectory()
+    {
+        var result = InvokeCombineAbsoluteFilePath("  '/tmp/praxis single data'  ", "praxis.db3");
+
+        Assert.Equal("/tmp/praxis single data/praxis.db3", result);
+    }
+
+    [Fact]
+    public void PathsEqual_ReturnsTrue_ForEquivalentAbsolutePaths()
+    {
+        var result = InvokePathsEqual("/tmp/../tmp/praxis.db3", "/tmp/praxis.db3");
+
+        Assert.True(result);
+    }
+
+    [Fact]
     public void PathsEqual_ReturnsFalse_ForInvalidPathInput_InsteadOfThrowing()
     {
         var invalid = $"bad{'\0'}path";

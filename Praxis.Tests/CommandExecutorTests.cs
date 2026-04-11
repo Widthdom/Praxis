@@ -20,6 +20,32 @@ public class CommandExecutorTests
         Assert.Equal(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), startInfo.WorkingDirectory);
     }
 
+    [Fact]
+    public void ApplyWorkingDirectoryOverride_SetsUserProfile_ForEnvExpandedWindowsShellTool()
+    {
+        const string variableName = "PRAXIS_TEST_COMMAND_EXECUTOR_SHELL";
+        var previous = Environment.GetEnvironmentVariable(variableName);
+
+        try
+        {
+            Environment.SetEnvironmentVariable(variableName, "\"C:\\Program Files\\PowerShell\\7\\pwsh.exe\"");
+
+            var startInfo = new ProcessStartInfo
+            {
+                FileName = "pwsh.exe",
+                UseShellExecute = true,
+            };
+
+            InvokeApplyWorkingDirectoryOverride(startInfo, $"%{variableName}%", isWindows: true);
+
+            Assert.Equal(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), startInfo.WorkingDirectory);
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable(variableName, previous);
+        }
+    }
+
     [Theory]
     [InlineData("\"C:\\Program Files\\App\\app.exe\"", "C:\\Program Files\\App\\app.exe")]
     [InlineData("'C:\\Program Files\\App\\app.exe'", "C:\\Program Files\\App\\app.exe")]

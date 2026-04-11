@@ -59,7 +59,7 @@ dotnet test Praxis.Tests/Praxis.Tests.csproj --collect:"XPlat Code Coverage"
 
 ### Command Execution / Matching / Suggestions
 - [`CommandLineBuilderTests.cs`](../Praxis.Tests/CommandLineBuilderTests.cs): null/whitespace handling, quoted-empty tool normalization, and command-line construction.
-- [`CommandExecutorTests.cs`](../Praxis.Tests/CommandExecutorTests.cs): linked-source coverage for home-path expansion helpers (`~`, `~/...`, `~\\...`), non-home relative path pass-through, quoted-tool normalization, normalized empty/quoted-empty tool detection, Windows shell launch working-directory override to the user profile, and crash-log breadcrumbs when native process launch throws.
+- [`CommandExecutorTests.cs`](../Praxis.Tests/CommandExecutorTests.cs): linked-source coverage for home-path expansion helpers (`~`, `~/...`, `~\\...`), non-home relative path pass-through, quoted-tool normalization, normalized empty/quoted-empty tool detection, env-expanded Windows shell launch working-directory override to the user profile, and crash-log breadcrumbs when native process launch throws.
 - [`CommandRecordMatcherTests.cs`](../Praxis.Tests/CommandRecordMatcherTests.cs): exact command matching rules, null guards including null collection entries, and case/trim behavior.
 - [`CommandSuggestionVisibilityPolicyTests.cs`](../Praxis.Tests/CommandSuggestionVisibilityPolicyTests.cs): close policy when context menu opens.
 - [`CommandSuggestionRowColorPolicyTests.cs`](../Praxis.Tests/CommandSuggestionRowColorPolicyTests.cs): selected/unselected row color decisions per theme.
@@ -103,10 +103,10 @@ dotnet test Praxis.Tests/Praxis.Tests.csproj --collect:"XPlat Code Coverage"
 - [`UiTimingPolicyTests.cs`](../Praxis.Tests/UiTimingPolicyTests.cs): named UI timing constants (focus restore, activation windows, polling interval) and ordering constraints.
 
 ### Launch / Path / Storage / Reflection Utilities
-- [`LaunchTargetResolverTests.cs`](../Praxis.Tests/LaunchTargetResolverTests.cs): HTTP(S)/file/path fallback target resolution, env expansion, quoted env-expansion normalization, relative-path detection (including `.` / `..`), and bare-tilde home-path detection.
+- [`LaunchTargetResolverTests.cs`](../Praxis.Tests/LaunchTargetResolverTests.cs): HTTP(S)/file/path fallback target resolution, env expansion, single/double-quoted env-expansion normalization, relative-path detection (including `.` / `..`), and bare-tilde home-path detection.
 - [`WindowsPathPolicyTests.cs`](../Praxis.Tests/WindowsPathPolicyTests.cs): UNC (`\\\\server\\share`) path detection used by Windows auth-first launch flow.
 - [`AppStoragePathLayoutResolverTests.cs`](../Praxis.Tests/AppStoragePathLayoutResolverTests.cs): platform-specific storage layout policy, including trimming quoted storage roots.
-- [`AppStoragePathsTests.cs`](../Praxis.Tests/AppStoragePathsTests.cs): linked-source coverage for quoted `%LOCALAPPDATA%` normalization, rejection of blank/relative legacy migration roots, and invalid legacy-path comparison safety.
+- [`AppStoragePathsTests.cs`](../Praxis.Tests/AppStoragePathsTests.cs): linked-source coverage for quoted `%LOCALAPPDATA%` normalization, single/double-quoted absolute migration roots, equivalent-path comparison, rejection of blank/relative legacy migration roots, and invalid legacy-path comparison safety.
 - [`FileAppConfigServiceTests.cs`](../Praxis.Tests/FileAppConfigServiceTests.cs): linked-source coverage for config-path candidate enumeration, crash-log breadcrumbs for skipped config candidates, and fallback to later valid config files when earlier JSON is malformed, missing a `theme`, or specifies an invalid theme value.
 - [`DockOrderValueCodecTests.cs`](../Praxis.Tests/DockOrderValueCodecTests.cs): dock-order CSV parsing/serialization, including duplicate/empty/invalid GUID filtering while preserving first occurrence order.
 - [`DatabaseSchemaVersionPolicyTests.cs`](../Praxis.Tests/DatabaseSchemaVersionPolicyTests.cs): schema-version upgrade-path resolution (`PRAGMA user_version` migration sequencing, unsupported/future version rejection), including v1->v2->v3->v4 and unversioned->current multi-step upgrades.
@@ -223,12 +223,12 @@ dotnet test Praxis.Tests/Praxis.Tests.csproj --collect:"XPlat Code Coverage"
 - [`UiTimingPolicyTests.cs`](../Praxis.Tests/UiTimingPolicyTests.cs): フォーカス復帰・アクティベーション・ポーリングの UI タイミング定数と順序条件。
 
 ### 起動 / パス / ストレージ / リフレクション補助
-- [`LaunchTargetResolverTests.cs`](../Praxis.Tests/LaunchTargetResolverTests.cs): HTTP(S)/ファイル/パスのフォールバック起動先解決、環境変数展開、展開後に引用符付きになった値の正規化、相対パス判定（`.` / `..` 含む）、bare `~` のホームパス判定。
-- [`CommandExecutorTests.cs`](../Praxis.Tests/CommandExecutorTests.cs): linked-source で取り込んだ `CommandExecutor` のホームパス展開 helper テスト。`~`、`~/...`、`~\\...` を展開し、通常の相対パスはそのまま残すこと、quoted tool path の正規化、正規化後に空になる tool 値の検出、Windows シェル起動時の作業ディレクトリ上書き、および native process 起動例外時の crash-log breadcrumb を確認。
+- [`LaunchTargetResolverTests.cs`](../Praxis.Tests/LaunchTargetResolverTests.cs): HTTP(S)/ファイル/パスのフォールバック起動先解決、環境変数展開、single/double quote を含む展開後値の正規化、相対パス判定（`.` / `..` 含む）、bare `~` のホームパス判定。
+- [`CommandExecutorTests.cs`](../Praxis.Tests/CommandExecutorTests.cs): linked-source で取り込んだ `CommandExecutor` のホームパス展開 helper テスト。`~`、`~/...`、`~\\...` を展開し、通常の相対パスはそのまま残すこと、quoted tool path の正規化、正規化後に空になる tool 値の検出、環境変数展開後も含む Windows シェル起動時の作業ディレクトリ上書き、および native process 起動例外時の crash-log breadcrumb を確認。
 - [`CommandWorkingDirectoryPolicyTests.cs`](../Praxis.Tests/CommandWorkingDirectoryPolicyTests.cs): `cmd`、`powershell`、`pwsh`、`wt` をユーザープロファイル起点で開く対象として判定する純粋ポリシーテスト。環境変数展開後の quoted path も含む。
 - [`WindowsPathPolicyTests.cs`](../Praxis.Tests/WindowsPathPolicyTests.cs): Windows の認証先行起動フローで使う UNC（`\\\\server\\share`）判定。
 - [`AppStoragePathLayoutResolverTests.cs`](../Praxis.Tests/AppStoragePathLayoutResolverTests.cs): プラットフォーム別ストレージ配置ルール。quote 付き保存先 root の正規化も検証する。
-- [`AppStoragePathsTests.cs`](../Praxis.Tests/AppStoragePathsTests.cs): linked-source の `AppStoragePaths` テスト。quote 付き `%LOCALAPPDATA%` 正規化、空/相対 legacy migration root の除外、壊れた legacy path 比較入力を安全に無視することを確認。
+- [`AppStoragePathsTests.cs`](../Praxis.Tests/AppStoragePathsTests.cs): linked-source の `AppStoragePaths` テスト。quote 付き `%LOCALAPPDATA%` 正規化、single/double quote 付き absolute migration root、等価 path 比較、空/相対 legacy migration root の除外、壊れた legacy path 比較入力を安全に無視することを確認。
 - [`FileAppConfigServiceTests.cs`](../Praxis.Tests/FileAppConfigServiceTests.cs): linked-source の `FileAppConfigService` テスト。config 候補列挙、スキップした候補の crash-log breadcrumb、先頭候補の JSON が壊れている場合、`theme` が欠落している場合、不正な theme 値を持つ場合に後続の正常設定へフォールバックすることを確認。
 - [`DockOrderValueCodecTests.cs`](../Praxis.Tests/DockOrderValueCodecTests.cs): Dock 順序 CSV の解析/直列化テスト。重複/空/不正 GUID を除外しつつ、最初の有効順序を維持することを確認。
 - [`DatabaseSchemaVersionPolicyTests.cs`](../Praxis.Tests/DatabaseSchemaVersionPolicyTests.cs): スキーマバージョンのアップグレード経路解決（`PRAGMA user_version` の段階適用順序、未対応/未来バージョン拒否）を検証。`v1 -> v2 -> v3 -> v4` と `未バージョン -> 現行` の段階適用も確認する。
