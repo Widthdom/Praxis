@@ -249,6 +249,22 @@ public class DbErrorLoggerTests
     }
 
     [Fact]
+    public async Task FlushAsync_DoesNotPurgeOldErrorLogs_ForInfoAndWarningOnly()
+    {
+        var repo = new FakeAppRepository();
+        var logger = new DbErrorLogger(repo);
+
+        logger.LogInfo("info only", "info-ctx");
+        logger.LogWarning("warn only", "warn-ctx");
+
+        await logger.FlushAsync(TimeSpan.FromSeconds(5));
+
+        Assert.Equal(0, repo.PurgeCallCount);
+        Assert.Contains(repo.ErrorLogs, x => x.Level == "Info" && x.Context == "info-ctx" && x.ExceptionType == string.Empty && x.StackTrace == string.Empty);
+        Assert.Contains(repo.ErrorLogs, x => x.Level == "Warning" && x.Context == "warn-ctx" && x.ExceptionType == string.Empty && x.StackTrace == string.Empty);
+    }
+
+    [Fact]
     public async Task FlushAsync_RespectsTimeout()
     {
         var repo = new FakeAppRepository();
@@ -273,6 +289,21 @@ public class DbErrorLoggerTests
 
         var content = File.ReadAllText(CrashFileLogger.LogFilePath);
         Assert.Contains($"Failed to persist Error log for '{context}': Simulated DB failure", content);
+    }
+
+    [Fact]
+    public async Task Log_PreservesErrorContext_OnPersistedEntry()
+    {
+        var repo = new FakeAppRepository();
+        var logger = new DbErrorLogger(repo);
+
+        logger.Log(new InvalidOperationException("ctx test"), "ctx-value");
+
+        await logger.FlushAsync(TimeSpan.FromSeconds(5));
+
+        var entry = Assert.Single(repo.ErrorLogs);
+        Assert.Equal("Error", entry.Level);
+        Assert.Equal("ctx-value", entry.Context);
     }
 
     [Fact]

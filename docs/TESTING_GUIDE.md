@@ -54,8 +54,8 @@ dotnet test Praxis.Tests/Praxis.Tests.csproj --collect:"XPlat Code Coverage"
 - [`LauncherButtonOrderPolicyTests.cs`](../Praxis.Tests/LauncherButtonOrderPolicyTests.cs): placement-order normalization (`Y`, then `X`) while preserving stable order for ties and skipping null entries safely.
 
 ### Logging / Crash Safety
-- [`CrashFileLoggerTests.cs`](../Praxis.Tests/CrashFileLoggerTests.cs): synchronous crash file logger behavior — path resolution, quoted/invalid platform-directory fallback handling, no-throw guarantees for all write methods (`WriteException`, `WriteInfo`, `WriteWarning`), inner exception chain capture, `AggregateException` child capture, `Exception.Data` capture, file write verification, and thread safety under concurrent writes without blocking-task analyzer warnings.
-- [`DbErrorLoggerTests.cs`](../Praxis.Tests/DbErrorLoggerTests.cs): database error logger behavior — no-throw guarantees for `Log`/`LogInfo`/`LogWarning`, `FlushAsync` verification for queued and already-in-flight writes, full exception type chain capture (including `AggregateException`), message chain concatenation, stack trace capture, timeout behavior, Error-only retention purge behavior, and crash-log breadcrumbs for repository write, purge, or timeout failures.
+- [`CrashFileLoggerTests.cs`](../Praxis.Tests/CrashFileLoggerTests.cs): synchronous crash file logger behavior — Windows/macOS path resolution, quoted/invalid platform-directory fallback handling, no-throw guarantees for all write methods (`WriteException`, `WriteInfo`, `WriteWarning`), inner exception chain capture, `AggregateException` child capture, `Exception.Data` capture, file write verification, and thread safety under concurrent writes without blocking-task analyzer warnings.
+- [`DbErrorLoggerTests.cs`](../Praxis.Tests/DbErrorLoggerTests.cs): database error logger behavior — no-throw guarantees for `Log`/`LogInfo`/`LogWarning`, `FlushAsync` verification for queued and already-in-flight writes, persisted context/level fields for Error/Info/Warning entries, full exception type chain capture (including `AggregateException`), message chain concatenation, stack trace capture, timeout behavior, Error-only retention purge behavior, and crash-log breadcrumbs for repository write, purge, or timeout failures.
 
 ### Command Execution / Matching / Suggestions
 - [`CommandLineBuilderTests.cs`](../Praxis.Tests/CommandLineBuilderTests.cs): null/whitespace handling, quoted-empty tool normalization, and command-line construction.
@@ -176,8 +176,8 @@ dotnet test Praxis.Tests/Praxis.Tests.csproj --collect:"XPlat Code Coverage"
 - [`LauncherButtonOrderPolicyTests.cs`](../Praxis.Tests/LauncherButtonOrderPolicyTests.cs): 配置順（`Y`、次に `X`）への正規化、同位置時の安定順序維持、null 要素の安全なスキップ。
 
 ### ログ / クラッシュ安全性
-- [`CrashFileLoggerTests.cs`](../Praxis.Tests/CrashFileLoggerTests.cs): 同期クラッシュファイルロガーの挙動 — パス解決、quote 付き/無効なプラットフォーム保存先からのフォールバック、全書き込みメソッド（`WriteException`、`WriteInfo`、`WriteWarning`）の例外非送出保証、InnerException チェーン記録、`AggregateException` 子例外記録、`Exception.Data` 記録、ファイル書き込み検証、並行書き込み時のスレッドセーフティ、および blocking task analyzer 警告を出さない非同期検証。
-- [`DbErrorLoggerTests.cs`](../Praxis.Tests/DbErrorLoggerTests.cs): DB エラーロガーの挙動 — `Log`/`LogInfo`/`LogWarning` の例外非送出保証、`FlushAsync` による保留キューと in-flight 書き込みの両方の待機検証、完全な例外型チェーン記録（`AggregateException` 含む）、メッセージチェーン連結、スタックトレース記録、タイムアウト挙動、Error のみ保持期間 purge を発火すること、リポジトリ書き込み失敗・purge 失敗・timeout の crash-log breadcrumb を確認する。
+- [`CrashFileLoggerTests.cs`](../Praxis.Tests/CrashFileLoggerTests.cs): 同期クラッシュファイルロガーの挙動 — Windows/macOS のパス解決、quote 付き/無効なプラットフォーム保存先からのフォールバック、全書き込みメソッド（`WriteException`、`WriteInfo`、`WriteWarning`）の例外非送出保証、InnerException チェーン記録、`AggregateException` 子例外記録、`Exception.Data` 記録、ファイル書き込み検証、並行書き込み時のスレッドセーフティ、および blocking task analyzer 警告を出さない非同期検証。
+- [`DbErrorLoggerTests.cs`](../Praxis.Tests/DbErrorLoggerTests.cs): DB エラーロガーの挙動 — `Log`/`LogInfo`/`LogWarning` の例外非送出保証、`FlushAsync` による保留キューと in-flight 書き込みの両方の待機検証、Error/Info/Warning 各 entry の context/level 永続化、完全な例外型チェーン記録（`AggregateException` 含む）、メッセージチェーン連結、スタックトレース記録、タイムアウト挙動、Error のみ保持期間 purge を発火すること、リポジトリ書き込み失敗・purge 失敗・timeout の crash-log breadcrumb を確認する。
 
 ### コマンド実行 / 一致 / 候補
 - [`CommandLineBuilderTests.cs`](../Praxis.Tests/CommandLineBuilderTests.cs): コマンドライン構築の null/空白処理、quoted-empty tool 正規化、組み立て結果。
