@@ -101,6 +101,23 @@ public class AppLayerSourceGuardTests
     }
 
     [Fact]
+    public void App_StaticEventDispatchers_UseSharedLoggedRaiseHelpers()
+    {
+        var source = ReadRepositoryFile("Praxis", "App.xaml.cs");
+
+        Assert.Contains("private static void TryRaise(Action? handler, string context)", source);
+        Assert.Contains("private static void TryRaise<T>(Action<T>? handler, T argument, string context)", source);
+        Assert.Contains("TryRaise(MacApplicationDeactivating, nameof(RaiseMacApplicationDeactivating));", source);
+        Assert.Contains("TryRaise(MacApplicationActivated, nameof(RaiseMacApplicationActivated));", source);
+        Assert.Contains("TryRaise(ThemeShortcutRequested, mode, nameof(RaiseThemeShortcut));", source);
+        Assert.Contains("TryRaise(EditorShortcutRequested, action, nameof(RaiseEditorShortcut));", source);
+        Assert.Contains("TryRaise(CommandInputShortcutRequested, action, nameof(RaiseCommandInputShortcut));", source);
+        Assert.Contains("TryRaise(HistoryShortcutRequested, action, nameof(RaiseHistoryShortcut));", source);
+        Assert.Contains("TryRaise(MiddleMouseClickRequested, nameof(RaiseMiddleMouseClick));", source);
+        Assert.Equal(2, CountOccurrences(source, "errorLogger?.Log(ex, context);"));
+    }
+
+    [Fact]
     public void FileStateSyncNotifier_ReadRetryExhaustion_IsWarningLogged()
     {
         var source = ReadRepositoryFile("Praxis", "Services", "FileStateSyncNotifier.cs");
