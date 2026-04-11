@@ -831,6 +831,7 @@ public class MainViewModelWorkflowIntegrationTests
         Assert.Equal("Executed.", viewModel.StatusText);
         Assert.Single(viewModel.DockButtons);
         Assert.Contains(logger.Warnings, x => x.Context == "AddToDockAsync" && x.Message.Contains("dock boom", StringComparison.Ordinal));
+        Assert.Contains(logger.Exceptions, x => x.Context == "AddToDockAsync" && x.Exception.Message.Contains("dock boom", StringComparison.Ordinal));
     }
 
     [Fact]
@@ -861,6 +862,7 @@ public class MainViewModelWorkflowIntegrationTests
         Assert.Empty(await repository.GetButtonsAsync());
         Assert.Equal("Button deleted.", viewModel.StatusText);
         Assert.Contains(logger.Warnings, x => x.Context == "DeleteButtonsAsync" && x.Message.Contains("dock boom", StringComparison.Ordinal));
+        Assert.Contains(logger.Exceptions, x => x.Context == "DeleteButtonsAsync" && x.Exception.Message.Contains("dock boom", StringComparison.Ordinal));
     }
 
     [Fact]
@@ -883,6 +885,7 @@ public class MainViewModelWorkflowIntegrationTests
         Assert.Equal(ThemeMode.Dark, viewModel.SelectedTheme);
         Assert.Equal(ThemeMode.Dark, theme.Current);
         Assert.Contains(logger.Warnings, x => x.Context == "SetThemeAsync" && x.Message.Contains("theme save boom", StringComparison.Ordinal));
+        Assert.Contains(logger.Exceptions, x => x.Context == "SetThemeAsync" && x.Exception.Message.Contains("theme save boom", StringComparison.Ordinal));
     }
 
     [Fact]

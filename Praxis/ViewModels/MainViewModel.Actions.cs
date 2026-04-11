@@ -737,6 +737,7 @@ public partial class MainViewModel
         }
         catch (Exception ex)
         {
+            errorLogger.Log(ex, context);
             errorLogger.LogWarning($"{operation} applied locally, but theme persistence failed: {ex.Message}", context);
             return false;
         }
@@ -754,6 +755,7 @@ public partial class MainViewModel
         }
         catch (Exception ex)
         {
+            errorLogger.Log(ex, context);
             errorLogger.LogWarning($"{operation} completed locally, but dock persistence failed: {ex.Message}", context);
             return false;
         }
