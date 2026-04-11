@@ -194,8 +194,13 @@ public partial class MainPage
         {
             await Task.Delay(QuickLookShowDelayMs, token);
         }
-        catch (OperationCanceledException)
+        catch (OperationCanceledException) when (token.IsCancellationRequested)
         {
+            return;
+        }
+        catch (Exception ex)
+        {
+            CrashFileLogger.WriteWarning(nameof(ShowQuickLookAfterDelayAsync), $"Quick Look show failed: {ex.Message}");
             return;
         }
 
