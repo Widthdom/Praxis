@@ -24,7 +24,17 @@ public class QuickLookPreviewFormatterTests
     {
         var value = "abcdefghijklmnopqrstuvwxyz";
 
-        Assert.Equal("abcdefghi...", QuickLookPreviewFormatter.FormatValue(value, maxLength: 10));
+        Assert.Equal("abcdefg...", QuickLookPreviewFormatter.FormatValue(value, maxLength: 10));
+    }
+
+    [Fact]
+    public void FormatValue_KeepsTruncationWithinRequestedMaxLength()
+    {
+        var value = "abcdefghijklmnopqrstuvwxyz";
+
+        Assert.Equal(".", QuickLookPreviewFormatter.FormatValue(value, maxLength: 1));
+        Assert.Equal("..", QuickLookPreviewFormatter.FormatValue(value, maxLength: 2));
+        Assert.Equal("...", QuickLookPreviewFormatter.FormatValue(value, maxLength: 3));
     }
 
     [Fact]

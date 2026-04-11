@@ -52,4 +52,14 @@ public class StateSyncPayloadParserTests
 
         Assert.False(parsed);
     }
+
+    [Fact]
+    public void TryParse_ReturnsFalse_ForPayloadWithExtraSeparators()
+    {
+        var payload = $"instance||{DateTime.UtcNow.Ticks}";
+
+        var parsed = StateSyncPayloadParser.TryParse(payload, out _, out _);
+
+        Assert.False(parsed);
+    }
 }

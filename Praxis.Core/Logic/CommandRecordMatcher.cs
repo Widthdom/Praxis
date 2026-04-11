@@ -20,6 +20,7 @@ public static class CommandRecordMatcher
         }
 
         return records
+            .OfType<LauncherButtonRecord>()
             .Where(x => string.Equals(Normalize(x.Command), normalizedInput, StringComparison.OrdinalIgnoreCase))
             .ToList();
     }

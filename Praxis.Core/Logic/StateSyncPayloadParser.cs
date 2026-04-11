@@ -15,7 +15,7 @@ public static class StateSyncPayloadParser
             return false;
         }
 
-        var parts = trimmed.Split('|', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+        var parts = trimmed.Split('|', StringSplitOptions.TrimEntries);
         if (parts.Length != 2)
         {
             return false;
@@ -32,7 +32,13 @@ public static class StateSyncPayloadParser
         }
 
         sourceInstanceId = parts[0];
+        if (string.IsNullOrWhiteSpace(sourceInstanceId))
+        {
+            sourceInstanceId = string.Empty;
+            return false;
+        }
+
         timestampUtc = new DateTime(ticks, DateTimeKind.Utc);
-        return !string.IsNullOrWhiteSpace(sourceInstanceId);
+        return true;
     }
 }

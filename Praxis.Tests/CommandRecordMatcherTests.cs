@@ -67,4 +67,16 @@ public class CommandRecordMatcherTests
         Assert.Single(result);
         Assert.Same(b, result[0]);
     }
+
+    [Fact]
+    public void FindMatches_IgnoresNullRecordEntries()
+    {
+        var match = new LauncherButtonRecord { Command = "build", ButtonText = "B" };
+        LauncherButtonRecord? missing = null;
+
+        var result = CommandRecordMatcher.FindMatches([missing!, match], "build");
+
+        Assert.Single(result);
+        Assert.Same(match, result[0]);
+    }
 }

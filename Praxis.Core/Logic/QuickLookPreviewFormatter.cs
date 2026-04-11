@@ -3,6 +3,7 @@ namespace Praxis.Core.Logic;
 public static class QuickLookPreviewFormatter
 {
     public const string EmptyValuePlaceholder = "-";
+    private const string Ellipsis = "...";
 
     public static string BuildLine(string label, string? value, int maxLength = 96)
     {
@@ -30,11 +31,11 @@ public static class QuickLookPreviewFormatter
             return normalized;
         }
 
-        if (maxLength <= 1)
+        if (maxLength <= Ellipsis.Length)
         {
-            return "...";
+            return Ellipsis[..maxLength];
         }
 
-        return normalized[..(maxLength - 1)] + "...";
+        return normalized[..(maxLength - Ellipsis.Length)] + Ellipsis;
     }
 }

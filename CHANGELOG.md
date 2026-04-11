@@ -15,6 +15,9 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - `CommandExecutor` now warning-logs native process-start and launch-target-resolution failures to `crash.log` so returned user-facing launch errors also leave a local diagnostic breadcrumb
 - `LaunchTargetResolver` now trims wrapping quotes after environment-variable expansion, so quoted env-backed HTTP URLs and filesystem paths still resolve correctly
 - `AppStoragePaths` now ignores malformed legacy-path comparisons instead of letting `Path.GetFullPath` abort storage migration checks
+- `CommandRecordMatcher` now ignores `null` collection entries instead of throwing while scanning command suggestions
+- `StateSyncPayloadParser` now rejects double-separator payloads instead of collapsing empty segments and accepting malformed sync signals
+- `QuickLookPreviewFormatter` now keeps ellipsis-truncated output within the requested `maxLength` instead of returning strings longer than the caller asked for
 
 ### [1.1.5] - 2026-04-11
 
@@ -184,6 +187,9 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - `CommandExecutor` は native process 起動失敗や launch-target-resolution 失敗も `crash.log` に warning 記録するようにし、ユーザー向け失敗メッセージの裏側にローカル診断 breadcrumb を残すよう修正
 - `LaunchTargetResolver` は環境変数展開後の引用符も正規化するようにし、引用符付き env 由来の HTTP URL や filesystem path も正しく解決できるよう修正
 - `AppStoragePaths` は壊れた legacy path 比較入力を無視するようにし、`Path.GetFullPath` 例外でストレージ移行チェック全体が止まらないよう修正
+- `CommandRecordMatcher` は command 候補走査中に `null` コレクション要素を無視するようにし、候補生成で例外落ちしないよう修正
+- `StateSyncPayloadParser` は二重区切り payload を空セグメント圧縮で受理しないようにし、壊れた同期シグナルを拒否するよう修正
+- `QuickLookPreviewFormatter` は省略記号つき短縮後も要求 `maxLength` を超えないようにし、呼び出し元の長さ制約を破らないよう修正
 
 ### [1.1.5] - 2026-04-11
 
