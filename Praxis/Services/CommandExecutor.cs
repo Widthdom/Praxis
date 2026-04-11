@@ -211,10 +211,22 @@ public sealed class CommandExecutor : ICommandExecutor
         if (trimmed.Length >= 2 &&
             ((trimmed[0] == '"' && trimmed[^1] == '"') || (trimmed[0] == '\'' && trimmed[^1] == '\'')))
         {
-            return trimmed[1..^1].Trim();
+            trimmed = trimmed[1..^1].Trim();
         }
 
-        return trimmed;
+        if (string.IsNullOrWhiteSpace(trimmed))
+        {
+            return string.Empty;
+        }
+
+        var expanded = Environment.ExpandEnvironmentVariables(trimmed).Trim();
+        if (expanded.Length >= 2 &&
+            ((expanded[0] == '"' && expanded[^1] == '"') || (expanded[0] == '\'' && expanded[^1] == '\'')))
+        {
+            expanded = expanded[1..^1].Trim();
+        }
+
+        return expanded;
     }
 
     private static bool HasUsableTool(string tool)

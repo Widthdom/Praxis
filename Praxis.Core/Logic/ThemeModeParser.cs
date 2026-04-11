@@ -42,6 +42,7 @@ public static class ThemeModeParser
 
     public static ThemeMode ParseOrDefault(string? value, ThemeMode defaultMode = ThemeMode.System)
     {
+        defaultMode = NormalizeOrDefault(defaultMode, ThemeMode.System);
         return TryParse(value, out var parsed)
             ? parsed
             : defaultMode;

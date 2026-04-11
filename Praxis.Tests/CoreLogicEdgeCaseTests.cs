@@ -13,6 +13,14 @@ public class CoreLogicEdgeCaseTests
     }
 
     [Fact]
+    public void ThemeModeParser_ParseOrDefault_SanitizesInvalidFallbackToSystem()
+    {
+        var parsed = ThemeModeParser.ParseOrDefault("invalid", (ThemeMode)123);
+
+        Assert.Equal(ThemeMode.System, parsed);
+    }
+
+    [Fact]
     public void ThemeModeParser_ParsesCaseInsensitiveValues()
     {
         Assert.Equal(ThemeMode.Light, ThemeModeParser.ParseOrDefault("light"));

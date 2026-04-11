@@ -7,6 +7,9 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 ## [Unreleased]
 
 ### Fixed
+- `ThemeModeParser.ParseOrDefault()` now sanitizes invalid caller-supplied fallback enum values back to `System` instead of returning an out-of-range theme when both the input string and default are invalid
+- `CommandExecutor` now expands environment-variable-backed tool paths and trims quotes after expansion, so `%ComSpec%` / quoted `%...%` tools execute with the same normalized path logic as literal tool values
+- Windows startup now warning-logs failures to create the `startup.log` directory instead of losing that breadcrumb before the later append path even runs
 - `DockOrderValueCodec.Parse()` now trims wrapping quotes from both the whole CSV payload and individual GUID entries so quoted dock-order persistence still restores the intended order
 - `WindowsPathPolicy.IsUncPath()` now accepts quoted UNC paths but rejects `\\\\?\\` and `\\\\.\\` local-device prefixes instead of misclassifying them as network shares
 - Mac `AppDelegate` now warning-logs failures to prioritize key commands over system behavior instead of letting runtime reflection differences fail silently

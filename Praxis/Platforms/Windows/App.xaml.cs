@@ -25,7 +25,19 @@ public partial class App : MauiWinUIApplication
 	/// </summary>
 	public App()
 	{
-		Directory.CreateDirectory(Path.GetDirectoryName(StartupLogPath)!);
+		var startupLogDirectory = Path.GetDirectoryName(StartupLogPath);
+		if (!string.IsNullOrWhiteSpace(startupLogDirectory))
+		{
+			try
+			{
+				Directory.CreateDirectory(startupLogDirectory);
+			}
+			catch (Exception ex)
+			{
+				CrashFileLogger.WriteWarning(nameof(App), $"Failed to create startup log directory '{startupLogDirectory}': {ex.Message}");
+			}
+		}
+
 		HookGlobalExceptionLogging();
 		this.InitializeComponent();
 	}

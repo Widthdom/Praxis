@@ -59,6 +59,26 @@ public class CommandExecutorTests
         Assert.Equal(expected, result);
     }
 
+    [Fact]
+    public void NormalizeToolPath_ExpandsEnvironmentVariables_AndTrimsExpandedQuotes()
+    {
+        const string variableName = "PRAXIS_TEST_COMMAND_EXECUTOR_TOOL";
+        var previous = Environment.GetEnvironmentVariable(variableName);
+
+        try
+        {
+            Environment.SetEnvironmentVariable(variableName, "\"C:\\Program Files\\App\\tool.exe\"");
+
+            var result = InvokeNormalizeToolPath($"%{variableName}%");
+
+            Assert.Equal("C:\\Program Files\\App\\tool.exe", result);
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable(variableName, previous);
+        }
+    }
+
     [Theory]
     [InlineData("pwsh", true)]
     [InlineData("\"C:\\Program Files\\App\\app.exe\"", true)]
