@@ -76,6 +76,139 @@ public class MainViewModelWorkflowIntegrationTests
     }
 
     [Fact]
+    public async Task UndoRedo_CreateAction_RemovesAndRestoresButton()
+    {
+        var repository = new InMemoryAppRepository();
+        var executor = new RecordingCommandExecutor((true, "ok"));
+        var clipboard = new RecordingClipboardService();
+        var theme = new RecordingThemeService();
+        var syncNotifier = new TestStateSyncNotifier();
+        var logger = new RecordingErrorLogger();
+        var viewModel = new MainViewModel(repository, executor, clipboard, theme, syncNotifier, logger);
+        await viewModel.InitializeAsync();
+
+        viewModel.CreateNewCommand.Execute(null);
+        viewModel.Editor.Command = "build";
+        viewModel.Editor.ButtonText = "Build";
+        viewModel.Editor.Tool = "echo";
+        viewModel.Editor.Arguments = "one";
+
+        await viewModel.SaveEditorCommand.ExecuteAsync(null);
+
+        var created = Assert.Single(await repository.GetButtonsAsync());
+        Assert.Equal("Build", created.ButtonText);
+        Assert.Equal(1, syncNotifier.NotifyCount);
+
+        await viewModel.UndoCommand.ExecuteAsync(null);
+
+        Assert.Empty(await repository.GetButtonsAsync());
+        Assert.Empty(viewModel.VisibleButtons);
+        Assert.Equal("Undid create.", viewModel.StatusText);
+        Assert.Equal(2, syncNotifier.NotifyCount);
+        Assert.Contains(logger.Infos, x => x.Context == "UndoAsync" && x.Message.Contains("Undo: create, applied=True", StringComparison.Ordinal));
+
+        await viewModel.RedoCommand.ExecuteAsync(null);
+
+        var restored = Assert.Single(await repository.GetButtonsAsync());
+        Assert.Equal(created.Id, restored.Id);
+        Assert.Equal("Build", restored.ButtonText);
+        Assert.Equal("Redid create.", viewModel.StatusText);
+        Assert.Equal(3, syncNotifier.NotifyCount);
+        Assert.Contains(logger.Infos, x => x.Context == "RedoAsync" && x.Message.Contains("Redo: create, applied=True", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task Undo_DeleteAction_RestoresButtonAndDockOrder()
+    {
+        var repository = new InMemoryAppRepository();
+        var record = new LauncherButtonRecord
+        {
+            Id = Guid.NewGuid(),
+            Command = "build",
+            ButtonText = "Build",
+            Tool = "echo",
+            Arguments = "one",
+        };
+        await repository.UpsertButtonAsync(record);
+
+        var executor = new RecordingCommandExecutor((true, "ok"));
+        var clipboard = new RecordingClipboardService();
+        var theme = new RecordingThemeService();
+        var syncNotifier = new TestStateSyncNotifier();
+        var logger = new RecordingErrorLogger();
+        var viewModel = new MainViewModel(repository, executor, clipboard, theme, syncNotifier, logger);
+        await viewModel.InitializeAsync();
+
+        await viewModel.ExecuteButtonCommand.ExecuteAsync(Assert.Single(viewModel.VisibleButtons));
+        Assert.Equal(record.Id, Assert.Single(viewModel.DockButtons).Id);
+
+        await viewModel.DeleteButtonCommand.ExecuteAsync(Assert.Single(viewModel.VisibleButtons));
+
+        Assert.Empty(await repository.GetButtonsAsync());
+        Assert.Empty(viewModel.DockButtons);
+
+        await viewModel.UndoCommand.ExecuteAsync(null);
+
+        var restored = Assert.Single(await repository.GetButtonsAsync());
+        Assert.Equal(record.Id, restored.Id);
+        Assert.Equal(record.ButtonText, restored.ButtonText);
+        Assert.Equal(record.Id, Assert.Single(viewModel.DockButtons).Id);
+        Assert.Equal(record.Id, Assert.Single(await repository.GetDockButtonIdsAsync()));
+        Assert.Equal("Undid delete.", viewModel.StatusText);
+        Assert.Equal(3, syncNotifier.NotifyCount);
+        Assert.Contains(logger.Infos, x => x.Context == "UndoAsync" && x.Message.Contains("Undo: delete, applied=True", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task Undo_WhenAffectedButtonChangedExternally_CancelsAndKeepsCurrentState()
+    {
+        var repository = new InMemoryAppRepository();
+        var record = new LauncherButtonRecord
+        {
+            Id = Guid.NewGuid(),
+            Command = "build",
+            ButtonText = "Build",
+            Tool = "echo",
+            Arguments = "one",
+        };
+        await repository.UpsertButtonAsync(record);
+
+        var executor = new RecordingCommandExecutor((true, "ok"));
+        var clipboard = new RecordingClipboardService();
+        var theme = new RecordingThemeService();
+        var syncNotifier = new TestStateSyncNotifier();
+        var logger = new RecordingErrorLogger();
+        var viewModel = new MainViewModel(repository, executor, clipboard, theme, syncNotifier, logger);
+        await viewModel.InitializeAsync();
+
+        var existing = Assert.Single(viewModel.VisibleButtons);
+        viewModel.OpenEditorCommand.Execute(existing);
+        viewModel.Editor.ButtonText = "Build Updated";
+
+        await viewModel.SaveEditorCommand.ExecuteAsync(null);
+
+        repository.UpsertForExternalChange(new LauncherButtonRecord
+        {
+            Id = record.Id,
+            Command = "build",
+            ButtonText = "Build External",
+            Tool = "echo",
+            Arguments = "external",
+            CreatedAtUtc = record.CreatedAtUtc,
+        });
+
+        await viewModel.UndoCommand.ExecuteAsync(null);
+
+        var current = Assert.Single(await repository.GetButtonsAsync());
+        Assert.Equal("Build External", current.ButtonText);
+        Assert.Equal("external", current.Arguments);
+        Assert.Equal("Build Updated", Assert.Single(viewModel.VisibleButtons).ButtonText);
+        Assert.Equal("Undo canceled: affected buttons changed in another window.", viewModel.StatusText);
+        Assert.Equal(1, syncNotifier.NotifyCount);
+        Assert.Contains(logger.Infos, x => x.Context == "UndoAsync" && x.Message.Contains("Undo: edit, applied=False", StringComparison.Ordinal));
+    }
+
+    [Fact]
     public async Task CommandSuggestions_DoNotAutoSelect_AndDownSelectsFirstItem()
     {
         var repository = new InMemoryAppRepository();
