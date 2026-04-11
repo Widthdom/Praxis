@@ -62,7 +62,7 @@ dotnet test Praxis.Tests/Praxis.Tests.csproj --collect:"XPlat Code Coverage"
 - [`CommandExecutorTests.cs`](../Praxis.Tests/CommandExecutorTests.cs): linked-source coverage for home-path expansion helpers (`~`, `~/...`, `~\\...`), non-home relative path pass-through, quoted-tool normalization, normalized empty/quoted-empty tool detection, env-expanded Windows shell launch working-directory override to the user profile, and crash-log breadcrumbs when native process launch throws.
 - [`CommandRecordMatcherTests.cs`](../Praxis.Tests/CommandRecordMatcherTests.cs): exact command matching rules, null guards including null collection entries, and case/trim behavior.
 - [`CommandSuggestionVisibilityPolicyTests.cs`](../Praxis.Tests/CommandSuggestionVisibilityPolicyTests.cs): close policy when context menu opens, locked as a direct mirror of current suggestion-open state.
-- [`CommandSuggestionRowColorPolicyTests.cs`](../Praxis.Tests/CommandSuggestionRowColorPolicyTests.cs): selected/unselected row color decisions per theme.
+- [`CommandSuggestionRowColorPolicyTests.cs`](../Praxis.Tests/CommandSuggestionRowColorPolicyTests.cs): selected/unselected row color decisions per theme, including transparent unselected rows and distinct selected palettes for light vs dark themes.
 - [`CommandWorkingDirectoryPolicyTests.cs`](../Praxis.Tests/CommandWorkingDirectoryPolicyTests.cs): pure policy coverage for which Windows shell-like tools (`cmd`, `powershell`, `pwsh`, `wt`) should start from the user-profile working directory, including env-expanded quoted tool paths.
 - [`CommandNotFoundRefocusPolicyTests.cs`](../Praxis.Tests/CommandNotFoundRefocusPolicyTests.cs): refocus decision for `Command not found:` status, including exact-prefix acceptance and rejection when the colon is missing or the phrase is not message-leading.
 - [`StatusFlashErrorPolicyTests.cs`](../Praxis.Tests/StatusFlashErrorPolicyTests.cs): status classification for error flash behavior, including embedded `error` / `exception` / `not found` terms and neutral-message rejection.
@@ -98,7 +98,7 @@ dotnet test Praxis.Tests/Praxis.Tests.csproj --collect:"XPlat Code Coverage"
 - [`ModalEditorScrollHeightResolverTests.cs`](../Praxis.Tests/ModalEditorScrollHeightResolverTests.cs): modal scroll height clamping with non-finite input safety plus zero/negative-max fallback and finite-side preservation.
 - [`ThemeTextColorPolicyTests.cs`](../Praxis.Tests/ThemeTextColorPolicyTests.cs): theme text color policy, including palette stability and distinct light/dark outputs.
 - [`ThemeDarkStateResolverTests.cs`](../Praxis.Tests/ThemeDarkStateResolverTests.cs): effective dark-mode resolution, including explicit dark/light precedence over requested/platform values and undefined-enum fallback behavior.
-- [`ThemeShortcutModeResolverTests.cs`](../Praxis.Tests/ThemeShortcutModeResolverTests.cs): macOS key-input to theme-mode mapping.
+- [`ThemeShortcutModeResolverTests.cs`](../Praxis.Tests/ThemeShortcutModeResolverTests.cs): macOS key-input to theme-mode mapping, including rejection of multi-character or trim-dependent inputs.
 - [`TextCaretPositionResolverTests.cs`](../Praxis.Tests/TextCaretPositionResolverTests.cs): caret-tail placement resolution.
 - [`UiTimingPolicyTests.cs`](../Praxis.Tests/UiTimingPolicyTests.cs): named UI timing constants (focus restore, activation windows, polling interval) and ordering constraints.
 
@@ -183,7 +183,7 @@ dotnet test Praxis.Tests/Praxis.Tests.csproj --collect:"XPlat Code Coverage"
 - [`CommandLineBuilderTests.cs`](../Praxis.Tests/CommandLineBuilderTests.cs): コマンドライン構築の null/空白処理、quoted-empty tool 正規化、組み立て結果。
 - [`CommandRecordMatcherTests.cs`](../Praxis.Tests/CommandRecordMatcherTests.cs): command 完全一致規則、null コレクション要素も含む null ガード、trim/大小文字非依存。
 - [`CommandSuggestionVisibilityPolicyTests.cs`](../Praxis.Tests/CommandSuggestionVisibilityPolicyTests.cs): コンテキストメニュー表示時の候補クローズ判定。候補表示状態との 1:1 対応を固定する。
-- [`CommandSuggestionRowColorPolicyTests.cs`](../Praxis.Tests/CommandSuggestionRowColorPolicyTests.cs): テーマ別の候補行背景色判定。
+- [`CommandSuggestionRowColorPolicyTests.cs`](../Praxis.Tests/CommandSuggestionRowColorPolicyTests.cs): テーマ別の候補行背景色判定。未選択の透明維持と、light/dark で異なる選択色も固定する。
 - [`CommandNotFoundRefocusPolicyTests.cs`](../Praxis.Tests/CommandNotFoundRefocusPolicyTests.cs): `Command not found:` 時の再フォーカス判定。prefix 厳密一致、コロン欠落拒否、文頭以外拒否も検証する。
 - [`StatusFlashErrorPolicyTests.cs`](../Praxis.Tests/StatusFlashErrorPolicyTests.cs): ステータスのエラーフラッシュ分類判定。埋め込み `error` / `exception` / `not found` と中立メッセージ拒否も含む。
 - [`QuickLookPreviewFormatterTests.cs`](../Praxis.Tests/QuickLookPreviewFormatterTests.cs): Quick Look 表示文字列の正規化・最大長を超えない省略・ちょうど上限長の素通し・ラベル整形・不正長/空ラベルの引数ガード。
@@ -218,7 +218,7 @@ dotnet test Praxis.Tests/Praxis.Tests.csproj --collect:"XPlat Code Coverage"
 - [`ModalEditorScrollHeightResolverTests.cs`](../Praxis.Tests/ModalEditorScrollHeightResolverTests.cs): モーダル項目スクロール高さクランプと非有限入力の安全化に加え、`maxHeight <= 0` フォールバックと片側のみ非有限な入力の扱いも検証する。
 - [`ThemeTextColorPolicyTests.cs`](../Praxis.Tests/ThemeTextColorPolicyTests.cs): テーマ連動文字色判定。パレット固定と light/dark の差異も検証する。
 - [`ThemeDarkStateResolverTests.cs`](../Praxis.Tests/ThemeDarkStateResolverTests.cs): 実効ダーク判定。Dark/Light の優先、requested/platform のフォールバック、未定義 enum の扱いも検証する。
-- [`ThemeShortcutModeResolverTests.cs`](../Praxis.Tests/ThemeShortcutModeResolverTests.cs): macOS キー入力からテーマモード解決。
+- [`ThemeShortcutModeResolverTests.cs`](../Praxis.Tests/ThemeShortcutModeResolverTests.cs): macOS キー入力からテーマモード解決。複数文字や trim 前提の入力を拒否することも検証する。
 - [`TextCaretPositionResolverTests.cs`](../Praxis.Tests/TextCaretPositionResolverTests.cs): キャレット末尾配置判定。
 - [`UiTimingPolicyTests.cs`](../Praxis.Tests/UiTimingPolicyTests.cs): フォーカス復帰・アクティベーション・ポーリングの UI タイミング定数と順序条件。
 
