@@ -242,6 +242,7 @@ public class AppLayerSourceGuardTests
 
         Assert.Contains("Command suggestion close dispatch failed:", source);
         Assert.Contains("Command suggestion refresh dispatch failed:", source);
+        Assert.Contains("catch (OperationCanceledException) when (token.IsCancellationRequested)", source);
     }
 
     [Fact]

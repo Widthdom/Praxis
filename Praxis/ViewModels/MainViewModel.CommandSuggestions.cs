@@ -195,7 +195,7 @@ public partial class MainViewModel
 
             RefreshCommandSuggestionsOnMainThread(CommandInput);
         }
-        catch (OperationCanceledException)
+        catch (OperationCanceledException) when (token.IsCancellationRequested)
         {
         }
         catch (Exception ex)
