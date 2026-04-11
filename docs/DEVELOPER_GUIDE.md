@@ -271,6 +271,7 @@ sequenceDiagram
   - For macOS stability, Dock applies a bottom mask (`DockScrollBarMask`) while not hovered so the indicator stays visually hidden even when native indicator timing is inconsistent.
 - Middle click edit is implemented via [`Behaviors/MiddleClickBehavior.cs`](../Praxis/Behaviors/MiddleClickBehavior.cs) plus macOS fallbacks in [`MainPage.PointerAndSelection.cs`](../Praxis/MainPage.PointerAndSelection.cs) (pointer detection) and [`MainPage.MacCatalystBehavior.cs`](../Praxis/MainPage.MacCatalystBehavior.cs) (polling).
   - **Mac click-through quirk**: macOS delivers non-primary mouse clicks to whichever window is under the cursor regardless of focus. The polling timer uses `CGEventSource.GetButtonState` (global HID state), so it can fire for middle-clicks in other apps. `lastPointerOnRoot` is cleared to `null` in `OnMacApplicationDeactivating` (triggered by `OnResignActivation`) so stale cursor positions from a previous focus session cannot trigger the editor when the app is inactive. Additional guards: `IsMacApplicationActive()` (explicit volatile bool set by `OnResignActivation`/`OnActivated`), `IsActivationSuppressionActive()` (500 ms after re-activation), and a ViewModel-level `IsMacApplicationActive()` check in `OpenEditor`.
+  - Deferred secondary-button execution treats token cancellation as expected, but warning-logs unexpected command-path exceptions instead of letting the UI callback fail silently
 - Tab focus policy is applied in [`MainPage.FocusAndContext.cs`](../Praxis/MainPage.FocusAndContext.cs) (`ApplyTabPolicy`) by toggling native `IsTabStop`.
 - Selection rectangle is rendered as `SelectionRect` in [`MainPage.xaml`](../Praxis/MainPage.xaml) with gray stroke/fill.
 - Selection toggle modifier handling is centralized in [`MainPage.PointerAndSelection.cs`](../Praxis/MainPage.PointerAndSelection.cs):
@@ -298,6 +299,7 @@ sequenceDiagram
   - normal: green
   - error (`Failed`/`error`/`exception`/`not found`): red
   - after flash/theme switch, local background override is cleared so AppThemeBinding is restored
+  - Unexpected animation failures are warning-logged; only the active flash token's own cancellation is silent
 - On macOS, when Enter execution in command input ends with `Command not found: ...`, focus is restored to command input for immediate retry typing.
 - Command input suggestion UX:
   - `MainViewModel` builds `CommandSuggestions` from partial match on `LauncherButtonItemViewModel.Command`

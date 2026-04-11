@@ -31,8 +31,12 @@ public partial class MainPage
             await AnimateStatusBackgroundAsync(flash, neutral, UiTimingPolicy.StatusFlashOutDurationMs, Easing.CubicIn, token);
             token.ThrowIfCancellationRequested();
         }
-        catch (OperationCanceledException)
+        catch (OperationCanceledException) when (token.IsCancellationRequested)
         {
+        }
+        catch (Exception ex)
+        {
+            CrashFileLogger.WriteWarning(nameof(TriggerStatusFlash), $"Status flash animation failed: {ex.Message}");
         }
         finally
         {

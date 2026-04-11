@@ -306,6 +306,7 @@ public class AppLayerSourceGuardTests
         var macSource = ReadRepositoryFile("Praxis", "MainPage.MacCatalystBehavior.cs");
 
         Assert.Contains("CrashFileLogger.WriteWarning(nameof(MiddleClickBehavior), $\"Failed to set buttonMaskRequired={mask}: {ex.Message}\");", behaviorSource);
+        Assert.Contains("CrashFileLogger.WriteWarning(nameof(MiddleClickBehavior), $\"Deferred middle-click execution failed: {ex.Message}\");", behaviorSource);
         Assert.Contains("CrashFileLogger.WriteWarning(nameof(TryCreateMacEditorKeyCommand), $\"Failed to create Mac editor key command '{selectorName}' for input '{keyInput}': {ex.Message}\");", macSource);
         Assert.Contains("CrashFileLogger.WriteWarning(nameof(IsMacMiddleButtonCurrentlyDown), $\"Failed to query middle button state from CoreGraphics: {ex.Message}\");", macSource);
     }
@@ -315,6 +316,13 @@ public class AppLayerSourceGuardTests
     {
         var source = ReadRepositoryFile("Praxis", "MainPage.xaml.cs");
         Assert.Contains("CrashFileLogger.WriteWarning(\"MainPage.CopyIconButton_Clicked\", $\"Copy notice animation failed: {ex.Message}\");", source);
+    }
+
+    [Fact]
+    public void MainPage_StatusFlashAnimationFailures_AreCrashLogged()
+    {
+        var source = ReadRepositoryFile("Praxis", "MainPage.StatusAndTheme.cs");
+        Assert.Contains("CrashFileLogger.WriteWarning(nameof(TriggerStatusFlash), $\"Status flash animation failed: {ex.Message}\");", source);
     }
 
     private static string ReadRepositoryFile(params string[] segments)
