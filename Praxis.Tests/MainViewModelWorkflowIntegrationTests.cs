@@ -251,6 +251,7 @@ public class MainViewModelWorkflowIntegrationTests
 
         await WaitUntilAsync(() => logger.Warnings.Any(x => x.Context == "SyncThemeFromExternalChangeAsync"));
         Assert.Contains(logger.Warnings, x => x.Message.Contains("theme boom", StringComparison.Ordinal));
+        Assert.Contains(logger.Exceptions, x => x.Context == "SyncThemeFromExternalChangeAsync" && x.Exception.Message.Contains("theme boom", StringComparison.Ordinal));
     }
 
     [Fact]
