@@ -72,7 +72,7 @@ dotnet build Praxis/Praxis.csproj -c Release -f net10.0-maccatalyst -v minimal -
 ### Code Search Rules
 
 This repository should use **`cdidx` as the primary code search tool**.
-If `cdidx` is missing, install it. If it is already installed, update it. Use `rg` only as a fast fallback or for one-off file/text checks.
+Query the generated index in `.cdidx/codeindex.db` instead of defaulting to `find`, `grep`, or recursive directory scans. Use `rg` only as a fast fallback or for one-off raw-text checks.
 
 #### Setup
 
@@ -82,7 +82,7 @@ First check whether `cdidx` is available:
 cdidx --version
 ```
 
-If it is not installed:
+If it is not installed (`cdidx` requires .NET 8+ even though this repo targets .NET 10):
 
 ```bash
 dotnet --version
@@ -95,29 +95,59 @@ If it is already installed:
 dotnet tool update -g cdidx
 ```
 
-If install/update fails because the SDK or network is unavailable, fall back to `rg` for the current session and say so explicitly.
+If update fails, continue with the existing version and say so explicitly. If install fails because the SDK or network is unavailable, fall back to `sqlite3` queries against `.cdidx/codeindex.db` if the database already exists; otherwise fall back to `rg` for the current session and say so explicitly.
 
 Before searching, refresh the index:
 
 ```bash
-cdidx .
+cdidx .   # incremental refresh; purges stale files and skips unchanged files
 ```
+
+#### Keeping the index fresh
 
 After editing files, refresh the index again before your next search:
 
 ```bash
-cdidx . --files path/to/changed_file.cs
-cdidx . --commits HEAD
-cdidx .
+cdidx . --files path/to/changed_file.cs   # refresh only touched files
+cdidx . --commits HEAD                     # refresh files changed in the last commit
+cdidx .                                    # full incremental refresh
 ```
 
-#### Default search workflow
+**Rule: whenever you modify source files, run one of the commands above before your next search.**
+If the checkout changed because of `git reset`, `git rebase`, `git commit --amend`, `git switch`, or `git merge`, prefer `cdidx .` so removed or renamed files are purged from the index against the current worktree.
+
+#### Query strategy
+
+- Start with `map` when you need a quick repo overview before drilling into symbols or text.
+- Check `status --json` when freshness matters. Use `indexed_at`, `latest_modified`, `git_head`, and `git_is_dirty` to decide whether the index is trustworthy. If you already started with `map --json`, treat `indexed_at` / `latest_modified` there as filter-scoped freshness and `workspace_indexed_at` / `workspace_latest_modified` as whole-workspace freshness.
+- Use `inspect` when you already have a candidate symbol and want definition, nearby symbols, references, callers, callees, file metadata, and freshness metadata in one round-trip.
+- Use `definition` when you need the declaration text for a named symbol; add `--body` when the implementation body matters.
+- Use `references`, `callers`, and `callees` for symbol-aware graph questions in Python, JavaScript/TypeScript, C#, Go, Rust, Java, Kotlin, Ruby, C/C++, PHP, Swift, Dart, and Scala. F# call graphs are not supported; use `search` there instead.
+- Use `symbols` for name-based symbol discovery in symbol-aware languages, including C#, F#, VB.NET, Elixir, Lua, R, and Haskell.
+- Use `outline` to understand a single file's symbol structure without reading the full file.
+- Use `excerpt` when you need a precise line range instead of opening an entire file.
+- Use `search` for comments, string literals, configs, docs, XAML, SQL, JSON, YAML, Markdown, and other languages where symbol extraction or graph data is limited.
+- Unless you are explicitly investigating tests, add `--exclude-tests` first.
+- Narrow noisy searches with `--path <text>` and repeatable `--exclude-path <text>`.
+- Use `search --snippet-lines <n>` when you want tighter JSON snippets for downstream tool/model use.
+
+`search`, `definition`, `references`, `callers`, `callees`, `symbols`, `files`, `map`, and `inspect` all support `--json`. `search --json` returns match-centered snippets with `chunk_start_line`, `chunk_end_line`, `snippet_start_line`, `snippet_end_line`, `match_lines`, and `highlights`. `files --json` includes per-file `checksum`, `modified`, and `indexed_at`. Graph queries for unsupported languages report that explicitly instead of silently implying “no hits.”
+
+#### Default CLI workflow
 
 ```bash
 cdidx .
-cdidx files
-cdidx search "keyword"
-cdidx symbols "ClassName"
+cdidx map --path Praxis --exclude-tests
+cdidx inspect "MainViewModel" --exclude-tests
+cdidx search "keyword" --path Praxis --exclude-tests --snippet-lines 6
+cdidx definition "MainViewModel" --path Praxis/ViewModels --body
+cdidx callers "ApplyButtonDiffAsync" --lang csharp --exclude-tests
+cdidx callees "ReloadButtonsAsync" --lang csharp --exclude-tests
+cdidx symbols "CrashFileLogger" --lang csharp --exclude-tests
+cdidx outline Praxis/MainPage.EditorAndInput.cs
+cdidx excerpt Praxis/Services/SqliteAppRepository.cs --start 1 --end 80
+cdidx files --lang csharp --path Praxis.Core
+cdidx status --json
 git log --oneline -- path/to/file
 ```
 
@@ -138,6 +168,30 @@ git log --oneline -- path/to/file
   - Search both the implementation files and `Praxis.Tests/MainPageStructureTests.cs` before moving fields, renaming XAML elements, or reordering modal fields.
 - **Linked-source test coverage**
   - If you touch app-layer files compiled into tests, inspect `Praxis.Tests/Praxis.Tests.csproj` to see whether the file is linked into the test project.
+
+#### Direct SQL fallback
+
+If `cdidx` is unavailable but `.cdidx/codeindex.db` already exists, query it directly with `sqlite3`:
+
+```sql
+SELECT f.path, c.start_line, c.content
+FROM fts_chunks fc
+JOIN chunks c ON c.id = fc.rowid
+JOIN files f ON f.id = c.file_id
+WHERE fts_chunks MATCH 'keyword'
+LIMIT 20;
+```
+
+```sql
+SELECT f.path, s.name, s.line
+FROM symbols s
+JOIN files f ON f.id = s.file_id
+WHERE s.name LIKE '%MainViewModel%'
+ORDER BY f.path, s.line
+LIMIT 20;
+```
+
+If `sqlite3` is unavailable, say so explicitly before falling back to `rg`.
 
 #### `rg` fallback
 
@@ -381,7 +435,7 @@ dotnet build Praxis/Praxis.csproj -c Release -f net10.0-maccatalyst -v minimal -
 ### コードベース検索ルール
 
 このリポジトリでは **`cdidx` を第一選択のコード検索手段** とします。
-`cdidx` が未導入ならインストールし、導入済みなら更新します。`rg` は高速な補助・フォールバック用途に下げます。
+`.cdidx/codeindex.db` に構築されたインデックスを検索し、`find`、`grep`、再帰 `ls` を第一選択にしないこと。`rg` は高速な補助か、生テキスト確認の一発用途に限ります。
 
 #### セットアップ
 
@@ -391,7 +445,7 @@ dotnet build Praxis/Praxis.csproj -c Release -f net10.0-maccatalyst -v minimal -
 cdidx --version
 ```
 
-未導入なら:
+未導入なら（このリポジトリ自体は .NET 10 だが、`cdidx` 自体は .NET 8+ が必要）:
 
 ```bash
 dotnet --version
@@ -404,29 +458,59 @@ dotnet tool install -g cdidx
 dotnet tool update -g cdidx
 ```
 
-SDK 不足やネットワーク制約で install/update が失敗した場合は、その旨を明示したうえで当該セッションだけ `rg` にフォールバックすること。
+更新に失敗しても既存バージョンで続行してよい。その旨を明示すること。インストールに失敗した場合は、`.cdidx/codeindex.db` が既に存在するなら `sqlite3` で直接検索し、DB 自体が無い場合だけ当該セッションでは `rg` にフォールバックすること。
 
 検索前にインデックスを更新する:
 
 ```bash
-cdidx .
+cdidx .   # stale file を掃除しつつインクリメンタル更新
 ```
+
+#### インデックスの鮮度維持
 
 ファイル編集後は、次の検索前に再度インデックスを更新する:
 
 ```bash
-cdidx . --files path/to/changed_file.cs
-cdidx . --commits HEAD
-cdidx .
+cdidx . --files path/to/changed_file.cs   # 触ったファイルだけ更新
+cdidx . --commits HEAD                     # 直前コミットの変更ファイルを更新
+cdidx .                                    # フルのインクリメンタル更新
 ```
 
-#### 基本の検索フロー
+**ルール: ソースを変更したら、次の検索前に必ず上記のいずれかを実行すること。**
+`git reset`、`git rebase`、`git commit --amend`、`git switch`、`git merge` のように checkout 自体が変わった直後は、消えたパスも正しく落とすため `cdidx .` を優先すること。
+
+#### クエリ戦略
+
+- まず全体像が欲しいときは `map` から始めて、言語構成、モジュール、ホットスポット、主要ファイルを掴む。
+- 鮮度が重要なときは `status --json` を見て、`indexed_at`、`latest_modified`、`git_head`、`git_is_dirty` を確認してから結果を信用する。すでに `map --json` を使っている場合は、その `indexed_at` / `latest_modified` は絞り込み範囲、`workspace_indexed_at` / `workspace_latest_modified` はワークスペース全体の鮮度として読む。
+- 候補シンボルが見えていて、定義・近傍シンボル・参照・caller・callee・鮮度情報を一度に欲しいときは `inspect` を使う。
+- 宣言本文が欲しいときは `definition`、実装本体まで欲しいときは `--body` を付ける。
+- Python、JavaScript/TypeScript、C#、Go、Rust、Java、Kotlin、Ruby、C/C++、PHP、Swift、Dart、Scala の graph 系調査では `references`、`callers`、`callees` を使う。F# の call graph は未対応なので `search` を使う。
+- C#、F#、VB.NET、Elixir、Lua、R、Haskell などシンボル抽出対応言語の名前探索には `symbols` を使う。
+- 1ファイルの構造を読む前に掴みたいときは `outline` を使う。
+- 必要行だけ抜き出したいときは `excerpt` を使い、ファイル全体を開かない。
+- コメント、文字列、設定、ドキュメント、XAML、SQL、JSON、YAML、Markdown などは `search` を優先する。
+- テストを明示的に調べるのでなければ、まず `--exclude-tests` を付ける。
+- ノイズが多いときは `--path <text>` と繰り返し指定できる `--exclude-path <text>` で先に絞る。
+- 他ツールや別モデルへ渡す JSON を細くしたいときは `search --snippet-lines <n>` を使う。
+
+`search`、`definition`、`references`、`callers`、`callees`、`symbols`、`files`、`map`、`inspect` はすべて `--json` に対応している。`search --json` は `chunk_start_line`、`chunk_end_line`、`snippet_start_line`、`snippet_end_line`、`match_lines`、`highlights` を含む一致中心スニペットを返す。`files --json` はファイルごとの `checksum`、`modified`、`indexed_at` も返す。未対応言語の graph クエリは「0件」ではなく「未対応」であることが明示される。
+
+#### 基本の CLI フロー
 
 ```bash
 cdidx .
-cdidx files
-cdidx search "keyword"
-cdidx symbols "ClassName"
+cdidx map --path Praxis --exclude-tests
+cdidx inspect "MainViewModel" --exclude-tests
+cdidx search "keyword" --path Praxis --exclude-tests --snippet-lines 6
+cdidx definition "MainViewModel" --path Praxis/ViewModels --body
+cdidx callers "ApplyButtonDiffAsync" --lang csharp --exclude-tests
+cdidx callees "ReloadButtonsAsync" --lang csharp --exclude-tests
+cdidx symbols "CrashFileLogger" --lang csharp --exclude-tests
+cdidx outline Praxis/MainPage.EditorAndInput.cs
+cdidx excerpt Praxis/Services/SqliteAppRepository.cs --start 1 --end 80
+cdidx files --lang csharp --path Praxis.Core
+cdidx status --json
 git log --oneline -- path/to/file
 ```
 
@@ -447,6 +531,30 @@ git log --oneline -- path/to/file
   - field 移動、XAML 名変更、モーダル欄順変更の前に、実装ファイルだけでなく `Praxis.Tests/MainPageStructureTests.cs` も見る。
 - **linked-source テスト**
   - テストがアプリ層ソースを直接コンパイルしている場合があるので、`Praxis.Tests/Praxis.Tests.csproj` を見て linked file を確認する。
+
+#### `sqlite3` による直接検索フォールバック
+
+`cdidx` 自体が使えず、`.cdidx/codeindex.db` だけ存在する場合は `sqlite3` で直接検索してよい:
+
+```sql
+SELECT f.path, c.start_line, c.content
+FROM fts_chunks fc
+JOIN chunks c ON c.id = fc.rowid
+JOIN files f ON f.id = c.file_id
+WHERE fts_chunks MATCH 'keyword'
+LIMIT 20;
+```
+
+```sql
+SELECT f.path, s.name, s.line
+FROM symbols s
+JOIN files f ON f.id = s.file_id
+WHERE s.name LIKE '%MainViewModel%'
+ORDER BY f.path, s.line
+LIMIT 20;
+```
+
+`sqlite3` も使えない場合は、その旨を明示してから `rg` に落とすこと。
 
 #### `rg` フォールバック
 
