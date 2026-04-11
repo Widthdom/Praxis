@@ -375,6 +375,7 @@ sequenceDiagram
   - Top-bar create icon button uses `CreateNewCommand` and does not consume clipboard.
   - Top-bar create button visuals are implemented as a tappable `Border` + shape stack (outer hexagon, inscribed circle, inner hexagon, center plus), not a platform glyph text button.
   - Right-click on empty placement area opens create editor at clicked canvas coordinates (`Selection_PointerPressed` and `PlacementCanvas_SecondaryTapped` paths).
+  - The `PlacementCanvas_SecondaryTapped` async-void entrypoint warning-logs unexpected create-flow failures so page-level gesture callbacks do not fault silently.
   - Right-click create flow seeds editor `Arguments` from clipboard.
   - Starting create flow clears `SearchText` (top-bar create and empty-area right-click).
   - On new-button create, the first modal focus still lands on `ButtonText`, and the initial `ButtonText` value is selected on both Windows and macOS for immediate overwrite.

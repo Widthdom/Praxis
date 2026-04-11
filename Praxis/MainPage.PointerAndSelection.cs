@@ -393,7 +393,14 @@ public partial class MainPage
             return;
         }
 
-        await OpenCreateEditorFromCanvasPointAsync(canvasPoint);
+        try
+        {
+            await OpenCreateEditorFromCanvasPointAsync(canvasPoint);
+        }
+        catch (Exception ex)
+        {
+            CrashFileLogger.WriteWarning(nameof(PlacementCanvas_SecondaryTapped), $"Secondary-tap create flow failed: {ex.Message}");
+        }
     }
 
     private void Selection_PointerMoved(object? sender, PointerEventArgs e)
