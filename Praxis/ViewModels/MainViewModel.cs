@@ -94,12 +94,12 @@ public partial class MainViewModel : ObservableObject
         await LoadButtonsFromRepositoryAsync(forceReload: true);
         errorLogger.LogInfo($"Buttons loaded. Count={allButtons.Count}", nameof(InitializeAsync));
 
-        SelectedTheme = await repository.GetThemeAsync();
+        SelectedTheme = await TryGetThemeOrDefaultAsync(nameof(InitializeAsync), ThemeMode.System, "Initialization theme load");
         themeService.Apply(SelectedTheme);
         errorLogger.LogInfo($"Theme applied during initialization: {SelectedTheme}", nameof(InitializeAsync));
         ApplyFilter();
         UpdateCanvasSize();
-        await RestoreDockAsync();
+        await TryRestoreDockAsync(nameof(InitializeAsync));
         errorLogger.LogInfo($"Initialized. Buttons: {allButtons.Count}, Theme: {SelectedTheme}, DockButtons: {DockButtons.Count}", nameof(InitializeAsync));
     }
 
@@ -266,8 +266,8 @@ public partial class MainViewModel : ObservableObject
     {
         errorLogger.LogInfo("ReloadOnMainThreadAsync started.", nameof(ReloadOnMainThreadAsync));
         await LoadButtonsFromRepositoryAsync(forceReload: true);
-        await RestoreDockAsync();
-        var latestTheme = await repository.GetThemeAsync();
+        await TryRestoreDockAsync(nameof(ReloadOnMainThreadAsync));
+        var latestTheme = await TryGetThemeOrDefaultAsync(nameof(ReloadOnMainThreadAsync), SelectedTheme, "External reload theme load");
         if (latestTheme != SelectedTheme)
         {
             SelectedTheme = latestTheme;
@@ -281,6 +281,44 @@ public partial class MainViewModel : ObservableObject
 
         errorLogger.LogInfo($"Reloaded from external window sync. Buttons: {allButtons.Count}, Theme: {SelectedTheme}, DockButtons: {DockButtons.Count}", nameof(ReloadOnMainThreadAsync));
         SetStatus("Synced from another window.");
+    }
+
+    private async Task<ThemeMode> TryGetThemeOrDefaultAsync(string context, ThemeMode fallback, string operation)
+    {
+        try
+        {
+            return await repository.GetThemeAsync();
+        }
+        catch (Exception ex)
+        {
+            errorLogger.LogWarning($"{operation} failed: {ex.Message}", context);
+            return fallback;
+        }
+    }
+
+    private async Task TryRestoreDockAsync(string context)
+    {
+        try
+        {
+            await RestoreDockAsync();
+        }
+        catch (Exception ex)
+        {
+            errorLogger.LogWarning($"Dock restore failed: {ex.Message}", context);
+            PruneDockButtonsToExistingButtons();
+        }
+    }
+
+    private void PruneDockButtonsToExistingButtons()
+    {
+        var validIds = allButtons.Select(x => x.Id).ToHashSet();
+        for (var i = DockButtons.Count - 1; i >= 0; i--)
+        {
+            if (!validIds.Contains(DockButtons[i].Id))
+            {
+                DockButtons.RemoveAt(i);
+            }
+        }
     }
 
     private void RefreshCommandSuggestions(string value, bool keepOpenState)

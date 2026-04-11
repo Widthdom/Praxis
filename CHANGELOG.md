@@ -27,6 +27,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - Startup, external sync, execution-request, clipboard-copy, clear-button, and sync-signal boundaries now emit additional low-cost Info breadcrumbs so GUI hangs/aborts leave a clearer last-known-good stage
 - Clipboard and sync-notifier failures are now isolated from successful local actions: create-with-clipboard falls back to empty args, copy failures become warning/status feedback, execution still logs after clipboard-copy failure, and save/delete/theme/dock/history operations no longer unwind after post-success sync notification errors
 - Launch-log write/purge, dock persistence, undo/redo dock restore, and theme persistence failures are now treated as non-fatal after local success, with warning logs instead of surfacing as user-action exceptions
+- Initialization and external reload now tolerate non-critical theme/dock read failures with warning logs and safe fallbacks, and command lookup fallback errors now degrade to `Command not found` instead of bubbling exceptions
 
 ### [1.1.3] - 2026-04-05
 

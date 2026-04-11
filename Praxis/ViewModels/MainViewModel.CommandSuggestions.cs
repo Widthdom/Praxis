@@ -295,7 +295,16 @@ public partial class MainViewModel
         var targets = CommandRecordMatcher.FindMatches(allButtons.Select(x => x.ToRecord()), cmd).ToList();
         if (targets.Count == 0)
         {
-            var singleTarget = await repository.GetByCommandAsync(cmd);
+            LauncherButtonRecord? singleTarget = null;
+            try
+            {
+                singleTarget = await repository.GetByCommandAsync(cmd);
+            }
+            catch (Exception ex)
+            {
+                errorLogger.LogWarning($"Command lookup fallback failed: {ex.Message}", nameof(ExecuteCommandMatchesAsync));
+            }
+
             if (singleTarget is not null)
             {
                 targets.Add(singleTarget);

@@ -210,6 +210,135 @@ public class MainViewModelWorkflowIntegrationTests
     }
 
     [Fact]
+    public async Task Initialize_WhenThemeReadFails_FallsBackToSystemAndLogsWarning()
+    {
+        var repository = new InMemoryAppRepository
+        {
+            ThrowOnGetTheme = new InvalidOperationException("theme boom"),
+        };
+        await repository.UpsertButtonAsync(new LauncherButtonRecord
+        {
+            Id = Guid.NewGuid(),
+            Command = "build",
+            ButtonText = "Build",
+            Tool = "echo",
+            Arguments = "one",
+        });
+
+        var executor = new RecordingCommandExecutor((true, "ok"));
+        var clipboard = new RecordingClipboardService();
+        var theme = new RecordingThemeService();
+        var syncNotifier = new TestStateSyncNotifier();
+        var logger = new RecordingErrorLogger();
+        var viewModel = new MainViewModel(repository, executor, clipboard, theme, syncNotifier, logger);
+
+        await viewModel.InitializeAsync();
+
+        Assert.Equal(ThemeMode.System, viewModel.SelectedTheme);
+        Assert.Equal(ThemeMode.System, theme.Current);
+        Assert.Single(viewModel.VisibleButtons);
+        Assert.Contains(logger.Warnings, x => x.Context == "InitializeAsync" && x.Message.Contains("theme boom", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task Initialize_WhenDockReadFails_StillLoadsButtonsAndLogsWarning()
+    {
+        var repository = new InMemoryAppRepository
+        {
+            ThrowOnGetDockButtonIds = new InvalidOperationException("dock boom"),
+        };
+        await repository.UpsertButtonAsync(new LauncherButtonRecord
+        {
+            Id = Guid.NewGuid(),
+            Command = "build",
+            ButtonText = "Build",
+            Tool = "echo",
+            Arguments = "one",
+        });
+
+        var executor = new RecordingCommandExecutor((true, "ok"));
+        var clipboard = new RecordingClipboardService();
+        var theme = new RecordingThemeService();
+        var syncNotifier = new TestStateSyncNotifier();
+        var logger = new RecordingErrorLogger();
+        var viewModel = new MainViewModel(repository, executor, clipboard, theme, syncNotifier, logger);
+
+        await viewModel.InitializeAsync();
+
+        Assert.Single(viewModel.VisibleButtons);
+        Assert.Empty(viewModel.DockButtons);
+        Assert.Contains(logger.Warnings, x => x.Context == "InitializeAsync" && x.Message.Contains("dock boom", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task ExternalSync_WhenDockReadFails_StillReloadsButtonsAndLogsWarning()
+    {
+        var repository = new InMemoryAppRepository();
+        var record = new LauncherButtonRecord
+        {
+            Id = Guid.NewGuid(),
+            Command = "build",
+            ButtonText = "Build",
+            Tool = "echo",
+            Arguments = "one",
+        };
+        await repository.UpsertButtonAsync(record);
+
+        var executor = new RecordingCommandExecutor((true, "ok"));
+        var clipboard = new RecordingClipboardService();
+        var theme = new RecordingThemeService();
+        var syncNotifier = new TestStateSyncNotifier();
+        var logger = new RecordingErrorLogger();
+        var viewModel = new MainViewModel(repository, executor, clipboard, theme, syncNotifier, logger);
+        await viewModel.InitializeAsync();
+        repository.ThrowOnGetDockButtonIds = new InvalidOperationException("dock boom");
+        repository.UpsertForExternalChange(new LauncherButtonRecord(record)
+        {
+            ButtonText = "Build Synced",
+        });
+
+        syncNotifier.RaiseExternalChange();
+
+        await WaitUntilAsync(() => viewModel.StatusText == "Synced from another window.");
+        Assert.Equal("Build Synced", Assert.Single(viewModel.VisibleButtons).ButtonText);
+        Assert.Contains(logger.Warnings, x => x.Context == "ReloadOnMainThreadAsync" && x.Message.Contains("dock boom", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task ExternalSync_WhenThemeReadFailsDuringReload_StillReloadsButtonsAndLogsWarning()
+    {
+        var repository = new InMemoryAppRepository();
+        var record = new LauncherButtonRecord
+        {
+            Id = Guid.NewGuid(),
+            Command = "build",
+            ButtonText = "Build",
+            Tool = "echo",
+            Arguments = "one",
+        };
+        await repository.UpsertButtonAsync(record);
+
+        var executor = new RecordingCommandExecutor((true, "ok"));
+        var clipboard = new RecordingClipboardService();
+        var theme = new RecordingThemeService();
+        var syncNotifier = new TestStateSyncNotifier();
+        var logger = new RecordingErrorLogger();
+        var viewModel = new MainViewModel(repository, executor, clipboard, theme, syncNotifier, logger);
+        await viewModel.InitializeAsync();
+        repository.ThrowOnGetTheme = new InvalidOperationException("theme boom");
+        repository.UpsertForExternalChange(new LauncherButtonRecord(record)
+        {
+            ButtonText = "Build Synced",
+        });
+
+        syncNotifier.RaiseExternalChange();
+
+        await WaitUntilAsync(() => viewModel.StatusText == "Synced from another window.");
+        Assert.Equal("Build Synced", Assert.Single(viewModel.VisibleButtons).ButtonText);
+        Assert.Contains(logger.Warnings, x => x.Context == "ReloadOnMainThreadAsync" && x.Message.Contains("theme boom", StringComparison.Ordinal));
+    }
+
+    [Fact]
     public async Task ExternalSync_WhileEditorOpen_LogsDeferredAndAppliesAfterClose()
     {
         var repository = new InMemoryAppRepository();
@@ -624,6 +753,28 @@ public class MainViewModelWorkflowIntegrationTests
         Assert.Contains(logger.Warnings, x => x.Context == "SetThemeAsync" && x.Message.Contains("theme save boom", StringComparison.Ordinal));
     }
 
+    [Fact]
+    public async Task ExecuteCommandInput_WhenRepositoryLookupThrows_LogsWarningAndShowsCommandNotFound()
+    {
+        var repository = new InMemoryAppRepository
+        {
+            ThrowOnGetByCommand = new InvalidOperationException("lookup boom"),
+        };
+        var executor = new RecordingCommandExecutor((true, "ok"));
+        var clipboard = new RecordingClipboardService();
+        var theme = new RecordingThemeService();
+        var syncNotifier = new TestStateSyncNotifier();
+        var logger = new RecordingErrorLogger();
+        var viewModel = new MainViewModel(repository, executor, clipboard, theme, syncNotifier, logger);
+        await viewModel.InitializeAsync();
+        viewModel.CommandInput = "missing";
+
+        await viewModel.ExecuteCommandInputCommand.ExecuteAsync(null);
+
+        Assert.Equal("Command not found: missing", viewModel.StatusText);
+        Assert.Contains(logger.Warnings, x => x.Context == "ExecuteCommandMatchesAsync" && x.Message.Contains("lookup boom", StringComparison.Ordinal));
+    }
+
     private static async Task WaitUntilAsync(Func<bool> condition, int timeoutMs = 2000)
     {
         var started = DateTime.UtcNow;
@@ -647,6 +798,8 @@ public class MainViewModelWorkflowIntegrationTests
         private ThemeMode themeMode = ThemeMode.System;
         public Exception? ThrowOnReloadButtons { get; set; }
         public Exception? ThrowOnGetTheme { get; set; }
+        public Exception? ThrowOnGetDockButtonIds { get; set; }
+        public Exception? ThrowOnGetByCommand { get; set; }
         public Exception? ThrowOnAddLog { get; set; }
         public Exception? ThrowOnPurgeLogs { get; set; }
         public Exception? ThrowOnSetDockOrder { get; set; }
@@ -700,6 +853,11 @@ public class MainViewModelWorkflowIntegrationTests
 
         public Task<LauncherButtonRecord?> GetByCommandAsync(string command, CancellationToken cancellationToken = default)
         {
+            if (ThrowOnGetByCommand is not null)
+            {
+                return Task.FromException<LauncherButtonRecord?>(ThrowOnGetByCommand);
+            }
+
             lock (gate)
             {
                 var match = buttons.Values.FirstOrDefault(x =>
@@ -815,6 +973,11 @@ public class MainViewModelWorkflowIntegrationTests
 
         public Task<IReadOnlyList<Guid>> GetDockButtonIdsAsync(CancellationToken cancellationToken = default)
         {
+            if (ThrowOnGetDockButtonIds is not null)
+            {
+                return Task.FromException<IReadOnlyList<Guid>>(ThrowOnGetDockButtonIds);
+            }
+
             lock (gate)
             {
                 return Task.FromResult<IReadOnlyList<Guid>>(dockOrder.ToList());
