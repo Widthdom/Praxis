@@ -10,6 +10,10 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - add .codex & CLAUDE.md
 
 ### Fixed
+- `App.CreateWindow()` no longer caches the fallback error page when `ResolveRootPage()` fails, so later window creation can recover instead of being pinned to the first startup failure page
+- `App` now crash-logs log-flush failures during both `AppDomain.UnhandledException` termination handling and `ProcessExit`, instead of suppressing them silently
+- `FileStateSyncNotifier` now warning-logs sync-file read retry exhaustion instead of silently dropping unreadable external-sync payloads
+- `CommandExecutor` now treats normalized empty/quoted-empty tool values as “no tool” and falls back to URL/path launching instead of trying to execute an empty filename
 - `MainPage` now crash-logs XAML load failures, resets its initialization gate when first-load startup fails, and separately crash-logs initialization-alert failures so a broken alert path does not erase the original startup exception
 - `MauiClipboardService` now honors cancellation tokens for both clipboard reads and writes instead of ignoring canceled operations
 - `SqliteAppRepository` now publishes its shared SQLite connection only after schema upgrade and initial cache load succeed, allowing clean retry after initialization failures
@@ -148,6 +152,10 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - .codex および CLAUDE.md を追加
 
 ### 修正
+- `App.CreateWindow()` は `ResolveRootPage()` 失敗時のエラー表示ページを恒久キャッシュしないようにし、後続ウィンドウ生成で初回失敗ページに固定されず回復できるよう修正
+- `App` は `AppDomain.UnhandledException` の終端処理と `ProcessExit` の両方でログ flush 失敗を黙殺せず `crash.log` に残すよう修正
+- `FileStateSyncNotifier` は sync ファイルの再読込リトライが尽きた場合に warning を残し、読めない外部同期 payload を無言で捨てないよう修正
+- `CommandExecutor` は正規化後に空になる tool 値（空引用符や引用符内空白）を「tool 未指定」として扱い、空ファイル名を実行しようとせず URL / path フォールバックへ回すよう修正
 - `MainPage` は XAML 読込失敗を `crash.log` に記録し、初回初期化失敗時は初期化済みフラグを戻して再試行可能にし、初期化エラー表示自体が失敗した場合も元の例外を消さず別途 `crash.log` へ残すよう修正
 - `MauiClipboardService` は clipboard 読み書きの両方で `CancellationToken` を尊重し、キャンセル済み操作を無視して走らせないよう修正
 - `SqliteAppRepository` はスキーマ更新と初回キャッシュ読込が成功するまで共有 SQLite 接続を公開しないようにし、初期化途中失敗後に安全に再試行できるよう修正

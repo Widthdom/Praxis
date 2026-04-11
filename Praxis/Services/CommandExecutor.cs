@@ -12,9 +12,10 @@ public sealed class CommandExecutor : ICommandExecutor
             return Task.FromResult((false, "Canceled."));
         }
 
-        if (!string.IsNullOrWhiteSpace(tool))
+        var normalizedTool = NormalizeToolPath(tool);
+        if (HasUsableTool(normalizedTool))
         {
-            return RunProcess(tool, arguments);
+            return RunProcess(normalizedTool, arguments);
         }
 
         return OpenWithDefaultHandler(arguments);
@@ -22,16 +23,15 @@ public sealed class CommandExecutor : ICommandExecutor
 
     private static Task<(bool Success, string Message)> RunProcess(string tool, string arguments)
     {
-        var normalizedTool = NormalizeToolPath(tool);
         var psi = new ProcessStartInfo
         {
-            FileName = normalizedTool,
+            FileName = tool,
             Arguments = arguments,
             UseShellExecute = true,
         };
 
-        ApplyWorkingDirectoryOverride(psi, normalizedTool);
-        return Task.FromResult(StartProcess(psi, "Executed.", $"Process launch failed for tool '{normalizedTool}'."));
+        ApplyWorkingDirectoryOverride(psi, tool);
+        return Task.FromResult(StartProcess(psi, "Executed.", $"Process launch failed for tool '{tool}'."));
     }
 
     private static Task<(bool Success, string Message)> OpenHttpUrl(string url)
@@ -213,4 +213,7 @@ public sealed class CommandExecutor : ICommandExecutor
 
         return trimmed;
     }
+
+    private static bool HasUsableTool(string tool)
+        => !string.IsNullOrWhiteSpace(tool);
 }

@@ -24,9 +24,24 @@ public class CommandExecutorTests
     [InlineData("\"C:\\Program Files\\App\\app.exe\"", "C:\\Program Files\\App\\app.exe")]
     [InlineData("'C:\\Program Files\\App\\app.exe'", "C:\\Program Files\\App\\app.exe")]
     [InlineData("  pwsh  ", "pwsh")]
+    [InlineData("\"\"", "")]
+    [InlineData("'   '", "")]
     public void NormalizeToolPath_TrimsWrappingQuotesAndWhitespace(string value, string expected)
     {
         var result = InvokeNormalizeToolPath(value);
+
+        Assert.Equal(expected, result);
+    }
+
+    [Theory]
+    [InlineData("pwsh", true)]
+    [InlineData("\"C:\\Program Files\\App\\app.exe\"", true)]
+    [InlineData("\"\"", false)]
+    [InlineData("'   '", false)]
+    [InlineData("   ", false)]
+    public void HasUsableTool_UsesNormalizedToolEmptiness(string value, bool expected)
+    {
+        var result = InvokeHasUsableTool(InvokeNormalizeToolPath(value));
 
         Assert.Equal(expected, result);
     }
@@ -90,5 +105,14 @@ public class CommandExecutorTests
 
         var result = method.Invoke(null, [value]);
         return Assert.IsType<string>(result);
+    }
+
+    private static bool InvokeHasUsableTool(string value)
+    {
+        var method = typeof(CommandExecutor).GetMethod("HasUsableTool", BindingFlags.NonPublic | BindingFlags.Static);
+        Assert.NotNull(method);
+
+        var result = method.Invoke(null, [value]);
+        return Assert.IsType<bool>(result);
     }
 }

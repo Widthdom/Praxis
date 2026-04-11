@@ -59,6 +59,7 @@ public sealed class FileStateSyncNotifier : IStateSyncNotifier
         }
 
         string payload = string.Empty;
+        Exception? readFailure = null;
         for (var i = 0; i < 3; i++)
         {
             try
@@ -67,14 +68,18 @@ public sealed class FileStateSyncNotifier : IStateSyncNotifier
                 {
                     payload = await File.ReadAllTextAsync(signalPath);
                 }
+
+                readFailure = null;
                 break;
             }
-            catch (IOException)
+            catch (IOException ex)
             {
+                readFailure = ex;
                 await Task.Delay(20);
             }
-            catch (UnauthorizedAccessException)
+            catch (UnauthorizedAccessException ex)
             {
+                readFailure = ex;
                 await Task.Delay(20);
             }
         }
@@ -82,6 +87,11 @@ public sealed class FileStateSyncNotifier : IStateSyncNotifier
         payload = payload.Trim();
         if (string.IsNullOrWhiteSpace(payload))
         {
+            if (readFailure is not null)
+            {
+                CrashFileLogger.WriteWarning(nameof(FileStateSyncNotifier), $"Failed to read sync payload after retries: {readFailure.Message}");
+            }
+
             return;
         }
 

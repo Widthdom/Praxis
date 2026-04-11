@@ -57,6 +57,35 @@ public class AppLayerSourceGuardTests
         Assert.True(assignmentIndex > cacheRebuildIndex, "connection should only be published after schema and cache initialization succeed.");
     }
 
+    [Fact]
+    public void App_CreateWindow_DoesNotCacheFallbackErrorPage()
+    {
+        var source = ReadRepositoryFile("Praxis", "App.xaml.cs");
+
+        Assert.Contains("if (page is MainPage)", source);
+        Assert.Contains("rootPage = page;", source);
+        Assert.Contains("Root page resolution fell back to an error page; cache not updated.", source);
+    }
+
+    [Fact]
+    public void App_FlushFailures_AreCrashLogged_DuringUnhandledExceptionAndProcessExit()
+    {
+        var source = ReadRepositoryFile("Praxis", "App.xaml.cs");
+
+        Assert.Contains("TryFlushLogs(TimeSpan.FromSeconds(2), \"AppDomain.UnhandledException\");", source);
+        Assert.Contains("TryFlushLogs(TimeSpan.FromSeconds(3), \"App.ProcessExit\");", source);
+        Assert.Contains("CrashFileLogger.WriteWarning(context, $\"Log flush failed: {ex.Message}\");", source);
+    }
+
+    [Fact]
+    public void FileStateSyncNotifier_ReadRetryExhaustion_IsCrashLogged()
+    {
+        var source = ReadRepositoryFile("Praxis", "Services", "FileStateSyncNotifier.cs");
+
+        Assert.Contains("Exception? readFailure = null;", source);
+        Assert.Contains("CrashFileLogger.WriteWarning(nameof(FileStateSyncNotifier), $\"Failed to read sync payload after retries: {readFailure.Message}\");", source);
+    }
+
     private static string ReadRepositoryFile(params string[] segments)
         => File.ReadAllText(Path.Combine(ResolveRepositoryRoot(), Path.Combine(segments)));
 

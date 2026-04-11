@@ -86,9 +86,7 @@ public partial class App : Application
 
         if (isTerminating)
         {
-            // Best-effort flush before process dies.
-            try { errorLogger?.FlushAsync(TimeSpan.FromSeconds(2)).GetAwaiter().GetResult(); }
-            catch { /* must not throw */ }
+            TryFlushLogs(TimeSpan.FromSeconds(2), "AppDomain.UnhandledException");
         }
     }
 
@@ -102,16 +100,27 @@ public partial class App : Application
     private static void OnProcessExit(object? sender, EventArgs e)
     {
         CrashFileLogger.WriteInfo("App", "Process exiting — flushing logs.");
-        try { errorLogger?.FlushAsync(TimeSpan.FromSeconds(3)).GetAwaiter().GetResult(); }
-        catch { /* must not throw */ }
+        TryFlushLogs(TimeSpan.FromSeconds(3), "App.ProcessExit");
     }
 
     protected override Window CreateWindow(IActivationState? activationState)
     {
         errorLogger?.LogInfo($"CreateWindow called. ExistingRootPage={rootPage is not null}", nameof(CreateWindow));
-        rootPage ??= ResolveRootPage();
+        var page = rootPage;
+        if (page is null)
+        {
+            page = ResolveRootPage();
+            if (page is MainPage)
+            {
+                rootPage = page;
+            }
+            else
+            {
+                errorLogger?.LogWarning("Root page resolution fell back to an error page; cache not updated.", nameof(CreateWindow));
+            }
+        }
 
-        var window = new Window(rootPage)
+        var window = new Window(page)
         {
             Width = 1000,
             Height = 700,
@@ -139,8 +148,20 @@ public partial class App : Application
             }
         };
 #endif
-        errorLogger?.LogInfo($"Window created. RootPage={rootPage.GetType().Name}", nameof(CreateWindow));
+        errorLogger?.LogInfo($"Window created. RootPage={page.GetType().Name}", nameof(CreateWindow));
         return window;
+    }
+
+    private static void TryFlushLogs(TimeSpan timeout, string context)
+    {
+        try
+        {
+            errorLogger?.FlushAsync(timeout).GetAwaiter().GetResult();
+        }
+        catch (Exception ex)
+        {
+            CrashFileLogger.WriteWarning(context, $"Log flush failed: {ex.Message}");
+        }
     }
 
     private Page ResolveRootPage()
