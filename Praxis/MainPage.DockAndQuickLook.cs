@@ -253,6 +253,24 @@ public partial class MainPage
         try
         {
             await Task.Delay(QuickLookHideDelayMs, token);
+            if (token.IsCancellationRequested || !xamlLoaded || !QuickLookPopup.IsVisible)
+            {
+                return;
+            }
+
+            QuickLookPopup.CancelAnimations();
+            if (QuickLookPopup.Opacity > 0)
+            {
+                await QuickLookPopup.FadeToAsync(0, QuickLookFadeDurationMs, Easing.CubicIn);
+            }
+
+            if (token.IsCancellationRequested)
+            {
+                return;
+            }
+
+            QuickLookPopup.IsVisible = false;
+            QuickLookPopup.Opacity = 0;
         }
         catch (OperationCanceledException) when (token.IsCancellationRequested)
         {
@@ -263,25 +281,6 @@ public partial class MainPage
             CrashFileLogger.WriteWarning(nameof(HideQuickLookAfterDelayAsync), $"Quick Look hide failed: {ex.Message}");
             return;
         }
-
-        if (token.IsCancellationRequested || !xamlLoaded || !QuickLookPopup.IsVisible)
-        {
-            return;
-        }
-
-        QuickLookPopup.CancelAnimations();
-        if (QuickLookPopup.Opacity > 0)
-        {
-            await QuickLookPopup.FadeToAsync(0, QuickLookFadeDurationMs, Easing.CubicIn);
-        }
-
-        if (token.IsCancellationRequested)
-        {
-            return;
-        }
-
-        QuickLookPopup.IsVisible = false;
-        QuickLookPopup.Opacity = 0;
     }
 
     private void PositionQuickLookPopup(VisualElement anchor)
