@@ -94,8 +94,8 @@ dotnet test Praxis.Tests/Praxis.Tests.csproj --collect:"XPlat Code Coverage"
 - [`ClearButtonRefocusPolicyTests.cs`](../Praxis.Tests/ClearButtonRefocusPolicyTests.cs): clear-button focus retry schedule by platform, including deferred retries on Mac Catalyst.
 - [`WindowsNativeFocusSafetyPolicyTests.cs`](../Praxis.Tests/WindowsNativeFocusSafetyPolicyTests.cs): guard conditions for applying native WinUI `TextBox` refocus/caret restore only to live controls.
 - [`ButtonFocusVisualPolicyTests.cs`](../Praxis.Tests/ButtonFocusVisualPolicyTests.cs): focus-border style resolution.
-- [`ModalEditorHeightResolverTests.cs`](../Praxis.Tests/ModalEditorHeightResolverTests.cs): multiline editor height calculation and clamping.
-- [`ModalEditorScrollHeightResolverTests.cs`](../Praxis.Tests/ModalEditorScrollHeightResolverTests.cs): modal scroll height clamping with non-finite input safety.
+- [`ModalEditorHeightResolverTests.cs`](../Praxis.Tests/ModalEditorHeightResolverTests.cs): multiline editor height calculation and clamping, including trailing CRLF handling and preserved blank lines.
+- [`ModalEditorScrollHeightResolverTests.cs`](../Praxis.Tests/ModalEditorScrollHeightResolverTests.cs): modal scroll height clamping with non-finite input safety plus zero/negative-max fallback and finite-side preservation.
 - [`ThemeTextColorPolicyTests.cs`](../Praxis.Tests/ThemeTextColorPolicyTests.cs): theme text color policy.
 - [`ThemeDarkStateResolverTests.cs`](../Praxis.Tests/ThemeDarkStateResolverTests.cs): effective dark-mode resolution.
 - [`ThemeShortcutModeResolverTests.cs`](../Praxis.Tests/ThemeShortcutModeResolverTests.cs): macOS key-input to theme-mode mapping.
@@ -214,8 +214,8 @@ dotnet test Praxis.Tests/Praxis.Tests.csproj --collect:"XPlat Code Coverage"
 - [`ClearButtonRefocusPolicyTests.cs`](../Praxis.Tests/ClearButtonRefocusPolicyTests.cs): クリア後フォーカス復帰リトライ間隔。Mac Catalyst の遅延再試行も検証する。
 - [`WindowsNativeFocusSafetyPolicyTests.cs`](../Praxis.Tests/WindowsNativeFocusSafetyPolicyTests.cs): WinUI の native `TextBox` 再フォーカス/キャレット復帰を live control に限定する安全条件を検証する。
 - [`ButtonFocusVisualPolicyTests.cs`](../Praxis.Tests/ButtonFocusVisualPolicyTests.cs): フォーカス枠スタイル判定。
-- [`ModalEditorHeightResolverTests.cs`](../Praxis.Tests/ModalEditorHeightResolverTests.cs): 複数行エディタ高さ算出とクランプ。
-- [`ModalEditorScrollHeightResolverTests.cs`](../Praxis.Tests/ModalEditorScrollHeightResolverTests.cs): モーダル項目スクロール高さクランプと非有限入力の安全化。
+- [`ModalEditorHeightResolverTests.cs`](../Praxis.Tests/ModalEditorHeightResolverTests.cs): 複数行エディタ高さ算出とクランプ。末尾 CRLF と空行保持も検証する。
+- [`ModalEditorScrollHeightResolverTests.cs`](../Praxis.Tests/ModalEditorScrollHeightResolverTests.cs): モーダル項目スクロール高さクランプと非有限入力の安全化に加え、`maxHeight <= 0` フォールバックと片側のみ非有限な入力の扱いも検証する。
 - [`ThemeTextColorPolicyTests.cs`](../Praxis.Tests/ThemeTextColorPolicyTests.cs): テーマ連動文字色判定。
 - [`ThemeDarkStateResolverTests.cs`](../Praxis.Tests/ThemeDarkStateResolverTests.cs): 実効ダーク判定。
 - [`ThemeShortcutModeResolverTests.cs`](../Praxis.Tests/ThemeShortcutModeResolverTests.cs): macOS キー入力からテーマモード解決。
