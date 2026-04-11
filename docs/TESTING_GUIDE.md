@@ -69,7 +69,7 @@ dotnet test Praxis.Tests/Praxis.Tests.csproj --collect:"XPlat Code Coverage"
 - [`QuickLookPreviewFormatterTests.cs`](../Praxis.Tests/QuickLookPreviewFormatterTests.cs): quick-look preview text normalization, max-length-safe truncation, and labeled-line formatting.
 
 ### Undo / Redo
-- [`ActionHistoryTests.cs`](../Praxis.Tests/ActionHistoryTests.cs): command-pattern history stack behavior (undo/redo transitions, failed-apply recovery, capacity trimming).
+- [`ActionHistoryTests.cs`](../Praxis.Tests/ActionHistoryTests.cs): command-pattern history stack behavior (constructor guards, undo/redo transitions, failed-apply recovery on both stacks, `Clear()`, and capacity trimming).
 - [`ButtonHistoryConsistencyPolicyTests.cs`](../Praxis.Tests/ButtonHistoryConsistencyPolicyTests.cs): optimistic-lock version-match checks used when applying undo/redo mutations (including mismatch detection when `UseInvertedThemeColors` differs).
 
 ### Input / Keyboard / Focus Policies
@@ -189,7 +189,7 @@ dotnet test Praxis.Tests/Praxis.Tests.csproj --collect:"XPlat Code Coverage"
 - [`QuickLookPreviewFormatterTests.cs`](../Praxis.Tests/QuickLookPreviewFormatterTests.cs): Quick Look 表示文字列の正規化・最大長を超えない省略・ラベル整形。
 
 ### Undo / Redo
-- [`ActionHistoryTests.cs`](../Praxis.Tests/ActionHistoryTests.cs): コマンドパターン履歴スタックの挙動（Undo/Redo 遷移、失敗時ロールバック、容量トリム）。
+- [`ActionHistoryTests.cs`](../Praxis.Tests/ActionHistoryTests.cs): コマンドパターン履歴スタックの挙動（constructor ガード、Undo/Redo 遷移、両スタックの失敗時ロールバック、`Clear()`、容量トリム）。
 - [`ButtonHistoryConsistencyPolicyTests.cs`](../Praxis.Tests/ButtonHistoryConsistencyPolicyTests.cs): Undo/Redo 適用時に使う楽観的ロック版一致判定（`UpdatedAtUtc`）。`UseInvertedThemeColors` 差分を内容差分として正しく不一致判定することも検証。
 
 ### 入力 / キーボード / フォーカス
