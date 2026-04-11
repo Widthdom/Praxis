@@ -61,11 +61,31 @@ public class LaunchTargetResolverTests
     }
 
     [Fact]
-    public void Resolve_ReturnsNone_ForRelativePathLikeText()
+    public void Resolve_DetectsRelativePathLikeText()
     {
         var result = LaunchTargetResolver.Resolve("docs/readme.txt");
-        Assert.Equal(LaunchTargetKind.None, result.Kind);
-        Assert.Equal(string.Empty, result.Target);
+        Assert.Equal(LaunchTargetKind.FileSystemPath, result.Kind);
+        Assert.Equal("docs/readme.txt", result.Target);
+    }
+
+    [Theory]
+    [InlineData("./docs/readme.txt")]
+    [InlineData("../docs/readme.txt")]
+    [InlineData(".\\docs\\readme.txt")]
+    [InlineData("..\\docs\\readme.txt")]
+    public void Resolve_DetectsDotRelativePathLikeText(string value)
+    {
+        var result = LaunchTargetResolver.Resolve(value);
+        Assert.Equal(LaunchTargetKind.FileSystemPath, result.Kind);
+        Assert.Equal(value, result.Target);
+    }
+
+    [Fact]
+    public void Resolve_DetectsBareTilde_AsPathLikeValue()
+    {
+        var result = LaunchTargetResolver.Resolve("~");
+        Assert.Equal(LaunchTargetKind.FileSystemPath, result.Kind);
+        Assert.Equal("~", result.Target);
     }
 
     [Fact]

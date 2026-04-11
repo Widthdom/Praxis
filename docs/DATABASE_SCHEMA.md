@@ -149,7 +149,7 @@ Purpose: application error logs (exception, warning, and info logging).
 | `TimestampUtc` | `datetime` | Yes | No | Timestamp when the entry was logged (UTC) |
 
 Application-level behavior:
-- Error entries written by `DbErrorLogger` via `IErrorLogger.Log(exception, context)`. Exception type chains, concatenated inner messages, and full stack traces (including inner exceptions) are captured.
+- Error entries written by `DbErrorLogger` via `IErrorLogger.Log(exception, context)`. Exception type chains, concatenated inner messages, and full stack traces (including nested inner exceptions inside `AggregateException`) are captured.
 - Warning entries written by `DbErrorLogger` via `IErrorLogger.LogWarning(message, context)`.
 - Info entries written by `DbErrorLogger` via `IErrorLogger.LogInfo(message, context)`.
 - All log calls first write synchronously to a file-based crash log (`CrashFileLogger` → `crash.log`) for crash-safe persistence, then enqueue for async DB write.
@@ -246,7 +246,7 @@ Praxis が使う SQLite テーブル設計を明文化します。
 - `UpdatedAtUtc` だけが異なり内容が一致する場合は非競合として扱います。
 - `LaunchLogEntity.Source` の現行値は `button` / `command` です。
 - `LaunchLogEntity` は保持期間超過分を `TimestampUtc` 条件で一括削除します。
-- `ErrorLogEntity` は `IErrorLogger.Log(exception, context)`（Error）、`IErrorLogger.LogWarning(message, context)`（Warning）、および `IErrorLogger.LogInfo(message, context)`（Info）経由で `DbErrorLogger` が書き込みます。全ログ呼び出しはまず `CrashFileLogger` でファイルに同期書き込みし、その後 DB への非同期書き込みをキューイングします。`FlushAsync(timeout)` はグレースフルシャットダウン経路として、保留キューだけでなくすでに dequeue 済みの in-flight DB 書き込みもタイムアウトまで待機します。保持期間クリーンアップは Error エントリ書き込み時にのみ発動し、Level を問わず閾値より古い全行を削除します（30 日保持）。DB 書き込み失敗はクラッシュファイルに記録済みのため握り潰します。
+- `ErrorLogEntity` は `IErrorLogger.Log(exception, context)`（Error）、`IErrorLogger.LogWarning(message, context)`（Warning）、および `IErrorLogger.LogInfo(message, context)`（Info）経由で `DbErrorLogger` が書き込みます。全ログ呼び出しはまず `CrashFileLogger` でファイルに同期書き込みし、その後 DB への非同期書き込みをキューイングします。`AggregateException` 配下にさらに InnerException がネストしている場合も、型チェーンとメッセージチェーンに含めます。`FlushAsync(timeout)` はグレースフルシャットダウン経路として、保留キューだけでなくすでに dequeue 済みの in-flight DB 書き込みもタイムアウトまで待機します。保持期間クリーンアップは Error エントリ書き込み時にのみ発動し、Level を問わず閾値より古い全行を削除します（30 日保持）。DB 書き込み失敗はクラッシュファイルに記録済みのため握り潰します。
 - `crash.log` はクラッシュ安全ロギング用の同期ファイルベースフォールバックです（SQLite 外）:
   - Windows: `%LOCALAPPDATA%\Praxis\crash.log`
   - macOS（Mac Catalyst）: `~/Library/Application Support/Praxis/crash.log`

@@ -31,6 +31,7 @@
     <Compile Include="..\Praxis\Services\IStateSyncNotifier.cs" Link="Integration\IStateSyncNotifier.cs" />
     <Compile Include="..\Praxis\Services\IErrorLogger.cs" Link="Integration\IErrorLogger.cs" />
     <Compile Include="..\Praxis\Services\CrashFileLogger.cs" Link="Integration\CrashFileLogger.cs" />
+    <Compile Include="..\Praxis\Services\CommandExecutor.cs" Link="Integration\CommandExecutor.cs" />
     <Compile Include="..\Praxis\Services\DbErrorLogger.cs" Link="Integration\DbErrorLogger.cs" />
     <Compile Include="..\Praxis\Services\IThemeService.cs" Link="Integration\IThemeService.cs" />
     <Compile Include="..\Praxis\ViewModels\ButtonEditorViewModel.cs" Link="Integration\ButtonEditorViewModel.cs" />

@@ -45,6 +45,11 @@ public static class LaunchTargetResolver
             return false;
         }
 
+        if (string.Equals(value, "~", StringComparison.Ordinal))
+        {
+            return true;
+        }
+
         if (Path.IsPathRooted(value))
         {
             return true;
@@ -56,6 +61,20 @@ public static class LaunchTargetResolver
         }
 
         if (value.StartsWith("~/", StringComparison.Ordinal) || value.StartsWith("~\\", StringComparison.Ordinal))
+        {
+            return true;
+        }
+
+        if (value.StartsWith("./", StringComparison.Ordinal) ||
+            value.StartsWith("../", StringComparison.Ordinal) ||
+            value.StartsWith(".\\", StringComparison.Ordinal) ||
+            value.StartsWith("..\\", StringComparison.Ordinal))
+        {
+            return true;
+        }
+
+        if (!value.Contains("://", StringComparison.Ordinal) &&
+            (value.Contains('/') || value.Contains('\\')))
         {
             return true;
         }

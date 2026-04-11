@@ -29,6 +29,7 @@ public sealed class CommandExecutor : ICommandExecutor
             UseShellExecute = true,
         };
 
+        ApplyWorkingDirectoryOverride(psi, tool);
         return Task.FromResult(StartProcess(psi, "Executed.", $"Process launch failed for tool '{tool}'."));
     }
 
@@ -160,6 +161,11 @@ public sealed class CommandExecutor : ICommandExecutor
 
     private static string ExpandHomePath(string value)
     {
+        if (string.Equals(value, "~", StringComparison.Ordinal))
+        {
+            return Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+        }
+
         if (!(value.StartsWith("~/", StringComparison.Ordinal) || value.StartsWith("~\\", StringComparison.Ordinal)))
         {
             return value;
@@ -172,5 +178,26 @@ public sealed class CommandExecutor : ICommandExecutor
         }
 
         return Path.Combine(home, value[2..]);
+    }
+
+    private static void ApplyWorkingDirectoryOverride(ProcessStartInfo startInfo, string tool)
+    {
+        ApplyWorkingDirectoryOverride(startInfo, tool, OperatingSystem.IsWindows());
+    }
+
+    private static void ApplyWorkingDirectoryOverride(ProcessStartInfo startInfo, string tool, bool isWindows)
+    {
+        if (!CommandWorkingDirectoryPolicy.RequiresUserProfileWorkingDirectory(tool, isWindows))
+        {
+            return;
+        }
+
+        var userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+        if (string.IsNullOrWhiteSpace(userProfile) || !Directory.Exists(userProfile))
+        {
+            return;
+        }
+
+        startInfo.WorkingDirectory = userProfile;
     }
 }

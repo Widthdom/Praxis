@@ -193,6 +193,42 @@ public class DbErrorLoggerTests
     }
 
     [Fact]
+    public async Task Log_AggregateException_CapturesNestedInnerTypeChain()
+    {
+        var repo = new FakeAppRepository();
+        var logger = new DbErrorLogger(repo);
+
+        var nested = new InvalidOperationException("outer child", new NullReferenceException("nested child"));
+        var agg = new AggregateException("agg", nested);
+        logger.Log(agg, "ctx");
+
+        await logger.FlushAsync(TimeSpan.FromSeconds(5));
+
+        var entry = Assert.Single(repo.ErrorLogs);
+        Assert.Contains("AggregateException", entry.ExceptionType);
+        Assert.Contains("InvalidOperationException", entry.ExceptionType);
+        Assert.Contains("NullReferenceException", entry.ExceptionType);
+    }
+
+    [Fact]
+    public async Task Log_AggregateException_CapturesNestedInnerMessages()
+    {
+        var repo = new FakeAppRepository();
+        var logger = new DbErrorLogger(repo);
+
+        var nested = new InvalidOperationException("outer child", new NullReferenceException("nested child"));
+        var agg = new AggregateException("agg", nested);
+        logger.Log(agg, "ctx");
+
+        await logger.FlushAsync(TimeSpan.FromSeconds(5));
+
+        var entry = Assert.Single(repo.ErrorLogs);
+        Assert.Contains("agg", entry.Message);
+        Assert.Contains("outer child", entry.Message);
+        Assert.Contains("nested child", entry.Message);
+    }
+
+    [Fact]
     public async Task FlushAsync_PurgesOldErrorLogs_OnlyForErrorEntries()
     {
         var repo = new FakeAppRepository();

@@ -15,6 +15,9 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - `CrashFileLoggerTests` no longer use blocking `Task.WaitAll`, removing the xUnit analyzer warning from Release test runs
 - Shared and platform-specific unhandled-exception hooks now keep more diagnostics: non-`Exception` thrown objects are logged as warnings instead of degrading to empty payloads, and Windows/Mac `UnobservedTaskException` handlers now call `SetObserved()`
 - `FileStateSyncNotifier` now subscribes before enabling the watcher, recreates the sync directory before writes, ignores malformed/out-of-range payload timestamps safely, and crash-logs event-subscriber failures instead of letting the background task fault silently
+- `LaunchTargetResolver` now treats separator-based relative paths and bare `~` as filesystem fallback targets when `Tool` is empty, and `CommandExecutor` now expands bare `~` to the user-profile path before existence checks
+- Windows shell launches (`cmd.exe`, `powershell`, `pwsh`, `wt`) now start from the user-profile directory instead of inheriting the Praxis process working directory
+- `DbErrorLogger` now preserves nested inner exception type/message chains inside `AggregateException` entries instead of truncating at the direct children
 
 ### [1.1.3] - 2026-04-05
 

@@ -174,24 +174,7 @@ public sealed class DbErrorLogger : IErrorLogger
     private static string BuildExceptionTypeChain(Exception ex)
     {
         var parts = new List<string>();
-
-        if (ex is AggregateException agg)
-        {
-            parts.Add(nameof(AggregateException));
-            foreach (var inner in agg.InnerExceptions)
-            {
-                parts.Add(inner.GetType().FullName ?? inner.GetType().Name);
-            }
-        }
-        else
-        {
-            var current = ex;
-            while (current is not null)
-            {
-                parts.Add(current.GetType().FullName ?? current.GetType().Name);
-                current = current.InnerException;
-            }
-        }
+        AppendExceptionTypes(parts, ex);
 
         return string.Join(" -> ", parts);
     }
@@ -201,24 +184,8 @@ public sealed class DbErrorLogger : IErrorLogger
     /// </summary>
     private static string BuildFullMessage(Exception ex)
     {
-        if (ex is AggregateException agg)
-        {
-            var messages = new List<string> { ex.Message };
-            for (var i = 0; i < agg.InnerExceptions.Count; i++)
-            {
-                messages.Add($"[{i}] {agg.InnerExceptions[i].Message}");
-            }
-
-            return string.Join(" | ", messages);
-        }
-
         var parts = new List<string>();
-        var current = ex;
-        while (current is not null)
-        {
-            parts.Add(current.Message);
-            current = current.InnerException;
-        }
+        AppendExceptionMessages(parts, ex, prefix: string.Empty);
 
         return string.Join(" -> ", parts);
     }
@@ -230,5 +197,45 @@ public sealed class DbErrorLogger : IErrorLogger
     {
         // ex.ToString() already includes the full chain with stack traces.
         return ex.ToString();
+    }
+
+    private static void AppendExceptionTypes(List<string> parts, Exception ex)
+    {
+        parts.Add(ex.GetType().FullName ?? ex.GetType().Name);
+
+        if (ex is AggregateException agg)
+        {
+            foreach (var inner in agg.InnerExceptions)
+            {
+                AppendExceptionTypes(parts, inner);
+            }
+
+            return;
+        }
+
+        if (ex.InnerException is not null)
+        {
+            AppendExceptionTypes(parts, ex.InnerException);
+        }
+    }
+
+    private static void AppendExceptionMessages(List<string> parts, Exception ex, string prefix)
+    {
+        parts.Add(string.IsNullOrEmpty(prefix) ? ex.Message : $"{prefix}{ex.Message}");
+
+        if (ex is AggregateException agg)
+        {
+            for (var i = 0; i < agg.InnerExceptions.Count; i++)
+            {
+                AppendExceptionMessages(parts, agg.InnerExceptions[i], $"[{i}] ");
+            }
+
+            return;
+        }
+
+        if (ex.InnerException is not null)
+        {
+            AppendExceptionMessages(parts, ex.InnerException, prefix: string.Empty);
+        }
     }
 }
