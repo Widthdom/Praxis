@@ -9,6 +9,46 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 ### Added
 - add .codex & CLAUDE.md
 
+### Fixed
+- `MainViewModel.CommandSuggestions` now warning-logs failures to dispatch popup close/refresh work onto the main thread instead of letting those scheduling errors vanish silently
+- `MauiThemeService.Apply()` now skips no-op theme reapplication when the target theme is already active, and Mac window-style dispatch failures are crash-logged
+- Mac Catalyst open-relay startup now treats `Process.Start(...) == null` as failure and crash-logs LaunchServices relay failures instead of silently falling back
+- `FileStateSyncNotifier.Dispose()` now disables `EnableRaisingEvents` before unsubscribing/disposing the watcher to reduce late callback races during teardown
+- Base `App` global unhandled-exception/process-exit hooks are now registered only once, preventing duplicate crash/log flush handlers from stacking if app initialization is re-entered
+- `MainViewModel.SyncThemeFromExternalChangeAsync()` now warning-logs failures thrown from the dispatched main-thread apply path, and external reload uses `RunContinuationsAsynchronously` for its bridge `TaskCompletionSource`
+- `FileStateSyncNotifier.NotifyButtonsChangedAsync()` now no-ops after disposal instead of trying to write stale sync files during teardown
+- `AppStoragePaths.TryMigrateLegacyDatabase()` now warning-logs copy failures and continues scanning other legacy candidates instead of aborting migration on the first unreadable source
+- `FileAppConfigService` now falls back to later config candidates when an earlier config file is inaccessible with `UnauthorizedAccessException`
+- `MainPage.OnDisappearing()` now detaches window-activation hooks, and the detach path also releases Mac activation observers so disappearing pages do not keep stale activation callbacks alive
+- `CommandExecutor` now expands home-prefixed tool paths (`~`, `~/...`, `~\\...`) before deciding whether a tool is executable, so direct tool launches can use the same home shorthand as empty-tool path launches
+- Windows `startup.log` now uses the normalized shared app-storage root instead of the raw local-app-data special-folder string, avoiding malformed startup-log paths when the environment value is quoted or missing
+- Windows and Mac platform startup classes now guard global exception-hook registration so repeated initialization cannot stack duplicate unhandled-exception handlers
+- `App.CreateWindow()` no longer caches the fallback error page when `ResolveRootPage()` fails, so later window creation can recover instead of being pinned to the first startup failure page
+- `App` now crash-logs log-flush failures during both `AppDomain.UnhandledException` termination handling and `ProcessExit`, instead of suppressing them silently
+- `FileStateSyncNotifier` now warning-logs sync-file read retry exhaustion instead of silently dropping unreadable external-sync payloads
+- `CommandExecutor` now treats normalized empty/quoted-empty tool values as “no tool” and falls back to URL/path launching instead of trying to execute an empty filename
+- `MainPage` now crash-logs XAML load failures, resets its initialization gate when first-load startup fails, and separately crash-logs initialization-alert failures so a broken alert path does not erase the original startup exception
+- `MauiClipboardService` now honors cancellation tokens for both clipboard reads and writes instead of ignoring canceled operations
+- `SqliteAppRepository` now publishes its shared SQLite connection only after schema upgrade and initial cache load succeed, allowing clean retry after initialization failures
+- `DbErrorLogger.FlushAsync(timeout)` now waits for both queued entries and already-dequeued in-flight DB writes up to the timeout instead of returning early once the queue becomes temporarily empty
+- Error-log retention purge remains Error-only; added regression coverage so Info/Warning writes do not trigger `PurgeOldErrorLogsAsync`
+- `CrashFileLoggerTests` no longer use blocking `Task.WaitAll`, removing the xUnit analyzer warning from Release test runs
+- Shared and platform-specific unhandled-exception hooks now keep more diagnostics: non-`Exception` thrown objects are logged as warnings instead of degrading to empty payloads, and Windows/Mac `UnobservedTaskException` handlers now call `SetObserved()`
+- `FileStateSyncNotifier` now subscribes before enabling the watcher, recreates the sync directory before writes, ignores malformed/out-of-range payload timestamps safely, and crash-logs event-subscriber failures instead of letting the background task fault silently
+- `LaunchTargetResolver` now treats separator-based relative paths and bare `~` as filesystem fallback targets when `Tool` is empty, and `CommandExecutor` now expands bare `~` to the user-profile path before existence checks
+- Windows shell launches (`cmd.exe`, `powershell`, `pwsh`, `wt`) now start from the user-profile directory instead of inheriting the Praxis process working directory
+- Theme parsing now rejects numeric enum strings in config/repository/ViewModel inputs, `.` / `..` now resolve as filesystem targets, and quoted tool paths are normalized before process launch
+- `SqliteAppRepository` now normalizes cached button order to placement order after load/reload/upsert paths, and dock-order persistence now discards duplicate or empty GUIDs while preserving first occurrence order
+- Config/storage path handling is stricter: malformed base `praxis.config.json` now falls back to later valid candidates, quoted `%LOCALAPPDATA%` values are normalized, and blank/relative storage roots no longer degrade into working-directory-relative DB/crash-log paths
+- `DbErrorLogger` now preserves nested inner exception type/message chains inside `AggregateException` entries instead of truncating at the direct children
+- `SqliteAppRepository.SetThemeAsync` now normalizes out-of-range `ThemeMode` values to `System`, and external empty `dock_order` sync now clears stale Dock UI state instead of leaving old buttons visible
+- `MainViewModel` now warning-logs external reload/theme sync failures, command-suggestion refresh failures, and conflict-dialog callback failures instead of swallowing them silently
+- Windows clear-button native refocus failures now write directly to `crash.log`, improving diagnostics for freeze/abort paths where async DB logging may never complete
+- Startup, external sync, execution-request, clipboard-copy, clear-button, and sync-signal boundaries now emit additional low-cost Info breadcrumbs so GUI hangs/aborts leave a clearer last-known-good stage
+- Clipboard and sync-notifier failures are now isolated from successful local actions: create-with-clipboard falls back to empty args, copy failures become warning/status feedback, execution still logs after clipboard-copy failure, and save/delete/theme/dock/history operations no longer unwind after post-success sync notification errors
+- Launch-log write/purge, dock persistence, undo/redo dock restore, and theme persistence failures are now treated as non-fatal after local success, with warning logs instead of surfacing as user-action exceptions
+- Initialization and external reload now tolerate non-critical theme/dock read failures with warning logs and safe fallbacks, and command lookup fallback errors now degrade to `Command not found` instead of bubbling exceptions
+
 ### [1.1.3] - 2026-04-05
 
 ### Added
@@ -123,6 +163,33 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 
 ### 追加
 - .codex および CLAUDE.md を追加
+
+### 修正
+- `MainViewModel.CommandSuggestions` は候補ポップアップ close / refresh の main-thread dispatch 失敗も warning ログに残すようにし、スケジューリング失敗を無言で消さないよう修正
+- `MauiThemeService.Apply()` は適用済み theme への no-op 再適用を避けるようにし、Mac の window-style dispatch 失敗は `crash.log` に残すよう修正
+- Mac Catalyst の open relay 起動は `Process.Start(...) == null` も失敗扱いにし、LaunchServices relay 失敗を無言で握り潰さず `crash.log` へ記録するよう修正
+- `FileStateSyncNotifier.Dispose()` は watcher の unsubscribe / dispose 前に `EnableRaisingEvents` を false にし、teardown 中の遅延 callback race を減らすよう修正
+- ベース `App` のグローバル unhandled-exception / process-exit hook は一度だけ登録するようにし、アプリ初期化が再入した場合でも crash / flush handler が多重化しないよう修正
+- `MainViewModel.SyncThemeFromExternalChangeAsync()` は dispatch 先メインスレッド適用で発生した失敗も warning ログ化するようにし、外部 reload の `TaskCompletionSource` には `RunContinuationsAsynchronously` を付けて継続の再入を抑制
+- `FileStateSyncNotifier.NotifyButtonsChangedAsync()` は dispose 後は no-op にし、teardown 中に stale な sync file 書き込みを試みないよう修正
+- `AppStoragePaths.TryMigrateLegacyDatabase()` はコピー失敗を warning 記録しつつ次の legacy 候補探索を継続するようにし、最初の読めない DB で移行全体が止まらないよう修正
+- `FileAppConfigService` は先頭設定ファイルが `UnauthorizedAccessException` で読めない場合でも後続候補へフォールバックするよう修正
+- `MainPage.OnDisappearing()` は window activation hook を解除し、解除経路では Mac の activation observer も解放するようにして、非表示ページへ stale な activation callback が残らないよう修正
+- `CommandExecutor` は `~` / `~/...` / `~\\...` のような home 省略つき `tool` も実行可否判定前に展開するようにし、empty-tool path launch と同じ shorthand を direct tool launch でも使えるよう修正
+- Windows の `startup.log` は raw な local-app-data special folder 文字列ではなく正規化済み共有 app-storage root を使うようにし、quote 付きや欠落した環境値でパスが壊れにくいよう修正
+- Windows / Mac の platform startup class はグローバル例外 hook の多重登録を防ぐガードを追加し、初期化の再実行で unhandled-exception handler が重複しないよう修正
+- `App.CreateWindow()` は `ResolveRootPage()` 失敗時のエラー表示ページを恒久キャッシュしないようにし、後続ウィンドウ生成で初回失敗ページに固定されず回復できるよう修正
+- `App` は `AppDomain.UnhandledException` の終端処理と `ProcessExit` の両方でログ flush 失敗を黙殺せず `crash.log` に残すよう修正
+- `FileStateSyncNotifier` は sync ファイルの再読込リトライが尽きた場合に warning を残し、読めない外部同期 payload を無言で捨てないよう修正
+- `CommandExecutor` は正規化後に空になる tool 値（空引用符や引用符内空白）を「tool 未指定」として扱い、空ファイル名を実行しようとせず URL / path フォールバックへ回すよう修正
+- `MainPage` は XAML 読込失敗を `crash.log` に記録し、初回初期化失敗時は初期化済みフラグを戻して再試行可能にし、初期化エラー表示自体が失敗した場合も元の例外を消さず別途 `crash.log` へ残すよう修正
+- `MauiClipboardService` は clipboard 読み書きの両方で `CancellationToken` を尊重し、キャンセル済み操作を無視して走らせないよう修正
+- `SqliteAppRepository` はスキーマ更新と初回キャッシュ読込が成功するまで共有 SQLite 接続を公開しないようにし、初期化途中失敗後に安全に再試行できるよう修正
+- `SqliteAppRepository.SetThemeAsync` は範囲外の `ThemeMode` 値を `System` へ正規化して保存し、外部同期で `dock_order` が空になった場合は古い Dock 表示を残さず明示的にクリアするよう修正
+- `MainViewModel` は外部 reload/theme 同期失敗、command 候補再計算失敗、競合ダイアログ callback 失敗を無言で握り潰さず warning ログへ残すよう修正
+- Windows のクリアボタン後 native refocus 失敗は `crash.log` へ直接同期記録するようにし、freeze/abort 系の診断痕跡を残しやすくした
+- 起動、外部同期、実行リクエスト、クリップボード反映、クリアボタン、sync signal の境界に低コストな Info breadcrumb を追加し、GUI ハング/abort 時に最後に成功していた段階を追いやすくした
+- clipboard と sync notifier の失敗を主処理から分離し、clipboard 引数読込は空文字へフォールバック、コピー失敗は warning/status 化、clipboard 反映失敗後も実行ログを保持し、save/delete/theme/dock/history は同期通知失敗で巻き戻らないようにした
 
 ### [1.1.3] - 2026-04-05
 

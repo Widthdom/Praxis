@@ -1,4 +1,5 @@
 using System.Globalization;
+using Praxis.Core.Logic;
 
 namespace Praxis.Services;
 
@@ -24,23 +25,30 @@ public sealed class FileStateSyncNotifier : IStateSyncNotifier
         {
             NotifyFilter = NotifyFilters.FileName | NotifyFilters.LastWrite | NotifyFilters.CreationTime | NotifyFilters.Size,
             IncludeSubdirectories = false,
-            EnableRaisingEvents = true,
         };
 
         watcher.Changed += OnSignalChanged;
         watcher.Created += OnSignalChanged;
         watcher.Renamed += OnSignalChanged;
+        watcher.EnableRaisingEvents = true;
     }
 
     public async Task NotifyButtonsChangedAsync(CancellationToken cancellationToken = default)
     {
+        if (disposed)
+        {
+            return;
+        }
+
         var payload = $"{instanceId}|{DateTime.UtcNow.Ticks.ToString(CultureInfo.InvariantCulture)}";
         lock (gate)
         {
             lastObservedPayload = payload;
         }
 
+        Directory.CreateDirectory(directoryPath);
         await File.WriteAllTextAsync(signalPath, payload, cancellationToken);
+        CrashFileLogger.WriteInfo(nameof(FileStateSyncNotifier), $"Signal written. Source={instanceId} Path={signalPath}");
     }
 
     private void OnSignalChanged(object sender, FileSystemEventArgs e)
@@ -56,6 +64,7 @@ public sealed class FileStateSyncNotifier : IStateSyncNotifier
         }
 
         string payload = string.Empty;
+        Exception? readFailure = null;
         for (var i = 0; i < 3; i++)
         {
             try
@@ -64,14 +73,18 @@ public sealed class FileStateSyncNotifier : IStateSyncNotifier
                 {
                     payload = await File.ReadAllTextAsync(signalPath);
                 }
+
+                readFailure = null;
                 break;
             }
-            catch (IOException)
+            catch (IOException ex)
             {
+                readFailure = ex;
                 await Task.Delay(20);
             }
-            catch (UnauthorizedAccessException)
+            catch (UnauthorizedAccessException ex)
             {
+                readFailure = ex;
                 await Task.Delay(20);
             }
         }
@@ -79,6 +92,11 @@ public sealed class FileStateSyncNotifier : IStateSyncNotifier
         payload = payload.Trim();
         if (string.IsNullOrWhiteSpace(payload))
         {
+            if (readFailure is not null)
+            {
+                CrashFileLogger.WriteWarning(nameof(FileStateSyncNotifier), $"Failed to read sync payload after retries: {readFailure.Message}");
+            }
+
             return;
         }
 
@@ -92,29 +110,31 @@ public sealed class FileStateSyncNotifier : IStateSyncNotifier
             lastObservedPayload = payload;
         }
 
-        var parts = payload.Split('|', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
-        if (parts.Length != 2)
+        if (!StateSyncPayloadParser.TryParse(payload, out var source, out var timestamp))
         {
+            CrashFileLogger.WriteWarning(nameof(FileStateSyncNotifier), $"Ignored malformed sync payload: \"{payload}\"");
             return;
         }
 
-        var source = parts[0];
         if (string.Equals(source, instanceId, StringComparison.Ordinal))
         {
             return;
         }
 
-        if (!long.TryParse(parts[1], NumberStyles.Integer, CultureInfo.InvariantCulture, out var ticks))
-        {
-            return;
-        }
+        CrashFileLogger.WriteInfo(nameof(FileStateSyncNotifier), $"Signal observed. Source={source} TimestampUtc={timestamp:O}");
 
-        var timestamp = new DateTime(ticks, DateTimeKind.Utc);
-        ButtonsChanged?.Invoke(this, new StateSyncChangedEventArgs
+        try
         {
-            SourceInstanceId = source,
-            TimestampUtc = timestamp,
-        });
+            ButtonsChanged?.Invoke(this, new StateSyncChangedEventArgs
+            {
+                SourceInstanceId = source,
+                TimestampUtc = timestamp,
+            });
+        }
+        catch (Exception ex)
+        {
+            CrashFileLogger.WriteException(nameof(FileStateSyncNotifier), ex);
+        }
     }
 
     public void Dispose()
@@ -125,6 +145,7 @@ public sealed class FileStateSyncNotifier : IStateSyncNotifier
         }
 
         disposed = true;
+        watcher.EnableRaisingEvents = false;
         watcher.Changed -= OnSignalChanged;
         watcher.Created -= OnSignalChanged;
         watcher.Renamed -= OnSignalChanged;

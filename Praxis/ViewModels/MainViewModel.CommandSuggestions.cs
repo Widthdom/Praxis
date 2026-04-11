@@ -198,9 +198,17 @@ public partial class MainViewModel
         catch (OperationCanceledException)
         {
         }
-        catch
+        catch (Exception ex)
         {
-            MainThread.BeginInvokeOnMainThread(CloseCommandSuggestions);
+            errorLogger.LogWarning($"Debounced command suggestion refresh failed: {ex.Message}", nameof(DebouncedRefreshCommandSuggestionsAsync));
+            try
+            {
+                MainThread.BeginInvokeOnMainThread(CloseCommandSuggestions);
+            }
+            catch (Exception dispatchEx)
+            {
+                errorLogger.LogWarning($"Command suggestion close dispatch failed: {dispatchEx.Message}", nameof(DebouncedRefreshCommandSuggestionsAsync));
+            }
         }
     }
 
@@ -212,7 +220,14 @@ public partial class MainViewModel
             return;
         }
 
-        MainThread.BeginInvokeOnMainThread(() => RefreshCommandSuggestions(value));
+        try
+        {
+            MainThread.BeginInvokeOnMainThread(() => RefreshCommandSuggestions(value));
+        }
+        catch (Exception ex)
+        {
+            errorLogger.LogWarning($"Command suggestion refresh dispatch failed: {ex.Message}", nameof(RefreshCommandSuggestionsOnMainThread));
+        }
     }
 
     private void RefreshCommandSuggestions(string value)
@@ -254,8 +269,9 @@ public partial class MainViewModel
             CommandSuggestionPopupHeight = Math.Min(280, Math.Max(44, 12 + CommandSuggestions.Count * 38));
             IsCommandSuggestionOpen = true;
         }
-        catch
+        catch (Exception ex)
         {
+            errorLogger.LogWarning($"Command suggestion refresh failed: {ex.Message}", nameof(RefreshCommandSuggestions));
             CloseCommandSuggestions();
         }
     }
@@ -293,7 +309,16 @@ public partial class MainViewModel
         var targets = CommandRecordMatcher.FindMatches(allButtons.Select(x => x.ToRecord()), cmd).ToList();
         if (targets.Count == 0)
         {
-            var singleTarget = await repository.GetByCommandAsync(cmd);
+            LauncherButtonRecord? singleTarget = null;
+            try
+            {
+                singleTarget = await repository.GetByCommandAsync(cmd);
+            }
+            catch (Exception ex)
+            {
+                errorLogger.LogWarning($"Command lookup fallback failed: {ex.Message}", nameof(ExecuteCommandMatchesAsync));
+            }
+
             if (singleTarget is not null)
             {
                 targets.Add(singleTarget);
@@ -306,6 +331,8 @@ public partial class MainViewModel
             SetStatus($"Command not found: {cmd}");
             return;
         }
+
+        errorLogger.LogInfo($"Command execution resolved {targets.Count} target(s) for \"{cmd}\"", nameof(ExecuteCommandMatchesAsync));
 
         if (targets.Count == 1)
         {

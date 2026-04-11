@@ -1,6 +1,7 @@
 ﻿using System.Diagnostics;
 using Foundation;
 using ObjCRuntime;
+using Praxis.Services;
 using UIKit;
 
 namespace Praxis;
@@ -59,11 +60,18 @@ public class Program
 			startInfo.ArgumentList.Add(bundlePath);
 			startInfo.ArgumentList.Add("--args");
 			startInfo.ArgumentList.Add(OpenRelayArg);
-			Process.Start(startInfo);
+			var process = Process.Start(startInfo);
+			if (process is null)
+			{
+				CrashFileLogger.WriteWarning(nameof(Program), $"LaunchServices relay returned no process for bundle '{bundlePath}'.");
+				return false;
+			}
+
 			return true;
 		}
-		catch
+		catch (Exception ex)
 		{
+			CrashFileLogger.WriteWarning(nameof(Program), $"LaunchServices relay failed for bundle '{bundlePath}': {ex.Message}");
 			return false;
 		}
 	}

@@ -36,6 +36,11 @@ public sealed class MauiThemeService : IThemeService
             _ => AppTheme.Unspecified,
         };
 
+        if (Application.Current.UserAppTheme == appTheme)
+        {
+            return;
+        }
+
         Application.Current.UserAppTheme = appTheme;
 #if MACCATALYST
         ApplyMacWindowStyle(appTheme);
@@ -74,7 +79,14 @@ public sealed class MauiThemeService : IThemeService
             return;
         }
 
-        MainThread.BeginInvokeOnMainThread(apply);
+        try
+        {
+            MainThread.BeginInvokeOnMainThread(apply);
+        }
+        catch (Exception ex)
+        {
+            CrashFileLogger.WriteWarning(nameof(MauiThemeService), $"ApplyMacWindowStyle dispatch failed: {ex.Message}");
+        }
     }
 #endif
 }

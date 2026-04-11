@@ -8,6 +8,7 @@ public partial class App : Application
 {
     private readonly IServiceProvider services;
     private static IErrorLogger? errorLogger;
+    private static int globalExceptionHandlersRegistered;
     private Page? rootPage;
     private static volatile bool isEditorOpen;
     private static volatile bool isContextMenuOpen;
@@ -46,10 +47,14 @@ public partial class App : Application
     {
         this.services = services;
         errorLogger = services.GetRequiredService<IErrorLogger>();
+        errorLogger?.LogInfo("App constructor started.", nameof(App));
 
-        AppDomain.CurrentDomain.UnhandledException += OnUnhandledException;
-        AppDomain.CurrentDomain.ProcessExit += OnProcessExit;
-        TaskScheduler.UnobservedTaskException += OnUnobservedTaskException;
+        if (Interlocked.Exchange(ref globalExceptionHandlersRegistered, 1) == 0)
+        {
+            AppDomain.CurrentDomain.UnhandledException += OnUnhandledException;
+            AppDomain.CurrentDomain.ProcessExit += OnProcessExit;
+            TaskScheduler.UnobservedTaskException += OnUnobservedTaskException;
+        }
 
         try
         {
@@ -76,16 +81,16 @@ public partial class App : Application
         }
         else
         {
+            var message = $"Non-Exception object thrown (IsTerminating={isTerminating}): {e.ExceptionObject}";
             CrashFileLogger.WriteWarning(
                 "AppDomain.UnhandledException",
-                $"Non-Exception object thrown (IsTerminating={isTerminating}): {e.ExceptionObject}");
+                message);
+            errorLogger?.LogWarning(message, "AppDomain.UnhandledException");
         }
 
         if (isTerminating)
         {
-            // Best-effort flush before process dies.
-            try { errorLogger?.FlushAsync(TimeSpan.FromSeconds(2)).GetAwaiter().GetResult(); }
-            catch { /* must not throw */ }
+            TryFlushLogs(TimeSpan.FromSeconds(2), "AppDomain.UnhandledException");
         }
     }
 
@@ -99,15 +104,27 @@ public partial class App : Application
     private static void OnProcessExit(object? sender, EventArgs e)
     {
         CrashFileLogger.WriteInfo("App", "Process exiting — flushing logs.");
-        try { errorLogger?.FlushAsync(TimeSpan.FromSeconds(3)).GetAwaiter().GetResult(); }
-        catch { /* must not throw */ }
+        TryFlushLogs(TimeSpan.FromSeconds(3), "App.ProcessExit");
     }
 
     protected override Window CreateWindow(IActivationState? activationState)
     {
-        rootPage ??= ResolveRootPage();
+        errorLogger?.LogInfo($"CreateWindow called. ExistingRootPage={rootPage is not null}", nameof(CreateWindow));
+        var page = rootPage;
+        if (page is null)
+        {
+            page = ResolveRootPage();
+            if (page is MainPage)
+            {
+                rootPage = page;
+            }
+            else
+            {
+                errorLogger?.LogWarning("Root page resolution fell back to an error page; cache not updated.", nameof(CreateWindow));
+            }
+        }
 
-        var window = new Window(rootPage)
+        var window = new Window(page)
         {
             Width = 1000,
             Height = 700,
@@ -135,14 +152,29 @@ public partial class App : Application
             }
         };
 #endif
+        errorLogger?.LogInfo($"Window created. RootPage={page.GetType().Name}", nameof(CreateWindow));
         return window;
+    }
+
+    private static void TryFlushLogs(TimeSpan timeout, string context)
+    {
+        try
+        {
+            errorLogger?.FlushAsync(timeout).GetAwaiter().GetResult();
+        }
+        catch (Exception ex)
+        {
+            CrashFileLogger.WriteWarning(context, $"Log flush failed: {ex.Message}");
+        }
     }
 
     private Page ResolveRootPage()
     {
         try
         {
-            return services.GetRequiredService<MainPage>();
+            var page = services.GetRequiredService<MainPage>();
+            errorLogger?.LogInfo($"Resolved root page: {page.GetType().Name}", nameof(ResolveRootPage));
+            return page;
         }
         catch (Exception ex)
         {

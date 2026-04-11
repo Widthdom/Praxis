@@ -56,7 +56,7 @@ public sealed class SqliteAppRepository : IAppRepository
         {
             await InitializeCoreAsync();
             var entities = await Connection.Table<LauncherButtonEntity>().ToListAsync();
-            cache = entities.Select(Map).ToList();
+            cache = LauncherButtonOrderPolicy.ToSortedList(entities.Select(Map));
             RebuildCommandCache();
             return cache.Select(Clone).ToList();
         }
@@ -94,6 +94,7 @@ public sealed class SqliteAppRepository : IAppRepository
                     cache.Add(Clone(mapped));
                 }
 
+                SortCacheByPlacement();
                 RebuildCommandCache();
                 return Clone(mapped);
             }
@@ -150,6 +151,7 @@ public sealed class SqliteAppRepository : IAppRepository
                 cache.Add(Clone(Map(entity)));
             }
 
+            SortCacheByPlacement();
             RebuildCommandCache();
         }
         finally
@@ -275,10 +277,11 @@ public sealed class SqliteAppRepository : IAppRepository
         try
         {
             await InitializeCoreAsync();
+            var normalized = ThemeModeParser.NormalizeOrDefault(themeMode, ThemeMode.System);
             await Connection.InsertOrReplaceAsync(new AppSettingEntity
             {
                 Key = ThemeKey,
-                Value = themeMode.ToString(),
+                Value = normalized.ToString(),
             });
         }
         finally
@@ -294,12 +297,12 @@ public sealed class SqliteAppRepository : IAppRepository
         {
             await InitializeCoreAsync();
             var setting = await Connection.FindAsync<AppSettingEntity>(ThemeKey);
-            if (setting is null || !Enum.TryParse<ThemeMode>(setting.Value, true, out var mode))
+            if (setting is null)
             {
                 return ThemeMode.System;
             }
 
-            return mode;
+            return ThemeModeParser.ParseOrDefault(setting.Value, ThemeMode.System);
         }
         finally
         {
@@ -319,17 +322,7 @@ public sealed class SqliteAppRepository : IAppRepository
                 return [];
             }
 
-            var ids = new List<Guid>();
-            var parts = setting.Value.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-            foreach (var part in parts)
-            {
-                if (Guid.TryParse(part, out var id))
-                {
-                    ids.Add(id);
-                }
-            }
-
-            return ids;
+            return DockOrderValueCodec.Parse(setting.Value);
         }
         finally
         {
@@ -343,7 +336,7 @@ public sealed class SqliteAppRepository : IAppRepository
         try
         {
             await InitializeCoreAsync();
-            var value = string.Join(",", ids.Select(x => x.ToString()));
+            var value = DockOrderValueCodec.Serialize(ids);
             await Connection.InsertOrReplaceAsync(new AppSettingEntity
             {
                 Key = DockOrderKey,
@@ -363,12 +356,13 @@ public sealed class SqliteAppRepository : IAppRepository
             return;
         }
 
-        connection = new SQLiteAsyncConnection(dbPath);
-        await EnsureSchemaAsync(connection);
+        var initializedConnection = new SQLiteAsyncConnection(dbPath);
+        await EnsureSchemaAsync(initializedConnection);
 
-        var entities = await connection.Table<LauncherButtonEntity>().ToListAsync();
-        cache = entities.Select(Map).ToList();
+        var entities = await initializedConnection.Table<LauncherButtonEntity>().ToListAsync();
+        cache = LauncherButtonOrderPolicy.ToSortedList(entities.Select(Map));
         RebuildCommandCache();
+        connection = initializedConnection;
     }
 
     private static async Task EnsureSchemaAsync(SQLiteAsyncConnection connection)
@@ -447,6 +441,11 @@ public sealed class SqliteAppRepository : IAppRepository
 
     private static LauncherButtonRecord Clone(LauncherButtonRecord x)
         => x.Clone();
+
+    private void SortCacheByPlacement()
+    {
+        cache = LauncherButtonOrderPolicy.ToSortedList(cache);
+    }
 
     private void RebuildCommandCache()
     {

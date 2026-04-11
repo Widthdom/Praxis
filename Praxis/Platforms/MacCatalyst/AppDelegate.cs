@@ -15,6 +15,7 @@ public class AppDelegate : MauiUIApplicationDelegate
     private static readonly UIKeyCommand ThemeSystemCommand = CreateThemeKeyCommand("h", "handleThemeSystem:");
     private static readonly UIKeyCommand UndoHistoryCommand = CreateHistoryKeyCommand("z", UIKeyModifierFlags.Command, "handleHistoryUndo:");
     private static readonly UIKeyCommand RedoHistoryCommand = CreateHistoryKeyCommand("z", UIKeyModifierFlags.Command | UIKeyModifierFlags.Shift, "handleHistoryRedo:");
+    private static bool globalExceptionLoggingHooked;
     private NSObject? didBecomeActiveObserver;
     private NSObject? willEnterForegroundObserver;
     private NSObject? windowDidBecomeKeyObserver;
@@ -27,16 +28,32 @@ public class AppDelegate : MauiUIApplicationDelegate
 
     private static void HookGlobalExceptionLogging()
     {
+        if (globalExceptionLoggingHooked)
+        {
+            return;
+        }
+
+        globalExceptionLoggingHooked = true;
         AppDomain.CurrentDomain.UnhandledException += (_, e) =>
         {
-            CrashFileLogger.WriteException(
-                $"Mac.AppDomain.UnhandledException (IsTerminating={e.IsTerminating})",
-                e.ExceptionObject as Exception);
+            if (e.ExceptionObject is Exception exception)
+            {
+                CrashFileLogger.WriteException(
+                    $"Mac.AppDomain.UnhandledException (IsTerminating={e.IsTerminating})",
+                    exception);
+            }
+            else
+            {
+                CrashFileLogger.WriteWarning(
+                    "Mac.AppDomain.UnhandledException",
+                    $"Non-Exception object thrown (IsTerminating={e.IsTerminating}): {e.ExceptionObject}");
+            }
         };
 
         TaskScheduler.UnobservedTaskException += (_, e) =>
         {
             CrashFileLogger.WriteException("Mac.TaskScheduler.UnobservedTaskException", e.Exception);
+            e.SetObserved();
         };
 
         try

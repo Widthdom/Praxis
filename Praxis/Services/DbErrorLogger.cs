@@ -6,10 +6,12 @@ namespace Praxis.Services;
 public sealed class DbErrorLogger : IErrorLogger
 {
     private const int RetentionDays = 30;
+    private const int FlushPollIntervalMs = 10;
 
     private readonly IAppRepository repository;
     private readonly ConcurrentQueue<ErrorLogEntry> pendingWrites = new();
     private volatile int drainRunning;
+    private int activeWrites;
 
     public DbErrorLogger(IAppRepository repository)
     {
@@ -78,15 +80,21 @@ public sealed class DbErrorLogger : IErrorLogger
         using var cts = new CancellationTokenSource(timeout);
         try
         {
-            while (!pendingWrites.IsEmpty && !cts.Token.IsCancellationRequested)
+            while ((!pendingWrites.IsEmpty || Volatile.Read(ref activeWrites) > 0) &&
+                   !cts.Token.IsCancellationRequested)
             {
-                if (!pendingWrites.TryDequeue(out var entry))
+                if (pendingWrites.TryDequeue(out var entry))
                 {
-                    break;
+                    await WriteToDatabaseAsync(entry, cts.Token);
+                    continue;
                 }
 
-                await WriteToDatabaseAsync(entry);
+                await Task.Delay(FlushPollIntervalMs, cts.Token);
             }
+        }
+        catch (OperationCanceledException) when (cts.Token.IsCancellationRequested)
+        {
+            // Best-effort flush timed out.
         }
         catch
         {
@@ -106,7 +114,7 @@ public sealed class DbErrorLogger : IErrorLogger
         {
             while (pendingWrites.TryDequeue(out var entry))
             {
-                await WriteToDatabaseAsync(entry);
+                await WriteToDatabaseAsync(entry, CancellationToken.None);
             }
         }
         catch
@@ -126,21 +134,36 @@ public sealed class DbErrorLogger : IErrorLogger
         }
     }
 
-    private async Task WriteToDatabaseAsync(ErrorLogEntry entry)
+    private async Task WriteToDatabaseAsync(ErrorLogEntry entry, CancellationToken cancellationToken)
     {
+        var entryWritten = false;
+        Interlocked.Increment(ref activeWrites);
+
         try
         {
-            await repository.AddErrorLogAsync(entry);
+            await repository.AddErrorLogAsync(entry, cancellationToken);
+            entryWritten = true;
 
             // Purge only on Error-level writes to avoid excessive cleanup.
             if (entry.Level == "Error")
             {
-                await repository.PurgeOldErrorLogsAsync(RetentionDays);
+                await repository.PurgeOldErrorLogsAsync(RetentionDays, cancellationToken);
+            }
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            if (!entryWritten)
+            {
+                pendingWrites.Enqueue(entry);
             }
         }
         catch
         {
             // Swallow — the crash file already has the record.
+        }
+        finally
+        {
+            Interlocked.Decrement(ref activeWrites);
         }
     }
 
@@ -151,24 +174,7 @@ public sealed class DbErrorLogger : IErrorLogger
     private static string BuildExceptionTypeChain(Exception ex)
     {
         var parts = new List<string>();
-
-        if (ex is AggregateException agg)
-        {
-            parts.Add(nameof(AggregateException));
-            foreach (var inner in agg.InnerExceptions)
-            {
-                parts.Add(inner.GetType().FullName ?? inner.GetType().Name);
-            }
-        }
-        else
-        {
-            var current = ex;
-            while (current is not null)
-            {
-                parts.Add(current.GetType().FullName ?? current.GetType().Name);
-                current = current.InnerException;
-            }
-        }
+        AppendExceptionTypes(parts, ex);
 
         return string.Join(" -> ", parts);
     }
@@ -178,24 +184,8 @@ public sealed class DbErrorLogger : IErrorLogger
     /// </summary>
     private static string BuildFullMessage(Exception ex)
     {
-        if (ex is AggregateException agg)
-        {
-            var messages = new List<string> { ex.Message };
-            for (var i = 0; i < agg.InnerExceptions.Count; i++)
-            {
-                messages.Add($"[{i}] {agg.InnerExceptions[i].Message}");
-            }
-
-            return string.Join(" | ", messages);
-        }
-
         var parts = new List<string>();
-        var current = ex;
-        while (current is not null)
-        {
-            parts.Add(current.Message);
-            current = current.InnerException;
-        }
+        AppendExceptionMessages(parts, ex, prefix: string.Empty);
 
         return string.Join(" -> ", parts);
     }
@@ -207,5 +197,45 @@ public sealed class DbErrorLogger : IErrorLogger
     {
         // ex.ToString() already includes the full chain with stack traces.
         return ex.ToString();
+    }
+
+    private static void AppendExceptionTypes(List<string> parts, Exception ex)
+    {
+        parts.Add(ex.GetType().FullName ?? ex.GetType().Name);
+
+        if (ex is AggregateException agg)
+        {
+            foreach (var inner in agg.InnerExceptions)
+            {
+                AppendExceptionTypes(parts, inner);
+            }
+
+            return;
+        }
+
+        if (ex.InnerException is not null)
+        {
+            AppendExceptionTypes(parts, ex.InnerException);
+        }
+    }
+
+    private static void AppendExceptionMessages(List<string> parts, Exception ex, string prefix)
+    {
+        parts.Add(string.IsNullOrEmpty(prefix) ? ex.Message : $"{prefix}{ex.Message}");
+
+        if (ex is AggregateException agg)
+        {
+            for (var i = 0; i < agg.InnerExceptions.Count; i++)
+            {
+                AppendExceptionMessages(parts, agg.InnerExceptions[i], $"[{i}] ");
+            }
+
+            return;
+        }
+
+        if (ex.InnerException is not null)
+        {
+            AppendExceptionMessages(parts, ex.InnerException, prefix: string.Empty);
+        }
     }
 }

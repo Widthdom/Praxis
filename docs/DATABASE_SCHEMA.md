@@ -149,10 +149,11 @@ Purpose: application error logs (exception, warning, and info logging).
 | `TimestampUtc` | `datetime` | Yes | No | Timestamp when the entry was logged (UTC) |
 
 Application-level behavior:
-- Error entries written by `DbErrorLogger` via `IErrorLogger.Log(exception, context)`. Exception type chains, concatenated inner messages, and full stack traces (including inner exceptions) are captured.
+- Error entries written by `DbErrorLogger` via `IErrorLogger.Log(exception, context)`. Exception type chains, concatenated inner messages, and full stack traces (including nested inner exceptions inside `AggregateException`) are captured.
 - Warning entries written by `DbErrorLogger` via `IErrorLogger.LogWarning(message, context)`.
 - Info entries written by `DbErrorLogger` via `IErrorLogger.LogInfo(message, context)`.
 - All log calls first write synchronously to a file-based crash log (`CrashFileLogger` → `crash.log`) for crash-safe persistence, then enqueue for async DB write.
+- `FlushAsync(timeout)` is the graceful-shutdown path: it waits for both queued entries and already-dequeued in-flight DB writes until the timeout elapses.
 - Retention cleanup: `DELETE FROM ErrorLogEntity WHERE TimestampUtc < threshold` (30-day retention; cleanup is triggered only when Error entries are written, and deletes all rows older than the threshold regardless of Level).
 - DB write failures are silently suppressed (the crash file already has the record).
 
@@ -178,9 +179,10 @@ Purpose: key-value app settings.
 
 Known keys used by current code:
 - `theme`
-  - Values: `Light` / `Dark` / `System` (parsed to `ThemeMode`)
+  - Values: `Light` / `Dark` / `System` (parsed to `ThemeMode`; numeric enum strings are rejected and fall back to `System`, and out-of-range enum values are normalized to `System` before persistence)
 - `dock_order`
   - Comma-separated GUID list for dock ordering
+  - On load/save, duplicate GUIDs and `Guid.Empty` are discarded while preserving the first valid occurrence order
 
 ## Constraints, Indexes, Relations
 - Primary keys only (SQLite auto-index for PK).
@@ -245,15 +247,15 @@ Praxis が使う SQLite テーブル設計を明文化します。
 - `UpdatedAtUtc` だけが異なり内容が一致する場合は非競合として扱います。
 - `LaunchLogEntity.Source` の現行値は `button` / `command` です。
 - `LaunchLogEntity` は保持期間超過分を `TimestampUtc` 条件で一括削除します。
-- `ErrorLogEntity` は `IErrorLogger.Log(exception, context)`（Error）、`IErrorLogger.LogWarning(message, context)`（Warning）、および `IErrorLogger.LogInfo(message, context)`（Info）経由で `DbErrorLogger` が書き込みます。全ログ呼び出しはまず `CrashFileLogger` でファイルに同期書き込みし、その後 DB への非同期書き込みをキューイングします。保持期間クリーンアップは Error エントリ書き込み時にのみ発動し、Level を問わず閾値より古い全行を削除します（30 日保持）。DB 書き込み失敗はクラッシュファイルに記録済みのため握り潰します。
+- `ErrorLogEntity` は `IErrorLogger.Log(exception, context)`（Error）、`IErrorLogger.LogWarning(message, context)`（Warning）、および `IErrorLogger.LogInfo(message, context)`（Info）経由で `DbErrorLogger` が書き込みます。全ログ呼び出しはまず `CrashFileLogger` でファイルに同期書き込みし、その後 DB への非同期書き込みをキューイングします。`AggregateException` 配下にさらに InnerException がネストしている場合も、型チェーンとメッセージチェーンに含めます。`FlushAsync(timeout)` はグレースフルシャットダウン経路として、保留キューだけでなくすでに dequeue 済みの in-flight DB 書き込みもタイムアウトまで待機します。保持期間クリーンアップは Error エントリ書き込み時にのみ発動し、Level を問わず閾値より古い全行を削除します（30 日保持）。DB 書き込み失敗はクラッシュファイルに記録済みのため握り潰します。
 - `crash.log` はクラッシュ安全ロギング用の同期ファイルベースフォールバックです（SQLite 外）:
   - Windows: `%LOCALAPPDATA%\Praxis\crash.log`
   - macOS（Mac Catalyst）: `~/Library/Application Support/Praxis/crash.log`
   - 512 KB で自動ローテーション（`crash.log` → `crash.log.old`）
   - SQLite が利用不可、または非同期 DB 書き込み完了前にプロセスが終了した場合の診断用フォールバックです。
 - `AppSettingEntity` の既知キー:
-  - `theme`（`Light` / `Dark` / `System`）
-  - `dock_order`（GUID の CSV）
+  - `theme`（`Light` / `Dark` / `System`。数値 enum 文字列は無効として扱い `System` にフォールバックし、範囲外 enum 値の保存も `System` に正規化する）
+  - `dock_order`（GUID の CSV。読込/保存時に重複 GUID と `Guid.Empty` は除外し、最初の有効順序を維持）
 
 ## 制約と関連
 - 明示制約は主キー中心（追加インデックスなし）。

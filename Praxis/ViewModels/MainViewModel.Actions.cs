@@ -106,8 +106,8 @@ public partial class MainViewModel
         }
 
         UpdateCanvasSize();
-        await PersistDockAsync();
-        await stateSyncNotifier.NotifyButtonsChangedAsync();
+        await TryPersistDockAsync(nameof(DeleteButtonsAsync), "Delete");
+        await TryNotifyButtonsChangedAsync(nameof(DeleteButtonsAsync), "Delete");
         RecordHistoryAction("delete", snapshots.Select(x => new ButtonHistoryMutation
         {
             Id = x.Id,
@@ -183,7 +183,7 @@ public partial class MainViewModel
     public async Task OpenCreateEditorAtAsync(double x, double y, bool useClipboardForArguments)
     {
         var args = useClipboardForArguments
-            ? await clipboardService.GetTextAsync() ?? string.Empty
+            ? await TryGetClipboardTextAsync(nameof(OpenCreateEditorAtAsync), "Clipboard read for create")
             : string.Empty;
 
         OpenCreateEditor(x, y, args);
@@ -309,7 +309,7 @@ public partial class MainViewModel
         IsEditorOpen = false;
         ApplyFilter();
         UpdateCanvasSize();
-        await stateSyncNotifier.NotifyButtonsChangedAsync();
+        await TryNotifyButtonsChangedAsync(nameof(SaveEditorAsync), "Save");
         RecordHistoryAction(existing is null ? "create" : "edit", [new ButtonHistoryMutation
         {
             Id = record.Id,
@@ -332,8 +332,9 @@ public partial class MainViewModel
             errorLogger.LogInfo($"Conflict dialog: type={context.ConflictType}, resolution={resolution}, button=\"{context.EditingRecord.ButtonText}\" [{context.EditingRecord.Id}]", nameof(ResolveConflictAsync));
             return resolution;
         }
-        catch
+        catch (Exception ex)
         {
+            errorLogger.LogWarning($"Conflict resolution callback failed: {ex.Message}", nameof(ResolveConflictAsync));
             return EditorConflictResolution.Cancel;
         }
     }
@@ -341,23 +342,25 @@ public partial class MainViewModel
     [RelayCommand]
     private async Task CopyFieldAsync(string? value)
     {
-        await clipboardService.SetTextAsync(value ?? string.Empty);
-        SetStatus("Copied to clipboard.");
+        if (await TrySetClipboardTextAsync(value ?? string.Empty, nameof(CopyFieldAsync), "Clipboard copy"))
+        {
+            SetStatus("Copied to clipboard.");
+            return;
+        }
+
+        SetStatus("Clipboard copy failed.");
     }
 
     [RelayCommand]
     private async Task SetThemeAsync(string? mode)
     {
-        if (!Enum.TryParse<ThemeMode>(mode, true, out var parsed))
-        {
-            parsed = ThemeMode.System;
-        }
+        var parsed = ThemeModeParser.ParseOrDefault(mode, ThemeMode.System);
 
         errorLogger.LogInfo($"Theme set to {parsed}", nameof(SetThemeAsync));
         SelectedTheme = parsed;
         themeService.Apply(parsed);
-        await repository.SetThemeAsync(parsed);
-        await stateSyncNotifier.NotifyButtonsChangedAsync();
+        await TryPersistThemeAsync(parsed, nameof(SetThemeAsync), "Theme change");
+        await TryNotifyButtonsChangedAsync(nameof(SetThemeAsync), "Theme change");
     }
 
     [RelayCommand]
@@ -456,7 +459,7 @@ public partial class MainViewModel
                 }
             }
 
-            await stateSyncNotifier.NotifyButtonsChangedAsync();
+            await TryNotifyButtonsChangedAsync(nameof(HandleDragAsync), "Move");
             if (mutations.Count > 0)
             {
                 RecordHistoryAction("move", mutations);
@@ -606,12 +609,12 @@ public partial class MainViewModel
         var dockOrder = isUndo ? action.DockOrderBefore : action.DockOrderAfter;
         if (dockOrder is not null)
         {
-            await repository.SetDockButtonIdsAsync(dockOrder);
+            await TryPersistDockOrderAsync(dockOrder, nameof(ApplyHistoryActionAsync), isUndo ? "Undo dock restore" : "Redo dock restore");
         }
 
         await LoadButtonsFromRepositoryAsync(forceReload: true);
         await RestoreDockAsync();
-        await stateSyncNotifier.NotifyButtonsChangedAsync();
+        await TryNotifyButtonsChangedAsync(nameof(ApplyHistoryActionAsync), isUndo ? "Undo" : "Redo");
 
         if (!string.IsNullOrWhiteSpace(CommandInput))
         {
@@ -623,20 +626,26 @@ public partial class MainViewModel
 
     private async Task<(bool Success, string Message)> ExecuteRecordAsync(LauncherButtonRecord record, bool fromButton, bool updateStatus = true)
     {
+        var source = fromButton ? "button" : "command";
+        errorLogger.LogInfo(
+            $"Execution requested ({source}): \"{record.ButtonText}\" [{record.Id}] tool={record.Tool} args=\"{record.Arguments}\" clipTextPresent={!string.IsNullOrWhiteSpace(record.ClipText)}",
+            nameof(ExecuteRecordAsync));
         var result = await commandExecutor.ExecuteAsync(record.Tool, record.Arguments);
 
         if (!string.IsNullOrWhiteSpace(record.ClipText))
         {
-            await clipboardService.SetTextAsync(record.ClipText);
+            if (await TrySetClipboardTextAsync(record.ClipText, nameof(ExecuteRecordAsync), $"Clipboard update for \"{record.ButtonText}\" [{record.Id}]"))
+            {
+                errorLogger.LogInfo($"Clipboard updated for \"{record.ButtonText}\" [{record.Id}]", nameof(ExecuteRecordAsync));
+            }
         }
 
-        var source = fromButton ? "button" : "command";
         errorLogger.LogInfo(
             $"Executed ({source}): \"{record.ButtonText}\" [{record.Id}] tool={record.Tool} args=\"{record.Arguments}\" succeeded={result.Success}" +
             (result.Success ? string.Empty : $" error=\"{result.Message}\""),
             nameof(ExecuteRecordAsync));
 
-        await repository.AddLogAsync(new LaunchLogEntry
+        await TryAddLaunchLogAsync(new LaunchLogEntry
         {
             ButtonId = record.Id,
             Source = source,
@@ -645,9 +654,9 @@ public partial class MainViewModel
             Succeeded = result.Success,
             Message = result.Message,
             TimestampUtc = DateTime.UtcNow,
-        });
+        }, nameof(ExecuteRecordAsync), $"Launch log write for \"{record.ButtonText}\" [{record.Id}]");
 
-        await repository.PurgeOldLogsAsync(30);
+        await TryPurgeLaunchLogsAsync(30, nameof(ExecuteRecordAsync), $"Launch log purge after \"{record.ButtonText}\" [{record.Id}]");
         if (updateStatus)
         {
             SetStatus(result.Success ? "Executed." : $"Failed: {result.Message}");
@@ -670,8 +679,108 @@ public partial class MainViewModel
             DockButtons.RemoveAt(DockButtons.Count - 1);
         }
 
-        await PersistDockAsync();
-        await stateSyncNotifier.NotifyButtonsChangedAsync();
+        await TryPersistDockAsync(nameof(AddToDockAsync), "Dock update");
+        await TryNotifyButtonsChangedAsync(nameof(AddToDockAsync), "Dock update");
+    }
+
+    private async Task<string> TryGetClipboardTextAsync(string context, string operation)
+    {
+        try
+        {
+            return await clipboardService.GetTextAsync() ?? string.Empty;
+        }
+        catch (Exception ex)
+        {
+            errorLogger.LogWarning($"{operation} failed: {ex.Message}", context);
+            return string.Empty;
+        }
+    }
+
+    private async Task<bool> TrySetClipboardTextAsync(string text, string context, string operation)
+    {
+        try
+        {
+            await clipboardService.SetTextAsync(text);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            errorLogger.LogWarning($"{operation} failed: {ex.Message}", context);
+            return false;
+        }
+    }
+
+    private async Task<bool> TryNotifyButtonsChangedAsync(string context, string operation)
+    {
+        try
+        {
+            await stateSyncNotifier.NotifyButtonsChangedAsync();
+            return true;
+        }
+        catch (Exception ex)
+        {
+            errorLogger.LogWarning($"{operation} completed locally, but window sync notification failed: {ex.Message}", context);
+            return false;
+        }
+    }
+
+    private async Task<bool> TryPersistThemeAsync(ThemeMode mode, string context, string operation)
+    {
+        try
+        {
+            await repository.SetThemeAsync(mode);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            errorLogger.LogWarning($"{operation} applied locally, but theme persistence failed: {ex.Message}", context);
+            return false;
+        }
+    }
+
+    private async Task<bool> TryPersistDockAsync(string context, string operation)
+        => await TryPersistDockOrderAsync(DockButtons.Select(x => x.Id).ToList(), context, operation);
+
+    private async Task<bool> TryPersistDockOrderAsync(IReadOnlyList<Guid> ids, string context, string operation)
+    {
+        try
+        {
+            await repository.SetDockButtonIdsAsync(ids);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            errorLogger.LogWarning($"{operation} completed locally, but dock persistence failed: {ex.Message}", context);
+            return false;
+        }
+    }
+
+    private async Task<bool> TryAddLaunchLogAsync(LaunchLogEntry entry, string context, string operation)
+    {
+        try
+        {
+            await repository.AddLogAsync(entry);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            errorLogger.LogWarning($"{operation} failed: {ex.Message}", context);
+            return false;
+        }
+    }
+
+    private async Task<bool> TryPurgeLaunchLogsAsync(int retentionDays, string context, string operation)
+    {
+        try
+        {
+            await repository.PurgeOldLogsAsync(retentionDays);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            errorLogger.LogWarning($"{operation} failed: {ex.Message}", context);
+            return false;
+        }
     }
 
     private static string BuildButtonDiff(LauncherButtonRecord? before, LauncherButtonRecord after)
@@ -699,12 +808,12 @@ public partial class MainViewModel
     private async Task RestoreDockAsync()
     {
         var order = await repository.GetDockButtonIdsAsync();
+        DockButtons.Clear();
         if (order.Count == 0)
         {
             return;
         }
 
-        DockButtons.Clear();
         foreach (var id in order)
         {
             var item = allButtons.FirstOrDefault(x => x.Id == id);

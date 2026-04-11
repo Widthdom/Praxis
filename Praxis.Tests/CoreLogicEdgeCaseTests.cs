@@ -26,6 +26,24 @@ public class CoreLogicEdgeCaseTests
         Assert.Equal(ThemeMode.System, ThemeModeParser.ParseOrDefault("  system  "));
     }
 
+    [Theory]
+    [InlineData("0")]
+    [InlineData("1")]
+    [InlineData("2")]
+    [InlineData("999")]
+    public void ThemeModeParser_RejectsNumericEnumInputs(string value)
+    {
+        Assert.Equal(ThemeMode.System, ThemeModeParser.ParseOrDefault(value));
+    }
+
+    [Fact]
+    public void ThemeModeParser_NormalizeOrDefault_ReturnsDefault_ForUndefinedEnumValue()
+    {
+        var parsed = ThemeModeParser.NormalizeOrDefault((ThemeMode)999, ThemeMode.Light);
+
+        Assert.Equal(ThemeMode.Light, parsed);
+    }
+
     [Fact]
     public void CommandLineBuilder_ReturnsEmpty_WhenToolIsBlank()
     {

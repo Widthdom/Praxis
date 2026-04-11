@@ -1,0 +1,50 @@
+using Praxis.Core.Logic;
+
+namespace Praxis.Tests;
+
+public class CommandWorkingDirectoryPolicyTests
+{
+    [Theory]
+    [InlineData("cmd")]
+    [InlineData("cmd.exe")]
+    [InlineData("powershell")]
+    [InlineData("powershell.exe")]
+    [InlineData("pwsh")]
+    [InlineData("pwsh.exe")]
+    [InlineData("wt")]
+    [InlineData("wt.exe")]
+    [InlineData("\"C:\\Windows\\System32\\cmd.exe\"")]
+    [InlineData(" C:\\Program Files\\PowerShell\\7\\pwsh.exe ")]
+    public void RequiresUserProfileWorkingDirectory_ReturnsTrue_ForWindowsShellTools(string tool)
+    {
+        var result = CommandWorkingDirectoryPolicy.RequiresUserProfileWorkingDirectory(tool, isWindows: true);
+
+        Assert.True(result);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("   ")]
+    [InlineData("explorer.exe")]
+    [InlineData("notepad.exe")]
+    [InlineData("bash")]
+    public void RequiresUserProfileWorkingDirectory_ReturnsFalse_ForOtherTools(string? tool)
+    {
+        var result = CommandWorkingDirectoryPolicy.RequiresUserProfileWorkingDirectory(tool, isWindows: true);
+
+        Assert.False(result);
+    }
+
+    [Theory]
+    [InlineData("cmd.exe")]
+    [InlineData("powershell.exe")]
+    [InlineData("pwsh.exe")]
+    [InlineData("wt.exe")]
+    public void RequiresUserProfileWorkingDirectory_ReturnsFalse_OnNonWindows(string tool)
+    {
+        var result = CommandWorkingDirectoryPolicy.RequiresUserProfileWorkingDirectory(tool, isWindows: false);
+
+        Assert.False(result);
+    }
+}

@@ -12,9 +12,10 @@ public sealed class CommandExecutor : ICommandExecutor
             return Task.FromResult((false, "Canceled."));
         }
 
-        if (!string.IsNullOrWhiteSpace(tool))
+        var normalizedTool = ExpandHomePath(NormalizeToolPath(tool));
+        if (HasUsableTool(normalizedTool))
         {
-            return RunProcess(tool, arguments);
+            return RunProcess(normalizedTool, arguments);
         }
 
         return OpenWithDefaultHandler(arguments);
@@ -29,6 +30,7 @@ public sealed class CommandExecutor : ICommandExecutor
             UseShellExecute = true,
         };
 
+        ApplyWorkingDirectoryOverride(psi, tool);
         return Task.FromResult(StartProcess(psi, "Executed.", $"Process launch failed for tool '{tool}'."));
     }
 
@@ -160,6 +162,11 @@ public sealed class CommandExecutor : ICommandExecutor
 
     private static string ExpandHomePath(string value)
     {
+        if (string.Equals(value, "~", StringComparison.Ordinal))
+        {
+            return Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+        }
+
         if (!(value.StartsWith("~/", StringComparison.Ordinal) || value.StartsWith("~\\", StringComparison.Ordinal)))
         {
             return value;
@@ -173,4 +180,40 @@ public sealed class CommandExecutor : ICommandExecutor
 
         return Path.Combine(home, value[2..]);
     }
+
+    private static void ApplyWorkingDirectoryOverride(ProcessStartInfo startInfo, string tool)
+    {
+        ApplyWorkingDirectoryOverride(startInfo, tool, OperatingSystem.IsWindows());
+    }
+
+    private static void ApplyWorkingDirectoryOverride(ProcessStartInfo startInfo, string tool, bool isWindows)
+    {
+        if (!CommandWorkingDirectoryPolicy.RequiresUserProfileWorkingDirectory(tool, isWindows))
+        {
+            return;
+        }
+
+        var userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+        if (string.IsNullOrWhiteSpace(userProfile) || !Directory.Exists(userProfile))
+        {
+            return;
+        }
+
+        startInfo.WorkingDirectory = userProfile;
+    }
+
+    private static string NormalizeToolPath(string tool)
+    {
+        var trimmed = tool?.Trim() ?? string.Empty;
+        if (trimmed.Length >= 2 &&
+            ((trimmed[0] == '"' && trimmed[^1] == '"') || (trimmed[0] == '\'' && trimmed[^1] == '\'')))
+        {
+            return trimmed[1..^1].Trim();
+        }
+
+        return trimmed;
+    }
+
+    private static bool HasUsableTool(string tool)
+        => !string.IsNullOrWhiteSpace(tool);
 }

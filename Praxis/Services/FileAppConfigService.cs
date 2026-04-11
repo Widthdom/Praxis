@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Microsoft.Maui.Storage;
 using Praxis.Core.Logic;
 using Praxis.Core.Models;
 
@@ -11,39 +12,74 @@ public sealed class FileAppConfigService : IAppConfigService
 
     public ThemeMode GetThemeMode()
     {
-        var path = ResolveConfigPath();
-        if (path is null || !File.Exists(path))
+        var candidatePaths = EnumerateCandidatePaths(AppContext.BaseDirectory, FileSystem.Current.AppDataDirectory);
+        return ResolveThemeModeFromCandidates(candidatePaths, options);
+    }
+
+    private static IReadOnlyList<string> EnumerateCandidatePaths(string baseDirectory, string appDataDirectory)
+    {
+        var candidates = new List<string>();
+        AppendCandidatePath(candidates, baseDirectory);
+        AppendCandidatePath(candidates, appDataDirectory);
+        return candidates;
+    }
+
+    private static ThemeMode ResolveThemeModeFromCandidates(IEnumerable<string> candidatePaths, JsonSerializerOptions options)
+    {
+        foreach (var path in candidatePaths)
         {
-            return ThemeMode.System;
+            if (!File.Exists(path))
+            {
+                continue;
+            }
+
+            try
+            {
+                var json = File.ReadAllText(path);
+                var config = JsonSerializer.Deserialize<AppConfigFile>(json, options);
+                return ThemeModeParser.ParseOrDefault(config?.Theme, ThemeMode.System);
+            }
+            catch (IOException)
+            {
+                continue;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                continue;
+            }
+            catch (JsonException)
+            {
+                continue;
+            }
         }
 
-        try
+        return ThemeMode.System;
+    }
+
+    private static void AppendCandidatePath(List<string> candidates, string? directory)
+    {
+        var normalizedDirectory = NormalizeAbsoluteDirectory(directory);
+        if (string.IsNullOrWhiteSpace(normalizedDirectory))
         {
-            var json = File.ReadAllText(path);
-            var config = JsonSerializer.Deserialize<AppConfigFile>(json, options);
-            return ThemeModeParser.ParseOrDefault(config?.Theme, ThemeMode.System);
+            return;
         }
-        catch
+
+        var path = Path.Combine(normalizedDirectory, ConfigFileName);
+        if (!candidates.Contains(path, StringComparer.Ordinal))
         {
-            return ThemeMode.System;
+            candidates.Add(path);
         }
     }
 
-    private static string? ResolveConfigPath()
+    private static string? NormalizeAbsoluteDirectory(string? path)
     {
-        var basePath = Path.Combine(AppContext.BaseDirectory, ConfigFileName);
-        if (File.Exists(basePath))
+        var trimmed = path?.Trim().Trim('"', '\'');
+        if (string.IsNullOrWhiteSpace(trimmed) || !Path.IsPathRooted(trimmed))
         {
-            return basePath;
+            return null;
         }
 
-        var appDataPath = Path.Combine(FileSystem.Current.AppDataDirectory, ConfigFileName);
-        if (File.Exists(appDataPath))
-        {
-            return appDataPath;
-        }
-
-        return basePath;
+        return trimmed;
     }
 
     private sealed class AppConfigFile
