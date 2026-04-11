@@ -82,7 +82,7 @@ public class AppLayerSourceGuardTests
     }
 
     [Fact]
-    public void App_FlushFailures_AreCrashLogged_DuringUnhandledExceptionAndProcessExit()
+    public void App_FlushFailures_AreWarningLogged_DuringUnhandledExceptionAndProcessExit()
     {
         var source = ReadRepositoryFile("Praxis", "App.xaml.cs");
 
@@ -101,7 +101,7 @@ public class AppLayerSourceGuardTests
     }
 
     [Fact]
-    public void FileStateSyncNotifier_ReadRetryExhaustion_IsCrashLogged()
+    public void FileStateSyncNotifier_ReadRetryExhaustion_IsWarningLogged()
     {
         var source = ReadRepositoryFile("Praxis", "Services", "FileStateSyncNotifier.cs");
 
@@ -111,7 +111,7 @@ public class AppLayerSourceGuardTests
     }
 
     [Fact]
-    public void FileStateSyncNotifier_WriteFailures_AreCrashLogged()
+    public void FileStateSyncNotifier_WriteFailures_AreWarningLogged()
     {
         var source = ReadRepositoryFile("Praxis", "Services", "FileStateSyncNotifier.cs");
 
@@ -169,7 +169,7 @@ public class AppLayerSourceGuardTests
     }
 
     [Fact]
-    public void DbErrorLogger_DrainFailures_AreCrashLogged()
+    public void DbErrorLogger_DrainFailures_AreWarningLogged()
     {
         var source = ReadRepositoryFile("Praxis", "Services", "DbErrorLogger.cs");
 
@@ -192,7 +192,7 @@ public class AppLayerSourceGuardTests
     }
 
     [Fact]
-    public void MainPage_WindowsReflectionAndFocusFallbackFailures_AreCrashLogged()
+    public void MainPage_WindowsReflectionAndFocusFallbackFailures_AreWarningLogged()
     {
         var focusSource = ReadRepositoryFile("Praxis", "MainPage.FocusAndContext.cs");
         var pointerSource = ReadRepositoryFile("Praxis", "MainPage.PointerAndSelection.cs");
@@ -276,7 +276,7 @@ public class AppLayerSourceGuardTests
     }
 
     [Fact]
-    public void MacProgram_RelayFailures_AreCrashLogged_AndNullProcessIsRejected()
+    public void MacProgram_RelayFailures_AreWarningLogged_AndNullProcessIsRejected()
     {
         var source = ReadRepositoryFile("Praxis", "Platforms", "MacCatalyst", "Program.cs");
 
@@ -287,7 +287,7 @@ public class AppLayerSourceGuardTests
     }
 
     [Fact]
-    public void MacHandlers_KeyInputResolutionFailures_AreCrashLogged_AndFallBack()
+    public void MacHandlers_KeyInputResolutionFailures_AreWarningLogged_AndFallBack()
     {
         var macEntrySource = ReadRepositoryFile("Praxis", "Platforms", "MacCatalyst", "Handlers", "MacEntryHandler.cs");
         var macEditorSource = ReadRepositoryFile("Praxis", "Platforms", "MacCatalyst", "Handlers", "MacEditorHandler.cs");
@@ -304,7 +304,7 @@ public class AppLayerSourceGuardTests
     }
 
     [Fact]
-    public void MacMiddleClickAndKeyCommandFallbackFailures_AreCrashLogged()
+    public void MacMiddleClickAndKeyCommandFallbackFailures_AreWarningLogged()
     {
         var behaviorSource = ReadRepositoryFile("Praxis", "Behaviors", "MiddleClickBehavior.cs");
         var macSource = ReadRepositoryFile("Praxis", "MainPage.MacCatalystBehavior.cs");
@@ -316,7 +316,7 @@ public class AppLayerSourceGuardTests
     }
 
     [Fact]
-    public void MainPage_CopyNoticeAnimationFailures_AreCrashLogged()
+    public void MainPage_CopyNoticeAnimationFailures_AreWarningLogged()
     {
         var source = ReadRepositoryFile("Praxis", "MainPage.xaml.cs");
         Assert.Contains("catch (OperationCanceledException) when (token.IsCancellationRequested)", source);
@@ -324,14 +324,14 @@ public class AppLayerSourceGuardTests
     }
 
     [Fact]
-    public void MainPage_StatusFlashAnimationFailures_AreCrashLogged()
+    public void MainPage_StatusFlashAnimationFailures_AreWarningLogged()
     {
         var source = ReadRepositoryFile("Praxis", "MainPage.StatusAndTheme.cs");
         Assert.Contains("CrashFileLogger.WriteWarning(nameof(TriggerStatusFlash), $\"Status flash animation failed: {ex.Message}\");", source);
     }
 
     [Fact]
-    public void MainPage_DockHoverExitFailures_AreCrashLogged()
+    public void MainPage_DockHoverExitFailures_AreWarningLogged()
     {
         var source = ReadRepositoryFile("Praxis", "MainPage.DockAndQuickLook.cs");
         Assert.Contains("catch (OperationCanceledException) when (token.IsCancellationRequested)", source);
@@ -342,7 +342,7 @@ public class AppLayerSourceGuardTests
     }
 
     [Fact]
-    public void MainPage_QuickLookShowFailures_AreCrashLogged()
+    public void MainPage_QuickLookShowFailures_AreWarningLogged()
     {
         var source = ReadRepositoryFile("Praxis", "MainPage.DockAndQuickLook.cs");
         Assert.Contains("CrashFileLogger.WriteWarning(nameof(ShowQuickLookAfterDelayAsync), $\"Quick Look show failed: {ex.Message}\");", source);
@@ -352,7 +352,7 @@ public class AppLayerSourceGuardTests
     }
 
     [Fact]
-    public void MainPage_QuickLookHideFailures_AreCrashLogged()
+    public void MainPage_QuickLookHideFailures_AreWarningLogged()
     {
         var source = ReadRepositoryFile("Praxis", "MainPage.DockAndQuickLook.cs");
         Assert.Contains("CrashFileLogger.WriteWarning(nameof(HideQuickLookAfterDelayAsync), $\"Quick Look hide failed: {ex.Message}\");", source);
@@ -362,14 +362,14 @@ public class AppLayerSourceGuardTests
     }
 
     [Fact]
-    public void MainPage_ButtonTapExecutionFailures_AreCrashLogged()
+    public void MainPage_ButtonTapExecutionFailures_AreWarningLogged()
     {
         var source = ReadRepositoryFile("Praxis", "MainPage.EditorAndInput.cs");
         Assert.Contains("CrashFileLogger.WriteWarning(nameof(Draggable_Tapped), $\"Button tap execution failed for '{item.ButtonText}': {ex.Message}\");", source);
     }
 
     [Fact]
-    public void MainPage_SecondaryTapCreateFailures_AreCrashLogged()
+    public void MainPage_SecondaryTapCreateFailures_AreWarningLogged()
     {
         var source = ReadRepositoryFile("Praxis", "MainPage.PointerAndSelection.cs");
         Assert.Contains("CrashFileLogger.WriteWarning(nameof(PlacementCanvas_SecondaryTapped), $\"Secondary-tap create flow failed: {ex.Message}\");", source);
