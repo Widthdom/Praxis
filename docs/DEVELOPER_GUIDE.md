@@ -370,6 +370,7 @@ sequenceDiagram
   - `MainViewModel` keeps filtered list and updates `VisibleButtons` via diff (insert/move/remove), not full clear+rebind
   - Visible target is viewport-based with a safety margin for smooth scrolling
   - Drag updates throttle `UpdateCanvasSize()` during move and force final update on completion
+  - Button taps execute through an `async void` UI handler (`Draggable_Tapped`), so unexpected execution failures are warning-logged at the page boundary instead of surfacing as unhandled UI callbacks
 - Create flows:
   - Top-bar create icon button uses `CreateNewCommand` and does not consume clipboard.
   - Top-bar create button visuals are implemented as a tappable `Border` + shape stack (outer hexagon, inscribed circle, inner hexagon, center plus), not a platform glyph text button.

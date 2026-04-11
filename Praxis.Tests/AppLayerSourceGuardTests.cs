@@ -348,6 +348,13 @@ public class AppLayerSourceGuardTests
         Assert.Contains("CrashFileLogger.WriteWarning(nameof(HideQuickLookAfterDelayAsync), $\"Quick Look hide failed: {ex.Message}\");", source);
     }
 
+    [Fact]
+    public void MainPage_ButtonTapExecutionFailures_AreCrashLogged()
+    {
+        var source = ReadRepositoryFile("Praxis", "MainPage.EditorAndInput.cs");
+        Assert.Contains("CrashFileLogger.WriteWarning(nameof(Draggable_Tapped), $\"Button tap execution failed for '{item.ButtonText}': {ex.Message}\");", source);
+    }
+
     private static string ReadRepositoryFile(params string[] segments)
         => File.ReadAllText(Path.Combine(ResolveRepositoryRoot(), Path.Combine(segments)));
 
