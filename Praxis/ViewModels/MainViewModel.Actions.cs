@@ -722,6 +722,7 @@ public partial class MainViewModel
         }
         catch (Exception ex)
         {
+            errorLogger.Log(ex, context);
             errorLogger.LogWarning($"{operation} completed locally, but window sync notification failed: {ex.Message}", context);
             return false;
         }
