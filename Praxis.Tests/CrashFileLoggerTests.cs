@@ -1,3 +1,4 @@
+using System.Reflection;
 using Praxis.Services;
 
 namespace Praxis.Tests;
@@ -167,5 +168,53 @@ public class CrashFileLoggerTests
         {
             Assert.Contains(e.Message, content);
         }
+    }
+
+    [Fact]
+    public void ResolveCrashLogDirectory_UsesTrimmedLocalAppData_OnWindows()
+    {
+        var result = InvokeResolveCrashLogDirectory(
+            "  \"/tmp/praxis-local\"  ",
+            null,
+            null,
+            "/tmp/fallback",
+            isWindows: true,
+            isMacLike: false);
+
+        Assert.Equal("/tmp/praxis-local/Praxis", result);
+    }
+
+    [Fact]
+    public void ResolveCrashLogDirectory_FallsBackToCurrentDirectory_WhenNoAbsolutePlatformDirectoryExists()
+    {
+        var result = InvokeResolveCrashLogDirectory(
+            null,
+            null,
+            "relative/localappdata",
+            "/tmp/current",
+            isWindows: false,
+            isMacLike: false);
+
+        Assert.Equal("/tmp/current/Praxis", result);
+    }
+
+    private static string InvokeResolveCrashLogDirectory(
+        string? localAppDataOverride,
+        string? userProfileOverride,
+        string? localAppDataFolderOverride,
+        string currentDirectory,
+        bool isWindows,
+        bool isMacLike)
+    {
+        var method = typeof(CrashFileLogger).GetMethod(
+            "ResolveCrashLogDirectory",
+            BindingFlags.NonPublic | BindingFlags.Static,
+            binder: null,
+            [typeof(string), typeof(string), typeof(string), typeof(string), typeof(bool), typeof(bool)],
+            modifiers: null);
+        Assert.NotNull(method);
+
+        var result = method.Invoke(null, [localAppDataOverride, userProfileOverride, localAppDataFolderOverride, currentDirectory, isWindows, isMacLike]);
+        return Assert.IsType<string>(result);
     }
 }

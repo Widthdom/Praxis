@@ -70,11 +70,29 @@ public static class AppStoragePaths
 
     private static IEnumerable<string> EnumerateLegacyDatabasePaths()
     {
-        yield return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), DatabaseFileName);
+        var localAppDataCandidate = CombineAbsoluteFilePath(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            DatabaseFileName);
+        if (!string.IsNullOrWhiteSpace(localAppDataCandidate))
+        {
+            yield return localAppDataCandidate;
+        }
+
         if (!OperatingSystem.IsWindows())
         {
-            yield return Path.Combine(AppDataDirectory, AppDataFolderName, DatabaseFileName);
-            yield return Path.Combine(AppDataDirectory, DatabaseFileName);
+            var appDataFolderCandidate = CombineAbsoluteFilePath(
+                Path.Combine(AppDataDirectory, AppDataFolderName),
+                DatabaseFileName);
+            if (!string.IsNullOrWhiteSpace(appDataFolderCandidate))
+            {
+                yield return appDataFolderCandidate;
+            }
+
+            var appDataCandidate = CombineAbsoluteFilePath(AppDataDirectory, DatabaseFileName);
+            if (!string.IsNullOrWhiteSpace(appDataCandidate))
+            {
+                yield return appDataCandidate;
+            }
         }
     }
 
@@ -105,7 +123,7 @@ public static class AppStoragePaths
 
     private static string ResolveWindowsLocalAppDataRoot()
     {
-        var localAppData = Environment.GetEnvironmentVariable("LOCALAPPDATA");
+        var localAppData = NormalizeAbsoluteDirectory(Environment.GetEnvironmentVariable("LOCALAPPDATA"));
         if (!string.IsNullOrWhiteSpace(localAppData))
         {
             return localAppData;
@@ -117,7 +135,13 @@ public static class AppStoragePaths
             return Path.Combine(userProfile, "AppData", "Local");
         }
 
-        return Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+        var specialFolder = NormalizeAbsoluteDirectory(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData));
+        if (!string.IsNullOrWhiteSpace(specialFolder))
+        {
+            return specialFolder;
+        }
+
+        return Environment.CurrentDirectory;
     }
 
     private static string ResolveMacApplicationSupportRoot()
@@ -135,5 +159,27 @@ public static class AppStoragePaths
         }
 
         return AppDataDirectory;
+    }
+
+    private static string? CombineAbsoluteFilePath(string? directoryPath, string fileName)
+    {
+        var normalizedDirectory = NormalizeAbsoluteDirectory(directoryPath);
+        if (string.IsNullOrWhiteSpace(normalizedDirectory))
+        {
+            return null;
+        }
+
+        return Path.Combine(normalizedDirectory, fileName);
+    }
+
+    private static string? NormalizeAbsoluteDirectory(string? path)
+    {
+        var trimmed = path?.Trim().Trim('"', '\'');
+        if (string.IsNullOrWhiteSpace(trimmed) || !Path.IsPathRooted(trimmed))
+        {
+            return null;
+        }
+
+        return trimmed;
     }
 }

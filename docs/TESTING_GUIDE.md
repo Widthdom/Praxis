@@ -52,7 +52,7 @@ dotnet test Praxis.Tests/Praxis.Tests.csproj --collect:"XPlat Code Coverage"
 - [`LauncherButtonOrderPolicyTests.cs`](../Praxis.Tests/LauncherButtonOrderPolicyTests.cs): placement-order normalization (`Y`, then `X`) while preserving stable order for ties.
 
 ### Logging / Crash Safety
-- [`CrashFileLoggerTests.cs`](../Praxis.Tests/CrashFileLoggerTests.cs): synchronous crash file logger behavior — path resolution, no-throw guarantees for all write methods (`WriteException`, `WriteInfo`, `WriteWarning`), inner exception chain capture, `AggregateException` child capture, `Exception.Data` capture, file write verification, and thread safety under concurrent writes without blocking-task analyzer warnings.
+- [`CrashFileLoggerTests.cs`](../Praxis.Tests/CrashFileLoggerTests.cs): synchronous crash file logger behavior — path resolution, quoted/invalid platform-directory fallback handling, no-throw guarantees for all write methods (`WriteException`, `WriteInfo`, `WriteWarning`), inner exception chain capture, `AggregateException` child capture, `Exception.Data` capture, file write verification, and thread safety under concurrent writes without blocking-task analyzer warnings.
 - [`DbErrorLoggerTests.cs`](../Praxis.Tests/DbErrorLoggerTests.cs): database error logger behavior — no-throw guarantees for `Log`/`LogInfo`/`LogWarning`, `FlushAsync` verification for queued and already-in-flight writes, full exception type chain capture (including `AggregateException`), message chain concatenation, stack trace capture, timeout behavior, Error-only retention purge behavior, and graceful handling of repository write failures.
 
 ### Command Execution / Matching / Suggestions
@@ -104,6 +104,8 @@ dotnet test Praxis.Tests/Praxis.Tests.csproj --collect:"XPlat Code Coverage"
 - [`LaunchTargetResolverTests.cs`](../Praxis.Tests/LaunchTargetResolverTests.cs): HTTP(S)/file/path fallback target resolution, env expansion, relative-path detection (including `.` / `..`), and bare-tilde home-path detection.
 - [`WindowsPathPolicyTests.cs`](../Praxis.Tests/WindowsPathPolicyTests.cs): UNC (`\\\\server\\share`) path detection used by Windows auth-first launch flow.
 - [`AppStoragePathLayoutResolverTests.cs`](../Praxis.Tests/AppStoragePathLayoutResolverTests.cs): platform-specific storage layout policy.
+- [`AppStoragePathsTests.cs`](../Praxis.Tests/AppStoragePathsTests.cs): linked-source coverage for quoted `%LOCALAPPDATA%` normalization and rejection of blank/relative legacy migration roots.
+- [`FileAppConfigServiceTests.cs`](../Praxis.Tests/FileAppConfigServiceTests.cs): linked-source coverage for config-path candidate enumeration and fallback to later valid config files when earlier JSON is malformed.
 - [`DockOrderValueCodecTests.cs`](../Praxis.Tests/DockOrderValueCodecTests.cs): dock-order CSV parsing/serialization, including duplicate/empty/invalid GUID filtering while preserving first occurrence order.
 - [`DatabaseSchemaVersionPolicyTests.cs`](../Praxis.Tests/DatabaseSchemaVersionPolicyTests.cs): schema-version upgrade-path resolution (`PRAGMA user_version` migration sequencing, unsupported/future version rejection), including v1->v2->v3->v4 and unversioned->current multi-step upgrades.
 - [`NonPublicPropertySetterTests.cs`](../Praxis.Tests/NonPublicPropertySetterTests.cs): reflection-based writable property assignment behavior.
@@ -170,7 +172,7 @@ dotnet test Praxis.Tests/Praxis.Tests.csproj --collect:"XPlat Code Coverage"
 - [`LauncherButtonOrderPolicyTests.cs`](../Praxis.Tests/LauncherButtonOrderPolicyTests.cs): 配置順（`Y`、次に `X`）への正規化と、同位置時の安定順序維持。
 
 ### ログ / クラッシュ安全性
-- [`CrashFileLoggerTests.cs`](../Praxis.Tests/CrashFileLoggerTests.cs): 同期クラッシュファイルロガーの挙動 — パス解決、全書き込みメソッド（`WriteException`、`WriteInfo`、`WriteWarning`）の例外非送出保証、InnerException チェーン記録、`AggregateException` 子例外記録、`Exception.Data` 記録、ファイル書き込み検証、並行書き込み時のスレッドセーフティ、および blocking task analyzer 警告を出さない非同期検証。
+- [`CrashFileLoggerTests.cs`](../Praxis.Tests/CrashFileLoggerTests.cs): 同期クラッシュファイルロガーの挙動 — パス解決、quote 付き/無効なプラットフォーム保存先からのフォールバック、全書き込みメソッド（`WriteException`、`WriteInfo`、`WriteWarning`）の例外非送出保証、InnerException チェーン記録、`AggregateException` 子例外記録、`Exception.Data` 記録、ファイル書き込み検証、並行書き込み時のスレッドセーフティ、および blocking task analyzer 警告を出さない非同期検証。
 - [`DbErrorLoggerTests.cs`](../Praxis.Tests/DbErrorLoggerTests.cs): DB エラーロガーの挙動 — `Log`/`LogInfo`/`LogWarning` の例外非送出保証、`FlushAsync` による保留キューと in-flight 書き込みの両方の待機検証、完全な例外型チェーン記録（`AggregateException` 含む）、メッセージチェーン連結、スタックトレース記録、タイムアウト挙動、Error のみ保持期間 purge を発火すること、リポジトリ書き込み失敗時のグレースフルハンドリング。
 
 ### コマンド実行 / 一致 / 候補
@@ -222,6 +224,8 @@ dotnet test Praxis.Tests/Praxis.Tests.csproj --collect:"XPlat Code Coverage"
 - [`CommandWorkingDirectoryPolicyTests.cs`](../Praxis.Tests/CommandWorkingDirectoryPolicyTests.cs): `cmd`、`powershell`、`pwsh`、`wt` をユーザープロファイル起点で開く対象として判定する純粋ポリシーテスト。
 - [`WindowsPathPolicyTests.cs`](../Praxis.Tests/WindowsPathPolicyTests.cs): Windows の認証先行起動フローで使う UNC（`\\\\server\\share`）判定。
 - [`AppStoragePathLayoutResolverTests.cs`](../Praxis.Tests/AppStoragePathLayoutResolverTests.cs): プラットフォーム別ストレージ配置ルール。
+- [`AppStoragePathsTests.cs`](../Praxis.Tests/AppStoragePathsTests.cs): linked-source の `AppStoragePaths` テスト。quote 付き `%LOCALAPPDATA%` 正規化と、空/相対 legacy migration root を除外することを確認。
+- [`FileAppConfigServiceTests.cs`](../Praxis.Tests/FileAppConfigServiceTests.cs): linked-source の `FileAppConfigService` テスト。config 候補列挙と、先頭候補の JSON が壊れている場合に後続の正常設定へフォールバックすることを確認。
 - [`DockOrderValueCodecTests.cs`](../Praxis.Tests/DockOrderValueCodecTests.cs): Dock 順序 CSV の解析/直列化テスト。重複/空/不正 GUID を除外しつつ、最初の有効順序を維持することを確認。
 - [`DatabaseSchemaVersionPolicyTests.cs`](../Praxis.Tests/DatabaseSchemaVersionPolicyTests.cs): スキーマバージョンのアップグレード経路解決（`PRAGMA user_version` の段階適用順序、未対応/未来バージョン拒否）を検証。`v1 -> v2 -> v3 -> v4` と `未バージョン -> 現行` の段階適用も確認する。
 - [`NonPublicPropertySetterTests.cs`](../Praxis.Tests/NonPublicPropertySetterTests.cs): リフレクションによる書き込み可能プロパティ設定。

@@ -180,20 +180,37 @@ public static class CrashFileLogger
 
     private static string ResolveCrashLogDirectory()
     {
+        return ResolveCrashLogDirectory(
+            Environment.GetEnvironmentVariable("LOCALAPPDATA"),
+            Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            Environment.CurrentDirectory,
+            OperatingSystem.IsWindows(),
+            OperatingSystem.IsMacCatalyst() || OperatingSystem.IsMacOS());
+    }
+
+    private static string ResolveCrashLogDirectory(
+        string? localAppDataOverride,
+        string? userProfileOverride,
+        string? localAppDataFolderOverride,
+        string currentDirectory,
+        bool isWindows,
+        bool isMacLike)
+    {
         try
         {
-            if (OperatingSystem.IsWindows())
+            if (isWindows)
             {
-                var localAppData = Environment.GetEnvironmentVariable("LOCALAPPDATA");
+                var localAppData = NormalizeAbsoluteDirectory(localAppDataOverride);
                 if (!string.IsNullOrWhiteSpace(localAppData))
                 {
                     return Path.Combine(localAppData, "Praxis");
                 }
             }
 
-            if (OperatingSystem.IsMacCatalyst() || OperatingSystem.IsMacOS())
+            if (isMacLike)
             {
-                var home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+                var home = NormalizeAbsoluteDirectory(userProfileOverride);
                 if (!string.IsNullOrWhiteSpace(home))
                 {
                     return Path.Combine(home, "Library", "Application Support", "Praxis");
@@ -201,12 +218,28 @@ public static class CrashFileLogger
             }
 
             // Fallback: use local application data.
-            var appData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-            return Path.Combine(appData, "Praxis");
+            var appData = NormalizeAbsoluteDirectory(localAppDataFolderOverride);
+            if (!string.IsNullOrWhiteSpace(appData))
+            {
+                return Path.Combine(appData, "Praxis");
+            }
+
+            return Path.Combine(currentDirectory, "Praxis");
         }
         catch
         {
-            return Path.Combine(Environment.CurrentDirectory, "Praxis");
+            return Path.Combine(currentDirectory, "Praxis");
         }
+    }
+
+    private static string? NormalizeAbsoluteDirectory(string? path)
+    {
+        var trimmed = path?.Trim().Trim('"', '\'');
+        if (string.IsNullOrWhiteSpace(trimmed) || !Path.IsPathRooted(trimmed))
+        {
+            return null;
+        }
+
+        return trimmed;
     }
 }

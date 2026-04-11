@@ -11,6 +11,24 @@ namespace Microsoft.Maui.ApplicationModel
     }
 }
 
+namespace Microsoft.Maui.Storage
+{
+    public interface IFileSystem
+    {
+        string AppDataDirectory { get; }
+    }
+
+    public sealed class StubFileSystem : IFileSystem
+    {
+        public string AppDataDirectory { get; set; } = Environment.CurrentDirectory;
+    }
+
+    public static class FileSystem
+    {
+        public static IFileSystem Current { get; set; } = new StubFileSystem();
+    }
+}
+
 namespace Praxis.Behaviors
 {
     public enum GestureStatus
