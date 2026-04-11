@@ -591,6 +591,7 @@ public class MainViewModelWorkflowIntegrationTests
         Assert.True(viewModel.IsEditorOpen);
         Assert.Equal(string.Empty, viewModel.Editor.Arguments);
         Assert.Contains(logger.Warnings, x => x.Context == "OpenCreateEditorAtAsync" && x.Message.Contains("clipboard read boom", StringComparison.Ordinal));
+        Assert.Contains(logger.Exceptions, x => x.Context == "OpenCreateEditorAtAsync" && x.Exception.Message.Contains("clipboard read boom", StringComparison.Ordinal));
     }
 
     [Fact]
@@ -612,6 +613,7 @@ public class MainViewModelWorkflowIntegrationTests
 
         Assert.Equal("Clipboard copy failed.", viewModel.StatusText);
         Assert.Contains(logger.Warnings, x => x.Context == "CopyFieldAsync" && x.Message.Contains("clipboard write boom", StringComparison.Ordinal));
+        Assert.Contains(logger.Exceptions, x => x.Context == "CopyFieldAsync" && x.Exception.Message.Contains("clipboard write boom", StringComparison.Ordinal));
     }
 
     [Fact]
@@ -645,6 +647,7 @@ public class MainViewModelWorkflowIntegrationTests
         Assert.Single(repository.Logs);
         Assert.Equal("Executed.", viewModel.StatusText);
         Assert.Contains(logger.Warnings, x => x.Context == "ExecuteRecordAsync" && x.Message.Contains("clipboard write boom", StringComparison.Ordinal));
+        Assert.Contains(logger.Exceptions, x => x.Context == "ExecuteRecordAsync" && x.Exception.Message.Contains("clipboard write boom", StringComparison.Ordinal));
         Assert.Contains(logger.Infos, x => x.Context == "ExecuteRecordAsync" && x.Message.Contains("Executed (button)", StringComparison.Ordinal));
     }
 

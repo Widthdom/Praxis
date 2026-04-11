@@ -692,6 +692,7 @@ public partial class MainViewModel
         }
         catch (Exception ex)
         {
+            errorLogger.Log(ex, context);
             errorLogger.LogWarning($"{operation} failed: {ex.Message}", context);
             return string.Empty;
         }
@@ -706,6 +707,7 @@ public partial class MainViewModel
         }
         catch (Exception ex)
         {
+            errorLogger.Log(ex, context);
             errorLogger.LogWarning($"{operation} failed: {ex.Message}", context);
             return false;
         }
