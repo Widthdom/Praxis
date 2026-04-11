@@ -59,7 +59,7 @@ dotnet test Praxis.Tests/Praxis.Tests.csproj --collect:"XPlat Code Coverage"
 
 ### Command Execution / Matching / Suggestions
 - [`CommandLineBuilderTests.cs`](../Praxis.Tests/CommandLineBuilderTests.cs): null/whitespace handling and normalization for command-line construction.
-- [`CommandExecutorTests.cs`](../Praxis.Tests/CommandExecutorTests.cs): linked-source coverage for home-path expansion helpers (`~`, `~/...`, `~\\...`), non-home relative path pass-through, quoted-tool normalization, normalized empty/quoted-empty tool detection, and Windows shell launch working-directory override to the user profile.
+- [`CommandExecutorTests.cs`](../Praxis.Tests/CommandExecutorTests.cs): linked-source coverage for home-path expansion helpers (`~`, `~/...`, `~\\...`), non-home relative path pass-through, quoted-tool normalization, normalized empty/quoted-empty tool detection, Windows shell launch working-directory override to the user profile, and crash-log breadcrumbs when native process launch throws.
 - [`CommandRecordMatcherTests.cs`](../Praxis.Tests/CommandRecordMatcherTests.cs): exact command matching rules, null guards, and case/trim behavior.
 - [`CommandSuggestionVisibilityPolicyTests.cs`](../Praxis.Tests/CommandSuggestionVisibilityPolicyTests.cs): close policy when context menu opens.
 - [`CommandSuggestionRowColorPolicyTests.cs`](../Praxis.Tests/CommandSuggestionRowColorPolicyTests.cs): selected/unselected row color decisions per theme.
@@ -224,7 +224,7 @@ dotnet test Praxis.Tests/Praxis.Tests.csproj --collect:"XPlat Code Coverage"
 
 ### 起動 / パス / ストレージ / リフレクション補助
 - [`LaunchTargetResolverTests.cs`](../Praxis.Tests/LaunchTargetResolverTests.cs): HTTP(S)/ファイル/パスのフォールバック起動先解決、環境変数展開、相対パス判定（`.` / `..` 含む）、bare `~` のホームパス判定。
-- [`CommandExecutorTests.cs`](../Praxis.Tests/CommandExecutorTests.cs): linked-source で取り込んだ `CommandExecutor` のホームパス展開 helper テスト。`~`、`~/...`、`~\\...` を展開し、通常の相対パスはそのまま残すこと、quoted tool path の正規化、正規化後に空になる tool 値の検出、および Windows シェル起動時の作業ディレクトリ上書きを確認。
+- [`CommandExecutorTests.cs`](../Praxis.Tests/CommandExecutorTests.cs): linked-source で取り込んだ `CommandExecutor` のホームパス展開 helper テスト。`~`、`~/...`、`~\\...` を展開し、通常の相対パスはそのまま残すこと、quoted tool path の正規化、正規化後に空になる tool 値の検出、Windows シェル起動時の作業ディレクトリ上書き、および native process 起動例外時の crash-log breadcrumb を確認。
 - [`CommandWorkingDirectoryPolicyTests.cs`](../Praxis.Tests/CommandWorkingDirectoryPolicyTests.cs): `cmd`、`powershell`、`pwsh`、`wt` をユーザープロファイル起点で開く対象として判定する純粋ポリシーテスト。
 - [`WindowsPathPolicyTests.cs`](../Praxis.Tests/WindowsPathPolicyTests.cs): Windows の認証先行起動フローで使う UNC（`\\\\server\\share`）判定。
 - [`AppStoragePathLayoutResolverTests.cs`](../Praxis.Tests/AppStoragePathLayoutResolverTests.cs): プラットフォーム別ストレージ配置ルール。

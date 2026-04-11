@@ -138,6 +138,7 @@ public sealed class CommandExecutor : ICommandExecutor
         }
         catch (Exception ex)
         {
+            CrashFileLogger.WriteWarning(nameof(CommandExecutor), $"Launch target resolution failed for '{arguments}': {ex.Message}");
             return Task.FromResult((false, $"Launch target resolution failed: {ex.Message}"));
         }
     }
@@ -149,6 +150,7 @@ public sealed class CommandExecutor : ICommandExecutor
             var process = Process.Start(startInfo);
             if (process is null)
             {
+                CrashFileLogger.WriteWarning(nameof(CommandExecutor), $"{failurePrefix} No process handle was returned.");
                 return (false, $"{failurePrefix} No process handle was returned.");
             }
 
@@ -156,6 +158,7 @@ public sealed class CommandExecutor : ICommandExecutor
         }
         catch (Exception ex)
         {
+            CrashFileLogger.WriteWarning(nameof(CommandExecutor), $"{failurePrefix} {ex.Message}");
             return (false, $"{failurePrefix} {ex.Message}");
         }
     }

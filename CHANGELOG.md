@@ -12,6 +12,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - `DbErrorLogger` now warning-logs DB persistence and retention-purge failures to `crash.log` so non-fatal repository errors still leave diagnostics during shutdown or degraded logging paths
 - `DbErrorLogger.FlushAsync(timeout)` now warning-logs timeout and unexpected flush failures so graceful-shutdown logging gaps leave an explicit breadcrumb instead of failing silently
 - `Praxis/Platforms/MacCatalyst/Program.cs` is now UTF-8 BOM-free, and a repository encoding guard test now keeps `cdidx validate` clean for that entrypoint
+- `CommandExecutor` now warning-logs native process-start and launch-target-resolution failures to `crash.log` so returned user-facing launch errors also leave a local diagnostic breadcrumb
 
 ### [1.1.5] - 2026-04-11
 
@@ -178,6 +179,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - `DbErrorLogger` は DB への永続化失敗や保持期間 purge 失敗も `crash.log` に warning 記録するようにし、非致命なリポジトリエラーでも shutdown / 劣化動作時の診断痕跡を残すよう修正
 - `DbErrorLogger.FlushAsync(timeout)` は timeout や予期しない flush 失敗も warning 記録するようにし、graceful shutdown 中のログ欠落が無音にならないよう修正
 - `Praxis/Platforms/MacCatalyst/Program.cs` の UTF-8 BOM を除去し、同 entrypoint を BOM-free に保つ repository encoding guard テストを追加して `cdidx validate` をクリーン化
+- `CommandExecutor` は native process 起動失敗や launch-target-resolution 失敗も `crash.log` に warning 記録するようにし、ユーザー向け失敗メッセージの裏側にローカル診断 breadcrumb を残すよう修正
 
 ### [1.1.5] - 2026-04-11
 

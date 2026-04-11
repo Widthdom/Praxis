@@ -76,6 +76,25 @@ public class CommandExecutorTests
         Assert.Equal(value, result);
     }
 
+    [Fact]
+    public void StartProcess_WarningLogsFailure_WhenProcessStartThrows()
+    {
+        var failurePrefix = $"CommandExecutor failure {Guid.NewGuid():N}";
+        var startInfo = new ProcessStartInfo
+        {
+            FileName = string.Empty,
+            UseShellExecute = true,
+        };
+
+        var result = InvokeStartProcess(startInfo, "Executed.", failurePrefix);
+
+        Assert.False(result.Success);
+        Assert.StartsWith(failurePrefix, result.Message, StringComparison.Ordinal);
+
+        var content = File.ReadAllText(CrashFileLogger.LogFilePath);
+        Assert.Contains(failurePrefix, content);
+    }
+
     private static string InvokeExpandHomePath(string value)
     {
         var method = typeof(CommandExecutor).GetMethod("ExpandHomePath", BindingFlags.NonPublic | BindingFlags.Static);
@@ -114,5 +133,19 @@ public class CommandExecutorTests
 
         var result = method.Invoke(null, [value]);
         return Assert.IsType<bool>(result);
+    }
+
+    private static (bool Success, string Message) InvokeStartProcess(ProcessStartInfo startInfo, string successMessage, string failurePrefix)
+    {
+        var method = typeof(CommandExecutor).GetMethod(
+            "StartProcess",
+            BindingFlags.NonPublic | BindingFlags.Static,
+            binder: null,
+            [typeof(ProcessStartInfo), typeof(string), typeof(string)],
+            modifiers: null);
+        Assert.NotNull(method);
+
+        var result = method.Invoke(null, [startInfo, successMessage, failurePrefix]);
+        return Assert.IsType<(bool Success, string Message)>(result);
     }
 }
