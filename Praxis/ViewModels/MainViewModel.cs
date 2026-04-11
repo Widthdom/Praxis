@@ -260,6 +260,7 @@ public partial class MainViewModel : ObservableObject
         }
         catch (Exception ex)
         {
+            errorLogger.Log(ex, nameof(ReloadFromExternalChangeAsync));
             errorLogger.LogWarning($"External reload failed: {ex.Message}", nameof(ReloadFromExternalChangeAsync));
         }
         finally

@@ -228,6 +228,7 @@ public class MainViewModelWorkflowIntegrationTests
 
         await WaitUntilAsync(() => logger.Warnings.Any(x => x.Context == "ReloadFromExternalChangeAsync"));
         Assert.Contains(logger.Warnings, x => x.Message.Contains("reload boom", StringComparison.Ordinal));
+        Assert.Contains(logger.Exceptions, x => x.Context == "ReloadFromExternalChangeAsync" && x.Exception.Message.Contains("reload boom", StringComparison.Ordinal));
     }
 
     [Fact]
@@ -1273,9 +1274,11 @@ public class MainViewModelWorkflowIntegrationTests
     {
         public List<(string Message, string Context)> Infos { get; } = [];
         public List<(string Message, string Context)> Warnings { get; } = [];
+        public List<(Exception Exception, string Context)> Exceptions { get; } = [];
 
         public void Log(Exception exception, string context)
         {
+            Exceptions.Add((exception, context));
         }
 
         public void LogWarning(string message, string context)
