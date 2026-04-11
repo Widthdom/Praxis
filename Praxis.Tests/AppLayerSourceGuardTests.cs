@@ -32,6 +32,20 @@ public class AppLayerSourceGuardTests
     }
 
     [Fact]
+    public void MainPage_OnDisappearing_DetachesWindowActivationHooks()
+    {
+        var source = ReadRepositoryFile("Praxis", "MainPage.xaml.cs");
+        Assert.Contains("DetachWindowActivationHook();", source);
+    }
+
+    [Fact]
+    public void MainPage_DetachWindowActivationHook_AlsoDetachesMacObservers()
+    {
+        var source = ReadRepositoryFile("Praxis", "MainPage.xaml.cs");
+        Assert.Equal(2, CountOccurrences(source, "DetachMacActivationObservers();"));
+    }
+
+    [Fact]
     public void MauiClipboardService_HonorsCancellationTokens()
     {
         var source = ReadRepositoryFile("Praxis", "Services", "MauiClipboardService.cs");
@@ -84,6 +98,33 @@ public class AppLayerSourceGuardTests
 
         Assert.Contains("Exception? readFailure = null;", source);
         Assert.Contains("CrashFileLogger.WriteWarning(nameof(FileStateSyncNotifier), $\"Failed to read sync payload after retries: {readFailure.Message}\");", source);
+    }
+
+    [Fact]
+    public void CommandExecutor_ExpandsHomePathBeforeCheckingToolUsability()
+    {
+        var source = ReadRepositoryFile("Praxis", "Services", "CommandExecutor.cs");
+        Assert.Contains("var normalizedTool = ExpandHomePath(NormalizeToolPath(tool));", source);
+    }
+
+    [Fact]
+    public void WindowsStartupLog_UsesNormalizedAppStorageRoot_AndGuardsDuplicateHookRegistration()
+    {
+        var source = ReadRepositoryFile("Praxis", "Platforms", "Windows", "App.xaml.cs");
+
+        Assert.Contains("AppStoragePaths.WindowsLocalAppDataRoot", source);
+        Assert.Contains("private static bool globalExceptionLoggingHooked;", source);
+        Assert.Contains("if (globalExceptionLoggingHooked)", source);
+    }
+
+    [Fact]
+    public void MacAppDelegate_GuardsDuplicateGlobalExceptionHookRegistration()
+    {
+        var source = ReadRepositoryFile("Praxis", "Platforms", "MacCatalyst", "AppDelegate.cs");
+
+        Assert.Contains("private static bool globalExceptionLoggingHooked;", source);
+        Assert.Contains("if (globalExceptionLoggingHooked)", source);
+        Assert.Contains("globalExceptionLoggingHooked = true;", source);
     }
 
     private static string ReadRepositoryFile(params string[] segments)

@@ -12,7 +12,7 @@ public sealed class CommandExecutor : ICommandExecutor
             return Task.FromResult((false, "Canceled."));
         }
 
-        var normalizedTool = NormalizeToolPath(tool);
+        var normalizedTool = ExpandHomePath(NormalizeToolPath(tool));
         if (HasUsableTool(normalizedTool))
         {
             return RunProcess(normalizedTool, arguments);

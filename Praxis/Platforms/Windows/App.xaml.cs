@@ -13,8 +13,9 @@ namespace Praxis.WinUI;
 public partial class App : MauiWinUIApplication
 {
 	private static readonly object LogLock = new();
+	private static bool globalExceptionLoggingHooked;
 	private static readonly string StartupLogPath = Path.Combine(
-		Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+		AppStoragePaths.WindowsLocalAppDataRoot,
 		"Praxis",
 		"startup.log");
 
@@ -33,6 +34,12 @@ public partial class App : MauiWinUIApplication
 
 	private void HookGlobalExceptionLogging()
 	{
+		if (globalExceptionLoggingHooked)
+		{
+			return;
+		}
+
+		globalExceptionLoggingHooked = true;
 		this.UnhandledException += (_, e) =>
 		{
 			CrashFileLogger.WriteException("WinUI.UnhandledException", e.Exception);

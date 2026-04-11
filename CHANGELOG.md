@@ -10,6 +10,10 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - add .codex & CLAUDE.md
 
 ### Fixed
+- `MainPage.OnDisappearing()` now detaches window-activation hooks, and the detach path also releases Mac activation observers so disappearing pages do not keep stale activation callbacks alive
+- `CommandExecutor` now expands home-prefixed tool paths (`~`, `~/...`, `~\\...`) before deciding whether a tool is executable, so direct tool launches can use the same home shorthand as empty-tool path launches
+- Windows `startup.log` now uses the normalized shared app-storage root instead of the raw local-app-data special-folder string, avoiding malformed startup-log paths when the environment value is quoted or missing
+- Windows and Mac platform startup classes now guard global exception-hook registration so repeated initialization cannot stack duplicate unhandled-exception handlers
 - `App.CreateWindow()` no longer caches the fallback error page when `ResolveRootPage()` fails, so later window creation can recover instead of being pinned to the first startup failure page
 - `App` now crash-logs log-flush failures during both `AppDomain.UnhandledException` termination handling and `ProcessExit`, instead of suppressing them silently
 - `FileStateSyncNotifier` now warning-logs sync-file read retry exhaustion instead of silently dropping unreadable external-sync payloads
@@ -152,6 +156,10 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - .codex および CLAUDE.md を追加
 
 ### 修正
+- `MainPage.OnDisappearing()` は window activation hook を解除し、解除経路では Mac の activation observer も解放するようにして、非表示ページへ stale な activation callback が残らないよう修正
+- `CommandExecutor` は `~` / `~/...` / `~\\...` のような home 省略つき `tool` も実行可否判定前に展開するようにし、empty-tool path launch と同じ shorthand を direct tool launch でも使えるよう修正
+- Windows の `startup.log` は raw な local-app-data special folder 文字列ではなく正規化済み共有 app-storage root を使うようにし、quote 付きや欠落した環境値でパスが壊れにくいよう修正
+- Windows / Mac の platform startup class はグローバル例外 hook の多重登録を防ぐガードを追加し、初期化の再実行で unhandled-exception handler が重複しないよう修正
 - `App.CreateWindow()` は `ResolveRootPage()` 失敗時のエラー表示ページを恒久キャッシュしないようにし、後続ウィンドウ生成で初回失敗ページに固定されず回復できるよう修正
 - `App` は `AppDomain.UnhandledException` の終端処理と `ProcessExit` の両方でログ flush 失敗を黙殺せず `crash.log` に残すよう修正
 - `FileStateSyncNotifier` は sync ファイルの再読込リトライが尽きた場合に warning を残し、読めない外部同期 payload を無言で捨てないよう修正

@@ -185,6 +185,7 @@ public partial class MainPage : ContentPage
     {
         viewModel.NotifyWindowDisappearing();
         base.OnDisappearing();
+        DetachWindowActivationHook();
         DetachEditorPropertyChanged();
         App.SetEditorOpenState(false);
         App.SetContextMenuOpenState(false);
@@ -308,12 +309,18 @@ public partial class MainPage : ContentPage
     {
         if (attachedWindow is null)
         {
+#if MACCATALYST
+            DetachMacActivationObservers();
+#endif
             return;
         }
 
         attachedWindow.Activated -= OnWindowActivated;
         attachedWindow.Resumed -= OnWindowResumed;
         attachedWindow = null;
+#if MACCATALYST
+        DetachMacActivationObservers();
+#endif
     }
 
     private void OnWindowActivated(object? sender, EventArgs e)
