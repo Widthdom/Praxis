@@ -7,6 +7,9 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 ## [Unreleased]
 
 ### Fixed
+- `DockOrderValueCodec.Parse()` now trims wrapping quotes from both the whole CSV payload and individual GUID entries so quoted dock-order persistence still restores the intended order
+- `WindowsPathPolicy.IsUncPath()` now accepts quoted UNC paths but rejects `\\\\?\\` and `\\\\.\\` local-device prefixes instead of misclassifying them as network shares
+- Mac `AppDelegate` now warning-logs failures to prioritize key commands over system behavior instead of letting runtime reflection differences fail silently
 - `QuickLookPreviewFormatter.BuildLine()` now keeps the entire labeled quick-look line within the requested `maxLength` instead of letting the `label + ": "` prefix push the final string past the caller's limit
 - `CommandNotFoundRefocusPolicy` now ignores leading whitespace before checking the `Command not found:` prefix so refocus still triggers for padded status text without matching embedded phrases
 - Mac `AppDelegate` now warning-logs `MarshalManagedException` hook failures instead of swallowing them silently during startup
@@ -195,6 +198,9 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 ## [Unreleased]
 
 ### 修正
+- `DockOrderValueCodec.Parse()` は CSV 全体や各 GUID 要素を囲む quote も除去するようにし、quote 付きで保存された Dock 順序でも意図した並びを復元できるよう修正
+- `WindowsPathPolicy.IsUncPath()` は quote 付き UNC を受理しつつ `\\\\?\\` と `\\\\.\\` のローカルデバイス接頭辞は共有パスとして誤判定しないよう修正
+- Mac `AppDelegate` は key command の system 優先解除失敗も warning 記録するようにし、runtime の reflection 差異が無音にならないよう修正
 - `QuickLookPreviewFormatter.BuildLine()` はラベル付き Quick Look 行全体でも要求 `maxLength` を超えないようにし、`label + ": "` 分で最終文字列が上限超過しないよう修正
 - `CommandNotFoundRefocusPolicy` は `Command not found:` 判定前に先頭空白を無視するようにし、前置空白つき status でも再フォーカスを維持しつつ埋め込み語句とは誤一致しないよう修正
 - Mac `AppDelegate` は `MarshalManagedException` hook 失敗も startup 中に無音で握りつぶさず warning 記録するよう修正

@@ -136,14 +136,14 @@ public class AppDelegate : MauiUIApplicationDelegate
     private static UIKeyCommand CreateThemeKeyCommand(string keyInput, string selectorName)
     {
         var command = UIKeyCommand.Create(new NSString(keyInput), UIKeyModifierFlags.Command | UIKeyModifierFlags.Shift, new Selector(selectorName));
-        TrySetKeyCommandPriorityOverSystem(command);
+        TrySetKeyCommandPriorityOverSystem(command, selectorName);
         return command;
     }
 
     private static UIKeyCommand CreateHistoryKeyCommand(string keyInput, UIKeyModifierFlags modifierFlags, string selectorName)
     {
         var command = UIKeyCommand.Create(new NSString(keyInput), modifierFlags, new Selector(selectorName));
-        TrySetKeyCommandPriorityOverSystem(command);
+        TrySetKeyCommandPriorityOverSystem(command, selectorName);
         return command;
     }
 
@@ -157,18 +157,25 @@ public class AppDelegate : MauiUIApplicationDelegate
         MainThread.BeginInvokeOnMainThread(() => App.RaiseThemeShortcut(mode));
     }
 
-    private static void TrySetKeyCommandPriorityOverSystem(UIKeyCommand command)
+    private static void TrySetKeyCommandPriorityOverSystem(UIKeyCommand command, string selectorName)
     {
-        const System.Reflection.BindingFlags flags = System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance;
-        var prop = typeof(UIKeyCommand).GetProperty("WantsPriorityOverSystemBehavior", flags);
-        if (prop?.CanWrite == true)
+        try
         {
-            prop.SetValue(command, true);
-            return;
-        }
+            const System.Reflection.BindingFlags flags = System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance;
+            var prop = typeof(UIKeyCommand).GetProperty("WantsPriorityOverSystemBehavior", flags);
+            if (prop?.CanWrite == true)
+            {
+                prop.SetValue(command, true);
+                return;
+            }
 
-        var method = typeof(UIKeyCommand).GetMethod("SetWantsPriorityOverSystemBehavior", flags);
-        method?.Invoke(command, [true]);
+            var method = typeof(UIKeyCommand).GetMethod("SetWantsPriorityOverSystemBehavior", flags);
+            method?.Invoke(command, [true]);
+        }
+        catch (Exception ex)
+        {
+            CrashFileLogger.WriteWarning(nameof(AppDelegate), $"Failed to prioritize key command '{selectorName}': {ex.Message}");
+        }
     }
 
     private void AttachActivationObservers()

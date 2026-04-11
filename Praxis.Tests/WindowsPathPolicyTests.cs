@@ -8,6 +8,7 @@ public class WindowsPathPolicyTests
     [InlineData(@"\\server\share")]
     [InlineData(@"\\server\share\folder")]
     [InlineData(@"  \\server\share  ")]
+    [InlineData("  \"\\\\server\\share\"  ")]
     public void IsUncPath_ReturnsTrue_ForUncPaths(string value)
     {
         var result = WindowsPathPolicy.IsUncPath(value);
@@ -21,6 +22,8 @@ public class WindowsPathPolicyTests
     [InlineData(@"C:\Temp")]
     [InlineData(@"/mnt/share")]
     [InlineData("server/share")]
+    [InlineData(@"\\?\C:\Temp")]
+    [InlineData(@"\\.\pipe\praxis")]
     public void IsUncPath_ReturnsFalse_ForNonUncPaths(string? value)
     {
         var result = WindowsPathPolicy.IsUncPath(value);

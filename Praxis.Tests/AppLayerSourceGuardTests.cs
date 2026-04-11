@@ -220,6 +220,7 @@ public class AppLayerSourceGuardTests
         Assert.Contains("if (globalExceptionLoggingHooked)", source);
         Assert.Contains("globalExceptionLoggingHooked = true;", source);
         Assert.Contains("CrashFileLogger.WriteWarning(nameof(AppDelegate), $\"Failed to hook MarshalManagedException: {ex.Message}\");", source);
+        Assert.Contains("CrashFileLogger.WriteWarning(nameof(AppDelegate), $\"Failed to prioritize key command '{selectorName}': {ex.Message}\");", source);
     }
 
     [Fact]
