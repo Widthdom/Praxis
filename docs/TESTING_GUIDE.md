@@ -39,6 +39,7 @@ dotnet test Praxis.Tests/Praxis.Tests.csproj --collect:"XPlat Code Coverage"
 ### Baseline / Cross-Cutting
 - [`UnitTest1.cs`](../Praxis.Tests/UnitTest1.cs) (`CoreLogicTests`): baseline checks for command-line build, snapping, search matching, and retention.
 - [`CoreLogicEdgeCaseTests.cs`](../Praxis.Tests/CoreLogicEdgeCaseTests.cs): parser/snapper/matcher/retention edge cases, including invalid `ThemeMode` enum normalization.
+- [`RepositoryEncodingPolicyTests.cs`](../Praxis.Tests/RepositoryEncodingPolicyTests.cs): repository encoding guard for source files that must remain BOM-free, currently protecting [`Praxis/Platforms/MacCatalyst/Program.cs`](../Praxis/Platforms/MacCatalyst/Program.cs) because `cdidx validate` flags UTF-8 BOMs as index-quality issues.
 - [`StateSyncPayloadParserTests.cs`](../Praxis.Tests/StateSyncPayloadParserTests.cs): sync-signal payload parsing coverage for valid payloads plus malformed, blank-source, non-numeric, and out-of-range timestamp rejection.
 - [`CoreLogicPerformanceSafetyTests.cs`](../Praxis.Tests/CoreLogicPerformanceSafetyTests.cs): regression-safety checks for defaults, bounds, and conflict detection (including timestamp-only drift vs material-content conflict cases).
 - [`PolicyTruthTableTests.cs`](../Praxis.Tests/PolicyTruthTableTests.cs): full truth-table validation for focus-related policy combinations.
@@ -160,6 +161,7 @@ dotnet test Praxis.Tests/Praxis.Tests.csproj --collect:"XPlat Code Coverage"
 ### 基本 / 横断
 - [`UnitTest1.cs`](../Praxis.Tests/UnitTest1.cs)（`CoreLogicTests`）: コマンドライン生成、スナップ、検索一致、保持期間の基本確認。
 - [`CoreLogicEdgeCaseTests.cs`](../Praxis.Tests/CoreLogicEdgeCaseTests.cs): パーサ/スナッパ/マッチャー/保持期間の境界ケース。範囲外 `ThemeMode` enum 値の正規化も検証する。
+- [`RepositoryEncodingPolicyTests.cs`](../Praxis.Tests/RepositoryEncodingPolicyTests.cs): BOM-free を維持すべきソースの encoding guard。現在は `cdidx validate` の品質警告対策として [`Praxis/Platforms/MacCatalyst/Program.cs`](../Praxis/Platforms/MacCatalyst/Program.cs) に UTF-8 BOM が混入しないことを保護する。
 - [`StateSyncPayloadParserTests.cs`](../Praxis.Tests/StateSyncPayloadParserTests.cs): 同期シグナル payload の解析テスト。正常 payload に加えて、壊れた形式、空 source、非数値、範囲外 timestamp を拒否することを検証。
 - [`CoreLogicPerformanceSafetyTests.cs`](../Praxis.Tests/CoreLogicPerformanceSafetyTests.cs): 既定値・境界・競合判定（時刻差分のみは非競合、内容差分は競合）の回帰安全性確認。
 - [`PolicyTruthTableTests.cs`](../Praxis.Tests/PolicyTruthTableTests.cs): フォーカス系ポリシーの真理値表を網羅検証。
