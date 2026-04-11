@@ -6,6 +6,22 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 
 ## [Unreleased]
 
+### [1.1.7] - 2026-04-12
+
+### Fixed
+- UI event handlers, sync notifiers, dock/QuickLook timers, command-suggestion debounce, clipboard helpers, and conflict callbacks now persist unhandled exceptions to `crash.log` so crash evidence survives abrupt termination
+- Narrowed `OperationCanceledException` handling in command-suggestion debounce and Windows IME reassert paths to avoid swallowing non-cancellation exceptions
+- `DbErrorLogger` now preserves inner-exception details when logging persistence failures
+
+### Changed
+- Consolidated repeated dispatcher-invoke logging helpers in `MainViewModel` and `App` into shared static methods
+- Refreshed cdidx guidance in `CLAUDE.md` for v1.6 features (inspect metadata, `suggest_improvement`, MCP-first SQL fallback policy)
+
+### Tests
+- Added undo/redo workflow integration tests for `MainViewModel`
+- Expanded `AppLayerSourceGuardTests` to cover newly hardened partial classes
+- Added `DbErrorLogger` detail-preservation tests
+
 ### [1.1.6] - 2026-04-12
 
 ### Fixed
@@ -202,6 +218,22 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 
 ## [Unreleased]
 
+### [1.1.7] - 2026-04-12
+
+### 修正
+- UI イベントハンドラ、同期通知、Dock/QuickLook タイマー、コマンド候補 debounce、クリップボードヘルパー、競合コールバックで未捕捉例外を `crash.log` に永続化するようにし、異常終了時のクラッシュ証跡を確保
+- コマンド候補 debounce と Windows IME 再設定パスの `OperationCanceledException` ハンドリングを限定し、キャンセル以外の例外を握りつぶさないよう修正
+- `DbErrorLogger` がログ永続化失敗時に inner exception の詳細を保持するよう修正
+
+### 変更
+- `MainViewModel` と `App` の重複 dispatcher ログヘルパーを共有 static メソッドに集約
+- `CLAUDE.md` の cdidx ガイダンスを v1.6 向けに更新（inspect メタデータ、`suggest_improvement`、MCP 優先 SQL フォールバック方針）
+
+### テスト
+- `MainViewModel` の undo/redo ワークフロー統合テストを追加
+- `AppLayerSourceGuardTests` を拡充し、新たに例外永続化対応した partial class を網羅
+- `DbErrorLogger` の failure detail 保持テストを追加
+
 ### [1.1.6] - 2026-04-12
 
 ### 修正
@@ -372,7 +404,8 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - 重複 `using` ディレクティブの削除と `using` 順序の正規化
 - `MainViewModel` と各 partial クラスに主要ライフサイクルイベントの `LogInfo` 呼び出しを追加
 
-[Unreleased]: https://github.com/Widthdom/Praxis/compare/v1.1.6...HEAD
+[Unreleased]: https://github.com/Widthdom/Praxis/compare/v1.1.7...HEAD
+[1.1.7]: https://github.com/Widthdom/Praxis/compare/v1.1.6...v1.1.7
 [1.1.6]: https://github.com/Widthdom/Praxis/compare/v1.1.5...v1.1.6
 [1.1.5]: https://github.com/Widthdom/Praxis/compare/v1.1.4...v1.1.5
 [1.1.4]: https://github.com/Widthdom/Praxis/compare/v1.1.3...v1.1.4
