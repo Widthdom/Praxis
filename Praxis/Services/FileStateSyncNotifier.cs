@@ -1,4 +1,5 @@
 using System.Globalization;
+using Praxis.Core.Logic;
 
 namespace Praxis.Services;
 
@@ -24,12 +25,12 @@ public sealed class FileStateSyncNotifier : IStateSyncNotifier
         {
             NotifyFilter = NotifyFilters.FileName | NotifyFilters.LastWrite | NotifyFilters.CreationTime | NotifyFilters.Size,
             IncludeSubdirectories = false,
-            EnableRaisingEvents = true,
         };
 
         watcher.Changed += OnSignalChanged;
         watcher.Created += OnSignalChanged;
         watcher.Renamed += OnSignalChanged;
+        watcher.EnableRaisingEvents = true;
     }
 
     public async Task NotifyButtonsChangedAsync(CancellationToken cancellationToken = default)
@@ -40,6 +41,7 @@ public sealed class FileStateSyncNotifier : IStateSyncNotifier
             lastObservedPayload = payload;
         }
 
+        Directory.CreateDirectory(directoryPath);
         await File.WriteAllTextAsync(signalPath, payload, cancellationToken);
     }
 
@@ -92,29 +94,28 @@ public sealed class FileStateSyncNotifier : IStateSyncNotifier
             lastObservedPayload = payload;
         }
 
-        var parts = payload.Split('|', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
-        if (parts.Length != 2)
+        if (!StateSyncPayloadParser.TryParse(payload, out var source, out var timestamp))
         {
             return;
         }
 
-        var source = parts[0];
         if (string.Equals(source, instanceId, StringComparison.Ordinal))
         {
             return;
         }
 
-        if (!long.TryParse(parts[1], NumberStyles.Integer, CultureInfo.InvariantCulture, out var ticks))
+        try
         {
-            return;
+            ButtonsChanged?.Invoke(this, new StateSyncChangedEventArgs
+            {
+                SourceInstanceId = source,
+                TimestampUtc = timestamp,
+            });
         }
-
-        var timestamp = new DateTime(ticks, DateTimeKind.Utc);
-        ButtonsChanged?.Invoke(this, new StateSyncChangedEventArgs
+        catch (Exception ex)
         {
-            SourceInstanceId = source,
-            TimestampUtc = timestamp,
-        });
+            CrashFileLogger.WriteException(nameof(FileStateSyncNotifier), ex);
+        }
     }
 
     public void Dispose()

@@ -41,16 +41,26 @@ public partial class App : MauiWinUIApplication
 
 		AppDomain.CurrentDomain.UnhandledException += (_, e) =>
 		{
-			CrashFileLogger.WriteException(
-				$"Win.AppDomain.UnhandledException (IsTerminating={e.IsTerminating})",
-				e.ExceptionObject as Exception);
-			WriteStartupLog("AppDomain.UnhandledException", e.ExceptionObject as Exception);
+			if (e.ExceptionObject is Exception exception)
+			{
+				CrashFileLogger.WriteException(
+					$"Win.AppDomain.UnhandledException (IsTerminating={e.IsTerminating})",
+					exception);
+				WriteStartupLog("AppDomain.UnhandledException", exception);
+			}
+			else
+			{
+				var payload = $"Non-Exception object thrown (IsTerminating={e.IsTerminating}): {e.ExceptionObject}";
+				CrashFileLogger.WriteWarning("Win.AppDomain.UnhandledException", payload);
+				WriteStartupLog("AppDomain.UnhandledException", payload);
+			}
 		};
 
 		TaskScheduler.UnobservedTaskException += (_, e) =>
 		{
 			CrashFileLogger.WriteException("Win.TaskScheduler.UnobservedTaskException", e.Exception);
 			WriteStartupLog("TaskScheduler.UnobservedTaskException", e.Exception);
+			e.SetObserved();
 		};
 	}
 
@@ -69,6 +79,24 @@ public partial class App : MauiWinUIApplication
 				sb.AppendLine(exception.ToString());
 			}
 
+			sb.AppendLine(new string('-', 80));
+			lock (LogLock)
+			{
+				File.AppendAllText(StartupLogPath, sb.ToString(), Encoding.UTF8);
+			}
+		}
+		catch
+		{
+		}
+	}
+
+	private static void WriteStartupLog(string source, string message)
+	{
+		try
+		{
+			var sb = new StringBuilder();
+			sb.AppendLine($"[{DateTimeOffset.Now:yyyy-MM-dd HH:mm:ss.fff zzz}] {source}");
+			sb.AppendLine(message);
 			sb.AppendLine(new string('-', 80));
 			lock (LogLock)
 			{

@@ -76,9 +76,11 @@ public partial class App : Application
         }
         else
         {
+            var message = $"Non-Exception object thrown (IsTerminating={isTerminating}): {e.ExceptionObject}";
             CrashFileLogger.WriteWarning(
                 "AppDomain.UnhandledException",
-                $"Non-Exception object thrown (IsTerminating={isTerminating}): {e.ExceptionObject}");
+                message);
+            errorLogger?.LogWarning(message, "AppDomain.UnhandledException");
         }
 
         if (isTerminating)
