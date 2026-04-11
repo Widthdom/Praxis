@@ -6,8 +6,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 
 ## [Unreleased]
 
-### Added
-- add .codex & CLAUDE.md
+### [1.1.5] - 2026-04-11
 
 ### Fixed
 - `MainViewModel.CommandSuggestions` now warning-logs failures to dispatch popup close/refresh work onto the main thread instead of letting those scheduling errors vanish silently
@@ -49,13 +48,18 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - Launch-log write/purge, dock persistence, undo/redo dock restore, and theme persistence failures are now treated as non-fatal after local success, with warning logs instead of surfacing as user-action exceptions
 - Initialization and external reload now tolerate non-critical theme/dock read failures with warning logs and safe fallbacks, and command lookup fallback errors now degrade to `Command not found` instead of bubbling exceptions
 
+### [1.1.4] - 2026-04-09
+
+### Added
+- add .codex & CLAUDE.md
+
+### Fixed
+- .NET 10 preview runtime package restore failure (`NU1102: Unable to find package Microsoft.NETCore.App.Runtime.Mono.win-x64 with version (= 10.0.5)`) in CI and Delivery workflows — replaced pinned `dotnet-version: 10.0.100` with `10.0.x` + `dotnet-quality: preview` to enable the preview NuGet feed
+
 ### [1.1.3] - 2026-04-05
 
 ### Added
 - Automatic GitHub Release creation on `v*` tag push — delivery workflow now zips OS-specific artifacts (Windows / macOS) and publishes them with auto-generated release notes
-
-### Fixed
-- .NET 10 preview runtime package restore failure (`NU1102: Unable to find package Microsoft.NETCore.App.Runtime.Mono.win-x64 with version (= 10.0.5)`) in CI and Delivery workflows — replaced pinned `dotnet-version: 10.0.100` with `10.0.x` + `dotnet-quality: preview` to enable the preview NuGet feed
 
 ### [1.1.2] - 2026-03-31
 
@@ -161,8 +165,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 
 ## [Unreleased]
 
-### 追加
-- .codex および CLAUDE.md を追加
+### [1.1.5] - 2026-04-11
 
 ### 修正
 - `MainViewModel.CommandSuggestions` は候補ポップアップ close / refresh の main-thread dispatch 失敗も warning ログに残すようにし、スケジューリング失敗を無言で消さないよう修正
@@ -191,13 +194,18 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - 起動、外部同期、実行リクエスト、クリップボード反映、クリアボタン、sync signal の境界に低コストな Info breadcrumb を追加し、GUI ハング/abort 時に最後に成功していた段階を追いやすくした
 - clipboard と sync notifier の失敗を主処理から分離し、clipboard 引数読込は空文字へフォールバック、コピー失敗は warning/status 化、clipboard 反映失敗後も実行ログを保持し、save/delete/theme/dock/history は同期通知失敗で巻き戻らないようにした
 
+### [1.1.4] - 2026-04-09
+
+### 追加
+- .codex および CLAUDE.md を追加
+
+### 修正
+- CI および Delivery ワークフローで .NET 10 プレビューランタイムパッケージの復元が失敗する問題を修正（`NU1102: Unable to find package Microsoft.NETCore.App.Runtime.Mono.win-x64 with version (= 10.0.5)`）— 固定指定の `dotnet-version: 10.0.100` を `10.0.x` + `dotnet-quality: preview` に変更しプレビュー NuGet フィードを有効化
+
 ### [1.1.3] - 2026-04-05
 
 ### 追加
 - `v*` タグ push 時に GitHub Release を自動作成 — delivery ワークフローが OS 別アーティファクト（Windows / macOS）を zip 化し、自動生成リリースノート付きで公開
-
-### 修正
-- CI および Delivery ワークフローで .NET 10 プレビューランタイムパッケージの復元が失敗する問題を修正（`NU1102: Unable to find package Microsoft.NETCore.App.Runtime.Mono.win-x64 with version (= 10.0.5)`）— 固定指定の `dotnet-version: 10.0.100` を `10.0.x` + `dotnet-quality: preview` に変更しプレビュー NuGet フィードを有効化
 
 ### [1.1.2] - 2026-03-31
 
@@ -293,7 +301,9 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - 重複 `using` ディレクティブの削除と `using` 順序の正規化
 - `MainViewModel` と各 partial クラスに主要ライフサイクルイベントの `LogInfo` 呼び出しを追加
 
-[Unreleased]: https://github.com/Widthdom/Praxis/compare/v1.1.3...HEAD
+[Unreleased]: https://github.com/Widthdom/Praxis/compare/v1.1.5...HEAD
+[1.1.5]: https://github.com/Widthdom/Praxis/compare/v1.1.4...v1.1.5
+[1.1.4]: https://github.com/Widthdom/Praxis/compare/v1.1.3...v1.1.4
 [1.1.3]: https://github.com/Widthdom/Praxis/compare/v1.1.2...v1.1.3
 [1.1.2]: https://github.com/Widthdom/Praxis/compare/v1.1.1...v1.1.2
 [1.1.1]: https://github.com/Widthdom/Praxis/compare/v1.1.0...v1.1.1
