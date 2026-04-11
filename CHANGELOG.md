@@ -13,6 +13,8 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - `DbErrorLogger.FlushAsync(timeout)` now warning-logs timeout and unexpected flush failures so graceful-shutdown logging gaps leave an explicit breadcrumb instead of failing silently
 - `Praxis/Platforms/MacCatalyst/Program.cs` is now UTF-8 BOM-free, and a repository encoding guard test now keeps `cdidx validate` clean for that entrypoint
 - `CommandExecutor` now warning-logs native process-start and launch-target-resolution failures to `crash.log` so returned user-facing launch errors also leave a local diagnostic breadcrumb
+- `LaunchTargetResolver` now trims wrapping quotes after environment-variable expansion, so quoted env-backed HTTP URLs and filesystem paths still resolve correctly
+- `AppStoragePaths` now ignores malformed legacy-path comparisons instead of letting `Path.GetFullPath` abort storage migration checks
 
 ### [1.1.5] - 2026-04-11
 
@@ -180,6 +182,8 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - `DbErrorLogger.FlushAsync(timeout)` は timeout や予期しない flush 失敗も warning 記録するようにし、graceful shutdown 中のログ欠落が無音にならないよう修正
 - `Praxis/Platforms/MacCatalyst/Program.cs` の UTF-8 BOM を除去し、同 entrypoint を BOM-free に保つ repository encoding guard テストを追加して `cdidx validate` をクリーン化
 - `CommandExecutor` は native process 起動失敗や launch-target-resolution 失敗も `crash.log` に warning 記録するようにし、ユーザー向け失敗メッセージの裏側にローカル診断 breadcrumb を残すよう修正
+- `LaunchTargetResolver` は環境変数展開後の引用符も正規化するようにし、引用符付き env 由来の HTTP URL や filesystem path も正しく解決できるよう修正
+- `AppStoragePaths` は壊れた legacy path 比較入力を無視するようにし、`Path.GetFullPath` 例外でストレージ移行チェック全体が止まらないよう修正
 
 ### [1.1.5] - 2026-04-11
 

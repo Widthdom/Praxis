@@ -133,6 +133,42 @@ public class LaunchTargetResolverTests
     }
 
     [Fact]
+    public void Resolve_ExpandsEnvironmentVariables_ThenTrimsWrappingQuotes_ForPathLikeValues()
+    {
+        const string key = "PRAXIS_TEST_HOME_QUOTED";
+        var oldValue = Environment.GetEnvironmentVariable(key);
+        try
+        {
+            Environment.SetEnvironmentVariable(key, "\"/tmp/praxis quoted\"");
+            var result = LaunchTargetResolver.Resolve("%PRAXIS_TEST_HOME_QUOTED%/notes.txt");
+            Assert.Equal(LaunchTargetKind.FileSystemPath, result.Kind);
+            Assert.Equal("/tmp/praxis quoted/notes.txt", result.Target);
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable(key, oldValue);
+        }
+    }
+
+    [Fact]
+    public void Resolve_ExpandsEnvironmentVariables_ThenTrimsWrappingQuotes_ForHttpUrlValues()
+    {
+        const string key = "PRAXIS_TEST_URL_QUOTED";
+        var oldValue = Environment.GetEnvironmentVariable(key);
+        try
+        {
+            Environment.SetEnvironmentVariable(key, "\"https://example.com/path?q=1\"");
+            var result = LaunchTargetResolver.Resolve("%PRAXIS_TEST_URL_QUOTED%");
+            Assert.Equal(LaunchTargetKind.HttpUrl, result.Kind);
+            Assert.Equal("https://example.com/path?q=1", result.Target);
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable(key, oldValue);
+        }
+    }
+
+    [Fact]
     public void Resolve_TrimsWrappingQuotes_ForPathValues()
     {
         var result = LaunchTargetResolver.Resolve(" \"~/Documents/Praxis\" ");

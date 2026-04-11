@@ -40,11 +40,33 @@ public class AppStoragePathsTests
         Assert.Equal("/tmp/praxis data/praxis.db3", result);
     }
 
+    [Fact]
+    public void PathsEqual_ReturnsFalse_ForInvalidPathInput_InsteadOfThrowing()
+    {
+        var invalid = $"bad{'\0'}path";
+
+        var result = InvokePathsEqual(invalid, "/tmp/praxis.db3");
+
+        Assert.False(result);
+
+        var content = File.ReadAllText(CrashFileLogger.LogFilePath);
+        Assert.Contains("Ignoring invalid migration path comparison", content);
+    }
+
     private static string? InvokeCombineAbsoluteFilePath(string? directoryPath, string fileName)
     {
         var method = typeof(AppStoragePaths).GetMethod("CombineAbsoluteFilePath", BindingFlags.NonPublic | BindingFlags.Static);
         Assert.NotNull(method);
 
         return method.Invoke(null, [directoryPath, fileName]) as string;
+    }
+
+    private static bool InvokePathsEqual(string left, string right)
+    {
+        var method = typeof(AppStoragePaths).GetMethod("PathsEqual", BindingFlags.NonPublic | BindingFlags.Static);
+        Assert.NotNull(method);
+
+        var result = method.Invoke(null, [left, right]);
+        return Assert.IsType<bool>(result);
     }
 }
