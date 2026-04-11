@@ -469,7 +469,7 @@ public partial class MainPage : ContentPage
                 CopyNoticeOverlay.FadeToAsync(0.0, 160, Easing.CubicIn),
                 CopyNoticeBox.ScaleToAsync(0.92, 160, Easing.CubicIn));
         }
-        catch (OperationCanceledException)
+        catch (OperationCanceledException) when (token.IsCancellationRequested)
         {
         }
         catch (Exception ex)

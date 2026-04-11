@@ -315,6 +315,7 @@ public class AppLayerSourceGuardTests
     public void MainPage_CopyNoticeAnimationFailures_AreCrashLogged()
     {
         var source = ReadRepositoryFile("Praxis", "MainPage.xaml.cs");
+        Assert.Contains("catch (OperationCanceledException) when (token.IsCancellationRequested)", source);
         Assert.Contains("CrashFileLogger.WriteWarning(\"MainPage.CopyIconButton_Clicked\", $\"Copy notice animation failed: {ex.Message}\");", source);
     }
 
