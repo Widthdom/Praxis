@@ -79,7 +79,7 @@ dotnet test Praxis.Tests/Praxis.Tests.csproj --collect:"XPlat Code Coverage"
 - [`AsciiInputFilterTests.cs`](../Praxis.Tests/AsciiInputFilterTests.cs): ASCII filtering rules used by macOS modal command input paths.
 - [`MacCommandInputSourcePolicyTests.cs`](../Praxis.Tests/MacCommandInputSourcePolicyTests.cs): macOS ASCII input-source enforcement gating (first-responder + key-window + app-active + per-entry opt-in) and focused re-apply interval safety.
 - [`WindowsCommandInputImePolicyTests.cs`](../Praxis.Tests/WindowsCommandInputImePolicyTests.cs): Windows IME ASCII-mode gating (`ShouldForceAsciiImeMode` with per-entry opt-in), focus-time ASCII nudge retry schedule, focused-state ASCII reassert gating/interval, conversion-mode normalization, and caret clamp logic.
-- [`WindowsInputScopeCompatibilityPolicyTests.cs`](../Praxis.Tests/WindowsInputScopeCompatibilityPolicyTests.cs): fallback trigger rules when native `InputScope` assignment fails (`ArgumentException`).
+- [`WindowsInputScopeCompatibilityPolicyTests.cs`](../Praxis.Tests/WindowsInputScopeCompatibilityPolicyTests.cs): fallback trigger rules when native `InputScope` assignment fails (`ArgumentException`), including derived-argument exceptions and rejection of non-argument wrappers.
 - [`WindowsModalFocusRestorePolicyTests.cs`](../Praxis.Tests/WindowsModalFocusRestorePolicyTests.cs): Windows editor/conflict focus restore conditions.
 - [`ConflictDialogFocusRestorePolicyTests.cs`](../Praxis.Tests/ConflictDialogFocusRestorePolicyTests.cs): editor focus restore condition after conflict dialog close.
 - [`EditorShortcutActionResolverTests.cs`](../Praxis.Tests/EditorShortcutActionResolverTests.cs): key-to-action mapping for modal/context/conflict shortcuts.
@@ -89,7 +89,7 @@ dotnet test Praxis.Tests/Praxis.Tests.csproj --collect:"XPlat Code Coverage"
 
 ### UI-Agnostic Visual / Layout Policies
 - [`InputClearButtonVisibilityPolicyTests.cs`](../Praxis.Tests/InputClearButtonVisibilityPolicyTests.cs): clear button visibility rule, including whitespace/control-character visibility and the exact `!string.IsNullOrEmpty` contract.
-- [`DockScrollBarVisibilityPolicyTests.cs`](../Praxis.Tests/DockScrollBarVisibilityPolicyTests.cs): dock scrollbar visibility rule from pointer hover state + horizontal-overflow state, and mask-visibility inversion rule.
+- [`DockScrollBarVisibilityPolicyTests.cs`](../Praxis.Tests/DockScrollBarVisibilityPolicyTests.cs): dock scrollbar visibility rule from pointer hover state + horizontal-overflow state, plus full-combination verification that mask visibility remains the inverse of scrollbar visibility.
 - [`ClearButtonGlyphAlignmentPolicyTests.cs`](../Praxis.Tests/ClearButtonGlyphAlignmentPolicyTests.cs): clear glyph translation policy, including per-platform offsets and repeat-call stability.
 - [`ClearButtonRefocusPolicyTests.cs`](../Praxis.Tests/ClearButtonRefocusPolicyTests.cs): clear-button focus retry schedule by platform, including exact Windows/Mac Catalyst delays and Windows precedence when both platform flags are set.
 - [`WindowsNativeFocusSafetyPolicyTests.cs`](../Praxis.Tests/WindowsNativeFocusSafetyPolicyTests.cs): guard conditions for applying native WinUI `TextBox` refocus/caret restore only to live controls, with exhaustive three-flag truth-table coverage.
@@ -199,7 +199,7 @@ dotnet test Praxis.Tests/Praxis.Tests.csproj --collect:"XPlat Code Coverage"
 - [`AsciiInputFilterTests.cs`](../Praxis.Tests/AsciiInputFilterTests.cs): macOS モーダル command 入力経路で使う ASCII フィルタ判定。
 - [`MacCommandInputSourcePolicyTests.cs`](../Praxis.Tests/MacCommandInputSourcePolicyTests.cs): macOS ASCII 入力ソース強制の適用条件（first responder / キーウィンドウ / アプリ active / 欄ごとの opt-in）と、フォーカス中の再強制間隔の安全性を検証。
 - [`WindowsCommandInputImePolicyTests.cs`](../Praxis.Tests/WindowsCommandInputImePolicyTests.cs): Windows IME の ASCII モード適用判定（欄ごとの opt-in を含む `ShouldForceAsciiImeMode`）、フォーカス時 ASCII 補正の再試行スケジュール、フォーカス中英字再強制の適用条件/間隔、変換モード正規化、キャレット補正。
-- [`WindowsInputScopeCompatibilityPolicyTests.cs`](../Praxis.Tests/WindowsInputScopeCompatibilityPolicyTests.cs): ネイティブ `InputScope` 設定失敗時（`ArgumentException`）のフォールバック判定。
+- [`WindowsInputScopeCompatibilityPolicyTests.cs`](../Praxis.Tests/WindowsInputScopeCompatibilityPolicyTests.cs): ネイティブ `InputScope` 設定失敗時（`ArgumentException`）のフォールバック判定。派生 `ArgumentException` と、inner に持つだけの非対象例外も区別して検証する。
 - [`WindowsModalFocusRestorePolicyTests.cs`](../Praxis.Tests/WindowsModalFocusRestorePolicyTests.cs): Windows 編集モーダル/競合ダイアログのフォーカス復帰条件。
 - [`ConflictDialogFocusRestorePolicyTests.cs`](../Praxis.Tests/ConflictDialogFocusRestorePolicyTests.cs): 競合ダイアログ閉鎖後の編集フォーカス復帰条件。
 - [`EditorShortcutActionResolverTests.cs`](../Praxis.Tests/EditorShortcutActionResolverTests.cs): モーダル/コンテキスト/競合のキー操作マッピング。
@@ -209,7 +209,7 @@ dotnet test Praxis.Tests/Praxis.Tests.csproj --collect:"XPlat Code Coverage"
 
 ### UI 非依存の見た目 / レイアウトポリシー
 - [`InputClearButtonVisibilityPolicyTests.cs`](../Praxis.Tests/InputClearButtonVisibilityPolicyTests.cs): クリアボタン表示条件。空白/制御文字の表示と `!string.IsNullOrEmpty` 契約も固定する。
-- [`DockScrollBarVisibilityPolicyTests.cs`](../Praxis.Tests/DockScrollBarVisibilityPolicyTests.cs): ポインターホバー状態 + 横オーバーフロー状態に基づく Dock スクロールバー表示判定と、マスク表示の反転ルール判定。
+- [`DockScrollBarVisibilityPolicyTests.cs`](../Praxis.Tests/DockScrollBarVisibilityPolicyTests.cs): ポインターホバー状態 + 横オーバーフロー状態に基づく Dock スクロールバー表示判定と、全組み合わせでのマスク表示反転ルール判定。
 - [`ClearButtonGlyphAlignmentPolicyTests.cs`](../Praxis.Tests/ClearButtonGlyphAlignmentPolicyTests.cs): クリアボタン `x` の座標補正。プラットフォーム別オフセットと再呼び出し安定性も検証する。
 - [`ClearButtonRefocusPolicyTests.cs`](../Praxis.Tests/ClearButtonRefocusPolicyTests.cs): クリア後フォーカス復帰リトライ間隔。Windows/Mac Catalyst の正確な遅延値と、両フラグ指定時の Windows 優先も検証する。
 - [`WindowsNativeFocusSafetyPolicyTests.cs`](../Praxis.Tests/WindowsNativeFocusSafetyPolicyTests.cs): WinUI の native `TextBox` 再フォーカス/キャレット復帰を live control に限定する安全条件を検証する。3 フラグの全組み合わせも固定する。
