@@ -85,6 +85,15 @@ public class CoreLogicPerformanceSafetyTests
     }
 
     [Fact]
+    public void ButtonSearchMatcher_ReturnsFalse_ForNullButton_WhenQueryIsNotBlank()
+    {
+        var ex = Record.Exception(() => ButtonSearchMatcher.IsMatch(null, "abc"));
+
+        Assert.Null(ex);
+        Assert.False(ButtonSearchMatcher.IsMatch(null, "abc"));
+    }
+
+    [Fact]
     public void LogRetentionPolicy_ReturnsEmpty_WhenInputIsEmpty()
     {
         var now = new DateTime(2026, 2, 15, 0, 0, 0, DateTimeKind.Utc);
@@ -105,6 +114,24 @@ public class CoreLogicPerformanceSafetyTests
         var deleting = LogRetentionPolicy.GetEntriesToDelete(logs, now, -3);
         Assert.Single(deleting);
         Assert.Equal(now.AddDays(-2), deleting[0].TimestampUtc);
+    }
+
+    [Fact]
+    public void LogRetentionPolicy_IgnoresNullEntries()
+    {
+        var now = new DateTime(2026, 2, 15, 0, 0, 0, DateTimeKind.Utc);
+        LaunchLogEntry? missing = null;
+        var logs = new[]
+        {
+            missing!,
+            new LaunchLogEntry { TimestampUtc = now.AddDays(-3) },
+            new LaunchLogEntry { TimestampUtc = now.AddHours(-12) },
+        };
+
+        var deleting = LogRetentionPolicy.GetEntriesToDelete(logs, now, 1);
+
+        Assert.Single(deleting);
+        Assert.Equal(now.AddDays(-3), deleting[0].TimestampUtc);
     }
 
     [Fact]

@@ -9,6 +9,7 @@ public static class LauncherButtonOrderPolicy
         ArgumentNullException.ThrowIfNull(buttons);
 
         return buttons
+            .OfType<LauncherButtonRecord>()
             .OrderBy(x => x.Y)
             .ThenBy(x => x.X)
             .ToList();

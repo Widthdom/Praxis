@@ -34,4 +34,11 @@ public class ModalEditorScrollHeightResolverTests
         var height = ModalEditorScrollHeightResolver.Resolve(contentHeight: -20, maxHeight: -1);
         Assert.Equal(0, height);
     }
+
+    [Fact]
+    public void Resolve_TreatsNonFiniteInputs_AsZero()
+    {
+        Assert.Equal(0, ModalEditorScrollHeightResolver.Resolve(double.NaN, double.NaN));
+        Assert.Equal(0, ModalEditorScrollHeightResolver.Resolve(double.PositiveInfinity, double.NegativeInfinity));
+    }
 }

@@ -92,8 +92,9 @@ public partial class App : MauiWinUIApplication
 				File.AppendAllText(StartupLogPath, sb.ToString(), Encoding.UTF8);
 			}
 		}
-		catch
+		catch (Exception ex)
 		{
+			CrashFileLogger.WriteWarning(nameof(App), $"Failed to append startup log '{StartupLogPath}': {ex.Message}");
 		}
 	}
 
@@ -110,8 +111,9 @@ public partial class App : MauiWinUIApplication
 				File.AppendAllText(StartupLogPath, sb.ToString(), Encoding.UTF8);
 			}
 		}
-		catch
+		catch (Exception ex)
 		{
+			CrashFileLogger.WriteWarning(nameof(App), $"Failed to append startup log '{StartupLogPath}': {ex.Message}");
 		}
 	}
 }

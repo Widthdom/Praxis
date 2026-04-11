@@ -18,6 +18,12 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - `CommandRecordMatcher` now ignores `null` collection entries instead of throwing while scanning command suggestions
 - `StateSyncPayloadParser` now rejects double-separator payloads instead of collapsing empty segments and accepting malformed sync signals
 - `QuickLookPreviewFormatter` now keeps ellipsis-truncated output within the requested `maxLength` instead of returning strings longer than the caller asked for
+- `ButtonSearchMatcher`, `LogRetentionPolicy`, and `LauncherButtonOrderPolicy` now ignore `null` record entries instead of throwing inside search, retention, or placement normalization helpers
+- `CommandWorkingDirectoryPolicy` now expands environment-variable tool paths before shell detection, so `%ComSpec%` / quoted `%...%` Windows shell tools still pick the user-profile working directory
+- `CommandLineBuilder` now treats quoted-empty tool values as empty so preview/status command lines stay aligned with execution-time empty-tool handling
+- `AppStoragePathLayoutResolver` now trims wrapping quotes from configured storage roots before composing app-data paths
+- `GridSnapper` and `ModalEditorScrollHeightResolver` now sanitize non-finite numeric inputs instead of propagating `NaN` / infinity through layout calculations
+- Windows startup-log append failures and `MainPage` copy-notice animation failures now leave `crash.log` breadcrumbs instead of being swallowed silently
 
 ### [1.1.5] - 2026-04-11
 
@@ -190,6 +196,12 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - `CommandRecordMatcher` は command 候補走査中に `null` コレクション要素を無視するようにし、候補生成で例外落ちしないよう修正
 - `StateSyncPayloadParser` は二重区切り payload を空セグメント圧縮で受理しないようにし、壊れた同期シグナルを拒否するよう修正
 - `QuickLookPreviewFormatter` は省略記号つき短縮後も要求 `maxLength` を超えないようにし、呼び出し元の長さ制約を破らないよう修正
+- `ButtonSearchMatcher`、`LogRetentionPolicy`、`LauncherButtonOrderPolicy` は `null` 要素を無視するようにし、検索・保持期間計算・配置正規化 helper 内で例外落ちしないよう修正
+- `CommandWorkingDirectoryPolicy` は shell 判定前に環境変数つき tool path を展開するようにし、`%ComSpec%` や引用符付き `%...%` Windows shell tool でもユーザープロファイル起点 working directory を選べるよう修正
+- `CommandLineBuilder` は quoted-empty の tool 値を空として扱うようにし、実行時の empty-tool 判定と preview/status 表示を整合させるよう修正
+- `AppStoragePathLayoutResolver` は app-data path 合成前に保存先 root の外側引用符を除去するよう修正
+- `GridSnapper` と `ModalEditorScrollHeightResolver` は非有限数値入力を安全化するようにし、`NaN` / infinity がレイアウト計算へ伝播しないよう修正
+- Windows startup-log 追記失敗と `MainPage` copy notice animation 失敗は、無言で握りつぶさず `crash.log` に breadcrumb を残すよう修正
 
 ### [1.1.5] - 2026-04-11
 

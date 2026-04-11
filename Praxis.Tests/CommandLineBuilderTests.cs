@@ -27,4 +27,16 @@ public class CommandLineBuilderTests
 
         Assert.Equal("mytool --flag   value", commandLine);
     }
+
+    [Theory]
+    [InlineData("\"\"")]
+    [InlineData("''")]
+    [InlineData("\"   \"")]
+    [InlineData("'   '")]
+    public void Build_ReturnsEmpty_WhenToolNormalizesToQuotedEmpty(string tool)
+    {
+        var commandLine = CommandLineBuilder.Build(tool, "--flag");
+
+        Assert.Equal(string.Empty, commandLine);
+    }
 }

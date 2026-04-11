@@ -31,4 +31,16 @@ public class LauncherButtonOrderPolicyTests
         Assert.Same(first, result[0]);
         Assert.Same(second, result[1]);
     }
+
+    [Fact]
+    public void ToSortedList_IgnoresNullEntries()
+    {
+        var top = new LauncherButtonRecord { ButtonText = "Top", X = 0, Y = 0 };
+        LauncherButtonRecord? missing = null;
+        var bottom = new LauncherButtonRecord { ButtonText = "Bottom", X = 0, Y = 10 };
+
+        var result = LauncherButtonOrderPolicy.ToSortedList([bottom, missing!, top]);
+
+        Assert.Equal(["Top", "Bottom"], result.Select(x => x.ButtonText));
+    }
 }

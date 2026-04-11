@@ -4,11 +4,16 @@ namespace Praxis.Core.Logic;
 
 public static class ButtonSearchMatcher
 {
-    public static bool IsMatch(LauncherButtonRecord button, string query)
+    public static bool IsMatch(LauncherButtonRecord? button, string query)
     {
         if (string.IsNullOrWhiteSpace(query))
         {
             return true;
+        }
+
+        if (button is null)
+        {
+            return false;
         }
 
         var q = query.Trim();

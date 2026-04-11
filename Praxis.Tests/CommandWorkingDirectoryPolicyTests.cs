@@ -47,4 +47,24 @@ public class CommandWorkingDirectoryPolicyTests
 
         Assert.False(result);
     }
+
+    [Fact]
+    public void RequiresUserProfileWorkingDirectory_ReturnsTrue_ForExpandedEnvironmentShellPath()
+    {
+        const string variableName = "PRAXIS_TEST_SHELL_PATH";
+        var original = Environment.GetEnvironmentVariable(variableName);
+
+        try
+        {
+            Environment.SetEnvironmentVariable(variableName, "\"C:\\Program Files\\PowerShell\\7\\pwsh.exe\"");
+
+            var result = CommandWorkingDirectoryPolicy.RequiresUserProfileWorkingDirectory($"%{variableName}%", isWindows: true);
+
+            Assert.True(result);
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable(variableName, original);
+        }
+    }
 }

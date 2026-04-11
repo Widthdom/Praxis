@@ -138,6 +138,7 @@ public class AppLayerSourceGuardTests
         Assert.Contains("AppStoragePaths.WindowsLocalAppDataRoot", source);
         Assert.Contains("private static bool globalExceptionLoggingHooked;", source);
         Assert.Contains("if (globalExceptionLoggingHooked)", source);
+        Assert.Contains("CrashFileLogger.WriteWarning(nameof(App), $\"Failed to append startup log '{StartupLogPath}': {ex.Message}\");", source);
     }
 
     [Fact]
@@ -203,6 +204,13 @@ public class AppLayerSourceGuardTests
         Assert.Contains("if (process is null)", source);
         Assert.Contains("CrashFileLogger.WriteWarning(nameof(Program), $\"LaunchServices relay returned no process for bundle '{bundlePath}'.\");", source);
         Assert.Contains("CrashFileLogger.WriteWarning(nameof(Program), $\"LaunchServices relay failed for bundle '{bundlePath}': {ex.Message}\");", source);
+    }
+
+    [Fact]
+    public void MainPage_CopyNoticeAnimationFailures_AreCrashLogged()
+    {
+        var source = ReadRepositoryFile("Praxis", "MainPage.xaml.cs");
+        Assert.Contains("CrashFileLogger.WriteWarning(\"MainPage.CopyIconButton_Clicked\", $\"Copy notice animation failed: {ex.Message}\");", source);
     }
 
     private static string ReadRepositoryFile(params string[] segments)

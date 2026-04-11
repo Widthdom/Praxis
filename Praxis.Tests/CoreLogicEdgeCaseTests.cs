@@ -93,6 +93,23 @@ public class CoreLogicEdgeCaseTests
     }
 
     [Fact]
+    public void GridSnapper_HandlesNonFiniteValues_ByReturningOrigin()
+    {
+        var snapped = GridSnapper.Snap(double.NaN);
+        var clamped = GridSnapper.ClampWithinArea(
+            double.PositiveInfinity,
+            double.NegativeInfinity,
+            width: double.NaN,
+            height: double.PositiveInfinity,
+            areaWidth: double.NaN,
+            areaHeight: double.PositiveInfinity);
+
+        Assert.Equal(0, snapped);
+        Assert.Equal(0, clamped.X);
+        Assert.Equal(0, clamped.Y);
+    }
+
+    [Fact]
     public void ButtonSearchMatcher_ReturnsTrue_ForEmptyQuery()
     {
         var button = new LauncherButtonRecord { ButtonText = "Open" };
