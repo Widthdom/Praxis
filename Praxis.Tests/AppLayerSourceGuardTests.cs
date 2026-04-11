@@ -173,6 +173,7 @@ public class AppLayerSourceGuardTests
     {
         var source = ReadRepositoryFile("Praxis", "Services", "DbErrorLogger.cs");
 
+        Assert.Contains("CrashFileLogger.WriteException(nameof(DbErrorLogger), ex);", source);
         Assert.Contains("CrashFileLogger.WriteWarning(nameof(DbErrorLogger), $\"Drain loop failed unexpectedly: {ex.Message}\");", source);
     }
 
