@@ -277,6 +277,23 @@ public class AppLayerSourceGuardTests
     }
 
     [Fact]
+    public void MacHandlers_KeyInputResolutionFailures_AreCrashLogged_AndFallBack()
+    {
+        var macEntrySource = ReadRepositoryFile("Praxis", "Platforms", "MacCatalyst", "Handlers", "MacEntryHandler.cs");
+        var macEditorSource = ReadRepositoryFile("Praxis", "Platforms", "MacCatalyst", "Handlers", "MacEditorHandler.cs");
+        var commandEntrySource = ReadRepositoryFile("Praxis", "Platforms", "MacCatalyst", "Handlers", "CommandEntryHandler.cs");
+
+        Assert.Contains("return TryResolveKeyInput(inputName) ?? fallback;", macEntrySource);
+        Assert.Contains("CrashFileLogger.WriteWarning(nameof(MacEntryHandler), $\"Failed to resolve UIKeyCommand input '{inputName}': {ex.Message}\");", macEntrySource);
+
+        Assert.Contains("return TryResolveKeyInput(inputName) ?? fallback;", macEditorSource);
+        Assert.Contains("CrashFileLogger.WriteWarning(nameof(MacEditorHandler), $\"Failed to resolve UIKeyCommand input '{inputName}': {ex.Message}\");", macEditorSource);
+
+        Assert.Contains("return TryResolveKeyInput(inputName) ?? fallback;", commandEntrySource);
+        Assert.Contains("CrashFileLogger.WriteWarning(nameof(CommandEntryHandler), $\"Failed to resolve UIKeyCommand input '{inputName}': {ex.Message}\");", commandEntrySource);
+    }
+
+    [Fact]
     public void MacMiddleClickAndKeyCommandFallbackFailures_AreCrashLogged()
     {
         var behaviorSource = ReadRepositoryFile("Praxis", "Behaviors", "MiddleClickBehavior.cs");

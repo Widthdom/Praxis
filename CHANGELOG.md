@@ -7,6 +7,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 ## [Unreleased]
 
 ### Fixed
+- `MacEntryHandler`, `MacEditorHandler`, and Mac `CommandEntryHandler` now warning-log `UIKeyCommand` input-reflection failures and fall back to baked key literals instead of letting handler type initialization fail on runtime API differences
 - `ThemeModeParser.NormalizeOrDefault` now sanitizes invalid fallback enum values back to `System` instead of returning an out-of-range theme when both the parsed value and caller-supplied default are invalid
 - `DbErrorLogger` now warning-logs unexpected drain-loop failures to `crash.log` so background log persistence does not fail silently after enqueue succeeds
 - `FileStateSyncNotifier.NotifyButtonsChangedAsync` now warning-logs sync-payload write failures before rethrowing so local save/delete success paths leave a breadcrumb when file signaling breaks
@@ -191,6 +192,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 ## [Unreleased]
 
 ### 修正
+- `MacEntryHandler`、`MacEditorHandler`、Mac の `CommandEntryHandler` は `UIKeyCommand` 入力の reflection 解決失敗も warning 記録したうえで既定キー文字列へフォールバックするようにし、runtime API 差異で handler の型初期化ごと失敗しないよう修正
 - `ThemeModeParser.NormalizeOrDefault` は、解析値と呼び出し元既定値の両方が不正 enum でも out-of-range 値を返さず `System` へ安全化するよう修正
 - `DbErrorLogger` は background drain loop の予期しない失敗も `crash.log` に warning 記録するようにし、enqueue 済みでも以後のログ永続化失敗が無音にならないよう修正
 - `FileStateSyncNotifier.NotifyButtonsChangedAsync` は sync payload の書込失敗も再送出前に warning 記録するようにし、ローカル save/delete 成功後に file signaling が壊れても breadcrumb を残すよう修正
