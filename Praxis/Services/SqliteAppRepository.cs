@@ -356,12 +356,13 @@ public sealed class SqliteAppRepository : IAppRepository
             return;
         }
 
-        connection = new SQLiteAsyncConnection(dbPath);
-        await EnsureSchemaAsync(connection);
+        var initializedConnection = new SQLiteAsyncConnection(dbPath);
+        await EnsureSchemaAsync(initializedConnection);
 
-        var entities = await connection.Table<LauncherButtonEntity>().ToListAsync();
+        var entities = await initializedConnection.Table<LauncherButtonEntity>().ToListAsync();
         cache = LauncherButtonOrderPolicy.ToSortedList(entities.Select(Map));
         RebuildCommandCache();
+        connection = initializedConnection;
     }
 
     private static async Task EnsureSchemaAsync(SQLiteAsyncConnection connection)

@@ -6,6 +6,7 @@ using System.Runtime.InteropServices;
 using Praxis.Behaviors;
 using Praxis.Core.Logic;
 using Praxis.Core.Models;
+using Praxis.Services;
 using Praxis.ViewModels;
 #if MACCATALYST
 using CoreGraphics;
@@ -28,6 +29,7 @@ public partial class MainPage : ContentPage
         catch (Exception ex)
         {
             xamlLoaded = false;
+            CrashFileLogger.WriteException("MainPage.InitializeComponent", ex);
             Content = new VerticalStackLayout
             {
                 Padding = 24,
@@ -134,10 +136,10 @@ public partial class MainPage : ContentPage
             return;
         }
 
-        initialized = true;
         try
         {
             await viewModel.InitializeAsync();
+            initialized = true;
             ApplyTabPolicy();
             App.SetContextMenuOpenState(viewModel.IsContextMenuOpen);
 #if WINDOWS
@@ -155,7 +157,16 @@ public partial class MainPage : ContentPage
         }
         catch (Exception ex)
         {
-            await DisplayAlertAsync("Initialization Error", ex.Message, "OK");
+            initialized = false;
+            CrashFileLogger.WriteException("MainPage.OnAppearing.InitializeAsync", ex);
+            try
+            {
+                await DisplayAlertAsync("Initialization Error", ex.Message, "OK");
+            }
+            catch (Exception alertEx)
+            {
+                CrashFileLogger.WriteException("MainPage.OnAppearing.DisplayAlertAsync", alertEx);
+            }
         }
     }
 
