@@ -767,6 +767,7 @@ public class MainViewModelWorkflowIntegrationTests
         Assert.Equal("Executed.", viewModel.StatusText);
         Assert.Empty(repository.Logs);
         Assert.Contains(logger.Warnings, x => x.Context == "ExecuteRecordAsync" && x.Message.Contains("log boom", StringComparison.Ordinal));
+        Assert.Contains(logger.Exceptions, x => x.Context == "ExecuteRecordAsync" && x.Exception.Message.Contains("log boom", StringComparison.Ordinal));
     }
 
     [Fact]
@@ -798,6 +799,7 @@ public class MainViewModelWorkflowIntegrationTests
         Assert.Equal("Executed.", viewModel.StatusText);
         Assert.Single(repository.Logs);
         Assert.Contains(logger.Warnings, x => x.Context == "ExecuteRecordAsync" && x.Message.Contains("purge boom", StringComparison.Ordinal));
+        Assert.Contains(logger.Exceptions, x => x.Context == "ExecuteRecordAsync" && x.Exception.Message.Contains("purge boom", StringComparison.Ordinal));
     }
 
     [Fact]
