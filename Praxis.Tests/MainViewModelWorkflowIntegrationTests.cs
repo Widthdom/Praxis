@@ -568,6 +568,7 @@ public class MainViewModelWorkflowIntegrationTests
         Assert.True(viewModel.IsEditorOpen);
         Assert.Equal("Save canceled due to conflict.", viewModel.StatusText);
         Assert.Contains(logger.Warnings, x => x.Context == "ResolveConflictAsync" && x.Message.Contains("dialog boom", StringComparison.Ordinal));
+        Assert.Contains(logger.Exceptions, x => x.Context == "ResolveConflictAsync" && x.Exception.Message.Contains("dialog boom", StringComparison.Ordinal));
     }
 
     [Fact]

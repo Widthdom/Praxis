@@ -334,6 +334,7 @@ public partial class MainViewModel
         }
         catch (Exception ex)
         {
+            errorLogger.Log(ex, nameof(ResolveConflictAsync));
             errorLogger.LogWarning($"Conflict resolution callback failed: {ex.Message}", nameof(ResolveConflictAsync));
             return EditorConflictResolution.Cancel;
         }
