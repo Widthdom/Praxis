@@ -61,11 +61,11 @@ dotnet test Praxis.Tests/Praxis.Tests.csproj --collect:"XPlat Code Coverage"
 - [`CommandLineBuilderTests.cs`](../Praxis.Tests/CommandLineBuilderTests.cs): null/whitespace handling, quoted-empty tool normalization, and command-line construction.
 - [`CommandExecutorTests.cs`](../Praxis.Tests/CommandExecutorTests.cs): linked-source coverage for home-path expansion helpers (`~`, `~/...`, `~\\...`), non-home relative path pass-through, quoted-tool normalization, normalized empty/quoted-empty tool detection, env-expanded Windows shell launch working-directory override to the user profile, and crash-log breadcrumbs when native process launch throws.
 - [`CommandRecordMatcherTests.cs`](../Praxis.Tests/CommandRecordMatcherTests.cs): exact command matching rules, null guards including null collection entries, and case/trim behavior.
-- [`CommandSuggestionVisibilityPolicyTests.cs`](../Praxis.Tests/CommandSuggestionVisibilityPolicyTests.cs): close policy when context menu opens.
+- [`CommandSuggestionVisibilityPolicyTests.cs`](../Praxis.Tests/CommandSuggestionVisibilityPolicyTests.cs): close policy when context menu opens, locked as a direct mirror of current suggestion-open state.
 - [`CommandSuggestionRowColorPolicyTests.cs`](../Praxis.Tests/CommandSuggestionRowColorPolicyTests.cs): selected/unselected row color decisions per theme.
 - [`CommandWorkingDirectoryPolicyTests.cs`](../Praxis.Tests/CommandWorkingDirectoryPolicyTests.cs): pure policy coverage for which Windows shell-like tools (`cmd`, `powershell`, `pwsh`, `wt`) should start from the user-profile working directory, including env-expanded quoted tool paths.
-- [`CommandNotFoundRefocusPolicyTests.cs`](../Praxis.Tests/CommandNotFoundRefocusPolicyTests.cs): refocus decision for `Command not found:` status.
-- [`StatusFlashErrorPolicyTests.cs`](../Praxis.Tests/StatusFlashErrorPolicyTests.cs): status classification for error flash behavior.
+- [`CommandNotFoundRefocusPolicyTests.cs`](../Praxis.Tests/CommandNotFoundRefocusPolicyTests.cs): refocus decision for `Command not found:` status, including exact-prefix acceptance and rejection when the colon is missing or the phrase is not message-leading.
+- [`StatusFlashErrorPolicyTests.cs`](../Praxis.Tests/StatusFlashErrorPolicyTests.cs): status classification for error flash behavior, including embedded `error` / `exception` / `not found` terms and neutral-message rejection.
 - [`QuickLookPreviewFormatterTests.cs`](../Praxis.Tests/QuickLookPreviewFormatterTests.cs): quick-look preview text normalization, max-length-safe truncation, exact-length pass-through, labeled-line formatting, and argument guards for invalid lengths or blank labels.
 
 ### Undo / Redo
@@ -182,10 +182,10 @@ dotnet test Praxis.Tests/Praxis.Tests.csproj --collect:"XPlat Code Coverage"
 ### コマンド実行 / 一致 / 候補
 - [`CommandLineBuilderTests.cs`](../Praxis.Tests/CommandLineBuilderTests.cs): コマンドライン構築の null/空白処理、quoted-empty tool 正規化、組み立て結果。
 - [`CommandRecordMatcherTests.cs`](../Praxis.Tests/CommandRecordMatcherTests.cs): command 完全一致規則、null コレクション要素も含む null ガード、trim/大小文字非依存。
-- [`CommandSuggestionVisibilityPolicyTests.cs`](../Praxis.Tests/CommandSuggestionVisibilityPolicyTests.cs): コンテキストメニュー表示時の候補クローズ判定。
+- [`CommandSuggestionVisibilityPolicyTests.cs`](../Praxis.Tests/CommandSuggestionVisibilityPolicyTests.cs): コンテキストメニュー表示時の候補クローズ判定。候補表示状態との 1:1 対応を固定する。
 - [`CommandSuggestionRowColorPolicyTests.cs`](../Praxis.Tests/CommandSuggestionRowColorPolicyTests.cs): テーマ別の候補行背景色判定。
-- [`CommandNotFoundRefocusPolicyTests.cs`](../Praxis.Tests/CommandNotFoundRefocusPolicyTests.cs): `Command not found:` 時の再フォーカス判定。
-- [`StatusFlashErrorPolicyTests.cs`](../Praxis.Tests/StatusFlashErrorPolicyTests.cs): ステータスのエラーフラッシュ分類判定。
+- [`CommandNotFoundRefocusPolicyTests.cs`](../Praxis.Tests/CommandNotFoundRefocusPolicyTests.cs): `Command not found:` 時の再フォーカス判定。prefix 厳密一致、コロン欠落拒否、文頭以外拒否も検証する。
+- [`StatusFlashErrorPolicyTests.cs`](../Praxis.Tests/StatusFlashErrorPolicyTests.cs): ステータスのエラーフラッシュ分類判定。埋め込み `error` / `exception` / `not found` と中立メッセージ拒否も含む。
 - [`QuickLookPreviewFormatterTests.cs`](../Praxis.Tests/QuickLookPreviewFormatterTests.cs): Quick Look 表示文字列の正規化・最大長を超えない省略・ちょうど上限長の素通し・ラベル整形・不正長/空ラベルの引数ガード。
 
 ### Undo / Redo
