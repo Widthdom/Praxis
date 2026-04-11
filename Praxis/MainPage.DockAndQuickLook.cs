@@ -192,6 +192,41 @@ public partial class MainPage
         try
         {
             await Task.Delay(QuickLookShowDelayMs, token);
+            if (token.IsCancellationRequested ||
+                quickLookPendingItemId != item.Id ||
+                !ReferenceEquals(quickLookPendingAnchor, anchor))
+            {
+                return;
+            }
+
+            if (viewModel.IsEditorOpen || viewModel.IsContextMenuOpen || IsConflictDialogOpen())
+            {
+                return;
+            }
+
+            QuickLookCommandLabel.Text = QuickLookPreviewFormatter.BuildLine("Command", item.Command);
+            QuickLookToolLabel.Text = QuickLookPreviewFormatter.BuildLine("Tool", item.Tool);
+            QuickLookArgumentsLabel.Text = QuickLookPreviewFormatter.BuildLine("Arguments", item.Arguments);
+            QuickLookClipWordLabel.Text = QuickLookPreviewFormatter.BuildLine("Clip Word", item.ClipText);
+            QuickLookNoteLabel.Text = QuickLookPreviewFormatter.BuildLine("Note", item.Note);
+            PositionQuickLookPopup(anchor);
+
+            QuickLookPopup.CancelAnimations();
+            if (!QuickLookPopup.IsVisible)
+            {
+                QuickLookPopup.Opacity = 0;
+                QuickLookPopup.IsVisible = true;
+            }
+
+            if (QuickLookPopup.Opacity < 1)
+            {
+                await QuickLookPopup.FadeToAsync(1, QuickLookFadeDurationMs, Easing.CubicOut);
+            }
+
+            if (token.IsCancellationRequested)
+            {
+                return;
+            }
         }
         catch (OperationCanceledException) when (token.IsCancellationRequested)
         {
@@ -200,42 +235,6 @@ public partial class MainPage
         catch (Exception ex)
         {
             CrashFileLogger.WriteWarning(nameof(ShowQuickLookAfterDelayAsync), $"Quick Look show failed: {ex.Message}");
-            return;
-        }
-
-        if (token.IsCancellationRequested ||
-            quickLookPendingItemId != item.Id ||
-            !ReferenceEquals(quickLookPendingAnchor, anchor))
-        {
-            return;
-        }
-
-        if (viewModel.IsEditorOpen || viewModel.IsContextMenuOpen || IsConflictDialogOpen())
-        {
-            return;
-        }
-
-        QuickLookCommandLabel.Text = QuickLookPreviewFormatter.BuildLine("Command", item.Command);
-        QuickLookToolLabel.Text = QuickLookPreviewFormatter.BuildLine("Tool", item.Tool);
-        QuickLookArgumentsLabel.Text = QuickLookPreviewFormatter.BuildLine("Arguments", item.Arguments);
-        QuickLookClipWordLabel.Text = QuickLookPreviewFormatter.BuildLine("Clip Word", item.ClipText);
-        QuickLookNoteLabel.Text = QuickLookPreviewFormatter.BuildLine("Note", item.Note);
-        PositionQuickLookPopup(anchor);
-
-        QuickLookPopup.CancelAnimations();
-        if (!QuickLookPopup.IsVisible)
-        {
-            QuickLookPopup.Opacity = 0;
-            QuickLookPopup.IsVisible = true;
-        }
-
-        if (QuickLookPopup.Opacity < 1)
-        {
-            await QuickLookPopup.FadeToAsync(1, QuickLookFadeDurationMs, Easing.CubicOut);
-        }
-
-        if (token.IsCancellationRequested)
-        {
             return;
         }
     }
