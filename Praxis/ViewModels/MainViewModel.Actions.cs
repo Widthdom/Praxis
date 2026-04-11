@@ -685,108 +685,78 @@ public partial class MainViewModel
     }
 
     private async Task<string> TryGetClipboardTextAsync(string context, string operation)
-    {
-        try
-        {
-            return await clipboardService.GetTextAsync() ?? string.Empty;
-        }
-        catch (Exception ex)
-        {
-            errorLogger.Log(ex, context);
-            errorLogger.LogWarning($"{operation} failed: {ex.Message}", context);
-            return string.Empty;
-        }
-    }
+        => await TryWithLoggedFallbackAsync(
+            async () => await clipboardService.GetTextAsync() ?? string.Empty,
+            fallback: string.Empty,
+            context,
+            ex => $"{operation} failed: {ex.Message}");
 
     private async Task<bool> TrySetClipboardTextAsync(string text, string context, string operation)
-    {
-        try
-        {
-            await clipboardService.SetTextAsync(text);
-            return true;
-        }
-        catch (Exception ex)
-        {
-            errorLogger.Log(ex, context);
-            errorLogger.LogWarning($"{operation} failed: {ex.Message}", context);
-            return false;
-        }
-    }
+        => await TryWithLoggedWarningAsync(
+            () => clipboardService.SetTextAsync(text),
+            context,
+            ex => $"{operation} failed: {ex.Message}");
 
     private async Task<bool> TryNotifyButtonsChangedAsync(string context, string operation)
-    {
-        try
-        {
-            await stateSyncNotifier.NotifyButtonsChangedAsync();
-            return true;
-        }
-        catch (Exception ex)
-        {
-            errorLogger.Log(ex, context);
-            errorLogger.LogWarning($"{operation} completed locally, but window sync notification failed: {ex.Message}", context);
-            return false;
-        }
-    }
+        => await TryWithLoggedWarningAsync(
+            () => stateSyncNotifier.NotifyButtonsChangedAsync(),
+            context,
+            ex => $"{operation} completed locally, but window sync notification failed: {ex.Message}");
 
     private async Task<bool> TryPersistThemeAsync(ThemeMode mode, string context, string operation)
-    {
-        try
-        {
-            await repository.SetThemeAsync(mode);
-            return true;
-        }
-        catch (Exception ex)
-        {
-            errorLogger.Log(ex, context);
-            errorLogger.LogWarning($"{operation} applied locally, but theme persistence failed: {ex.Message}", context);
-            return false;
-        }
-    }
+        => await TryWithLoggedWarningAsync(
+            () => repository.SetThemeAsync(mode),
+            context,
+            ex => $"{operation} applied locally, but theme persistence failed: {ex.Message}");
 
     private async Task<bool> TryPersistDockAsync(string context, string operation)
         => await TryPersistDockOrderAsync(DockButtons.Select(x => x.Id).ToList(), context, operation);
 
     private async Task<bool> TryPersistDockOrderAsync(IReadOnlyList<Guid> ids, string context, string operation)
-    {
-        try
-        {
-            await repository.SetDockButtonIdsAsync(ids);
-            return true;
-        }
-        catch (Exception ex)
-        {
-            errorLogger.Log(ex, context);
-            errorLogger.LogWarning($"{operation} completed locally, but dock persistence failed: {ex.Message}", context);
-            return false;
-        }
-    }
+        => await TryWithLoggedWarningAsync(
+            () => repository.SetDockButtonIdsAsync(ids),
+            context,
+            ex => $"{operation} completed locally, but dock persistence failed: {ex.Message}");
 
     private async Task<bool> TryAddLaunchLogAsync(LaunchLogEntry entry, string context, string operation)
-    {
-        try
-        {
-            await repository.AddLogAsync(entry);
-            return true;
-        }
-        catch (Exception ex)
-        {
-            errorLogger.Log(ex, context);
-            errorLogger.LogWarning($"{operation} failed: {ex.Message}", context);
-            return false;
-        }
-    }
+        => await TryWithLoggedWarningAsync(
+            () => repository.AddLogAsync(entry),
+            context,
+            ex => $"{operation} failed: {ex.Message}");
 
     private async Task<bool> TryPurgeLaunchLogsAsync(int retentionDays, string context, string operation)
     {
+        return await TryWithLoggedWarningAsync(
+            () => repository.PurgeOldLogsAsync(retentionDays),
+            context,
+            ex => $"{operation} failed: {ex.Message}");
+    }
+
+    private async Task<T> TryWithLoggedFallbackAsync<T>(Func<Task<T>> operationAsync, T fallback, string context, Func<Exception, string> warningFactory)
+    {
         try
         {
-            await repository.PurgeOldLogsAsync(retentionDays);
+            return await operationAsync();
+        }
+        catch (Exception ex)
+        {
+            errorLogger.Log(ex, context);
+            errorLogger.LogWarning(warningFactory(ex), context);
+            return fallback;
+        }
+    }
+
+    private async Task<bool> TryWithLoggedWarningAsync(Func<Task> operationAsync, string context, Func<Exception, string> warningFactory)
+    {
+        try
+        {
+            await operationAsync();
             return true;
         }
         catch (Exception ex)
         {
             errorLogger.Log(ex, context);
-            errorLogger.LogWarning($"{operation} failed: {ex.Message}", context);
+            errorLogger.LogWarning(warningFactory(ex), context);
             return false;
         }
     }
