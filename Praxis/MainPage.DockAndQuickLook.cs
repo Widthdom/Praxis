@@ -256,8 +256,13 @@ public partial class MainPage
         {
             await Task.Delay(QuickLookHideDelayMs, token);
         }
-        catch (OperationCanceledException)
+        catch (OperationCanceledException) when (token.IsCancellationRequested)
         {
+            return;
+        }
+        catch (Exception ex)
+        {
+            CrashFileLogger.WriteWarning(nameof(HideQuickLookAfterDelayAsync), $"Quick Look hide failed: {ex.Message}");
             return;
         }
 

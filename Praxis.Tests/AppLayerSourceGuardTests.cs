@@ -341,6 +341,13 @@ public class AppLayerSourceGuardTests
         Assert.Contains("CrashFileLogger.WriteWarning(nameof(ShowQuickLookAfterDelayAsync), $\"Quick Look show failed: {ex.Message}\");", source);
     }
 
+    [Fact]
+    public void MainPage_QuickLookHideFailures_AreCrashLogged()
+    {
+        var source = ReadRepositoryFile("Praxis", "MainPage.DockAndQuickLook.cs");
+        Assert.Contains("CrashFileLogger.WriteWarning(nameof(HideQuickLookAfterDelayAsync), $\"Quick Look hide failed: {ex.Message}\");", source);
+    }
+
     private static string ReadRepositoryFile(params string[] segments)
         => File.ReadAllText(Path.Combine(ResolveRepositoryRoot(), Path.Combine(segments)));
 
