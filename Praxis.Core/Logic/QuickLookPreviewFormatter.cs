@@ -8,7 +8,18 @@ public static class QuickLookPreviewFormatter
     public static string BuildLine(string label, string? value, int maxLength = 96)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(label);
-        return $"{label}: {FormatValue(value, maxLength)}";
+        if (maxLength <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(maxLength));
+        }
+
+        var prefix = $"{label}: ";
+        if (prefix.Length >= maxLength)
+        {
+            return prefix[..maxLength];
+        }
+
+        return prefix + FormatValue(value, maxLength - prefix.Length);
     }
 
     public static string FormatValue(string? value, int maxLength = 96)

@@ -9,6 +9,8 @@ public class CommandNotFoundRefocusPolicyTests
     {
         Assert.True(CommandNotFoundRefocusPolicy.ShouldRefocusMainCommand("Command not found: demo"));
         Assert.True(CommandNotFoundRefocusPolicy.ShouldRefocusMainCommand("COMMAND NOT FOUND: demo"));
+        Assert.True(CommandNotFoundRefocusPolicy.ShouldRefocusMainCommand("  Command not found: demo"));
+        Assert.True(CommandNotFoundRefocusPolicy.ShouldRefocusMainCommand("\n\tCommand not found: demo"));
     }
 
     [Fact]
@@ -28,7 +30,7 @@ public class CommandNotFoundRefocusPolicyTests
     [Fact]
     public void ShouldRefocusMainCommand_ReturnsFalse_WhenPrefixIsNotAtMessageStartOrColonIsMissing()
     {
-        Assert.False(CommandNotFoundRefocusPolicy.ShouldRefocusMainCommand(" Command not found: demo"));
+        Assert.False(CommandNotFoundRefocusPolicy.ShouldRefocusMainCommand(" \nStatus: Command not found: demo"));
         Assert.False(CommandNotFoundRefocusPolicy.ShouldRefocusMainCommand("Command not found demo"));
     }
 

@@ -219,6 +219,7 @@ public class AppLayerSourceGuardTests
         Assert.Contains("private static bool globalExceptionLoggingHooked;", source);
         Assert.Contains("if (globalExceptionLoggingHooked)", source);
         Assert.Contains("globalExceptionLoggingHooked = true;", source);
+        Assert.Contains("CrashFileLogger.WriteWarning(nameof(AppDelegate), $\"Failed to hook MarshalManagedException: {ex.Message}\");", source);
     }
 
     [Fact]

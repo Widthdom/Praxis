@@ -7,6 +7,9 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 ## [Unreleased]
 
 ### Fixed
+- `QuickLookPreviewFormatter.BuildLine()` now keeps the entire labeled quick-look line within the requested `maxLength` instead of letting the `label + ": "` prefix push the final string past the caller's limit
+- `CommandNotFoundRefocusPolicy` now ignores leading whitespace before checking the `Command not found:` prefix so refocus still triggers for padded status text without matching embedded phrases
+- Mac `AppDelegate` now warning-logs `MarshalManagedException` hook failures instead of swallowing them silently during startup
 - `MacEntryHandler`, `MacEditorHandler`, and Mac `CommandEntryHandler` now warning-log `UIKeyCommand` input-reflection failures and fall back to baked key literals instead of letting handler type initialization fail on runtime API differences
 - `ThemeModeParser.NormalizeOrDefault` now sanitizes invalid fallback enum values back to `System` instead of returning an out-of-range theme when both the parsed value and caller-supplied default are invalid
 - `DbErrorLogger` now warning-logs unexpected drain-loop failures to `crash.log` so background log persistence does not fail silently after enqueue succeeds
@@ -192,6 +195,9 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 ## [Unreleased]
 
 ### 修正
+- `QuickLookPreviewFormatter.BuildLine()` はラベル付き Quick Look 行全体でも要求 `maxLength` を超えないようにし、`label + ": "` 分で最終文字列が上限超過しないよう修正
+- `CommandNotFoundRefocusPolicy` は `Command not found:` 判定前に先頭空白を無視するようにし、前置空白つき status でも再フォーカスを維持しつつ埋め込み語句とは誤一致しないよう修正
+- Mac `AppDelegate` は `MarshalManagedException` hook 失敗も startup 中に無音で握りつぶさず warning 記録するよう修正
 - `MacEntryHandler`、`MacEditorHandler`、Mac の `CommandEntryHandler` は `UIKeyCommand` 入力の reflection 解決失敗も warning 記録したうえで既定キー文字列へフォールバックするようにし、runtime API 差異で handler の型初期化ごと失敗しないよう修正
 - `ThemeModeParser.NormalizeOrDefault` は、解析値と呼び出し元既定値の両方が不正 enum でも out-of-range 値を返さず `System` へ安全化するよう修正
 - `DbErrorLogger` は background drain loop の予期しない失敗も `crash.log` に warning 記録するようにし、enqueue 済みでも以後のログ永続化失敗が無音にならないよう修正

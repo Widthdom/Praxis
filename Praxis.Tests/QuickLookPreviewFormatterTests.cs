@@ -74,4 +74,21 @@ public class QuickLookPreviewFormatterTests
 
         Assert.Equal("Tool: git", line);
     }
+
+    [Fact]
+    public void BuildLine_KeepsEntireLineWithinRequestedMaxLength()
+    {
+        var line = QuickLookPreviewFormatter.BuildLine("Tool", "abcdefghijklmnopqrstuvwxyz", maxLength: 10);
+
+        Assert.Equal("Tool: a...", line);
+        Assert.Equal(10, line.Length);
+    }
+
+    [Fact]
+    public void BuildLine_TruncatesPrefix_WhenMaxLengthIsShorterThanLabelPrefix()
+    {
+        var line = QuickLookPreviewFormatter.BuildLine("Tool", "git", maxLength: 3);
+
+        Assert.Equal("Too", line);
+    }
 }

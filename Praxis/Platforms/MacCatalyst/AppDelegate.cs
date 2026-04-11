@@ -63,9 +63,9 @@ public class AppDelegate : MauiUIApplicationDelegate
                 CrashFileLogger.WriteException("Mac.ObjCRuntime.MarshalManagedException", args.Exception);
             };
         }
-        catch
+        catch (Exception ex)
         {
-            // Not available on all runtimes — ignore.
+            CrashFileLogger.WriteWarning(nameof(AppDelegate), $"Failed to hook MarshalManagedException: {ex.Message}");
         }
     }
 
