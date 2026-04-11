@@ -326,6 +326,14 @@ public class AppLayerSourceGuardTests
         Assert.Contains("CrashFileLogger.WriteWarning(nameof(TriggerStatusFlash), $\"Status flash animation failed: {ex.Message}\");", source);
     }
 
+    [Fact]
+    public void MainPage_DockHoverExitFailures_AreCrashLogged()
+    {
+        var source = ReadRepositoryFile("Praxis", "MainPage.DockAndQuickLook.cs");
+        Assert.Contains("catch (OperationCanceledException) when (token.IsCancellationRequested)", source);
+        Assert.Contains("CrashFileLogger.WriteWarning(nameof(HideDockScrollBarAfterExitDelayAsync), $\"Dock hover-exit hide failed: {ex.Message}\");", source);
+    }
+
     private static string ReadRepositoryFile(params string[] segments)
         => File.ReadAllText(Path.Combine(ResolveRepositoryRoot(), Path.Combine(segments)));
 

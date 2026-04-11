@@ -69,8 +69,13 @@ public partial class MainPage
         {
             await Task.Delay(DockHoverExitHideDelayMs, token);
         }
-        catch (OperationCanceledException)
+        catch (OperationCanceledException) when (token.IsCancellationRequested)
         {
+            return;
+        }
+        catch (Exception ex)
+        {
+            CrashFileLogger.WriteWarning(nameof(HideDockScrollBarAfterExitDelayAsync), $"Dock hover-exit hide failed: {ex.Message}");
             return;
         }
 
