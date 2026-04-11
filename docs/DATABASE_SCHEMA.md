@@ -179,9 +179,10 @@ Purpose: key-value app settings.
 
 Known keys used by current code:
 - `theme`
-  - Values: `Light` / `Dark` / `System` (parsed to `ThemeMode`)
+  - Values: `Light` / `Dark` / `System` (parsed to `ThemeMode`; numeric enum strings are rejected and fall back to `System`)
 - `dock_order`
   - Comma-separated GUID list for dock ordering
+  - On load/save, duplicate GUIDs and `Guid.Empty` are discarded while preserving the first valid occurrence order
 
 ## Constraints, Indexes, Relations
 - Primary keys only (SQLite auto-index for PK).
@@ -253,8 +254,8 @@ Praxis が使う SQLite テーブル設計を明文化します。
   - 512 KB で自動ローテーション（`crash.log` → `crash.log.old`）
   - SQLite が利用不可、または非同期 DB 書き込み完了前にプロセスが終了した場合の診断用フォールバックです。
 - `AppSettingEntity` の既知キー:
-  - `theme`（`Light` / `Dark` / `System`）
-  - `dock_order`（GUID の CSV）
+  - `theme`（`Light` / `Dark` / `System`。数値 enum 文字列は無効として扱い `System` にフォールバック）
+  - `dock_order`（GUID の CSV。読込/保存時に重複 GUID と `Guid.Empty` は除外し、最初の有効順序を維持）
 
 ## 制約と関連
 - 明示制約は主キー中心（追加インデックスなし）。

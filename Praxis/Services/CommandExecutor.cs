@@ -22,15 +22,16 @@ public sealed class CommandExecutor : ICommandExecutor
 
     private static Task<(bool Success, string Message)> RunProcess(string tool, string arguments)
     {
+        var normalizedTool = NormalizeToolPath(tool);
         var psi = new ProcessStartInfo
         {
-            FileName = tool,
+            FileName = normalizedTool,
             Arguments = arguments,
             UseShellExecute = true,
         };
 
-        ApplyWorkingDirectoryOverride(psi, tool);
-        return Task.FromResult(StartProcess(psi, "Executed.", $"Process launch failed for tool '{tool}'."));
+        ApplyWorkingDirectoryOverride(psi, normalizedTool);
+        return Task.FromResult(StartProcess(psi, "Executed.", $"Process launch failed for tool '{normalizedTool}'."));
     }
 
     private static Task<(bool Success, string Message)> OpenHttpUrl(string url)
@@ -199,5 +200,17 @@ public sealed class CommandExecutor : ICommandExecutor
         }
 
         startInfo.WorkingDirectory = userProfile;
+    }
+
+    private static string NormalizeToolPath(string tool)
+    {
+        var trimmed = tool?.Trim() ?? string.Empty;
+        if (trimmed.Length >= 2 &&
+            ((trimmed[0] == '"' && trimmed[^1] == '"') || (trimmed[0] == '\'' && trimmed[^1] == '\'')))
+        {
+            return trimmed[1..^1].Trim();
+        }
+
+        return trimmed;
     }
 }

@@ -20,6 +20,17 @@ public class CommandExecutorTests
         Assert.Equal(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), startInfo.WorkingDirectory);
     }
 
+    [Theory]
+    [InlineData("\"C:\\Program Files\\App\\app.exe\"", "C:\\Program Files\\App\\app.exe")]
+    [InlineData("'C:\\Program Files\\App\\app.exe'", "C:\\Program Files\\App\\app.exe")]
+    [InlineData("  pwsh  ", "pwsh")]
+    public void NormalizeToolPath_TrimsWrappingQuotesAndWhitespace(string value, string expected)
+    {
+        var result = InvokeNormalizeToolPath(value);
+
+        Assert.Equal(expected, result);
+    }
+
     [Fact]
     public void ExpandHomePath_ExpandsBareTilde_ToUserProfile()
     {
@@ -70,5 +81,14 @@ public class CommandExecutorTests
         Assert.NotNull(method);
 
         method.Invoke(null, [startInfo, tool, isWindows]);
+    }
+
+    private static string InvokeNormalizeToolPath(string value)
+    {
+        var method = typeof(CommandExecutor).GetMethod("NormalizeToolPath", BindingFlags.NonPublic | BindingFlags.Static);
+        Assert.NotNull(method);
+
+        var result = method.Invoke(null, [value]);
+        return Assert.IsType<string>(result);
     }
 }

@@ -50,6 +50,12 @@ public static class LaunchTargetResolver
             return true;
         }
 
+        if (string.Equals(value, ".", StringComparison.Ordinal) ||
+            string.Equals(value, "..", StringComparison.Ordinal))
+        {
+            return true;
+        }
+
         if (Path.IsPathRooted(value))
         {
             return true;

@@ -118,6 +118,25 @@ public class MainViewModelWorkflowIntegrationTests
         Assert.True(viewModel.CommandSuggestions[0].IsSelected);
     }
 
+    [Fact]
+    public async Task SetThemeCommand_InvalidNumericInput_FallsBackToSystem()
+    {
+        var repository = new InMemoryAppRepository();
+        var executor = new RecordingCommandExecutor((true, "ok"));
+        var clipboard = new RecordingClipboardService();
+        var theme = new RecordingThemeService();
+        var syncNotifier = new TestStateSyncNotifier();
+        var viewModel = new MainViewModel(repository, executor, clipboard, theme, syncNotifier, new NullErrorLogger());
+        await viewModel.InitializeAsync();
+
+        await viewModel.SetThemeCommand.ExecuteAsync("999");
+
+        Assert.Equal(ThemeMode.System, viewModel.SelectedTheme);
+        Assert.Equal(ThemeMode.System, theme.Current);
+        Assert.Equal(ThemeMode.System, await repository.GetThemeAsync());
+        Assert.Equal(1, syncNotifier.NotifyCount);
+    }
+
     private static async Task WaitUntilAsync(Func<bool> condition, int timeoutMs = 2000)
     {
         var started = DateTime.UtcNow;

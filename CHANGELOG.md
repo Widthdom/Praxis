@@ -17,6 +17,8 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - `FileStateSyncNotifier` now subscribes before enabling the watcher, recreates the sync directory before writes, ignores malformed/out-of-range payload timestamps safely, and crash-logs event-subscriber failures instead of letting the background task fault silently
 - `LaunchTargetResolver` now treats separator-based relative paths and bare `~` as filesystem fallback targets when `Tool` is empty, and `CommandExecutor` now expands bare `~` to the user-profile path before existence checks
 - Windows shell launches (`cmd.exe`, `powershell`, `pwsh`, `wt`) now start from the user-profile directory instead of inheriting the Praxis process working directory
+- Theme parsing now rejects numeric enum strings in config/repository/ViewModel inputs, `.` / `..` now resolve as filesystem targets, and quoted tool paths are normalized before process launch
+- `SqliteAppRepository` now normalizes cached button order to placement order after load/reload/upsert paths, and dock-order persistence now discards duplicate or empty GUIDs while preserving first occurrence order
 - `DbErrorLogger` now preserves nested inner exception type/message chains inside `AggregateException` entries instead of truncating at the direct children
 
 ### [1.1.3] - 2026-04-05

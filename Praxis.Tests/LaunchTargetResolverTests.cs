@@ -88,6 +88,16 @@ public class LaunchTargetResolverTests
         Assert.Equal("~", result.Target);
     }
 
+    [Theory]
+    [InlineData(".")]
+    [InlineData("..")]
+    public void Resolve_DetectsCurrentAndParentDirectoryMarkers(string value)
+    {
+        var result = LaunchTargetResolver.Resolve(value);
+        Assert.Equal(LaunchTargetKind.FileSystemPath, result.Kind);
+        Assert.Equal(value, result.Target);
+    }
+
     [Fact]
     public void Resolve_ReturnsNone_ForBlankArguments()
     {

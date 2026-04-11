@@ -49,6 +49,7 @@ dotnet test Praxis.Tests/Praxis.Tests.csproj --collect:"XPlat Code Coverage"
 ### Models / Defaults
 - [`ModelDefaultsTests.cs`](../Praxis.Tests/ModelDefaultsTests.cs): default values and initialization guarantees for `LauncherButtonRecord`, `LaunchLogEntry`, and `ErrorLogEntry`.
   - Includes copy-constructor / `Clone()` full-field copy regression checks for `LauncherButtonRecord` (including `UseInvertedThemeColors`).
+- [`LauncherButtonOrderPolicyTests.cs`](../Praxis.Tests/LauncherButtonOrderPolicyTests.cs): placement-order normalization (`Y`, then `X`) while preserving stable order for ties.
 
 ### Logging / Crash Safety
 - [`CrashFileLoggerTests.cs`](../Praxis.Tests/CrashFileLoggerTests.cs): synchronous crash file logger behavior — path resolution, no-throw guarantees for all write methods (`WriteException`, `WriteInfo`, `WriteWarning`), inner exception chain capture, `AggregateException` child capture, `Exception.Data` capture, file write verification, and thread safety under concurrent writes without blocking-task analyzer warnings.
@@ -56,7 +57,7 @@ dotnet test Praxis.Tests/Praxis.Tests.csproj --collect:"XPlat Code Coverage"
 
 ### Command Execution / Matching / Suggestions
 - [`CommandLineBuilderTests.cs`](../Praxis.Tests/CommandLineBuilderTests.cs): null/whitespace handling and normalization for command-line construction.
-- [`CommandExecutorTests.cs`](../Praxis.Tests/CommandExecutorTests.cs): linked-source coverage for home-path expansion in empty-tool fallback launches (`~`, `~/...`, `~\\...`), non-home relative path pass-through, and Windows shell launch working-directory override to the user profile.
+- [`CommandExecutorTests.cs`](../Praxis.Tests/CommandExecutorTests.cs): linked-source coverage for home-path expansion in empty-tool fallback launches (`~`, `~/...`, `~\\...`), non-home relative path pass-through, quoted-tool normalization, and Windows shell launch working-directory override to the user profile.
 - [`CommandRecordMatcherTests.cs`](../Praxis.Tests/CommandRecordMatcherTests.cs): exact command matching rules, null guards, and case/trim behavior.
 - [`CommandSuggestionVisibilityPolicyTests.cs`](../Praxis.Tests/CommandSuggestionVisibilityPolicyTests.cs): close policy when context menu opens.
 - [`CommandSuggestionRowColorPolicyTests.cs`](../Praxis.Tests/CommandSuggestionRowColorPolicyTests.cs): selected/unselected row color decisions per theme.
@@ -100,9 +101,10 @@ dotnet test Praxis.Tests/Praxis.Tests.csproj --collect:"XPlat Code Coverage"
 - [`UiTimingPolicyTests.cs`](../Praxis.Tests/UiTimingPolicyTests.cs): named UI timing constants (focus restore, activation windows, polling interval) and ordering constraints.
 
 ### Launch / Path / Storage / Reflection Utilities
-- [`LaunchTargetResolverTests.cs`](../Praxis.Tests/LaunchTargetResolverTests.cs): HTTP(S)/file/path fallback target resolution, env expansion, relative-path detection, and bare-tilde home-path detection.
+- [`LaunchTargetResolverTests.cs`](../Praxis.Tests/LaunchTargetResolverTests.cs): HTTP(S)/file/path fallback target resolution, env expansion, relative-path detection (including `.` / `..`), and bare-tilde home-path detection.
 - [`WindowsPathPolicyTests.cs`](../Praxis.Tests/WindowsPathPolicyTests.cs): UNC (`\\\\server\\share`) path detection used by Windows auth-first launch flow.
 - [`AppStoragePathLayoutResolverTests.cs`](../Praxis.Tests/AppStoragePathLayoutResolverTests.cs): platform-specific storage layout policy.
+- [`DockOrderValueCodecTests.cs`](../Praxis.Tests/DockOrderValueCodecTests.cs): dock-order CSV parsing/serialization, including duplicate/empty/invalid GUID filtering while preserving first occurrence order.
 - [`DatabaseSchemaVersionPolicyTests.cs`](../Praxis.Tests/DatabaseSchemaVersionPolicyTests.cs): schema-version upgrade-path resolution (`PRAGMA user_version` migration sequencing, unsupported/future version rejection), including v1->v2->v3->v4 and unversioned->current multi-step upgrades.
 - [`NonPublicPropertySetterTests.cs`](../Praxis.Tests/NonPublicPropertySetterTests.cs): reflection-based writable property assignment behavior.
 
@@ -165,6 +167,7 @@ dotnet test Praxis.Tests/Praxis.Tests.csproj --collect:"XPlat Code Coverage"
 ### モデル / 既定値
 - [`ModelDefaultsTests.cs`](../Praxis.Tests/ModelDefaultsTests.cs): [`LauncherButtonRecord`](../Praxis.Core/Models/LauncherButtonRecord.cs) / [`LaunchLogEntry`](../Praxis.Core/Models/LaunchLogEntry.cs) / [`ErrorLogEntry`](../Praxis.Core/Models/ErrorLogEntry.cs) の既定値・初期化保証。
   - `LauncherButtonRecord` のコピーコンストラクタ / `Clone()` が全フィールド（`UseInvertedThemeColors` 含む）を複製することを回帰検証。
+- [`LauncherButtonOrderPolicyTests.cs`](../Praxis.Tests/LauncherButtonOrderPolicyTests.cs): 配置順（`Y`、次に `X`）への正規化と、同位置時の安定順序維持。
 
 ### ログ / クラッシュ安全性
 - [`CrashFileLoggerTests.cs`](../Praxis.Tests/CrashFileLoggerTests.cs): 同期クラッシュファイルロガーの挙動 — パス解決、全書き込みメソッド（`WriteException`、`WriteInfo`、`WriteWarning`）の例外非送出保証、InnerException チェーン記録、`AggregateException` 子例外記録、`Exception.Data` 記録、ファイル書き込み検証、並行書き込み時のスレッドセーフティ、および blocking task analyzer 警告を出さない非同期検証。
@@ -214,11 +217,12 @@ dotnet test Praxis.Tests/Praxis.Tests.csproj --collect:"XPlat Code Coverage"
 - [`UiTimingPolicyTests.cs`](../Praxis.Tests/UiTimingPolicyTests.cs): フォーカス復帰・アクティベーション・ポーリングの UI タイミング定数と順序条件。
 
 ### 起動 / パス / ストレージ / リフレクション補助
-- [`LaunchTargetResolverTests.cs`](../Praxis.Tests/LaunchTargetResolverTests.cs): HTTP(S)/ファイル/パスのフォールバック起動先解決、環境変数展開、相対パス判定、bare `~` のホームパス判定。
-- [`CommandExecutorTests.cs`](../Praxis.Tests/CommandExecutorTests.cs): linked-source で取り込んだ `CommandExecutor` のホームパス展開テスト。空 `tool` フォールバック時の `~`、`~/...`、`~\\...` を展開し、通常の相対パスはそのまま残すこと、および Windows シェル起動時の作業ディレクトリ上書きを確認。
+- [`LaunchTargetResolverTests.cs`](../Praxis.Tests/LaunchTargetResolverTests.cs): HTTP(S)/ファイル/パスのフォールバック起動先解決、環境変数展開、相対パス判定（`.` / `..` 含む）、bare `~` のホームパス判定。
+- [`CommandExecutorTests.cs`](../Praxis.Tests/CommandExecutorTests.cs): linked-source で取り込んだ `CommandExecutor` のホームパス展開テスト。空 `tool` フォールバック時の `~`、`~/...`、`~\\...` を展開し、通常の相対パスはそのまま残すこと、quoted tool path の正規化、および Windows シェル起動時の作業ディレクトリ上書きを確認。
 - [`CommandWorkingDirectoryPolicyTests.cs`](../Praxis.Tests/CommandWorkingDirectoryPolicyTests.cs): `cmd`、`powershell`、`pwsh`、`wt` をユーザープロファイル起点で開く対象として判定する純粋ポリシーテスト。
 - [`WindowsPathPolicyTests.cs`](../Praxis.Tests/WindowsPathPolicyTests.cs): Windows の認証先行起動フローで使う UNC（`\\\\server\\share`）判定。
 - [`AppStoragePathLayoutResolverTests.cs`](../Praxis.Tests/AppStoragePathLayoutResolverTests.cs): プラットフォーム別ストレージ配置ルール。
+- [`DockOrderValueCodecTests.cs`](../Praxis.Tests/DockOrderValueCodecTests.cs): Dock 順序 CSV の解析/直列化テスト。重複/空/不正 GUID を除外しつつ、最初の有効順序を維持することを確認。
 - [`DatabaseSchemaVersionPolicyTests.cs`](../Praxis.Tests/DatabaseSchemaVersionPolicyTests.cs): スキーマバージョンのアップグレード経路解決（`PRAGMA user_version` の段階適用順序、未対応/未来バージョン拒否）を検証。`v1 -> v2 -> v3 -> v4` と `未バージョン -> 現行` の段階適用も確認する。
 - [`NonPublicPropertySetterTests.cs`](../Praxis.Tests/NonPublicPropertySetterTests.cs): リフレクションによる書き込み可能プロパティ設定。
 

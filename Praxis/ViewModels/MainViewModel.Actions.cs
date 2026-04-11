@@ -348,10 +348,7 @@ public partial class MainViewModel
     [RelayCommand]
     private async Task SetThemeAsync(string? mode)
     {
-        if (!Enum.TryParse<ThemeMode>(mode, true, out var parsed))
-        {
-            parsed = ThemeMode.System;
-        }
+        var parsed = ThemeModeParser.ParseOrDefault(mode, ThemeMode.System);
 
         errorLogger.LogInfo($"Theme set to {parsed}", nameof(SetThemeAsync));
         SelectedTheme = parsed;
