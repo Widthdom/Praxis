@@ -101,8 +101,9 @@ public class DbErrorLoggerTests
     {
         var repo = new BlockingAppRepository();
         var logger = new DbErrorLogger(repo);
+        var context = $"timeout-{Guid.NewGuid():N}";
 
-        logger.LogInfo("timeout write", "ctx");
+        logger.LogInfo("timeout write", context);
         await repo.AddStarted.Task.WaitAsync(TimeSpan.FromSeconds(2));
 
         var flushTask = logger.FlushAsync(TimeSpan.FromMilliseconds(100));
@@ -118,6 +119,10 @@ public class DbErrorLoggerTests
 
         var entry = Assert.Single(repo.ErrorLogs);
         Assert.Equal("timeout write", entry.Message);
+
+        var content = File.ReadAllText(CrashFileLogger.LogFilePath);
+        Assert.Contains("Flush timed out after 100 ms", content);
+        Assert.Contains("1 active log writes", content);
     }
 
     [Fact]

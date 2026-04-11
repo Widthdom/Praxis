@@ -94,11 +94,13 @@ public sealed class DbErrorLogger : IErrorLogger
         }
         catch (OperationCanceledException) when (cts.Token.IsCancellationRequested)
         {
-            // Best-effort flush timed out.
+            CrashFileLogger.WriteWarning(
+                nameof(DbErrorLogger),
+                $"Flush timed out after {timeout.TotalMilliseconds:0} ms with {pendingWrites.Count} queued and {Volatile.Read(ref activeWrites)} active log writes.");
         }
-        catch
+        catch (Exception ex)
         {
-            // Best-effort flush — don't crash the shutdown path.
+            CrashFileLogger.WriteWarning(nameof(DbErrorLogger), $"Flush failed unexpectedly: {ex.Message}");
         }
     }
 
