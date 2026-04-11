@@ -68,6 +68,12 @@ public partial class MainPage
         try
         {
             await Task.Delay(DockHoverExitHideDelayMs, token);
+            if (token.IsCancellationRequested)
+            {
+                return;
+            }
+
+            SetDockScrollBarVisibility(isPointerOverDockRegion: false);
         }
         catch (OperationCanceledException) when (token.IsCancellationRequested)
         {
@@ -78,13 +84,6 @@ public partial class MainPage
             CrashFileLogger.WriteWarning(nameof(HideDockScrollBarAfterExitDelayAsync), $"Dock hover-exit hide failed: {ex.Message}");
             return;
         }
-
-        if (token.IsCancellationRequested)
-        {
-            return;
-        }
-
-        SetDockScrollBarVisibility(isPointerOverDockRegion: false);
     }
 
     private void ApplyNativeDockScrollBarVisibility(bool showHorizontalScrollBar)

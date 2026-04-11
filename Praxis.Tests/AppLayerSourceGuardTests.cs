@@ -334,6 +334,9 @@ public class AppLayerSourceGuardTests
         var source = ReadRepositoryFile("Praxis", "MainPage.DockAndQuickLook.cs");
         Assert.Contains("catch (OperationCanceledException) when (token.IsCancellationRequested)", source);
         Assert.Contains("CrashFileLogger.WriteWarning(nameof(HideDockScrollBarAfterExitDelayAsync), $\"Dock hover-exit hide failed: {ex.Message}\");", source);
+        Assert.True(
+            source.IndexOf("SetDockScrollBarVisibility(isPointerOverDockRegion: false);", StringComparison.Ordinal)
+            < source.IndexOf("CrashFileLogger.WriteWarning(nameof(HideDockScrollBarAfterExitDelayAsync), $\"Dock hover-exit hide failed: {ex.Message}\");", StringComparison.Ordinal));
     }
 
     [Fact]
