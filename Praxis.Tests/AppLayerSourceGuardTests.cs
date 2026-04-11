@@ -243,6 +243,7 @@ public class AppLayerSourceGuardTests
         var source = ReadRepositoryFile("Praxis", "ViewModels", "MainViewModel.CommandSuggestions.cs");
 
         Assert.Contains("errorLogger.Log(ex, nameof(DebouncedRefreshCommandSuggestionsAsync));", source);
+        Assert.Contains("errorLogger.Log(ex, nameof(RefreshCommandSuggestionsOnMainThread));", source);
         Assert.Contains("Command suggestion close dispatch failed:", source);
         Assert.Contains("Command suggestion refresh dispatch failed:", source);
         Assert.Contains("catch (OperationCanceledException) when (token.IsCancellationRequested)", source);

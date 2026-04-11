@@ -227,6 +227,7 @@ public partial class MainViewModel
         }
         catch (Exception ex)
         {
+            errorLogger.Log(ex, nameof(RefreshCommandSuggestionsOnMainThread));
             errorLogger.LogWarning($"Command suggestion refresh dispatch failed: {ex.Message}", nameof(RefreshCommandSuggestionsOnMainThread));
         }
     }
