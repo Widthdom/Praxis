@@ -84,8 +84,8 @@ dotnet test Praxis.Tests/Praxis.Tests.csproj --collect:"XPlat Code Coverage"
 - [`ConflictDialogFocusRestorePolicyTests.cs`](../Praxis.Tests/ConflictDialogFocusRestorePolicyTests.cs): editor focus restore condition after conflict dialog close.
 - [`EditorShortcutActionResolverTests.cs`](../Praxis.Tests/EditorShortcutActionResolverTests.cs): key-to-action mapping for modal/context/conflict shortcuts.
 - [`EditorShortcutScopeResolverTests.cs`](../Praxis.Tests/EditorShortcutScopeResolverTests.cs): active scope decision when overlays are open/closed.
-- [`EditorTabInsertionResolverTests.cs`](../Praxis.Tests/EditorTabInsertionResolverTests.cs): tab-character fallback detection and navigation mapping.
-- [`FocusRingNavigatorTests.cs`](../Praxis.Tests/FocusRingNavigatorTests.cs): wrap-around navigation index behavior.
+- [`EditorTabInsertionResolverTests.cs`](../Praxis.Tests/EditorTabInsertionResolverTests.cs): tab-character fallback detection and navigation mapping, including start-of-text insertions, backward-tab handling, null-input no-op paths, and overload parity.
+- [`FocusRingNavigatorTests.cs`](../Praxis.Tests/FocusRingNavigatorTests.cs): wrap-around navigation index behavior, including negative item counts, four-item rings, and far-out-of-range index normalization.
 
 ### UI-Agnostic Visual / Layout Policies
 - [`InputClearButtonVisibilityPolicyTests.cs`](../Praxis.Tests/InputClearButtonVisibilityPolicyTests.cs): clear button visibility rule.
@@ -204,8 +204,8 @@ dotnet test Praxis.Tests/Praxis.Tests.csproj --collect:"XPlat Code Coverage"
 - [`ConflictDialogFocusRestorePolicyTests.cs`](../Praxis.Tests/ConflictDialogFocusRestorePolicyTests.cs): 競合ダイアログ閉鎖後の編集フォーカス復帰条件。
 - [`EditorShortcutActionResolverTests.cs`](../Praxis.Tests/EditorShortcutActionResolverTests.cs): モーダル/コンテキスト/競合のキー操作マッピング。
 - [`EditorShortcutScopeResolverTests.cs`](../Praxis.Tests/EditorShortcutScopeResolverTests.cs): オーバーレイ表示状態のショートカット有効範囲判定。
-- [`EditorTabInsertionResolverTests.cs`](../Praxis.Tests/EditorTabInsertionResolverTests.cs): タブ文字フォールバック検知と遷移方向判定。
-- [`FocusRingNavigatorTests.cs`](../Praxis.Tests/FocusRingNavigatorTests.cs): ラップ付きフォーカスインデックス遷移。
+- [`EditorTabInsertionResolverTests.cs`](../Praxis.Tests/EditorTabInsertionResolverTests.cs): タブ文字フォールバック検知と遷移方向判定。先頭挿入・逆タブ・null 入力 no-op・overload 間整合も検証する。
+- [`FocusRingNavigatorTests.cs`](../Praxis.Tests/FocusRingNavigatorTests.cs): ラップ付きフォーカスインデックス遷移。負の item 数、4 要素リング、極端な範囲外 index 正規化も検証する。
 
 ### UI 非依存の見た目 / レイアウトポリシー
 - [`InputClearButtonVisibilityPolicyTests.cs`](../Praxis.Tests/InputClearButtonVisibilityPolicyTests.cs): クリアボタン表示条件。

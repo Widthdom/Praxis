@@ -12,6 +12,13 @@ public class FocusRingNavigatorTests
     }
 
     [Fact]
+    public void GetNextIndex_ReturnsMinusOne_WhenItemCountIsNegative()
+    {
+        var index = FocusRingNavigator.GetNextIndex(currentIndex: 0, itemCount: -3, forward: false);
+        Assert.Equal(-1, index);
+    }
+
+    [Fact]
     public void GetNextIndex_StartsAtFirst_WhenCurrentIndexIsInvalid_AndForward()
     {
         var index = FocusRingNavigator.GetNextIndex(currentIndex: -1, itemCount: 2, forward: true);
@@ -105,5 +112,38 @@ public class FocusRingNavigatorTests
     {
         var index = FocusRingNavigator.GetNextIndex(currentIndex: -1, itemCount: 3, forward: false);
         Assert.Equal(2, index);
+    }
+
+    [Theory]
+    [InlineData(0, 1)]
+    [InlineData(1, 2)]
+    [InlineData(2, 3)]
+    [InlineData(3, 0)]
+    public void GetNextIndex_AdvancesAcrossFourItemRing_WhenForward(int currentIndex, int expected)
+    {
+        var index = FocusRingNavigator.GetNextIndex(currentIndex, itemCount: 4, forward: true);
+        Assert.Equal(expected, index);
+    }
+
+    [Theory]
+    [InlineData(0, 3)]
+    [InlineData(1, 0)]
+    [InlineData(2, 1)]
+    [InlineData(3, 2)]
+    public void GetNextIndex_RewindsAcrossFourItemRing_WhenBackward(int currentIndex, int expected)
+    {
+        var index = FocusRingNavigator.GetNextIndex(currentIndex, itemCount: 4, forward: false);
+        Assert.Equal(expected, index);
+    }
+
+    [Theory]
+    [InlineData(-5, true, 0)]
+    [InlineData(-5, false, 3)]
+    [InlineData(9, true, 0)]
+    [InlineData(9, false, 3)]
+    public void GetNextIndex_NormalizesFarOutOfRangeIndexes(int currentIndex, bool forward, int expected)
+    {
+        var index = FocusRingNavigator.GetNextIndex(currentIndex, itemCount: 4, forward);
+        Assert.Equal(expected, index);
     }
 }

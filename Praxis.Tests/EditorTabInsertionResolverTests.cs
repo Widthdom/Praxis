@@ -27,6 +27,27 @@ public class EditorTabInsertionResolverTests
     }
 
     [Fact]
+    public void TryResolveNavigationAction_ReturnsTabNext_ForTabInsertionAtTextStart()
+    {
+        var resolved = EditorTabInsertionResolver.TryResolveNavigationAction("abc", "\tabc", out var action, out var insertedIndex);
+
+        Assert.True(resolved);
+        Assert.Equal("TabNext", action);
+        Assert.Equal(0, insertedIndex);
+    }
+
+    [Fact]
+    public void TryResolveNavigationAction_ReturnsTabPrevious_ForBackwardTabInsertionAtTextStart()
+    {
+        var newText = $"{EditorTabInsertionResolver.BackwardTabCharacter}abc";
+        var resolved = EditorTabInsertionResolver.TryResolveNavigationAction("abc", newText, out var action, out var insertedIndex);
+
+        Assert.True(resolved);
+        Assert.Equal("TabPrevious", action);
+        Assert.Equal(0, insertedIndex);
+    }
+
+    [Fact]
     public void TryResolveNavigationAction_ReturnsFalse_WhenInsertedCharacterIsNotTab()
     {
         var resolved = EditorTabInsertionResolver.TryResolveNavigationAction("abc", "axbc", out var action, out var insertedIndex);
@@ -87,12 +108,32 @@ public class EditorTabInsertionResolverTests
     }
 
     [Fact]
+    public void TryResolveNavigationAction_ReturnsFalse_WhenNoCharacterWasInserted()
+    {
+        var resolved = EditorTabInsertionResolver.TryResolveNavigationAction(null, null, out var action, out var insertedIndex);
+
+        Assert.False(resolved);
+        Assert.Equal(string.Empty, action);
+        Assert.Equal(-1, insertedIndex);
+    }
+
+    [Fact]
     public void TryResolveNavigationAction_OverloadWithoutIndex_ReturnsExpectedAction()
     {
         var resolved = EditorTabInsertionResolver.TryResolveNavigationAction("abc", "a\tbc", out var action);
 
         Assert.True(resolved);
         Assert.Equal("TabNext", action);
+    }
+
+    [Fact]
+    public void TryResolveNavigationAction_OverloadWithoutIndex_ReturnsBackwardAction()
+    {
+        var newText = $"{EditorTabInsertionResolver.BackwardTabCharacter}abc";
+        var resolved = EditorTabInsertionResolver.TryResolveNavigationAction("abc", newText, out var action);
+
+        Assert.True(resolved);
+        Assert.Equal("TabPrevious", action);
     }
 
     [Fact]
