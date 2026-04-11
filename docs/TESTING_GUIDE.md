@@ -49,9 +49,9 @@ dotnet test Praxis.Tests/Praxis.Tests.csproj --collect:"XPlat Code Coverage"
 - [`CiCoverageWorkflowPolicyTests.cs`](../Praxis.Tests/CiCoverageWorkflowPolicyTests.cs): workflow-configuration guard that verifies CI test step collects `XPlat Code Coverage` and uploads Cobertura artifact output.
 
 ### Models / Defaults
-- [`ModelDefaultsTests.cs`](../Praxis.Tests/ModelDefaultsTests.cs): default values and initialization guarantees for `LauncherButtonRecord`, `LaunchLogEntry`, and `ErrorLogEntry`.
+- [`ModelDefaultsTests.cs`](../Praxis.Tests/ModelDefaultsTests.cs): default values and initialization guarantees for `LauncherButtonRecord`, `LaunchLogEntry`, and `ErrorLogEntry`, including unique default IDs, copy-constructor null guards, and clone instance independence.
   - Includes copy-constructor / `Clone()` full-field copy regression checks for `LauncherButtonRecord` (including `UseInvertedThemeColors`).
-- [`LauncherButtonOrderPolicyTests.cs`](../Praxis.Tests/LauncherButtonOrderPolicyTests.cs): placement-order normalization (`Y`, then `X`) while preserving stable order for ties and skipping null entries safely.
+- [`LauncherButtonOrderPolicyTests.cs`](../Praxis.Tests/LauncherButtonOrderPolicyTests.cs): placement-order normalization (`Y`, then `X`) while preserving stable order for ties, skipping null entries safely, handling empty/null inputs correctly, and returning a new list independent from the source collection.
 
 ### Logging / Crash Safety
 - [`CrashFileLoggerTests.cs`](../Praxis.Tests/CrashFileLoggerTests.cs): synchronous crash file logger behavior — Windows/macOS path resolution, quoted/invalid platform-directory fallback handling, no-throw guarantees for all write methods (`WriteException`, `WriteInfo`, `WriteWarning`), inner exception chain capture, `AggregateException` child capture, `Exception.Data` capture, file write verification, and thread safety under concurrent writes without blocking-task analyzer warnings.
@@ -171,9 +171,9 @@ dotnet test Praxis.Tests/Praxis.Tests.csproj --collect:"XPlat Code Coverage"
 - [`CiCoverageWorkflowPolicyTests.cs`](../Praxis.Tests/CiCoverageWorkflowPolicyTests.cs): CI のテスト手順が `XPlat Code Coverage` 収集と Cobertura アーティファクト出力を維持しているかを検証するワークフロー設定ガード。
 
 ### モデル / 既定値
-- [`ModelDefaultsTests.cs`](../Praxis.Tests/ModelDefaultsTests.cs): [`LauncherButtonRecord`](../Praxis.Core/Models/LauncherButtonRecord.cs) / [`LaunchLogEntry`](../Praxis.Core/Models/LaunchLogEntry.cs) / [`ErrorLogEntry`](../Praxis.Core/Models/ErrorLogEntry.cs) の既定値・初期化保証。
+- [`ModelDefaultsTests.cs`](../Praxis.Tests/ModelDefaultsTests.cs): [`LauncherButtonRecord`](../Praxis.Core/Models/LauncherButtonRecord.cs) / [`LaunchLogEntry`](../Praxis.Core/Models/LaunchLogEntry.cs) / [`ErrorLogEntry`](../Praxis.Core/Models/ErrorLogEntry.cs) の既定値・初期化保証。既定 ID の一意性、copy constructor の null guard、clone の独立インスタンス性も検証する。
   - `LauncherButtonRecord` のコピーコンストラクタ / `Clone()` が全フィールド（`UseInvertedThemeColors` 含む）を複製することを回帰検証。
-- [`LauncherButtonOrderPolicyTests.cs`](../Praxis.Tests/LauncherButtonOrderPolicyTests.cs): 配置順（`Y`、次に `X`）への正規化、同位置時の安定順序維持、null 要素の安全なスキップ。
+- [`LauncherButtonOrderPolicyTests.cs`](../Praxis.Tests/LauncherButtonOrderPolicyTests.cs): 配置順（`Y`、次に `X`）への正規化、同位置時の安定順序維持、null 要素の安全なスキップに加え、empty/null 入力と source collection から独立した新規 list 返却も検証する。
 
 ### ログ / クラッシュ安全性
 - [`CrashFileLoggerTests.cs`](../Praxis.Tests/CrashFileLoggerTests.cs): 同期クラッシュファイルロガーの挙動 — Windows/macOS のパス解決、quote 付き/無効なプラットフォーム保存先からのフォールバック、全書き込みメソッド（`WriteException`、`WriteInfo`、`WriteWarning`）の例外非送出保証、InnerException チェーン記録、`AggregateException` 子例外記録、`Exception.Data` 記録、ファイル書き込み検証、並行書き込み時のスレッドセーフティ、および blocking task analyzer 警告を出さない非同期検証。
