@@ -75,6 +75,52 @@ public class DbErrorLoggerTests
     }
 
     [Fact]
+    public async Task FlushAsync_WaitsForInFlightWriteBeforeReturning()
+    {
+        var repo = new BlockingAppRepository();
+        var logger = new DbErrorLogger(repo);
+
+        logger.LogInfo("blocked write", "ctx");
+        await repo.AddStarted.Task.WaitAsync(TimeSpan.FromSeconds(2));
+
+        var flushTask = logger.FlushAsync(TimeSpan.FromSeconds(2));
+
+        await Task.Delay(50);
+        Assert.False(flushTask.IsCompleted);
+
+        repo.ReleaseWrite();
+        await flushTask;
+
+        var entry = Assert.Single(repo.ErrorLogs);
+        Assert.Equal("Info", entry.Level);
+        Assert.Equal("blocked write", entry.Message);
+    }
+
+    [Fact]
+    public async Task FlushAsync_TimesOut_WhenInFlightWriteDoesNotFinish()
+    {
+        var repo = new BlockingAppRepository();
+        var logger = new DbErrorLogger(repo);
+
+        logger.LogInfo("timeout write", "ctx");
+        await repo.AddStarted.Task.WaitAsync(TimeSpan.FromSeconds(2));
+
+        var flushTask = logger.FlushAsync(TimeSpan.FromMilliseconds(100));
+
+        await Task.Delay(30);
+        Assert.False(flushTask.IsCompleted);
+
+        await flushTask;
+        Assert.Empty(repo.ErrorLogs);
+
+        repo.ReleaseWrite();
+        await logger.FlushAsync(TimeSpan.FromSeconds(2));
+
+        var entry = Assert.Single(repo.ErrorLogs);
+        Assert.Equal("timeout write", entry.Message);
+    }
+
+    [Fact]
     public async Task Log_CapturesExceptionTypeChain()
     {
         var repo = new FakeAppRepository();
@@ -147,6 +193,21 @@ public class DbErrorLoggerTests
     }
 
     [Fact]
+    public async Task FlushAsync_PurgesOldErrorLogs_OnlyForErrorEntries()
+    {
+        var repo = new FakeAppRepository();
+        var logger = new DbErrorLogger(repo);
+
+        logger.LogInfo("info", "ctx");
+        logger.LogWarning("warn", "ctx");
+        logger.Log(new InvalidOperationException("error"), "ctx");
+
+        await logger.FlushAsync(TimeSpan.FromSeconds(5));
+
+        Assert.Equal(1, repo.PurgeCallCount);
+    }
+
+    [Fact]
     public async Task FlushAsync_RespectsTimeout()
     {
         var repo = new FakeAppRepository();
@@ -196,6 +257,40 @@ public class DbErrorLoggerTests
             return Task.CompletedTask;
         }
 
+        public Task SetThemeAsync(ThemeMode themeMode, CancellationToken cancellationToken = default) => Task.CompletedTask;
+        public Task<ThemeMode> GetThemeAsync(CancellationToken cancellationToken = default) => Task.FromResult(ThemeMode.System);
+        public Task<IReadOnlyList<Guid>> GetDockButtonIdsAsync(CancellationToken cancellationToken = default) => Task.FromResult<IReadOnlyList<Guid>>([]);
+        public Task SetDockButtonIdsAsync(IReadOnlyList<Guid> ids, CancellationToken cancellationToken = default) => Task.CompletedTask;
+    }
+
+    private sealed class BlockingAppRepository : IAppRepository
+    {
+        private readonly TaskCompletionSource addStarted = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        private readonly TaskCompletionSource releaseWrite = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public List<ErrorLogEntry> ErrorLogs { get; } = [];
+        public TaskCompletionSource AddStarted => addStarted;
+
+        public void ReleaseWrite() => releaseWrite.TrySetResult();
+
+        public Task InitializeAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
+        public Task<IReadOnlyList<LauncherButtonRecord>> GetButtonsAsync(CancellationToken cancellationToken = default) => Task.FromResult<IReadOnlyList<LauncherButtonRecord>>([]);
+        public Task<IReadOnlyList<LauncherButtonRecord>> ReloadButtonsAsync(CancellationToken cancellationToken = default) => Task.FromResult<IReadOnlyList<LauncherButtonRecord>>([]);
+        public Task<LauncherButtonRecord?> GetByIdAsync(Guid id, bool forceReload = false, CancellationToken cancellationToken = default) => Task.FromResult<LauncherButtonRecord?>(null);
+        public Task<LauncherButtonRecord?> GetByCommandAsync(string command, CancellationToken cancellationToken = default) => Task.FromResult<LauncherButtonRecord?>(null);
+        public Task UpsertButtonAsync(LauncherButtonRecord record, CancellationToken cancellationToken = default) => Task.CompletedTask;
+        public Task DeleteButtonAsync(Guid id, CancellationToken cancellationToken = default) => Task.CompletedTask;
+        public Task AddLogAsync(LaunchLogEntry entry, CancellationToken cancellationToken = default) => Task.CompletedTask;
+        public Task PurgeOldLogsAsync(int retentionDays, CancellationToken cancellationToken = default) => Task.CompletedTask;
+
+        public async Task AddErrorLogAsync(ErrorLogEntry entry, CancellationToken cancellationToken = default)
+        {
+            addStarted.TrySetResult();
+            await releaseWrite.Task.WaitAsync(cancellationToken);
+            ErrorLogs.Add(entry);
+        }
+
+        public Task PurgeOldErrorLogsAsync(int retentionDays, CancellationToken cancellationToken = default) => Task.CompletedTask;
         public Task SetThemeAsync(ThemeMode themeMode, CancellationToken cancellationToken = default) => Task.CompletedTask;
         public Task<ThemeMode> GetThemeAsync(CancellationToken cancellationToken = default) => Task.FromResult(ThemeMode.System);
         public Task<IReadOnlyList<Guid>> GetDockButtonIdsAsync(CancellationToken cancellationToken = default) => Task.FromResult<IReadOnlyList<Guid>>([]);

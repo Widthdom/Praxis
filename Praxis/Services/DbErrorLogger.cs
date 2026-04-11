@@ -6,10 +6,12 @@ namespace Praxis.Services;
 public sealed class DbErrorLogger : IErrorLogger
 {
     private const int RetentionDays = 30;
+    private const int FlushPollIntervalMs = 10;
 
     private readonly IAppRepository repository;
     private readonly ConcurrentQueue<ErrorLogEntry> pendingWrites = new();
     private volatile int drainRunning;
+    private int activeWrites;
 
     public DbErrorLogger(IAppRepository repository)
     {
@@ -78,15 +80,21 @@ public sealed class DbErrorLogger : IErrorLogger
         using var cts = new CancellationTokenSource(timeout);
         try
         {
-            while (!pendingWrites.IsEmpty && !cts.Token.IsCancellationRequested)
+            while ((!pendingWrites.IsEmpty || Volatile.Read(ref activeWrites) > 0) &&
+                   !cts.Token.IsCancellationRequested)
             {
-                if (!pendingWrites.TryDequeue(out var entry))
+                if (pendingWrites.TryDequeue(out var entry))
                 {
-                    break;
+                    await WriteToDatabaseAsync(entry, cts.Token);
+                    continue;
                 }
 
-                await WriteToDatabaseAsync(entry);
+                await Task.Delay(FlushPollIntervalMs, cts.Token);
             }
+        }
+        catch (OperationCanceledException) when (cts.Token.IsCancellationRequested)
+        {
+            // Best-effort flush timed out.
         }
         catch
         {
@@ -106,7 +114,7 @@ public sealed class DbErrorLogger : IErrorLogger
         {
             while (pendingWrites.TryDequeue(out var entry))
             {
-                await WriteToDatabaseAsync(entry);
+                await WriteToDatabaseAsync(entry, CancellationToken.None);
             }
         }
         catch
@@ -126,21 +134,36 @@ public sealed class DbErrorLogger : IErrorLogger
         }
     }
 
-    private async Task WriteToDatabaseAsync(ErrorLogEntry entry)
+    private async Task WriteToDatabaseAsync(ErrorLogEntry entry, CancellationToken cancellationToken)
     {
+        var entryWritten = false;
+        Interlocked.Increment(ref activeWrites);
+
         try
         {
-            await repository.AddErrorLogAsync(entry);
+            await repository.AddErrorLogAsync(entry, cancellationToken);
+            entryWritten = true;
 
             // Purge only on Error-level writes to avoid excessive cleanup.
             if (entry.Level == "Error")
             {
-                await repository.PurgeOldErrorLogsAsync(RetentionDays);
+                await repository.PurgeOldErrorLogsAsync(RetentionDays, cancellationToken);
+            }
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            if (!entryWritten)
+            {
+                pendingWrites.Enqueue(entry);
             }
         }
         catch
         {
             // Swallow — the crash file already has the record.
+        }
+        finally
+        {
+            Interlocked.Decrement(ref activeWrites);
         }
     }
 

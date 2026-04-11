@@ -151,7 +151,7 @@ public class CrashFileLoggerTests
     }
 
     [Fact]
-    public void WriteException_IsThreadSafe()
+    public async Task WriteException_IsThreadSafe()
     {
         var exceptions = Enumerable.Range(0, 20)
             .Select(i => new Exception($"thread-safe-test-{i}"))
@@ -160,7 +160,7 @@ public class CrashFileLoggerTests
         var tasks = exceptions.Select(e =>
             Task.Run(() => CrashFileLogger.WriteException("concurrent", e)));
 
-        Task.WaitAll(tasks.ToArray());
+        await Task.WhenAll(tasks);
 
         var content = File.ReadAllText(CrashFileLogger.LogFilePath);
         foreach (var e in exceptions)

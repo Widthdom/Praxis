@@ -9,6 +9,11 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 ### Added
 - add .codex & CLAUDE.md
 
+### Fixed
+- `DbErrorLogger.FlushAsync(timeout)` now waits for both queued entries and already-dequeued in-flight DB writes up to the timeout instead of returning early once the queue becomes temporarily empty
+- Error-log retention purge remains Error-only; added regression coverage so Info/Warning writes do not trigger `PurgeOldErrorLogsAsync`
+- `CrashFileLoggerTests` no longer use blocking `Task.WaitAll`, removing the xUnit analyzer warning from Release test runs
+
 ### [1.1.3] - 2026-04-05
 
 ### Added

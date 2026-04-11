@@ -50,8 +50,8 @@ dotnet test Praxis.Tests/Praxis.Tests.csproj --collect:"XPlat Code Coverage"
   - Includes copy-constructor / `Clone()` full-field copy regression checks for `LauncherButtonRecord` (including `UseInvertedThemeColors`).
 
 ### Logging / Crash Safety
-- [`CrashFileLoggerTests.cs`](../Praxis.Tests/CrashFileLoggerTests.cs): synchronous crash file logger behavior — path resolution, no-throw guarantees for all write methods (`WriteException`, `WriteInfo`, `WriteWarning`), inner exception chain capture, `AggregateException` child capture, `Exception.Data` capture, file write verification, and thread safety under concurrent writes.
-- [`DbErrorLoggerTests.cs`](../Praxis.Tests/DbErrorLoggerTests.cs): database error logger behavior — no-throw guarantees for `Log`/`LogInfo`/`LogWarning`, `FlushAsync` queue drain verification (Error/Warning/Info levels), full exception type chain capture (including `AggregateException`), message chain concatenation, stack trace capture, timeout behavior, and graceful handling of repository write failures.
+- [`CrashFileLoggerTests.cs`](../Praxis.Tests/CrashFileLoggerTests.cs): synchronous crash file logger behavior — path resolution, no-throw guarantees for all write methods (`WriteException`, `WriteInfo`, `WriteWarning`), inner exception chain capture, `AggregateException` child capture, `Exception.Data` capture, file write verification, and thread safety under concurrent writes without blocking-task analyzer warnings.
+- [`DbErrorLoggerTests.cs`](../Praxis.Tests/DbErrorLoggerTests.cs): database error logger behavior — no-throw guarantees for `Log`/`LogInfo`/`LogWarning`, `FlushAsync` verification for queued and already-in-flight writes, full exception type chain capture (including `AggregateException`), message chain concatenation, stack trace capture, timeout behavior, Error-only retention purge behavior, and graceful handling of repository write failures.
 
 ### Command Execution / Matching / Suggestions
 - [`CommandLineBuilderTests.cs`](../Praxis.Tests/CommandLineBuilderTests.cs): null/whitespace handling and normalization for command-line construction.
@@ -163,8 +163,8 @@ dotnet test Praxis.Tests/Praxis.Tests.csproj --collect:"XPlat Code Coverage"
   - `LauncherButtonRecord` のコピーコンストラクタ / `Clone()` が全フィールド（`UseInvertedThemeColors` 含む）を複製することを回帰検証。
 
 ### ログ / クラッシュ安全性
-- [`CrashFileLoggerTests.cs`](../Praxis.Tests/CrashFileLoggerTests.cs): 同期クラッシュファイルロガーの挙動 — パス解決、全書き込みメソッド（`WriteException`、`WriteInfo`、`WriteWarning`）の例外非送出保証、InnerException チェーン記録、`AggregateException` 子例外記録、`Exception.Data` 記録、ファイル書き込み検証、並行書き込み時のスレッドセーフティ。
-- [`DbErrorLoggerTests.cs`](../Praxis.Tests/DbErrorLoggerTests.cs): DB エラーロガーの挙動 — `Log`/`LogInfo`/`LogWarning` の例外非送出保証、`FlushAsync` キュードレイン検証（Error/Warning/Info 各レベル）、完全な例外型チェーン記録（`AggregateException` 含む）、メッセージチェーン連結、スタックトレース記録、タイムアウト挙動、リポジトリ書き込み失敗時のグレースフルハンドリング。
+- [`CrashFileLoggerTests.cs`](../Praxis.Tests/CrashFileLoggerTests.cs): 同期クラッシュファイルロガーの挙動 — パス解決、全書き込みメソッド（`WriteException`、`WriteInfo`、`WriteWarning`）の例外非送出保証、InnerException チェーン記録、`AggregateException` 子例外記録、`Exception.Data` 記録、ファイル書き込み検証、並行書き込み時のスレッドセーフティ、および blocking task analyzer 警告を出さない非同期検証。
+- [`DbErrorLoggerTests.cs`](../Praxis.Tests/DbErrorLoggerTests.cs): DB エラーロガーの挙動 — `Log`/`LogInfo`/`LogWarning` の例外非送出保証、`FlushAsync` による保留キューと in-flight 書き込みの両方の待機検証、完全な例外型チェーン記録（`AggregateException` 含む）、メッセージチェーン連結、スタックトレース記録、タイムアウト挙動、Error のみ保持期間 purge を発火すること、リポジトリ書き込み失敗時のグレースフルハンドリング。
 
 ### コマンド実行 / 一致 / 候補
 - [`CommandLineBuilderTests.cs`](../Praxis.Tests/CommandLineBuilderTests.cs): コマンドライン構築の null/空白処理と正規化。
