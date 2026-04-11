@@ -107,7 +107,7 @@ public partial class MainViewModel
 
         UpdateCanvasSize();
         await PersistDockAsync();
-        await stateSyncNotifier.NotifyButtonsChangedAsync();
+        await TryNotifyButtonsChangedAsync(nameof(DeleteButtonsAsync), "Delete");
         RecordHistoryAction("delete", snapshots.Select(x => new ButtonHistoryMutation
         {
             Id = x.Id,
@@ -183,7 +183,7 @@ public partial class MainViewModel
     public async Task OpenCreateEditorAtAsync(double x, double y, bool useClipboardForArguments)
     {
         var args = useClipboardForArguments
-            ? await clipboardService.GetTextAsync() ?? string.Empty
+            ? await TryGetClipboardTextAsync(nameof(OpenCreateEditorAtAsync), "Clipboard read for create")
             : string.Empty;
 
         OpenCreateEditor(x, y, args);
@@ -309,7 +309,7 @@ public partial class MainViewModel
         IsEditorOpen = false;
         ApplyFilter();
         UpdateCanvasSize();
-        await stateSyncNotifier.NotifyButtonsChangedAsync();
+        await TryNotifyButtonsChangedAsync(nameof(SaveEditorAsync), "Save");
         RecordHistoryAction(existing is null ? "create" : "edit", [new ButtonHistoryMutation
         {
             Id = record.Id,
@@ -342,8 +342,13 @@ public partial class MainViewModel
     [RelayCommand]
     private async Task CopyFieldAsync(string? value)
     {
-        await clipboardService.SetTextAsync(value ?? string.Empty);
-        SetStatus("Copied to clipboard.");
+        if (await TrySetClipboardTextAsync(value ?? string.Empty, nameof(CopyFieldAsync), "Clipboard copy"))
+        {
+            SetStatus("Copied to clipboard.");
+            return;
+        }
+
+        SetStatus("Clipboard copy failed.");
     }
 
     [RelayCommand]
@@ -355,7 +360,7 @@ public partial class MainViewModel
         SelectedTheme = parsed;
         themeService.Apply(parsed);
         await repository.SetThemeAsync(parsed);
-        await stateSyncNotifier.NotifyButtonsChangedAsync();
+        await TryNotifyButtonsChangedAsync(nameof(SetThemeAsync), "Theme change");
     }
 
     [RelayCommand]
@@ -454,7 +459,7 @@ public partial class MainViewModel
                 }
             }
 
-            await stateSyncNotifier.NotifyButtonsChangedAsync();
+            await TryNotifyButtonsChangedAsync(nameof(HandleDragAsync), "Move");
             if (mutations.Count > 0)
             {
                 RecordHistoryAction("move", mutations);
@@ -609,7 +614,7 @@ public partial class MainViewModel
 
         await LoadButtonsFromRepositoryAsync(forceReload: true);
         await RestoreDockAsync();
-        await stateSyncNotifier.NotifyButtonsChangedAsync();
+        await TryNotifyButtonsChangedAsync(nameof(ApplyHistoryActionAsync), isUndo ? "Undo" : "Redo");
 
         if (!string.IsNullOrWhiteSpace(CommandInput))
         {
@@ -629,8 +634,10 @@ public partial class MainViewModel
 
         if (!string.IsNullOrWhiteSpace(record.ClipText))
         {
-            await clipboardService.SetTextAsync(record.ClipText);
-            errorLogger.LogInfo($"Clipboard updated for \"{record.ButtonText}\" [{record.Id}]", nameof(ExecuteRecordAsync));
+            if (await TrySetClipboardTextAsync(record.ClipText, nameof(ExecuteRecordAsync), $"Clipboard update for \"{record.ButtonText}\" [{record.Id}]"))
+            {
+                errorLogger.LogInfo($"Clipboard updated for \"{record.ButtonText}\" [{record.Id}]", nameof(ExecuteRecordAsync));
+            }
         }
 
         errorLogger.LogInfo(
@@ -673,7 +680,48 @@ public partial class MainViewModel
         }
 
         await PersistDockAsync();
-        await stateSyncNotifier.NotifyButtonsChangedAsync();
+        await TryNotifyButtonsChangedAsync(nameof(AddToDockAsync), "Dock update");
+    }
+
+    private async Task<string> TryGetClipboardTextAsync(string context, string operation)
+    {
+        try
+        {
+            return await clipboardService.GetTextAsync() ?? string.Empty;
+        }
+        catch (Exception ex)
+        {
+            errorLogger.LogWarning($"{operation} failed: {ex.Message}", context);
+            return string.Empty;
+        }
+    }
+
+    private async Task<bool> TrySetClipboardTextAsync(string text, string context, string operation)
+    {
+        try
+        {
+            await clipboardService.SetTextAsync(text);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            errorLogger.LogWarning($"{operation} failed: {ex.Message}", context);
+            return false;
+        }
+    }
+
+    private async Task<bool> TryNotifyButtonsChangedAsync(string context, string operation)
+    {
+        try
+        {
+            await stateSyncNotifier.NotifyButtonsChangedAsync();
+            return true;
+        }
+        catch (Exception ex)
+        {
+            errorLogger.LogWarning($"{operation} completed locally, but window sync notification failed: {ex.Message}", context);
+            return false;
+        }
     }
 
     private static string BuildButtonDiff(LauncherButtonRecord? before, LauncherButtonRecord after)

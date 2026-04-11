@@ -318,6 +318,167 @@ public class MainViewModelWorkflowIntegrationTests
         Assert.Contains(logger.Warnings, x => x.Context == "ResolveConflictAsync" && x.Message.Contains("dialog boom", StringComparison.Ordinal));
     }
 
+    [Fact]
+    public async Task OpenCreateEditorAtAsync_WhenClipboardReadFails_UsesEmptyArgsAndLogsWarning()
+    {
+        var repository = new InMemoryAppRepository();
+        var executor = new RecordingCommandExecutor((true, "ok"));
+        var clipboard = new RecordingClipboardService
+        {
+            ThrowOnGetText = new InvalidOperationException("clipboard read boom"),
+        };
+        var theme = new RecordingThemeService();
+        var syncNotifier = new TestStateSyncNotifier();
+        var logger = new RecordingErrorLogger();
+        var viewModel = new MainViewModel(repository, executor, clipboard, theme, syncNotifier, logger);
+        await viewModel.InitializeAsync();
+
+        await viewModel.OpenCreateEditorAtAsync(20, 20, useClipboardForArguments: true);
+
+        Assert.True(viewModel.IsEditorOpen);
+        Assert.Equal(string.Empty, viewModel.Editor.Arguments);
+        Assert.Contains(logger.Warnings, x => x.Context == "OpenCreateEditorAtAsync" && x.Message.Contains("clipboard read boom", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task CopyField_WhenClipboardWriteFails_LogsWarningAndSetsFailureStatus()
+    {
+        var repository = new InMemoryAppRepository();
+        var executor = new RecordingCommandExecutor((true, "ok"));
+        var clipboard = new RecordingClipboardService
+        {
+            ThrowOnSetText = new InvalidOperationException("clipboard write boom"),
+        };
+        var theme = new RecordingThemeService();
+        var syncNotifier = new TestStateSyncNotifier();
+        var logger = new RecordingErrorLogger();
+        var viewModel = new MainViewModel(repository, executor, clipboard, theme, syncNotifier, logger);
+        await viewModel.InitializeAsync();
+
+        await viewModel.CopyFieldCommand.ExecuteAsync("abc");
+
+        Assert.Equal("Clipboard copy failed.", viewModel.StatusText);
+        Assert.Contains(logger.Warnings, x => x.Context == "CopyFieldAsync" && x.Message.Contains("clipboard write boom", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task ExecuteButton_WhenClipboardWriteFails_StillLogsLaunchAndSucceeds()
+    {
+        var repository = new InMemoryAppRepository();
+        await repository.UpsertButtonAsync(new LauncherButtonRecord
+        {
+            Id = Guid.NewGuid(),
+            Command = "build",
+            ButtonText = "Build",
+            Tool = "echo",
+            Arguments = "one",
+            ClipText = "copied",
+        });
+
+        var executor = new RecordingCommandExecutor((true, "ok"));
+        var clipboard = new RecordingClipboardService
+        {
+            ThrowOnSetText = new InvalidOperationException("clipboard write boom"),
+        };
+        var theme = new RecordingThemeService();
+        var syncNotifier = new TestStateSyncNotifier();
+        var logger = new RecordingErrorLogger();
+        var viewModel = new MainViewModel(repository, executor, clipboard, theme, syncNotifier, logger);
+        await viewModel.InitializeAsync();
+
+        await viewModel.ExecuteButtonCommand.ExecuteAsync(Assert.Single(viewModel.VisibleButtons));
+
+        Assert.Single(executor.Calls);
+        Assert.Single(repository.Logs);
+        Assert.Equal("Executed.", viewModel.StatusText);
+        Assert.Contains(logger.Warnings, x => x.Context == "ExecuteRecordAsync" && x.Message.Contains("clipboard write boom", StringComparison.Ordinal));
+        Assert.Contains(logger.Infos, x => x.Context == "ExecuteRecordAsync" && x.Message.Contains("Executed (button)", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task SaveEditor_WhenSyncNotifyFails_StillPersistsAndLogsWarning()
+    {
+        var repository = new InMemoryAppRepository();
+        var executor = new RecordingCommandExecutor((true, "ok"));
+        var clipboard = new RecordingClipboardService();
+        var theme = new RecordingThemeService();
+        var syncNotifier = new TestStateSyncNotifier
+        {
+            ThrowOnNotify = new InvalidOperationException("sync boom"),
+        };
+        var logger = new RecordingErrorLogger();
+        var viewModel = new MainViewModel(repository, executor, clipboard, theme, syncNotifier, logger);
+        await viewModel.InitializeAsync();
+
+        viewModel.CreateNewCommand.Execute(null);
+        viewModel.Editor.Command = "build";
+        viewModel.Editor.ButtonText = "Build";
+        viewModel.Editor.Tool = "echo";
+        viewModel.Editor.Arguments = "one";
+
+        await viewModel.SaveEditorCommand.ExecuteAsync(null);
+
+        Assert.Single(await repository.GetButtonsAsync());
+        Assert.False(viewModel.IsEditorOpen);
+        Assert.Equal("Saved.", viewModel.StatusText);
+        Assert.Contains(logger.Warnings, x => x.Context == "SaveEditorAsync" && x.Message.Contains("sync boom", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task DeleteButton_WhenSyncNotifyFails_StillDeletesAndLogsWarning()
+    {
+        var repository = new InMemoryAppRepository();
+        var record = new LauncherButtonRecord
+        {
+            Id = Guid.NewGuid(),
+            Command = "build",
+            ButtonText = "Build",
+            Tool = "echo",
+            Arguments = "one",
+        };
+        await repository.UpsertButtonAsync(record);
+
+        var executor = new RecordingCommandExecutor((true, "ok"));
+        var clipboard = new RecordingClipboardService();
+        var theme = new RecordingThemeService();
+        var syncNotifier = new TestStateSyncNotifier
+        {
+            ThrowOnNotify = new InvalidOperationException("sync boom"),
+        };
+        var logger = new RecordingErrorLogger();
+        var viewModel = new MainViewModel(repository, executor, clipboard, theme, syncNotifier, logger);
+        await viewModel.InitializeAsync();
+
+        await viewModel.DeleteButtonCommand.ExecuteAsync(Assert.Single(viewModel.VisibleButtons));
+
+        Assert.Empty(await repository.GetButtonsAsync());
+        Assert.Equal("Button deleted.", viewModel.StatusText);
+        Assert.Contains(logger.Warnings, x => x.Context == "DeleteButtonsAsync" && x.Message.Contains("sync boom", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task SetTheme_WhenSyncNotifyFails_StillAppliesThemeAndLogsWarning()
+    {
+        var repository = new InMemoryAppRepository();
+        var executor = new RecordingCommandExecutor((true, "ok"));
+        var clipboard = new RecordingClipboardService();
+        var theme = new RecordingThemeService();
+        var syncNotifier = new TestStateSyncNotifier
+        {
+            ThrowOnNotify = new InvalidOperationException("sync boom"),
+        };
+        var logger = new RecordingErrorLogger();
+        var viewModel = new MainViewModel(repository, executor, clipboard, theme, syncNotifier, logger);
+        await viewModel.InitializeAsync();
+
+        await viewModel.SetThemeCommand.ExecuteAsync("Dark");
+
+        Assert.Equal(ThemeMode.Dark, viewModel.SelectedTheme);
+        Assert.Equal(ThemeMode.Dark, theme.Current);
+        Assert.Equal(ThemeMode.Dark, await repository.GetThemeAsync());
+        Assert.Contains(logger.Warnings, x => x.Context == "SetThemeAsync" && x.Message.Contains("sync boom", StringComparison.Ordinal));
+    }
+
     private static async Task WaitUntilAsync(Func<bool> condition, int timeoutMs = 2000)
     {
         var started = DateTime.UtcNow;
@@ -566,12 +727,26 @@ public class MainViewModelWorkflowIntegrationTests
     private sealed class RecordingClipboardService : IClipboardService
     {
         public string CurrentText { get; private set; } = string.Empty;
+        public Exception? ThrowOnGetText { get; set; }
+        public Exception? ThrowOnSetText { get; set; }
 
         public Task<string> GetTextAsync(CancellationToken cancellationToken = default)
-            => Task.FromResult(CurrentText);
+        {
+            if (ThrowOnGetText is not null)
+            {
+                return Task.FromException<string>(ThrowOnGetText);
+            }
+
+            return Task.FromResult(CurrentText);
+        }
 
         public Task SetTextAsync(string text, CancellationToken cancellationToken = default)
         {
+            if (ThrowOnSetText is not null)
+            {
+                return Task.FromException(ThrowOnSetText);
+            }
+
             CurrentText = text;
             return Task.CompletedTask;
         }
@@ -590,11 +765,17 @@ public class MainViewModelWorkflowIntegrationTests
     private sealed class TestStateSyncNotifier : IStateSyncNotifier
     {
         public int NotifyCount { get; private set; }
+        public Exception? ThrowOnNotify { get; set; }
 
         public event EventHandler<StateSyncChangedEventArgs>? ButtonsChanged;
 
         public Task NotifyButtonsChangedAsync(CancellationToken cancellationToken = default)
         {
+            if (ThrowOnNotify is not null)
+            {
+                return Task.FromException(ThrowOnNotify);
+            }
+
             NotifyCount++;
             return Task.CompletedTask;
         }
