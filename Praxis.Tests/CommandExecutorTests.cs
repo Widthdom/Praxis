@@ -20,6 +20,32 @@ public class CommandExecutorTests
         Assert.Equal(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), startInfo.WorkingDirectory);
     }
 
+    [Fact]
+    public void ApplyWorkingDirectoryOverride_SetsUserProfile_ForEnvExpandedWindowsShellTool()
+    {
+        const string variableName = "PRAXIS_TEST_COMMAND_EXECUTOR_SHELL";
+        var previous = Environment.GetEnvironmentVariable(variableName);
+
+        try
+        {
+            Environment.SetEnvironmentVariable(variableName, "\"C:\\Program Files\\PowerShell\\7\\pwsh.exe\"");
+
+            var startInfo = new ProcessStartInfo
+            {
+                FileName = "pwsh.exe",
+                UseShellExecute = true,
+            };
+
+            InvokeApplyWorkingDirectoryOverride(startInfo, $"%{variableName}%", isWindows: true);
+
+            Assert.Equal(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), startInfo.WorkingDirectory);
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable(variableName, previous);
+        }
+    }
+
     [Theory]
     [InlineData("\"C:\\Program Files\\App\\app.exe\"", "C:\\Program Files\\App\\app.exe")]
     [InlineData("'C:\\Program Files\\App\\app.exe'", "C:\\Program Files\\App\\app.exe")]
@@ -31,6 +57,26 @@ public class CommandExecutorTests
         var result = InvokeNormalizeToolPath(value);
 
         Assert.Equal(expected, result);
+    }
+
+    [Fact]
+    public void NormalizeToolPath_ExpandsEnvironmentVariables_AndTrimsExpandedQuotes()
+    {
+        const string variableName = "PRAXIS_TEST_COMMAND_EXECUTOR_TOOL";
+        var previous = Environment.GetEnvironmentVariable(variableName);
+
+        try
+        {
+            Environment.SetEnvironmentVariable(variableName, "\"C:\\Program Files\\App\\tool.exe\"");
+
+            var result = InvokeNormalizeToolPath($"%{variableName}%");
+
+            Assert.Equal("C:\\Program Files\\App\\tool.exe", result);
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable(variableName, previous);
+        }
     }
 
     [Theory]
@@ -76,6 +122,25 @@ public class CommandExecutorTests
         Assert.Equal(value, result);
     }
 
+    [Fact]
+    public void StartProcess_WarningLogsFailure_WhenProcessStartThrows()
+    {
+        var failurePrefix = $"CommandExecutor failure {Guid.NewGuid():N}";
+        var startInfo = new ProcessStartInfo
+        {
+            FileName = string.Empty,
+            UseShellExecute = true,
+        };
+
+        var result = InvokeStartProcess(startInfo, "Executed.", failurePrefix);
+
+        Assert.False(result.Success);
+        Assert.StartsWith(failurePrefix, result.Message, StringComparison.Ordinal);
+
+        var content = File.ReadAllText(CrashFileLogger.LogFilePath);
+        Assert.Contains(failurePrefix, content);
+    }
+
     private static string InvokeExpandHomePath(string value)
     {
         var method = typeof(CommandExecutor).GetMethod("ExpandHomePath", BindingFlags.NonPublic | BindingFlags.Static);
@@ -114,5 +179,19 @@ public class CommandExecutorTests
 
         var result = method.Invoke(null, [value]);
         return Assert.IsType<bool>(result);
+    }
+
+    private static (bool Success, string Message) InvokeStartProcess(ProcessStartInfo startInfo, string successMessage, string failurePrefix)
+    {
+        var method = typeof(CommandExecutor).GetMethod(
+            "StartProcess",
+            BindingFlags.NonPublic | BindingFlags.Static,
+            binder: null,
+            [typeof(ProcessStartInfo), typeof(string), typeof(string)],
+            modifiers: null);
+        Assert.NotNull(method);
+
+        var result = method.Invoke(null, [startInfo, successMessage, failurePrefix]);
+        return Assert.IsType<(bool Success, string Message)>(result);
     }
 }

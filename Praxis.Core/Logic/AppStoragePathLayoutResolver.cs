@@ -16,10 +16,10 @@ public static class AppStoragePathLayoutResolver
     {
         if (isWindows)
         {
-            return Path.Combine(windowsLocalAppDataRoot, AppDataFolderName);
+            return Path.Combine(NormalizeRootPath(windowsLocalAppDataRoot), AppDataFolderName);
         }
 
-        return Path.Combine(nonWindowsBasePath, AppDataFolderName);
+        return Path.Combine(NormalizeRootPath(nonWindowsBasePath), AppDataFolderName);
     }
 
     public static string ResolveSyncPath(string windowsLocalAppDataRoot, string nonWindowsBasePath, bool isWindows)
@@ -32,9 +32,25 @@ public static class AppStoragePathLayoutResolver
     {
         if (isWindows)
         {
-            return Path.Combine(windowsLocalAppDataRoot, AppDataFolderName);
+            return Path.Combine(NormalizeRootPath(windowsLocalAppDataRoot), AppDataFolderName);
         }
 
-        return Path.Combine(nonWindowsBasePath, AppDataFolderName);
+        return Path.Combine(NormalizeRootPath(nonWindowsBasePath), AppDataFolderName);
+    }
+
+    private static string NormalizeRootPath(string? rootPath)
+    {
+        var trimmed = (rootPath ?? string.Empty).Trim();
+        if (trimmed.Length >= 2)
+        {
+            var first = trimmed[0];
+            var last = trimmed[^1];
+            if ((first == '"' || first == '\'') && last == first)
+            {
+                trimmed = trimmed[1..^1].Trim();
+            }
+        }
+
+        return trimmed;
     }
 }

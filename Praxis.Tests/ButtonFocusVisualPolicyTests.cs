@@ -5,9 +5,14 @@ namespace Praxis.Tests;
 public class ButtonFocusVisualPolicyTests
 {
     [Fact]
-    public void ResolveBorderWidth_ReturnsConstantWidth()
+    public void ResolveBorderWidth_ReturnsPositiveConstantWidth()
     {
-        Assert.Equal(1.5, ButtonFocusVisualPolicy.ResolveBorderWidth());
+        var first = ButtonFocusVisualPolicy.ResolveBorderWidth();
+        var second = ButtonFocusVisualPolicy.ResolveBorderWidth();
+
+        Assert.Equal(1.5, first);
+        Assert.Equal(first, second);
+        Assert.True(first > 0);
     }
 
     [Theory]
@@ -19,5 +24,14 @@ public class ButtonFocusVisualPolicyTests
     {
         var color = ButtonFocusVisualPolicy.ResolveBorderColorHex(focused, isDarkTheme);
         Assert.Equal(expected, color);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void ResolveBorderColorHex_ReturnsTransparent_WhenNotFocused_RegardlessOfTheme(bool isDarkTheme)
+    {
+        var color = ButtonFocusVisualPolicy.ResolveBorderColorHex(focused: false, isDarkTheme);
+        Assert.Equal("#00000000", color);
     }
 }

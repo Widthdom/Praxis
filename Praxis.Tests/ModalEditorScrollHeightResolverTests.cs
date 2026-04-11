@@ -34,4 +34,32 @@ public class ModalEditorScrollHeightResolverTests
         var height = ModalEditorScrollHeightResolver.Resolve(contentHeight: -20, maxHeight: -1);
         Assert.Equal(0, height);
     }
+
+    [Fact]
+    public void Resolve_ReturnsContentHeight_WhenMaxHeightIsZeroOrNegative()
+    {
+        Assert.Equal(180, ModalEditorScrollHeightResolver.Resolve(contentHeight: 180, maxHeight: 0));
+        Assert.Equal(180, ModalEditorScrollHeightResolver.Resolve(contentHeight: 180, maxHeight: -1));
+    }
+
+    [Fact]
+    public void Resolve_TreatsOnlyNonFiniteContent_AsZero_BeforeApplyingFiniteMax()
+    {
+        Assert.Equal(0, ModalEditorScrollHeightResolver.Resolve(double.NaN, 200));
+        Assert.Equal(0, ModalEditorScrollHeightResolver.Resolve(double.PositiveInfinity, 200));
+    }
+
+    [Fact]
+    public void Resolve_TreatsOnlyNonFiniteMax_AsUnbounded()
+    {
+        Assert.Equal(120, ModalEditorScrollHeightResolver.Resolve(120, double.NaN));
+        Assert.Equal(120, ModalEditorScrollHeightResolver.Resolve(120, double.PositiveInfinity));
+    }
+
+    [Fact]
+    public void Resolve_TreatsNonFiniteInputs_AsZero()
+    {
+        Assert.Equal(0, ModalEditorScrollHeightResolver.Resolve(double.NaN, double.NaN));
+        Assert.Equal(0, ModalEditorScrollHeightResolver.Resolve(double.PositiveInfinity, double.NegativeInfinity));
+    }
 }

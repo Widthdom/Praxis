@@ -51,6 +51,15 @@ public class ModelDefaultsTests
     }
 
     [Fact]
+    public void LaunchLogEntry_DefaultIds_AreUniqueAcrossInstances()
+    {
+        var a = new LaunchLogEntry();
+        var b = new LaunchLogEntry();
+
+        Assert.NotEqual(a.Id, b.Id);
+    }
+
+    [Fact]
     public void ErrorLogEntry_Defaults_AreInitializedAsExpected()
     {
         var entry = new ErrorLogEntry();
@@ -62,6 +71,15 @@ public class ModelDefaultsTests
         Assert.Equal(string.Empty, entry.Message);
         Assert.Equal(string.Empty, entry.StackTrace);
         Assert.Equal(DateTimeKind.Utc, entry.TimestampUtc.Kind);
+    }
+
+    [Fact]
+    public void ErrorLogEntry_DefaultIds_AreUniqueAcrossInstances()
+    {
+        var a = new ErrorLogEntry();
+        var b = new ErrorLogEntry();
+
+        Assert.NotEqual(a.Id, b.Id);
     }
 
     [Fact]
@@ -121,5 +139,23 @@ public class ModelDefaultsTests
         source.Command = "mutated";
         Assert.Equal("cmd", copied.Command);
         Assert.Equal("cmd", cloned.Command);
+    }
+
+    [Fact]
+    public void LauncherButtonRecord_CopyConstructor_ThrowsArgumentNullException_ForNullSource()
+    {
+        Assert.Throws<ArgumentNullException>(() => new LauncherButtonRecord(null!));
+    }
+
+    [Fact]
+    public void LauncherButtonRecord_Clone_ReturnsDistinctInstance()
+    {
+        var source = new LauncherButtonRecord { Command = "cmd" };
+
+        var clone = source.Clone();
+        clone.Command = "mutated";
+
+        Assert.NotSame(source, clone);
+        Assert.Equal("cmd", source.Command);
     }
 }

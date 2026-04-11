@@ -8,6 +8,7 @@ using Microsoft.Maui.Platform;
 using ObjCRuntime;
 using Praxis.Core.Logic;
 using Praxis.Core.Models;
+using Praxis.Services;
 using UIKit;
 
 namespace Praxis.Controls;
@@ -449,26 +450,33 @@ public class MacEntryHandler : EntryHandler
 
     private static string? TryResolveKeyInput(string inputName)
     {
-        var keyInputProperty = typeof(UIKeyCommand).GetProperty(inputName, System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
-        if (keyInputProperty?.GetValue(null) is NSString nsInput)
+        try
         {
-            return nsInput.ToString();
-        }
+            var keyInputProperty = typeof(UIKeyCommand).GetProperty(inputName, System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
+            if (keyInputProperty?.GetValue(null) is NSString nsInput)
+            {
+                return nsInput.ToString();
+            }
 
-        if (keyInputProperty?.GetValue(null) is string inputText && !string.IsNullOrEmpty(inputText))
-        {
-            return inputText;
-        }
+            if (keyInputProperty?.GetValue(null) is string inputText && !string.IsNullOrEmpty(inputText))
+            {
+                return inputText;
+            }
 
-        var keyInputField = typeof(UIKeyCommand).GetField(inputName, System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
-        if (keyInputField?.GetValue(null) is NSString nsInputField)
-        {
-            return nsInputField.ToString();
-        }
+            var keyInputField = typeof(UIKeyCommand).GetField(inputName, System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
+            if (keyInputField?.GetValue(null) is NSString nsInputField)
+            {
+                return nsInputField.ToString();
+            }
 
-        if (keyInputField?.GetValue(null) is string inputFieldText && !string.IsNullOrEmpty(inputFieldText))
+            if (keyInputField?.GetValue(null) is string inputFieldText && !string.IsNullOrEmpty(inputFieldText))
+            {
+                return inputFieldText;
+            }
+        }
+        catch (Exception ex)
         {
-            return inputFieldText;
+            CrashFileLogger.WriteWarning(nameof(MacEntryHandler), $"Failed to resolve UIKeyCommand input '{inputName}': {ex.Message}");
         }
 
         return null;

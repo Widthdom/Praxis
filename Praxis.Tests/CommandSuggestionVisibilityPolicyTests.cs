@@ -4,17 +4,12 @@ namespace Praxis.Tests;
 
 public class CommandSuggestionVisibilityPolicyTests
 {
-    [Fact]
-    public void ShouldCloseOnContextMenuOpen_ReturnsTrue_WhenSuggestionIsOpen()
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void ShouldCloseOnContextMenuOpen_MirrorsSuggestionOpenState(bool isSuggestionOpen)
     {
-        var shouldClose = CommandSuggestionVisibilityPolicy.ShouldCloseOnContextMenuOpen(isSuggestionOpen: true);
-        Assert.True(shouldClose);
-    }
-
-    [Fact]
-    public void ShouldCloseOnContextMenuOpen_ReturnsFalse_WhenSuggestionIsClosed()
-    {
-        var shouldClose = CommandSuggestionVisibilityPolicy.ShouldCloseOnContextMenuOpen(isSuggestionOpen: false);
-        Assert.False(shouldClose);
+        var shouldClose = CommandSuggestionVisibilityPolicy.ShouldCloseOnContextMenuOpen(isSuggestionOpen);
+        Assert.Equal(isSuggestionOpen, shouldClose);
     }
 }

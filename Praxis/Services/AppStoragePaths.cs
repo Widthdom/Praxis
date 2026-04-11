@@ -120,8 +120,16 @@ public static class AppStoragePaths
 
     private static bool PathsEqual(string left, string right)
     {
-        var comparison = OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
-        return string.Equals(Path.GetFullPath(left), Path.GetFullPath(right), comparison);
+        try
+        {
+            var comparison = OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
+            return string.Equals(Path.GetFullPath(left), Path.GetFullPath(right), comparison);
+        }
+        catch (Exception ex) when (ex is ArgumentException or NotSupportedException or PathTooLongException)
+        {
+            CrashFileLogger.WriteWarning(nameof(AppStoragePaths), $"Ignoring invalid migration path comparison between '{left}' and '{right}': {ex.Message}");
+            return false;
+        }
     }
 
     private static void EnsureDirectory(string? path)

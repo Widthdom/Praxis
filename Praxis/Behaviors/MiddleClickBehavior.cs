@@ -4,6 +4,7 @@ using System.Windows.Input;
 using Microsoft.Maui.ApplicationModel;
 using Microsoft.Maui.Controls;
 
+using Praxis.Services;
 using Praxis.ViewModels;
 #if MACCATALYST
 using Foundation;
@@ -199,8 +200,9 @@ public sealed class MiddleClickBehavior : Behavior<View>
         {
             recognizer.SetValueForKey(NSNumber.FromUInt64(mask), new NSString("buttonMaskRequired"));
         }
-        catch
+        catch (Exception ex)
         {
+            CrashFileLogger.WriteWarning(nameof(MiddleClickBehavior), $"Failed to set buttonMaskRequired={mask}: {ex.Message}");
         }
     }
 

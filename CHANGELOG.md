@@ -6,6 +6,41 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 
 ## [Unreleased]
 
+### Fixed
+- `ThemeModeParser.ParseOrDefault()` now sanitizes invalid caller-supplied fallback enum values back to `System` instead of returning an out-of-range theme when both the input string and default are invalid
+- `CommandExecutor` now expands environment-variable-backed tool paths and trims quotes after expansion, so `%ComSpec%` / quoted `%...%` tools execute with the same normalized path logic as literal tool values
+- Windows startup now warning-logs failures to create the `startup.log` directory instead of losing that breadcrumb before the later append path even runs
+- `DockOrderValueCodec.Parse()` now trims wrapping quotes from both the whole CSV payload and individual GUID entries so quoted dock-order persistence still restores the intended order
+- `WindowsPathPolicy.IsUncPath()` now accepts quoted UNC paths but rejects `\\\\?\\` and `\\\\.\\` local-device prefixes instead of misclassifying them as network shares
+- Mac `AppDelegate` now warning-logs failures to prioritize key commands over system behavior instead of letting runtime reflection differences fail silently
+- `QuickLookPreviewFormatter.BuildLine()` now keeps the entire labeled quick-look line within the requested `maxLength` instead of letting the `label + ": "` prefix push the final string past the caller's limit
+- `CommandNotFoundRefocusPolicy` now ignores leading whitespace before checking the `Command not found:` prefix so refocus still triggers for padded status text without matching embedded phrases
+- Mac `AppDelegate` now warning-logs `MarshalManagedException` hook failures instead of swallowing them silently during startup
+- `MacEntryHandler`, `MacEditorHandler`, and Mac `CommandEntryHandler` now warning-log `UIKeyCommand` input-reflection failures and fall back to baked key literals instead of letting handler type initialization fail on runtime API differences
+- `ThemeModeParser.NormalizeOrDefault` now sanitizes invalid fallback enum values back to `System` instead of returning an out-of-range theme when both the parsed value and caller-supplied default are invalid
+- `DbErrorLogger` now warning-logs unexpected drain-loop failures to `crash.log` so background log persistence does not fail silently after enqueue succeeds
+- `FileStateSyncNotifier.NotifyButtonsChangedAsync` now warning-logs sync-payload write failures before rethrowing so local save/delete success paths leave a breadcrumb when file signaling breaks
+- `MainPage` now warning-logs Windows focus-visual reflection failures, modal primary-editor focus failures, and `IsTabStop` reflection failures instead of swallowing those fallback-path errors silently
+- Mac middle-click/button-mask and editor-key-command/CoreGraphics fallback paths now warning-log failures so native pointer or shortcut bridging issues leave local diagnostics instead of quietly degrading
+- Windows `CommandEntryHandler` now warning-logs both compatibility-triggered and unexpected `InputScope` assignment failures before disabling or rejecting the write
+- `FileAppConfigService` now continues to later config candidates when an earlier config file is readable but omits `theme` or contains an invalid theme value, instead of prematurely defaulting to `System`
+- `FileAppConfigService` now warning-logs skipped config candidates so malformed, unreadable, or invalid theme configs leave a crash-log breadcrumb before fallback continues
+- `DbErrorLogger` now warning-logs DB persistence and retention-purge failures to `crash.log` so non-fatal repository errors still leave diagnostics during shutdown or degraded logging paths
+- `DbErrorLogger.FlushAsync(timeout)` now warning-logs timeout and unexpected flush failures so graceful-shutdown logging gaps leave an explicit breadcrumb instead of failing silently
+- `Praxis/Platforms/MacCatalyst/Program.cs` is now UTF-8 BOM-free, and a repository encoding guard test now keeps `cdidx validate` clean for that entrypoint
+- `CommandExecutor` now warning-logs native process-start and launch-target-resolution failures to `crash.log` so returned user-facing launch errors also leave a local diagnostic breadcrumb
+- `LaunchTargetResolver` now trims wrapping quotes after environment-variable expansion, so quoted env-backed HTTP URLs and filesystem paths still resolve correctly
+- `AppStoragePaths` now ignores malformed legacy-path comparisons instead of letting `Path.GetFullPath` abort storage migration checks
+- `CommandRecordMatcher` now ignores `null` collection entries instead of throwing while scanning command suggestions
+- `StateSyncPayloadParser` now rejects double-separator payloads instead of collapsing empty segments and accepting malformed sync signals
+- `QuickLookPreviewFormatter` now keeps ellipsis-truncated output within the requested `maxLength` instead of returning strings longer than the caller asked for
+- `ButtonSearchMatcher`, `LogRetentionPolicy`, and `LauncherButtonOrderPolicy` now ignore `null` record entries instead of throwing inside search, retention, or placement normalization helpers
+- `CommandWorkingDirectoryPolicy` now expands environment-variable tool paths before shell detection, so `%ComSpec%` / quoted `%...%` Windows shell tools still pick the user-profile working directory
+- `CommandLineBuilder` now treats quoted-empty tool values as empty so preview/status command lines stay aligned with execution-time empty-tool handling
+- `AppStoragePathLayoutResolver` now trims wrapping quotes from configured storage roots before composing app-data paths
+- `GridSnapper` and `ModalEditorScrollHeightResolver` now sanitize non-finite numeric inputs instead of propagating `NaN` / infinity through layout calculations
+- Windows startup-log append failures and `MainPage` copy-notice animation failures now leave `crash.log` breadcrumbs instead of being swallowed silently
+
 ### [1.1.5] - 2026-04-11
 
 ### Fixed
@@ -164,6 +199,38 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 形式は Keep a Changelog に準拠し、バージョン管理は Semantic Versioning に従います。
 
 ## [Unreleased]
+
+### 修正
+- `DockOrderValueCodec.Parse()` は CSV 全体や各 GUID 要素を囲む quote も除去するようにし、quote 付きで保存された Dock 順序でも意図した並びを復元できるよう修正
+- `WindowsPathPolicy.IsUncPath()` は quote 付き UNC を受理しつつ `\\\\?\\` と `\\\\.\\` のローカルデバイス接頭辞は共有パスとして誤判定しないよう修正
+- Mac `AppDelegate` は key command の system 優先解除失敗も warning 記録するようにし、runtime の reflection 差異が無音にならないよう修正
+- `QuickLookPreviewFormatter.BuildLine()` はラベル付き Quick Look 行全体でも要求 `maxLength` を超えないようにし、`label + ": "` 分で最終文字列が上限超過しないよう修正
+- `CommandNotFoundRefocusPolicy` は `Command not found:` 判定前に先頭空白を無視するようにし、前置空白つき status でも再フォーカスを維持しつつ埋め込み語句とは誤一致しないよう修正
+- Mac `AppDelegate` は `MarshalManagedException` hook 失敗も startup 中に無音で握りつぶさず warning 記録するよう修正
+- `MacEntryHandler`、`MacEditorHandler`、Mac の `CommandEntryHandler` は `UIKeyCommand` 入力の reflection 解決失敗も warning 記録したうえで既定キー文字列へフォールバックするようにし、runtime API 差異で handler の型初期化ごと失敗しないよう修正
+- `ThemeModeParser.NormalizeOrDefault` は、解析値と呼び出し元既定値の両方が不正 enum でも out-of-range 値を返さず `System` へ安全化するよう修正
+- `DbErrorLogger` は background drain loop の予期しない失敗も `crash.log` に warning 記録するようにし、enqueue 済みでも以後のログ永続化失敗が無音にならないよう修正
+- `FileStateSyncNotifier.NotifyButtonsChangedAsync` は sync payload の書込失敗も再送出前に warning 記録するようにし、ローカル save/delete 成功後に file signaling が壊れても breadcrumb を残すよう修正
+- `MainPage` は Windows の focus-visual reflection 失敗、モーダル primary editor focus 失敗、`IsTabStop` reflection 失敗も warning 記録するようにし、フォールバック経路の silent failure をなくすよう修正
+- Mac の middle-click/button-mask と editor key-command/CoreGraphics fallback は失敗時も warning 記録するようにし、native pointer / shortcut bridge 劣化時にローカル診断痕跡を残すよう修正
+- Windows `CommandEntryHandler` は `InputScope` 代入の互換性由来失敗と予期しない失敗の両方を warning 記録したうえで無効化または拒否するよう修正
+- `FileAppConfigService` は先頭設定ファイルが読めても `theme` 欠落または不正値だった場合にそこで `System` へ確定せず、後続候補へフォールバックするよう修正
+- `FileAppConfigService` は壊れた設定・読めない設定・不正な theme 設定をスキップした理由を warning として残すようにし、後続候補へのフォールバック前に `crash.log` に診断 breadcrumb を残すよう修正
+- `DbErrorLogger` は DB への永続化失敗や保持期間 purge 失敗も `crash.log` に warning 記録するようにし、非致命なリポジトリエラーでも shutdown / 劣化動作時の診断痕跡を残すよう修正
+- `DbErrorLogger.FlushAsync(timeout)` は timeout や予期しない flush 失敗も warning 記録するようにし、graceful shutdown 中のログ欠落が無音にならないよう修正
+- `Praxis/Platforms/MacCatalyst/Program.cs` の UTF-8 BOM を除去し、同 entrypoint を BOM-free に保つ repository encoding guard テストを追加して `cdidx validate` をクリーン化
+- `CommandExecutor` は native process 起動失敗や launch-target-resolution 失敗も `crash.log` に warning 記録するようにし、ユーザー向け失敗メッセージの裏側にローカル診断 breadcrumb を残すよう修正
+- `LaunchTargetResolver` は環境変数展開後の引用符も正規化するようにし、引用符付き env 由来の HTTP URL や filesystem path も正しく解決できるよう修正
+- `AppStoragePaths` は壊れた legacy path 比較入力を無視するようにし、`Path.GetFullPath` 例外でストレージ移行チェック全体が止まらないよう修正
+- `CommandRecordMatcher` は command 候補走査中に `null` コレクション要素を無視するようにし、候補生成で例外落ちしないよう修正
+- `StateSyncPayloadParser` は二重区切り payload を空セグメント圧縮で受理しないようにし、壊れた同期シグナルを拒否するよう修正
+- `QuickLookPreviewFormatter` は省略記号つき短縮後も要求 `maxLength` を超えないようにし、呼び出し元の長さ制約を破らないよう修正
+- `ButtonSearchMatcher`、`LogRetentionPolicy`、`LauncherButtonOrderPolicy` は `null` 要素を無視するようにし、検索・保持期間計算・配置正規化 helper 内で例外落ちしないよう修正
+- `CommandWorkingDirectoryPolicy` は shell 判定前に環境変数つき tool path を展開するようにし、`%ComSpec%` や引用符付き `%...%` Windows shell tool でもユーザープロファイル起点 working directory を選べるよう修正
+- `CommandLineBuilder` は quoted-empty の tool 値を空として扱うようにし、実行時の empty-tool 判定と preview/status 表示を整合させるよう修正
+- `AppStoragePathLayoutResolver` は app-data path 合成前に保存先 root の外側引用符を除去するよう修正
+- `GridSnapper` と `ModalEditorScrollHeightResolver` は非有限数値入力を安全化するようにし、`NaN` / infinity がレイアウト計算へ伝播しないよう修正
+- Windows startup-log 追記失敗と `MainPage` copy notice animation 失敗は、無言で握りつぶさず `crash.log` に breadcrumb を残すよう修正
 
 ### [1.1.5] - 2026-04-11
 

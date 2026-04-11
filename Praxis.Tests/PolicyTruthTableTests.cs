@@ -58,6 +58,52 @@ public class PolicyTruthTableTests
     }
 
     [Theory]
+    [InlineData(false, false, false, false)]
+    [InlineData(false, false, true, false)]
+    [InlineData(false, true, false, false)]
+    [InlineData(false, true, true, false)]
+    [InlineData(true, false, false, true)]
+    [InlineData(true, false, true, false)]
+    [InlineData(true, true, false, false)]
+    [InlineData(true, true, true, false)]
+    public void CommandEntryBehaviorPolicy_NativeActivationFocus_MatchesExpectedTruthTable(
+        bool enableNativeActivationFocus,
+        bool isEditorOpen,
+        bool isConflictDialogOpen,
+        bool expected)
+    {
+        var actual = CommandEntryBehaviorPolicy.ShouldApplyNativeActivationFocus(
+            enableNativeActivationFocus,
+            isEditorOpen,
+            isConflictDialogOpen);
+
+        Assert.Equal(expected, actual);
+    }
+
+    [Theory]
+    [InlineData(false, false, false, false)]
+    [InlineData(false, false, true, false)]
+    [InlineData(false, true, false, false)]
+    [InlineData(false, true, true, false)]
+    [InlineData(true, false, false, false)]
+    [InlineData(true, false, true, false)]
+    [InlineData(true, true, false, false)]
+    [InlineData(true, true, true, true)]
+    public void WindowsNativeFocusSafetyPolicy_MatchesExpectedTruthTable(
+        bool hasTextBox,
+        bool isLoaded,
+        bool hasXamlRoot,
+        bool expected)
+    {
+        var actual = WindowsNativeFocusSafetyPolicy.ShouldApplyNativeFocus(
+            hasTextBox,
+            isLoaded,
+            hasXamlRoot);
+
+        Assert.Equal(expected, actual);
+    }
+
+    [Theory]
     [InlineData(false, false, false, false, false)]
     [InlineData(false, false, false, true, false)]
     [InlineData(false, false, true, false, false)]

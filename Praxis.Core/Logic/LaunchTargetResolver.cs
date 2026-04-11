@@ -11,7 +11,7 @@ public static class LaunchTargetResolver
 {
     public static (LaunchTargetKind Kind, string Target) Resolve(string? arguments)
     {
-        var value = TrimEnclosingQuotes((arguments ?? string.Empty).Trim());
+        var value = NormalizeExpandedCandidate(Environment.ExpandEnvironmentVariables((arguments ?? string.Empty).Trim()));
         if (string.IsNullOrWhiteSpace(value))
         {
             return (LaunchTargetKind.None, string.Empty);
@@ -29,10 +29,9 @@ public static class LaunchTargetResolver
             return (LaunchTargetKind.FileSystemPath, fileUri.LocalPath);
         }
 
-        var expanded = Environment.ExpandEnvironmentVariables(value);
-        if (LooksLikePath(expanded))
+        if (LooksLikePath(value))
         {
-            return (LaunchTargetKind.FileSystemPath, expanded);
+            return (LaunchTargetKind.FileSystemPath, value);
         }
 
         return (LaunchTargetKind.None, string.Empty);
@@ -97,5 +96,28 @@ public static class LaunchTargetResolver
         }
 
         return value;
+    }
+
+    private static string NormalizeExpandedCandidate(string value)
+    {
+        var trimmed = value.Trim();
+        var normalized = TrimEnclosingQuotes(trimmed);
+        if (!string.Equals(normalized, trimmed, StringComparison.Ordinal))
+        {
+            return normalized;
+        }
+
+        if (trimmed.Length >= 3 && (trimmed[0] == '"' || trimmed[0] == '\''))
+        {
+            var closingQuoteIndex = trimmed.IndexOf(trimmed[0], 1);
+            if (closingQuoteIndex > 0 &&
+                closingQuoteIndex < trimmed.Length - 1 &&
+                (trimmed[closingQuoteIndex + 1] == '/' || trimmed[closingQuoteIndex + 1] == '\\'))
+            {
+                return trimmed[1..closingQuoteIndex] + trimmed[(closingQuoteIndex + 1)..];
+            }
+        }
+
+        return trimmed;
     }
 }

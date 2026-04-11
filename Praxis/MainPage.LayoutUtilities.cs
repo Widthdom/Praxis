@@ -1,4 +1,5 @@
 using System.Reflection;
+using Praxis.Services;
 
 namespace Praxis;
 
@@ -53,8 +54,9 @@ public partial class MainPage
         {
             prop.SetValue(platformView, isTabStop);
         }
-        catch
+        catch (Exception ex)
         {
+            CrashFileLogger.WriteWarning(nameof(SetTabStop), $"Failed to set IsTabStop={isTabStop}: {ex.Message}");
         }
     }
 #endif

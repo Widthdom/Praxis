@@ -15,9 +15,23 @@ public class InputClearButtonVisibilityPolicyTests
     [Theory]
     [InlineData("a")]
     [InlineData(" ")]
+    [InlineData("\t")]
+    [InlineData("\n")]
+    [InlineData("\0")]
     [InlineData("command")]
     public void ShouldShow_ReturnsTrue_WhenValueExists(string value)
     {
         Assert.True(InputClearButtonVisibilityPolicy.ShouldShow(value));
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("text")]
+    [InlineData(" ")]
+    [InlineData("\n")]
+    public void ShouldShow_MatchesStringIsNullOrEmptyContract(string? value)
+    {
+        Assert.Equal(!string.IsNullOrEmpty(value), InputClearButtonVisibilityPolicy.ShouldShow(value));
     }
 }

@@ -1,7 +1,6 @@
 using System.Reflection;
-
-using Praxis.Behaviors;
 using Praxis.Core.Logic;
+using Praxis.Services;
 #if MACCATALYST
 using CoreGraphics;
 using Foundation;
@@ -891,8 +890,9 @@ public partial class MainPage
         {
             return CreateMacEditorKeyCommand(keyInput, modifiers, selectorName);
         }
-        catch
+        catch (Exception ex)
         {
+            CrashFileLogger.WriteWarning(nameof(TryCreateMacEditorKeyCommand), $"Failed to create Mac editor key command '{selectorName}' for input '{keyInput}': {ex.Message}");
             return null;
         }
     }
@@ -1078,8 +1078,9 @@ public partial class MainPage
             {
                 return CGEventSource.GetButtonState(CGEventSourceStateID.CombinedSession, CGMouseButton.Center);
             }
-            catch
+            catch (Exception ex)
             {
+                CrashFileLogger.WriteWarning(nameof(IsMacMiddleButtonCurrentlyDown), $"Failed to query middle button state from CoreGraphics: {ex.Message}");
                 return false;
             }
         }

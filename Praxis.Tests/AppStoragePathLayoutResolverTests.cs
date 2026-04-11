@@ -58,4 +58,30 @@ public class AppStoragePathLayoutResolverTests
             NormalizeSeparators(@"/Users/tester/Library/Application Support/Praxis/buttons.sync"),
             NormalizeSeparators(path));
     }
+
+    [Fact]
+    public void ResolveDatabasePath_TrimsWrappingQuotes_FromWindowsRoot()
+    {
+        var path = AppStoragePathLayoutResolver.ResolveDatabasePath(
+            windowsLocalAppDataRoot: "  \"C:\\Users\\tester\\AppData\\Local\"  ",
+            nonWindowsBasePath: @"/Users/tester/Library/Application Support",
+            isWindows: true);
+
+        Assert.Equal(
+            NormalizeSeparators(@"C:\Users\tester\AppData\Local\Praxis\praxis.db3"),
+            NormalizeSeparators(path));
+    }
+
+    [Fact]
+    public void ResolveSyncPath_TrimsWrappingQuotes_FromNonWindowsRoot()
+    {
+        var path = AppStoragePathLayoutResolver.ResolveSyncPath(
+            windowsLocalAppDataRoot: @"C:\Users\tester\AppData\Local",
+            nonWindowsBasePath: "  \"/Users/tester/Library/Application Support\"  ",
+            isWindows: false);
+
+        Assert.Equal(
+            NormalizeSeparators(@"/Users/tester/Library/Application Support/Praxis/buttons.sync"),
+            NormalizeSeparators(path));
+    }
 }

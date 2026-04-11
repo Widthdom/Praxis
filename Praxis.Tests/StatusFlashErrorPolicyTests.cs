@@ -22,10 +22,25 @@ public class StatusFlashErrorPolicyTests
     }
 
     [Fact]
+    public void IsErrorStatus_ReturnsTrue_ForEmbeddedErrorTerms()
+    {
+        Assert.True(StatusFlashErrorPolicy.IsErrorStatus("Launch error recovered"));
+        Assert.True(StatusFlashErrorPolicy.IsErrorStatus("Clipboard exception occurred"));
+        Assert.True(StatusFlashErrorPolicy.IsErrorStatus("Binary was not found on disk"));
+    }
+
+    [Fact]
     public void IsErrorStatus_ReturnsFalse_ForNonErrorMessage()
     {
         var isError = StatusFlashErrorPolicy.IsErrorStatus("Executed.");
         Assert.False(isError);
+    }
+
+    [Fact]
+    public void IsErrorStatus_ReturnsFalse_ForMessagesWithoutTrackedTerms()
+    {
+        Assert.False(StatusFlashErrorPolicy.IsErrorStatus("Completed with warnings"));
+        Assert.False(StatusFlashErrorPolicy.IsErrorStatus("Found cached result"));
     }
 
     [Fact]

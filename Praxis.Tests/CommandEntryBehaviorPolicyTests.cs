@@ -4,18 +4,20 @@ namespace Praxis.Tests;
 
 public class CommandEntryBehaviorPolicyTests
 {
-    [Fact]
-    public void ShouldHandleCommandNavigationShortcuts_ReturnsInputValue()
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void ShouldHandleCommandNavigationShortcuts_ReturnsInputValue(bool enabled)
     {
-        Assert.True(CommandEntryBehaviorPolicy.ShouldHandleCommandNavigationShortcuts(enableCommandNavigationShortcuts: true));
-        Assert.False(CommandEntryBehaviorPolicy.ShouldHandleCommandNavigationShortcuts(enableCommandNavigationShortcuts: false));
+        Assert.Equal(enabled, CommandEntryBehaviorPolicy.ShouldHandleCommandNavigationShortcuts(enabled));
     }
 
-    [Fact]
-    public void ShouldTrackActivationFocusTarget_ReturnsInputValue()
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void ShouldTrackActivationFocusTarget_ReturnsInputValue(bool enabled)
     {
-        Assert.True(CommandEntryBehaviorPolicy.ShouldTrackActivationFocusTarget(enableNativeActivationFocus: true));
-        Assert.False(CommandEntryBehaviorPolicy.ShouldTrackActivationFocusTarget(enableNativeActivationFocus: false));
+        Assert.Equal(enabled, CommandEntryBehaviorPolicy.ShouldTrackActivationFocusTarget(enabled));
     }
 
     [Theory]
@@ -39,5 +41,26 @@ public class CommandEntryBehaviorPolicyTests
             isConflictDialogOpen);
 
         Assert.Equal(expected, actual);
+    }
+
+    [Fact]
+    public void ShouldApplyNativeActivationFocus_RequiresEnabledFeatureAndClosedOverlays_ForAllCombinations()
+    {
+        foreach (var enableNativeActivationFocus in new[] { false, true })
+        {
+            foreach (var isEditorOpen in new[] { false, true })
+            {
+                foreach (var isConflictDialogOpen in new[] { false, true })
+                {
+                    var actual = CommandEntryBehaviorPolicy.ShouldApplyNativeActivationFocus(
+                        enableNativeActivationFocus,
+                        isEditorOpen,
+                        isConflictDialogOpen);
+
+                    var expected = enableNativeActivationFocus && !isEditorOpen && !isConflictDialogOpen;
+                    Assert.Equal(expected, actual);
+                }
+            }
+        }
     }
 }

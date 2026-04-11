@@ -13,11 +13,38 @@ public class CoreLogicEdgeCaseTests
     }
 
     [Fact]
+    public void ThemeModeParser_ParseOrDefault_SanitizesInvalidFallbackToSystem()
+    {
+        var parsed = ThemeModeParser.ParseOrDefault("invalid", (ThemeMode)123);
+
+        Assert.Equal(ThemeMode.System, parsed);
+    }
+
+    [Fact]
     public void ThemeModeParser_ParsesCaseInsensitiveValues()
     {
         Assert.Equal(ThemeMode.Light, ThemeModeParser.ParseOrDefault("light"));
         Assert.Equal(ThemeMode.Dark, ThemeModeParser.ParseOrDefault("DARK"));
         Assert.Equal(ThemeMode.System, ThemeModeParser.ParseOrDefault("System"));
+    }
+
+    [Fact]
+    public void ThemeModeParser_TryParse_ReturnsFalse_ForBlankOrInvalidValues()
+    {
+        Assert.False(ThemeModeParser.TryParse(null, out _));
+        Assert.False(ThemeModeParser.TryParse("   ", out _));
+        Assert.False(ThemeModeParser.TryParse("invalid", out _));
+        Assert.False(ThemeModeParser.TryParse("1", out _));
+    }
+
+    [Fact]
+    public void ThemeModeParser_TryParse_ReturnsParsedTheme_ForNamedValues()
+    {
+        Assert.True(ThemeModeParser.TryParse("dark", out var darkMode));
+        Assert.Equal(ThemeMode.Dark, darkMode);
+
+        Assert.True(ThemeModeParser.TryParse("  Light  ", out var lightMode));
+        Assert.Equal(ThemeMode.Light, lightMode);
     }
 
     [Fact]
@@ -42,6 +69,14 @@ public class CoreLogicEdgeCaseTests
         var parsed = ThemeModeParser.NormalizeOrDefault((ThemeMode)999, ThemeMode.Light);
 
         Assert.Equal(ThemeMode.Light, parsed);
+    }
+
+    [Fact]
+    public void ThemeModeParser_NormalizeOrDefault_FallsBackToSystem_WhenValueAndDefaultAreUndefined()
+    {
+        var parsed = ThemeModeParser.NormalizeOrDefault((ThemeMode)999, (ThemeMode)123);
+
+        Assert.Equal(ThemeMode.System, parsed);
     }
 
     [Fact]
@@ -71,6 +106,23 @@ public class CoreLogicEdgeCaseTests
         var result = GridSnapper.ClampWithinArea(-26, -11, 120, 44, 820, 420);
         Assert.Equal(0, result.X);
         Assert.Equal(0, result.Y);
+    }
+
+    [Fact]
+    public void GridSnapper_HandlesNonFiniteValues_ByReturningOrigin()
+    {
+        var snapped = GridSnapper.Snap(double.NaN);
+        var clamped = GridSnapper.ClampWithinArea(
+            double.PositiveInfinity,
+            double.NegativeInfinity,
+            width: double.NaN,
+            height: double.PositiveInfinity,
+            areaWidth: double.NaN,
+            areaHeight: double.PositiveInfinity);
+
+        Assert.Equal(0, snapped);
+        Assert.Equal(0, clamped.X);
+        Assert.Equal(0, clamped.Y);
     }
 
     [Fact]

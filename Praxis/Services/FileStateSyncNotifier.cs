@@ -46,9 +46,21 @@ public sealed class FileStateSyncNotifier : IStateSyncNotifier
             lastObservedPayload = payload;
         }
 
-        Directory.CreateDirectory(directoryPath);
-        await File.WriteAllTextAsync(signalPath, payload, cancellationToken);
-        CrashFileLogger.WriteInfo(nameof(FileStateSyncNotifier), $"Signal written. Source={instanceId} Path={signalPath}");
+        try
+        {
+            Directory.CreateDirectory(directoryPath);
+            await File.WriteAllTextAsync(signalPath, payload, cancellationToken);
+            CrashFileLogger.WriteInfo(nameof(FileStateSyncNotifier), $"Signal written. Source={instanceId} Path={signalPath}");
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            CrashFileLogger.WriteWarning(nameof(FileStateSyncNotifier), $"Failed to write sync payload '{signalPath}': {ex.Message}");
+            throw;
+        }
     }
 
     private void OnSignalChanged(object sender, FileSystemEventArgs e)

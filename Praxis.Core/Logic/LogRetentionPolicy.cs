@@ -9,12 +9,17 @@ public static class LogRetentionPolicy
         DateTime nowUtc,
         int retentionDays)
     {
+        ArgumentNullException.ThrowIfNull(logs);
+
         if (retentionDays < 1)
         {
             retentionDays = 1;
         }
 
         var threshold = nowUtc.AddDays(-retentionDays);
-        return logs.Where(x => x.TimestampUtc < threshold).ToList();
+        return logs
+            .OfType<LaunchLogEntry>()
+            .Where(x => x.TimestampUtc < threshold)
+            .ToList();
     }
 }

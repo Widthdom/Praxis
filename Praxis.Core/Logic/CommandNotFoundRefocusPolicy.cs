@@ -9,6 +9,6 @@ public static class CommandNotFoundRefocusPolicy
             return false;
         }
 
-        return statusMessage.StartsWith("Command not found:", StringComparison.OrdinalIgnoreCase);
+        return statusMessage.TrimStart().StartsWith("Command not found:", StringComparison.OrdinalIgnoreCase);
     }
 }

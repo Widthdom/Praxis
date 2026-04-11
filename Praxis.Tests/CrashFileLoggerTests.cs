@@ -185,6 +185,34 @@ public class CrashFileLoggerTests
     }
 
     [Fact]
+    public void ResolveCrashLogDirectory_UsesMacApplicationSupportRoot_WhenMacLike()
+    {
+        var result = InvokeResolveCrashLogDirectory(
+            localAppDataOverride: null,
+            userProfileOverride: "  '/Users/tester'  ",
+            localAppDataFolderOverride: "/tmp/localappdata",
+            currentDirectory: "/tmp/current",
+            isWindows: false,
+            isMacLike: true);
+
+        Assert.Equal("/Users/tester/Library/Application Support/Praxis", result);
+    }
+
+    [Fact]
+    public void ResolveCrashLogDirectory_FallsBackToLocalApplicationData_WhenMacHomeIsInvalid()
+    {
+        var result = InvokeResolveCrashLogDirectory(
+            localAppDataOverride: null,
+            userProfileOverride: "relative/home",
+            localAppDataFolderOverride: "\"/tmp/localappdata\"",
+            currentDirectory: "/tmp/current",
+            isWindows: false,
+            isMacLike: true);
+
+        Assert.Equal("/tmp/localappdata/Praxis", result);
+    }
+
+    [Fact]
     public void ResolveCrashLogDirectory_FallsBackToCurrentDirectory_WhenNoAbsolutePlatformDirectoryExists()
     {
         var result = InvokeResolveCrashLogDirectory(

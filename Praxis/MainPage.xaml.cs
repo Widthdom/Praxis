@@ -472,8 +472,9 @@ public partial class MainPage : ContentPage
         catch (OperationCanceledException)
         {
         }
-        catch
+        catch (Exception ex)
         {
+            CrashFileLogger.WriteWarning("MainPage.CopyIconButton_Clicked", $"Copy notice animation failed: {ex.Message}");
         }
         finally
         {

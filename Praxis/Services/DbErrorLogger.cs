@@ -94,11 +94,13 @@ public sealed class DbErrorLogger : IErrorLogger
         }
         catch (OperationCanceledException) when (cts.Token.IsCancellationRequested)
         {
-            // Best-effort flush timed out.
+            CrashFileLogger.WriteWarning(
+                nameof(DbErrorLogger),
+                $"Flush timed out after {timeout.TotalMilliseconds:0} ms with {pendingWrites.Count} queued and {Volatile.Read(ref activeWrites)} active log writes.");
         }
-        catch
+        catch (Exception ex)
         {
-            // Best-effort flush — don't crash the shutdown path.
+            CrashFileLogger.WriteWarning(nameof(DbErrorLogger), $"Flush failed unexpectedly: {ex.Message}");
         }
     }
 
@@ -117,10 +119,9 @@ public sealed class DbErrorLogger : IErrorLogger
                 await WriteToDatabaseAsync(entry, CancellationToken.None);
             }
         }
-        catch
+        catch (Exception ex)
         {
-            // Swallow write failures to avoid infinite logging loops.
-            // The crash file already has the data.
+            CrashFileLogger.WriteWarning(nameof(DbErrorLogger), $"Drain loop failed unexpectedly: {ex.Message}");
         }
         finally
         {
@@ -147,7 +148,18 @@ public sealed class DbErrorLogger : IErrorLogger
             // Purge only on Error-level writes to avoid excessive cleanup.
             if (entry.Level == "Error")
             {
-                await repository.PurgeOldErrorLogsAsync(RetentionDays, cancellationToken);
+                try
+                {
+                    await repository.PurgeOldErrorLogsAsync(RetentionDays, cancellationToken);
+                }
+                catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+                {
+                    throw;
+                }
+                catch (Exception ex)
+                {
+                    CrashFileLogger.WriteWarning(nameof(DbErrorLogger), $"Failed to purge old error logs after persisting '{entry.Context}': {ex.Message}");
+                }
             }
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
@@ -157,9 +169,9 @@ public sealed class DbErrorLogger : IErrorLogger
                 pendingWrites.Enqueue(entry);
             }
         }
-        catch
+        catch (Exception ex)
         {
-            // Swallow — the crash file already has the record.
+            CrashFileLogger.WriteWarning(nameof(DbErrorLogger), $"Failed to persist {entry.Level} log for '{entry.Context}': {ex.Message}");
         }
         finally
         {

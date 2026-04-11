@@ -24,4 +24,21 @@ public class DockScrollBarVisibilityPolicyTests
     {
         Assert.Equal(expectedMaskVisible, DockScrollBarVisibilityPolicy.ShouldShowScrollBarMask(showHorizontalScrollBar));
     }
+
+    [Fact]
+    public void ScrollBarMask_RemainsInverseOfVisibility_ForAllPointerAndOverflowCombinations()
+    {
+        foreach (var isPointerOverDockRegion in new[] { false, true })
+        {
+            foreach (var hasHorizontalOverflow in new[] { false, true })
+            {
+                var showScrollBar = DockScrollBarVisibilityPolicy.ShouldShowHorizontalScrollBar(
+                    isPointerOverDockRegion,
+                    hasHorizontalOverflow);
+
+                var showMask = DockScrollBarVisibilityPolicy.ShouldShowScrollBarMask(showScrollBar);
+                Assert.Equal(!showScrollBar, showMask);
+            }
+        }
+    }
 }

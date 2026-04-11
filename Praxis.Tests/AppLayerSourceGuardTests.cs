@@ -110,6 +110,14 @@ public class AppLayerSourceGuardTests
     }
 
     [Fact]
+    public void FileStateSyncNotifier_WriteFailures_AreCrashLogged()
+    {
+        var source = ReadRepositoryFile("Praxis", "Services", "FileStateSyncNotifier.cs");
+
+        Assert.Contains("CrashFileLogger.WriteWarning(nameof(FileStateSyncNotifier), $\"Failed to write sync payload '{signalPath}': {ex.Message}\");", source);
+    }
+
+    [Fact]
     public void FileStateSyncNotifier_IgnoresNotifyRequestsAfterDispose()
     {
         var source = ReadRepositoryFile("Praxis", "Services", "FileStateSyncNotifier.cs");
@@ -131,6 +139,68 @@ public class AppLayerSourceGuardTests
     }
 
     [Fact]
+    public void CommandExecutor_FailureBreadcrumbs_ArePresent_ForProcessAndResolutionFailures()
+    {
+        var source = ReadRepositoryFile("Praxis", "Services", "CommandExecutor.cs");
+
+        Assert.Contains("CrashFileLogger.WriteWarning(nameof(CommandExecutor), $\"Launch target resolution failed for '{arguments}': {ex.Message}\");", source);
+        Assert.Contains("CrashFileLogger.WriteWarning(nameof(CommandExecutor), $\"{failurePrefix} {ex.Message}\");", source);
+        Assert.Contains("CrashFileLogger.WriteWarning(nameof(CommandExecutor), $\"{failurePrefix} No process handle was returned.\");", source);
+    }
+
+    [Fact]
+    public void DbErrorLogger_WritesCrashFileBeforeEnqueueingDatabaseWrites()
+    {
+        var source = ReadRepositoryFile("Praxis", "Services", "DbErrorLogger.cs");
+
+        AssertMethodContainsInOrder(source,
+            "public void Log(Exception exception, string context)",
+            "CrashFileLogger.WriteException($\"ERROR [{context}]\", exception);",
+            "pendingWrites.Enqueue(entry);");
+        AssertMethodContainsInOrder(source,
+            "public void LogWarning(string message, string context)",
+            "CrashFileLogger.WriteWarning(context, message);",
+            "pendingWrites.Enqueue(entry);");
+        AssertMethodContainsInOrder(source,
+            "public void LogInfo(string message, string context)",
+            "CrashFileLogger.WriteInfo(context, message);",
+            "pendingWrites.Enqueue(entry);");
+    }
+
+    [Fact]
+    public void DbErrorLogger_DrainFailures_AreCrashLogged()
+    {
+        var source = ReadRepositoryFile("Praxis", "Services", "DbErrorLogger.cs");
+
+        Assert.Contains("CrashFileLogger.WriteWarning(nameof(DbErrorLogger), $\"Drain loop failed unexpectedly: {ex.Message}\");", source);
+    }
+
+    [Fact]
+    public void WindowsCommandEntryHandler_DisablesInputScopeAfterCompatibilityException()
+    {
+        var source = ReadRepositoryFile("Praxis", "Platforms", "Windows", "Handlers", "CommandEntryHandler.cs");
+
+        Assert.Contains("catch (Exception ex) when (WindowsInputScopeCompatibilityPolicy.ShouldDisableInputScopeOnException(ex))", source);
+        Assert.Contains("inputScopeUnsupported = true;", source);
+        Assert.Contains("CrashFileLogger.WriteWarning(nameof(CommandEntryHandler), $\"InputScope assignment disabled after compatibility failure: {ex.Message}\");", source);
+        Assert.Contains("CrashFileLogger.WriteWarning(nameof(CommandEntryHandler), $\"InputScope assignment failed unexpectedly: {ex.Message}\");", source);
+        Assert.Contains("catch", source);
+        Assert.Contains("return false;", source);
+    }
+
+    [Fact]
+    public void MainPage_WindowsReflectionAndFocusFallbackFailures_AreCrashLogged()
+    {
+        var focusSource = ReadRepositoryFile("Praxis", "MainPage.FocusAndContext.cs");
+        var pointerSource = ReadRepositoryFile("Praxis", "MainPage.PointerAndSelection.cs");
+        var layoutSource = ReadRepositoryFile("Praxis", "MainPage.LayoutUtilities.cs");
+
+        Assert.Contains("CrashFileLogger.WriteWarning(nameof(DisableWindowsSystemFocusVisual), $\"Failed to disable UseSystemFocusVisuals: {ex.Message}\");", focusSource);
+        Assert.Contains("CrashFileLogger.WriteWarning(nameof(FocusModalPrimaryEditorField), $\"Failed to focus modal ButtonText entry: {ex.Message}\");", pointerSource);
+        Assert.Contains("CrashFileLogger.WriteWarning(nameof(SetTabStop), $\"Failed to set IsTabStop={isTabStop}: {ex.Message}\");", layoutSource);
+    }
+
+    [Fact]
     public void WindowsStartupLog_UsesNormalizedAppStorageRoot_AndGuardsDuplicateHookRegistration()
     {
         var source = ReadRepositoryFile("Praxis", "Platforms", "Windows", "App.xaml.cs");
@@ -138,6 +208,8 @@ public class AppLayerSourceGuardTests
         Assert.Contains("AppStoragePaths.WindowsLocalAppDataRoot", source);
         Assert.Contains("private static bool globalExceptionLoggingHooked;", source);
         Assert.Contains("if (globalExceptionLoggingHooked)", source);
+        Assert.Contains("CrashFileLogger.WriteWarning(nameof(App), $\"Failed to create startup log directory '{startupLogDirectory}': {ex.Message}\");", source);
+        Assert.Contains("CrashFileLogger.WriteWarning(nameof(App), $\"Failed to append startup log '{StartupLogPath}': {ex.Message}\");", source);
     }
 
     [Fact]
@@ -148,6 +220,8 @@ public class AppLayerSourceGuardTests
         Assert.Contains("private static bool globalExceptionLoggingHooked;", source);
         Assert.Contains("if (globalExceptionLoggingHooked)", source);
         Assert.Contains("globalExceptionLoggingHooked = true;", source);
+        Assert.Contains("CrashFileLogger.WriteWarning(nameof(AppDelegate), $\"Failed to hook MarshalManagedException: {ex.Message}\");", source);
+        Assert.Contains("CrashFileLogger.WriteWarning(nameof(AppDelegate), $\"Failed to prioritize key command '{selectorName}': {ex.Message}\");", source);
     }
 
     [Fact]
@@ -180,7 +254,9 @@ public class AppLayerSourceGuardTests
     public void FileAppConfigService_FallsBackOnUnauthorizedAccess()
     {
         var source = ReadRepositoryFile("Praxis", "Services", "FileAppConfigService.cs");
-        Assert.Contains("catch (UnauthorizedAccessException)", source);
+        Assert.Contains("catch (UnauthorizedAccessException ex)", source);
+        Assert.Contains("CrashFileLogger.WriteWarning(nameof(FileAppConfigService), $\"Skipping config '{path}': {ex.Message}\");", source);
+        Assert.Contains("CrashFileLogger.WriteWarning(nameof(FileAppConfigService), $\"Skipping config '{path}' because it does not specify a valid theme.\");", source);
     }
 
     [Fact]
@@ -201,6 +277,41 @@ public class AppLayerSourceGuardTests
         Assert.Contains("if (process is null)", source);
         Assert.Contains("CrashFileLogger.WriteWarning(nameof(Program), $\"LaunchServices relay returned no process for bundle '{bundlePath}'.\");", source);
         Assert.Contains("CrashFileLogger.WriteWarning(nameof(Program), $\"LaunchServices relay failed for bundle '{bundlePath}': {ex.Message}\");", source);
+    }
+
+    [Fact]
+    public void MacHandlers_KeyInputResolutionFailures_AreCrashLogged_AndFallBack()
+    {
+        var macEntrySource = ReadRepositoryFile("Praxis", "Platforms", "MacCatalyst", "Handlers", "MacEntryHandler.cs");
+        var macEditorSource = ReadRepositoryFile("Praxis", "Platforms", "MacCatalyst", "Handlers", "MacEditorHandler.cs");
+        var commandEntrySource = ReadRepositoryFile("Praxis", "Platforms", "MacCatalyst", "Handlers", "CommandEntryHandler.cs");
+
+        Assert.Contains("return TryResolveKeyInput(inputName) ?? fallback;", macEntrySource);
+        Assert.Contains("CrashFileLogger.WriteWarning(nameof(MacEntryHandler), $\"Failed to resolve UIKeyCommand input '{inputName}': {ex.Message}\");", macEntrySource);
+
+        Assert.Contains("return TryResolveKeyInput(inputName) ?? fallback;", macEditorSource);
+        Assert.Contains("CrashFileLogger.WriteWarning(nameof(MacEditorHandler), $\"Failed to resolve UIKeyCommand input '{inputName}': {ex.Message}\");", macEditorSource);
+
+        Assert.Contains("return TryResolveKeyInput(inputName) ?? fallback;", commandEntrySource);
+        Assert.Contains("CrashFileLogger.WriteWarning(nameof(CommandEntryHandler), $\"Failed to resolve UIKeyCommand input '{inputName}': {ex.Message}\");", commandEntrySource);
+    }
+
+    [Fact]
+    public void MacMiddleClickAndKeyCommandFallbackFailures_AreCrashLogged()
+    {
+        var behaviorSource = ReadRepositoryFile("Praxis", "Behaviors", "MiddleClickBehavior.cs");
+        var macSource = ReadRepositoryFile("Praxis", "MainPage.MacCatalystBehavior.cs");
+
+        Assert.Contains("CrashFileLogger.WriteWarning(nameof(MiddleClickBehavior), $\"Failed to set buttonMaskRequired={mask}: {ex.Message}\");", behaviorSource);
+        Assert.Contains("CrashFileLogger.WriteWarning(nameof(TryCreateMacEditorKeyCommand), $\"Failed to create Mac editor key command '{selectorName}' for input '{keyInput}': {ex.Message}\");", macSource);
+        Assert.Contains("CrashFileLogger.WriteWarning(nameof(IsMacMiddleButtonCurrentlyDown), $\"Failed to query middle button state from CoreGraphics: {ex.Message}\");", macSource);
+    }
+
+    [Fact]
+    public void MainPage_CopyNoticeAnimationFailures_AreCrashLogged()
+    {
+        var source = ReadRepositoryFile("Praxis", "MainPage.xaml.cs");
+        Assert.Contains("CrashFileLogger.WriteWarning(\"MainPage.CopyIconButton_Clicked\", $\"Copy notice animation failed: {ex.Message}\");", source);
     }
 
     private static string ReadRepositoryFile(params string[] segments)
@@ -234,5 +345,18 @@ public class AppLayerSourceGuardTests
         }
 
         return count;
+    }
+
+    private static void AssertMethodContainsInOrder(string text, string methodSignature, string first, string second)
+    {
+        var methodStart = text.IndexOf(methodSignature, StringComparison.Ordinal);
+        Assert.True(methodStart >= 0, $"Missing method: {methodSignature}");
+
+        var methodBody = text[methodStart..];
+        var firstIndex = methodBody.IndexOf(first, StringComparison.Ordinal);
+        var secondIndex = methodBody.IndexOf(second, StringComparison.Ordinal);
+
+        Assert.True(firstIndex >= 0, $"Missing marker: {first}");
+        Assert.True(secondIndex > firstIndex, $"Expected '{first}' to appear before '{second}'.");
     }
 }

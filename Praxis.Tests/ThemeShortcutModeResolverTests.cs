@@ -27,6 +27,19 @@ public class ThemeShortcutModeResolverTests
     }
 
     [Fact]
+    public void TryResolveModeFromMacKeyInput_ReturnsFalse_ForMultiCharacterOrTrimDependentInput()
+    {
+        Assert.False(ThemeShortcutModeResolver.TryResolveModeFromMacKeyInput("ll", out var modeFromDoubleChar));
+        Assert.Equal(string.Empty, modeFromDoubleChar);
+
+        Assert.False(ThemeShortcutModeResolver.TryResolveModeFromMacKeyInput(" l", out var modeFromLeadingSpace));
+        Assert.Equal(string.Empty, modeFromLeadingSpace);
+
+        Assert.False(ThemeShortcutModeResolver.TryResolveModeFromMacKeyInput("d ", out var modeFromTrailingSpace));
+        Assert.Equal(string.Empty, modeFromTrailingSpace);
+    }
+
+    [Fact]
     public void TryResolveModeFromMacKeyInput_ReturnsFalse_ForNullOrWhitespace()
     {
         Assert.False(ThemeShortcutModeResolver.TryResolveModeFromMacKeyInput(null!, out var modeFromNull));
