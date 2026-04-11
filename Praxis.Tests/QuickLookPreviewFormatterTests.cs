@@ -4,6 +4,14 @@ namespace Praxis.Tests;
 
 public class QuickLookPreviewFormatterTests
 {
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-1)]
+    public void FormatValue_ThrowsOutOfRange_WhenMaxLengthIsNotPositive(int maxLength)
+    {
+        Assert.Throws<ArgumentOutOfRangeException>(() => QuickLookPreviewFormatter.FormatValue("value", maxLength));
+    }
+
     [Fact]
     public void FormatValue_ReturnsPlaceholder_ForNullOrWhitespace()
     {
@@ -35,6 +43,28 @@ public class QuickLookPreviewFormatterTests
         Assert.Equal(".", QuickLookPreviewFormatter.FormatValue(value, maxLength: 1));
         Assert.Equal("..", QuickLookPreviewFormatter.FormatValue(value, maxLength: 2));
         Assert.Equal("...", QuickLookPreviewFormatter.FormatValue(value, maxLength: 3));
+    }
+
+    [Fact]
+    public void FormatValue_DoesNotTruncate_WhenNormalizedLengthMatchesMaxLength()
+    {
+        var value = "  alpha\nbeta  ";
+
+        Assert.Equal("alpha beta", QuickLookPreviewFormatter.FormatValue(value, maxLength: 10));
+    }
+
+    [Fact]
+    public void BuildLine_ThrowsArgumentNullException_ForNullLabel()
+    {
+        Assert.Throws<ArgumentNullException>(() => QuickLookPreviewFormatter.BuildLine(null!, "git"));
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    public void BuildLine_ThrowsArgumentException_ForWhitespaceLabel(string label)
+    {
+        Assert.Throws<ArgumentException>(() => QuickLookPreviewFormatter.BuildLine(label, "git"));
     }
 
     [Fact]

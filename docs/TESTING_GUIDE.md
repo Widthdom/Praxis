@@ -66,7 +66,7 @@ dotnet test Praxis.Tests/Praxis.Tests.csproj --collect:"XPlat Code Coverage"
 - [`CommandWorkingDirectoryPolicyTests.cs`](../Praxis.Tests/CommandWorkingDirectoryPolicyTests.cs): pure policy coverage for which Windows shell-like tools (`cmd`, `powershell`, `pwsh`, `wt`) should start from the user-profile working directory, including env-expanded quoted tool paths.
 - [`CommandNotFoundRefocusPolicyTests.cs`](../Praxis.Tests/CommandNotFoundRefocusPolicyTests.cs): refocus decision for `Command not found:` status.
 - [`StatusFlashErrorPolicyTests.cs`](../Praxis.Tests/StatusFlashErrorPolicyTests.cs): status classification for error flash behavior.
-- [`QuickLookPreviewFormatterTests.cs`](../Praxis.Tests/QuickLookPreviewFormatterTests.cs): quick-look preview text normalization, max-length-safe truncation, and labeled-line formatting.
+- [`QuickLookPreviewFormatterTests.cs`](../Praxis.Tests/QuickLookPreviewFormatterTests.cs): quick-look preview text normalization, max-length-safe truncation, exact-length pass-through, labeled-line formatting, and argument guards for invalid lengths or blank labels.
 
 ### Undo / Redo
 - [`ActionHistoryTests.cs`](../Praxis.Tests/ActionHistoryTests.cs): command-pattern history stack behavior (constructor guards, undo/redo transitions, failed-apply recovery on both stacks, `Clear()`, and capacity trimming).
@@ -186,7 +186,7 @@ dotnet test Praxis.Tests/Praxis.Tests.csproj --collect:"XPlat Code Coverage"
 - [`CommandSuggestionRowColorPolicyTests.cs`](../Praxis.Tests/CommandSuggestionRowColorPolicyTests.cs): テーマ別の候補行背景色判定。
 - [`CommandNotFoundRefocusPolicyTests.cs`](../Praxis.Tests/CommandNotFoundRefocusPolicyTests.cs): `Command not found:` 時の再フォーカス判定。
 - [`StatusFlashErrorPolicyTests.cs`](../Praxis.Tests/StatusFlashErrorPolicyTests.cs): ステータスのエラーフラッシュ分類判定。
-- [`QuickLookPreviewFormatterTests.cs`](../Praxis.Tests/QuickLookPreviewFormatterTests.cs): Quick Look 表示文字列の正規化・最大長を超えない省略・ラベル整形。
+- [`QuickLookPreviewFormatterTests.cs`](../Praxis.Tests/QuickLookPreviewFormatterTests.cs): Quick Look 表示文字列の正規化・最大長を超えない省略・ちょうど上限長の素通し・ラベル整形・不正長/空ラベルの引数ガード。
 
 ### Undo / Redo
 - [`ActionHistoryTests.cs`](../Praxis.Tests/ActionHistoryTests.cs): コマンドパターン履歴スタックの挙動（constructor ガード、Undo/Redo 遷移、両スタックの失敗時ロールバック、`Clear()`、容量トリム）。
