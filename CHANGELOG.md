@@ -6,6 +6,8 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 
 ## [Unreleased]
 
+### [1.1.8] - 2026-04-13
+
 ### Fixed
 - `CrashFileLogger.AppendExceptionChain` and `DbErrorLogger`'s exception-type / message builders now cap recursion at depth 32 and emit an explicit truncation marker, protecting the last-resort crash logger from StackOverflow on pathological inner-exception chains
 - `DbErrorLogger.BuildFullStackTrace` now traverses the inner-exception graph iteratively with the same depth cap and reference-equality cycle detection instead of delegating to `Exception.ToString()`, so the DB logger's stack-trace field cannot stack-overflow or balloon on pathological or cyclic exception graphs
@@ -253,6 +255,8 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 
 ## [Unreleased]
 
+### [1.1.8] - 2026-04-13
+
 ### 修正
 - `CrashFileLogger.AppendExceptionChain` と `DbErrorLogger` の例外型/メッセージ構築を深さ 32 で上限化し、明示的な truncation マーカーを出力するよう修正。病的に深い inner exception チェーンで last-resort クラッシュロガーが StackOverflow に至らないよう保護
 
@@ -445,7 +449,8 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - 重複 `using` ディレクティブの削除と `using` 順序の正規化
 - `MainViewModel` と各 partial クラスに主要ライフサイクルイベントの `LogInfo` 呼び出しを追加
 
-[Unreleased]: https://github.com/Widthdom/Praxis/compare/v1.1.7...HEAD
+[Unreleased]: https://github.com/Widthdom/Praxis/compare/v1.1.8...HEAD
+[1.1.8]: https://github.com/Widthdom/Praxis/compare/v1.1.7...v1.1.8
 [1.1.7]: https://github.com/Widthdom/Praxis/compare/v1.1.6...v1.1.7
 [1.1.6]: https://github.com/Widthdom/Praxis/compare/v1.1.5...v1.1.6
 [1.1.5]: https://github.com/Widthdom/Praxis/compare/v1.1.4...v1.1.5
