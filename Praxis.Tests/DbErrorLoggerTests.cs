@@ -106,6 +106,31 @@ public class DbErrorLoggerTests
         Assert.Equal("Error", entry.Level);
         Assert.Contains("truncated at depth", entry.ExceptionType);
         Assert.Contains("truncated at depth", entry.Message);
+        Assert.Contains("truncated at depth", entry.StackTrace);
+    }
+
+    [Fact]
+    public async Task Log_DoesNotStackOverflow_OnCyclicInnerExceptionGraph()
+    {
+        var repo = new FakeAppRepository();
+        var logger = new DbErrorLogger(repo);
+
+        // Construct a self-referential inner-exception cycle via reflection.
+        var a = new InvalidOperationException("a");
+        var b = new InvalidOperationException("b", a);
+        var innerField = typeof(Exception).GetField("_innerException",
+            System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+        Assert.NotNull(innerField);
+        innerField!.SetValue(a, b);
+
+        var ex = Record.Exception(() => logger.Log(b, "cycle"));
+        Assert.Null(ex);
+
+        await logger.FlushAsync(TimeSpan.FromSeconds(5));
+
+        var entry = Assert.Single(repo.ErrorLogs);
+        Assert.Equal("Error", entry.Level);
+        Assert.Contains("cycle detected", entry.StackTrace);
     }
 
     [Fact]

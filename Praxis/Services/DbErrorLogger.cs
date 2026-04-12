@@ -232,12 +232,62 @@ public sealed class DbErrorLogger : IErrorLogger
     }
 
     /// <summary>
-    /// Builds the full stack trace including inner exceptions.
+    /// Builds the full stack trace including inner exceptions, bounded to
+    /// <see cref="MaxExceptionChainDepth"/> and cycle-safe. Uses an iterative
+    /// traversal so pathological graphs cannot stack-overflow the logger itself,
+    /// and <see cref="Exception.StackTrace"/> per frame instead of
+    /// <see cref="Exception.ToString"/> which recurses into inner exceptions.
     /// </summary>
     private static string BuildFullStackTrace(Exception ex)
     {
-        // ex.ToString() already includes the full chain with stack traces.
-        return ex.ToString();
+        var sb = new System.Text.StringBuilder();
+        var visited = new HashSet<Exception>(ReferenceEqualityComparer.Instance);
+        var stack = new Stack<(Exception Exception, int Depth)>();
+        stack.Push((ex, 0));
+
+        while (stack.Count > 0)
+        {
+            var (current, depth) = stack.Pop();
+
+            if (depth >= MaxExceptionChainDepth)
+            {
+                sb.AppendLine($"...(truncated at depth {depth})");
+                continue;
+            }
+
+            if (!visited.Add(current))
+            {
+                sb.AppendLine($"...(cycle detected at {current.GetType().FullName ?? current.GetType().Name})");
+                continue;
+            }
+
+            sb.Append(current.GetType().FullName ?? current.GetType().Name);
+            if (!string.IsNullOrEmpty(current.Message))
+            {
+                sb.Append(": ").Append(current.Message);
+            }
+
+            sb.AppendLine();
+            if (!string.IsNullOrEmpty(current.StackTrace))
+            {
+                sb.AppendLine(current.StackTrace);
+            }
+
+            if (current is AggregateException agg)
+            {
+                // Push in reverse so natural order is preserved in output.
+                for (var i = agg.InnerExceptions.Count - 1; i >= 0; i--)
+                {
+                    stack.Push((agg.InnerExceptions[i], depth + 1));
+                }
+            }
+            else if (current.InnerException is not null)
+            {
+                stack.Push((current.InnerException, depth + 1));
+            }
+        }
+
+        return sb.ToString().TrimEnd();
     }
 
     private static void AppendExceptionTypes(List<string> parts, Exception ex, int depth)
