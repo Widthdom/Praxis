@@ -45,7 +45,8 @@ public static class CrashFileLogger
             }
             else
             {
-                AppendExceptionChain(sb, exception, depth: 0);
+                var visited = new HashSet<Exception>(ReferenceEqualityComparer.Instance);
+                AppendExceptionChain(sb, exception, depth: 0, visited);
             }
 
             sb.AppendLine(new string('-', 80));
@@ -97,13 +98,19 @@ public static class CrashFileLogger
         }
     }
 
-    private static void AppendExceptionChain(StringBuilder sb, Exception ex, int depth)
+    private static void AppendExceptionChain(StringBuilder sb, Exception ex, int depth, HashSet<Exception> visited)
     {
         var indent = new string(' ', (depth + 1) * 2);
 
         if (depth >= MaxExceptionChainDepth)
         {
             sb.AppendLine($"{indent}--- Exception chain truncated at depth {depth} (max {MaxExceptionChainDepth}) ---");
+            return;
+        }
+
+        if (!visited.Add(ex))
+        {
+            sb.AppendLine($"{indent}--- Already serialized: {ex.GetType().FullName ?? ex.GetType().Name} (shared/cyclic reference) ---");
             return;
         }
 
@@ -138,12 +145,12 @@ public static class CrashFileLogger
             for (var i = 0; i < agg.InnerExceptions.Count; i++)
             {
                 sb.AppendLine($"{indent}--- AggregateException[{i}] ---");
-                AppendExceptionChain(sb, agg.InnerExceptions[i], depth + 1);
+                AppendExceptionChain(sb, agg.InnerExceptions[i], depth + 1, visited);
             }
         }
         else if (ex.InnerException is not null)
         {
-            AppendExceptionChain(sb, ex.InnerException, depth + 1);
+            AppendExceptionChain(sb, ex.InnerException, depth + 1, visited);
         }
     }
 

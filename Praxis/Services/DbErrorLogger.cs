@@ -215,7 +215,8 @@ public sealed class DbErrorLogger : IErrorLogger
     private static string BuildExceptionTypeChain(Exception ex)
     {
         var parts = new List<string>();
-        AppendExceptionTypes(parts, ex, depth: 0);
+        var visited = new HashSet<Exception>(ReferenceEqualityComparer.Instance);
+        AppendExceptionTypes(parts, ex, depth: 0, visited);
 
         return string.Join(" -> ", parts);
     }
@@ -226,7 +227,8 @@ public sealed class DbErrorLogger : IErrorLogger
     private static string BuildFullMessage(Exception ex)
     {
         var parts = new List<string>();
-        AppendExceptionMessages(parts, ex, prefix: string.Empty, depth: 0);
+        var visited = new HashSet<Exception>(ReferenceEqualityComparer.Instance);
+        AppendExceptionMessages(parts, ex, prefix: string.Empty, depth: 0, visited);
 
         return string.Join(" -> ", parts);
     }
@@ -290,11 +292,17 @@ public sealed class DbErrorLogger : IErrorLogger
         return sb.ToString().TrimEnd();
     }
 
-    private static void AppendExceptionTypes(List<string> parts, Exception ex, int depth)
+    private static void AppendExceptionTypes(List<string> parts, Exception ex, int depth, HashSet<Exception> visited)
     {
         if (depth >= MaxExceptionChainDepth)
         {
             parts.Add($"...(truncated at depth {depth})");
+            return;
+        }
+
+        if (!visited.Add(ex))
+        {
+            parts.Add($"...(shared {ex.GetType().FullName ?? ex.GetType().Name})");
             return;
         }
 
@@ -304,7 +312,7 @@ public sealed class DbErrorLogger : IErrorLogger
         {
             foreach (var inner in agg.InnerExceptions)
             {
-                AppendExceptionTypes(parts, inner, depth + 1);
+                AppendExceptionTypes(parts, inner, depth + 1, visited);
             }
 
             return;
@@ -312,15 +320,21 @@ public sealed class DbErrorLogger : IErrorLogger
 
         if (ex.InnerException is not null)
         {
-            AppendExceptionTypes(parts, ex.InnerException, depth + 1);
+            AppendExceptionTypes(parts, ex.InnerException, depth + 1, visited);
         }
     }
 
-    private static void AppendExceptionMessages(List<string> parts, Exception ex, string prefix, int depth)
+    private static void AppendExceptionMessages(List<string> parts, Exception ex, string prefix, int depth, HashSet<Exception> visited)
     {
         if (depth >= MaxExceptionChainDepth)
         {
             parts.Add($"...(truncated at depth {depth})");
+            return;
+        }
+
+        if (!visited.Add(ex))
+        {
+            parts.Add($"{prefix}...(shared reference)");
             return;
         }
 
@@ -330,7 +344,7 @@ public sealed class DbErrorLogger : IErrorLogger
         {
             for (var i = 0; i < agg.InnerExceptions.Count; i++)
             {
-                AppendExceptionMessages(parts, agg.InnerExceptions[i], $"[{i}] ", depth + 1);
+                AppendExceptionMessages(parts, agg.InnerExceptions[i], $"[{i}] ", depth + 1, visited);
             }
 
             return;
@@ -338,7 +352,7 @@ public sealed class DbErrorLogger : IErrorLogger
 
         if (ex.InnerException is not null)
         {
-            AppendExceptionMessages(parts, ex.InnerException, prefix: string.Empty, depth + 1);
+            AppendExceptionMessages(parts, ex.InnerException, prefix: string.Empty, depth + 1, visited);
         }
     }
 }

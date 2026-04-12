@@ -134,6 +134,40 @@ public class DbErrorLoggerTests
     }
 
     [Fact]
+    public async Task Log_SharedAggregateSubtree_IsSerializedLinearlyInDistinctNodes()
+    {
+        var repo = new FakeAppRepository();
+        var logger = new DbErrorLogger(repo);
+
+        // A shared inner subtree referenced from multiple parent slots would expand
+        // exponentially without reference-equality tracking. Build a fan-out of depth 10
+        // where each level re-uses the same shared child in two slots — 2^10 = 1024
+        // serialized paths without tracking, 11 distinct nodes with it.
+        var shared = new InvalidOperationException("leaf");
+        Exception current = shared;
+        for (var i = 0; i < 10; i++)
+        {
+            current = new AggregateException($"level-{i}", current, current);
+        }
+
+        var sw = System.Diagnostics.Stopwatch.StartNew();
+        var ex = Record.Exception(() => logger.Log(current, "shared-subtree"));
+        sw.Stop();
+
+        Assert.Null(ex);
+        // With visited-set tracking the synchronous Log() path stays trivially fast.
+        Assert.True(sw.ElapsedMilliseconds < 1000, $"Log took {sw.ElapsedMilliseconds} ms — suggests exponential expansion.");
+
+        await logger.FlushAsync(TimeSpan.FromSeconds(5));
+
+        var entry = Assert.Single(repo.ErrorLogs);
+        Assert.Equal("Error", entry.Level);
+        Assert.Contains("shared", entry.ExceptionType);
+        Assert.Contains("shared reference", entry.Message);
+        Assert.Contains("cycle detected", entry.StackTrace);
+    }
+
+    [Fact]
     public async Task FlushAsync_WritesWarningEntriesToRepository()
     {
         var repo = new FakeAppRepository();

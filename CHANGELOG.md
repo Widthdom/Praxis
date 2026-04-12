@@ -9,10 +9,12 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 ### Fixed
 - `CrashFileLogger.AppendExceptionChain` and `DbErrorLogger`'s exception-type / message builders now cap recursion at depth 32 and emit an explicit truncation marker, protecting the last-resort crash logger from StackOverflow on pathological inner-exception chains
 - `DbErrorLogger.BuildFullStackTrace` now traverses the inner-exception graph iteratively with the same depth cap and reference-equality cycle detection instead of delegating to `Exception.ToString()`, so the DB logger's stack-trace field cannot stack-overflow or balloon on pathological or cyclic exception graphs
+- `CrashFileLogger.AppendExceptionChain` and `DbErrorLogger`'s exception-type / message builders now also track visited exceptions by reference equality, so a shared `AggregateException` subtree referenced from multiple parent slots is serialized once with a `shared/cyclic reference` marker instead of fanning out exponentially before the depth cap engages
 
 ### Tests
 - Added deep inner-exception-chain safety tests for `CrashFileLogger.WriteException` and `DbErrorLogger.Log`
 - Added cyclic inner-exception graph regression test for `DbErrorLogger.Log` that asserts stack-trace persistence records a cycle marker rather than recursing
+- Added shared-`AggregateException`-subtree regression test for `DbErrorLogger.Log` that asserts a fan-out-of-10 graph (1024 paths untracked → 11 distinct nodes) serializes linearly and logs shared-reference markers across all three fields
 - Expanded `CiCoverageWorkflowPolicyTests` to assert `fetch-depth: 0`, GA SDK pinning, MAUI workload install flags, Xcode first-launch / compatibility gate, platform frameworks, and delivery-workflow Windows RID guard so documented CI/release invariants no longer rely on reviewer memory
 
 ### [1.1.7] - 2026-04-12
