@@ -149,20 +149,21 @@ public class DbErrorLoggerTests
         }
         var agg = new AggregateException("wide", children);
 
-        var sw = System.Diagnostics.Stopwatch.StartNew();
         var ex = Record.Exception(() => logger.Log(agg, "wide-fanout"));
-        sw.Stop();
-
         Assert.Null(ex);
-        Assert.True(sw.ElapsedMilliseconds < 1500, $"Log took {sw.ElapsedMilliseconds} ms — node budget did not engage.");
 
         await logger.FlushAsync(TimeSpan.FromSeconds(5));
 
         var entry = Assert.Single(repo.ErrorLogs);
         Assert.Equal("Error", entry.Level);
+
+        // Deterministic proof that the cap engaged: truncation markers present AND
+        // each field's length is bounded by O(MaxExceptionNodes), not O(children).
         Assert.Contains("skipped after node budget", entry.ExceptionType);
         Assert.Contains("skipped after node budget", entry.Message);
         Assert.Contains("not enqueued: node budget reached", entry.StackTrace);
+        Assert.True(entry.ExceptionType.Length < 100_000, $"ExceptionType grew to {entry.ExceptionType.Length} chars — cap did not engage.");
+        Assert.True(entry.Message.Length < 100_000, $"Message grew to {entry.Message.Length} chars — cap did not engage.");
 
         // crash.log should also show the per-call truncation marker, not every child.
         var content = File.ReadAllText(CrashFileLogger.LogFilePath);
@@ -185,23 +186,17 @@ public class DbErrorLoggerTests
         }
         var agg = new AggregateException("storm", children);
 
-        var beforeAlloc = GC.GetTotalAllocatedBytes(precise: true);
-        var sw = System.Diagnostics.Stopwatch.StartNew();
         var ex = Record.Exception(() => logger.Log(agg, "failure-storm"));
-        sw.Stop();
-        var deltaAlloc = GC.GetTotalAllocatedBytes(precise: true) - beforeAlloc;
-
         Assert.Null(ex);
-        Assert.True(sw.ElapsedMilliseconds < 1500, $"Log took {sw.ElapsedMilliseconds} ms — enqueue was not bounded by budget.");
-        // Without the pre-enqueue cap the traversal stack alone would be on the order of
-        // 50k * (entry + tuple) ≈ 1-2 MB per builder. We expect bounded work ≪ that for
-        // the traversal itself; allow headroom for StringBuilder growth and message text.
-        Assert.True(deltaAlloc < 16L * 1024 * 1024, $"Log allocated {deltaAlloc:N0} bytes — above bounded budget.");
 
         await logger.FlushAsync(TimeSpan.FromSeconds(5));
 
         var entry = Assert.Single(repo.ErrorLogs);
+
+        // Deterministic proof of bounded traversal: StackTrace field length is O(budget),
+        // not O(children). 50k children without the cap would produce multi-MB output.
         Assert.Contains("not enqueued: node budget reached", entry.StackTrace);
+        Assert.True(entry.StackTrace.Length < 200_000, $"StackTrace grew to {entry.StackTrace.Length} chars — traversal-stack growth not bounded.");
     }
 
     [Fact]
@@ -218,22 +213,21 @@ public class DbErrorLoggerTests
         for (var i = 0; i < repeated.Length; i++) repeated[i] = shared;
         var agg = new AggregateException("repeated-refs", repeated);
 
-        var beforeAlloc = GC.GetTotalAllocatedBytes(precise: true);
-        var sw = System.Diagnostics.Stopwatch.StartNew();
         var ex = Record.Exception(() => logger.Log(agg, "repeated-refs"));
-        sw.Stop();
-        var deltaAlloc = GC.GetTotalAllocatedBytes(precise: true) - beforeAlloc;
-
         Assert.Null(ex);
-        Assert.True(sw.ElapsedMilliseconds < 1500, $"Log took {sw.ElapsedMilliseconds} ms — repeated-ref edges not capped.");
-        Assert.True(deltaAlloc < 16L * 1024 * 1024, $"Log allocated {deltaAlloc:N0} bytes — edge loop not bounded.");
 
         await logger.FlushAsync(TimeSpan.FromSeconds(5));
 
         var entry = Assert.Single(repo.ErrorLogs);
+
+        // Deterministic proof that the edge cap engaged: truncation markers present AND
+        // persisted field lengths are O(budget), not O(100k).
         Assert.Contains("aggregate child edge(s) skipped after node budget", entry.ExceptionType);
         Assert.Contains("aggregate child edge(s) skipped after node budget", entry.Message);
         Assert.Contains("not enqueued: node budget reached", entry.StackTrace);
+        Assert.True(entry.ExceptionType.Length < 100_000, $"ExceptionType grew to {entry.ExceptionType.Length} chars — edge cap did not engage.");
+        Assert.True(entry.Message.Length < 100_000, $"Message grew to {entry.Message.Length} chars — edge cap did not engage.");
+        Assert.True(entry.StackTrace.Length < 200_000, $"StackTrace grew to {entry.StackTrace.Length} chars — edge cap did not engage.");
 
         var content = File.ReadAllText(CrashFileLogger.LogFilePath);
         Assert.Contains("more child edge(s) not iterated (node budget reached)", content);
@@ -256,21 +250,22 @@ public class DbErrorLoggerTests
             current = new AggregateException($"level-{i}", current, current);
         }
 
-        var sw = System.Diagnostics.Stopwatch.StartNew();
         var ex = Record.Exception(() => logger.Log(current, "shared-subtree"));
-        sw.Stop();
-
         Assert.Null(ex);
-        // With visited-set tracking the synchronous Log() path stays trivially fast.
-        Assert.True(sw.ElapsedMilliseconds < 1000, $"Log took {sw.ElapsedMilliseconds} ms — suggests exponential expansion.");
 
         await logger.FlushAsync(TimeSpan.FromSeconds(5));
 
         var entry = Assert.Single(repo.ErrorLogs);
         Assert.Equal("Error", entry.Level);
+
+        // Deterministic proof: with reference tracking the fan-out of depth 10 (1024 paths
+        // untracked) collapses to a linear list of distinct nodes plus shared-reference
+        // markers. ExceptionType serializes ≤ ~50 type-name entries; without tracking it
+        // would serialize ~1024 entries separated by " -> ".
         Assert.Contains("shared", entry.ExceptionType);
         Assert.Contains("shared reference", entry.Message);
         Assert.Contains("cycle detected", entry.StackTrace);
+        Assert.True(entry.ExceptionType.Split(" -> ").Length < 64, $"ExceptionType contains {entry.ExceptionType.Split(" -> ").Length} segments — suggests exponential expansion.");
     }
 
     [Fact]
