@@ -16,6 +16,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - Added cyclic inner-exception graph regression test for `DbErrorLogger.Log` that asserts stack-trace persistence records a cycle marker rather than recursing
 - Added shared-`AggregateException`-subtree regression test for `DbErrorLogger.Log` that asserts a fan-out-of-10 graph (1024 paths untracked → 11 distinct nodes) serializes linearly and logs shared-reference markers across all three fields
 - Expanded `CiCoverageWorkflowPolicyTests` to assert `fetch-depth: 0`, GA SDK pinning, MAUI workload install flags, Xcode first-launch / compatibility gate, platform frameworks, and delivery-workflow Windows RID guard so documented CI/release invariants no longer rely on reviewer memory
+- Scoped `CiCoverageWorkflowPolicyTests` assertions to individual jobs (`core-tests`, `windows-build`, `mac-build`, delivery `package` + matrix entries) so a regression dropping an invariant from one job cannot pass green just because a sibling job still contains the same string
 
 ### [1.1.7] - 2026-04-12
 
