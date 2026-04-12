@@ -19,6 +19,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - Added wide-`AggregateException`-fan-out regression test (5000 children) that asserts node-budget truncation markers appear on all three DB fields and in `crash.log`, and that `Log()` stays under 1.5 s synchronously
 - Expanded `CiCoverageWorkflowPolicyTests` to assert `fetch-depth: 0`, GA SDK pinning, MAUI workload install flags, Xcode first-launch / compatibility gate, platform frameworks, and delivery-workflow Windows RID guard so documented CI/release invariants no longer rely on reviewer memory
 - Scoped `CiCoverageWorkflowPolicyTests` assertions to individual jobs (`core-tests`, `windows-build`, `mac-build`, delivery `package` + matrix entries) so a regression dropping an invariant from one job cannot pass green just because a sibling job still contains the same string
+- `CiCoverageWorkflowPolicyTests` now parses workflow steps structurally (name/if/run/uses/id) for the critical Xcode-gate invariants. The delivery `Initialize Xcode` / `Check Xcode compatibility` / `Publish app` step guards are asserted against their actual `if:` expressions and `run:` bodies, so a comment or mis-scoped step condition cannot satisfy the test
 
 ### [1.1.7] - 2026-04-12
 

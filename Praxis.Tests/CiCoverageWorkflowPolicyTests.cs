@@ -54,14 +54,21 @@ public class CiCoverageWorkflowPolicyTests
     [Fact]
     public void CiWorkflow_MacJobRunsXcodeFirstLaunchAndGuardsCompatibility()
     {
-        var job = ExtractJob("ci.yml", "mac-build");
+        var steps = ParseSteps(ExtractJob("ci.yml", "mac-build"));
 
-        // Mac Catalyst runs need -runFirstLaunch before build.
-        Assert.Contains("sudo xcodebuild -runFirstLaunch", job, StringComparison.Ordinal);
-        // The Xcode floor gate exists to skip Mac Catalyst when Xcode is too old.
-        Assert.Contains("Check Xcode compatibility", job, StringComparison.Ordinal);
-        Assert.Contains("compatible=true", job, StringComparison.Ordinal);
-        Assert.Contains("compatible=false", job, StringComparison.Ordinal);
+        // Structural: Initialize Xcode must actually run -runFirstLaunch (not just mention it in a comment).
+        var firstLaunch = steps.Single(s => s.Name == "Initialize Xcode");
+        Assert.Contains("sudo xcodebuild -runFirstLaunch", firstLaunch.Run ?? string.Empty, StringComparison.Ordinal);
+
+        // Structural: Check Xcode compatibility owns the id used downstream and emits both gate outputs.
+        var xcodeCheck = steps.Single(s => s.Name == "Check Xcode compatibility");
+        Assert.Equal("xcode_check", xcodeCheck.Id);
+        Assert.Contains("compatible=true", xcodeCheck.Run ?? string.Empty, StringComparison.Ordinal);
+        Assert.Contains("compatible=false", xcodeCheck.Run ?? string.Empty, StringComparison.Ordinal);
+
+        // Structural: Mac Catalyst build must be guarded by the compatibility check output.
+        var build = steps.Single(s => s.Name == "Build app (Mac Catalyst)");
+        Assert.Equal("steps.xcode_check.outputs.compatible == 'true'", build.If);
     }
 
     [Fact]
@@ -87,15 +94,31 @@ public class CiCoverageWorkflowPolicyTests
     public void DeliveryWorkflow_PackageJobPreservesSharedReleaseGuards()
     {
         var job = ExtractJob("delivery.yml", "package");
+        var steps = ParseSteps(job);
 
-        // Release packaging shares the same GitVersion / SDK / workload / Xcode constraints,
-        // all rooted inside the single matrix job.
+        // Non-matrix-specific shared guards remain string-level because they target a
+        // single unguarded step (checkout/setup-dotnet/workload install).
         Assert.Contains("fetch-depth: 0", job, StringComparison.Ordinal);
         Assert.Contains("dotnet-version: 10.0.x", job, StringComparison.Ordinal);
         Assert.Contains("dotnet-quality: ga", job, StringComparison.Ordinal);
-        Assert.Contains("dotnet workload install maui", job, StringComparison.Ordinal);
         Assert.DoesNotContain("--skip-manifest-update", job, StringComparison.Ordinal);
-        Assert.Contains("sudo xcodebuild -runFirstLaunch", job, StringComparison.Ordinal);
+
+        var installWorkload = steps.Single(s => s.Name == "Install MAUI workload");
+        Assert.Equal("dotnet workload install maui", (installWorkload.Run ?? string.Empty).Trim());
+        Assert.Null(installWorkload.If);
+
+        // Structural: Initialize Xcode must be gated to the maccatalyst matrix entry only —
+        // a regression that drops or mis-scopes the `if:` would make Windows runners try xcodebuild.
+        var initXcode = steps.Single(s => s.Name == "Initialize Xcode");
+        Assert.Equal("matrix.name == 'maccatalyst'", initXcode.If);
+        Assert.Contains("sudo xcodebuild -runFirstLaunch", initXcode.Run ?? string.Empty, StringComparison.Ordinal);
+
+        var xcodeCheck = steps.Single(s => s.Name == "Check Xcode compatibility (Mac Catalyst)");
+        Assert.Equal("xcode_check", xcodeCheck.Id);
+        Assert.Equal("matrix.name == 'maccatalyst'", xcodeCheck.If);
+
+        var publish = steps.Single(s => s.Name == "Publish app");
+        Assert.Equal("matrix.name != 'maccatalyst' || steps.xcode_check.outputs.compatible == 'true'", publish.If);
     }
 
     [Fact]
@@ -186,6 +209,140 @@ public class CiCoverageWorkflowPolicyTests
         }
 
         return string.Join('\n', lines, startIndex, endIndex - startIndex);
+    }
+
+    private sealed record WorkflowStep(string? Name, string? If, string? Run, string? Uses, string? Id);
+
+    /// <summary>
+    /// Lightweight structural parser for GitHub Actions steps inside a job body.
+    /// Returns top-level step fields (<c>name</c>, <c>if</c>, <c>run</c>, <c>uses</c>,
+    /// <c>id</c>) so tests can assert step-name + adjacent-field invariants rather
+    /// than raw substring presence, which would also match comments, echoed shell
+    /// text, or mis-scoped <c>if:</c> conditions.
+    /// </summary>
+    private static List<WorkflowStep> ParseSteps(string jobBody)
+    {
+        const int StepIndent = 6;  // "      - name:"
+        const int FieldIndent = 8; // "        name:"
+
+        var lines = jobBody.Replace("\r", string.Empty).Split('\n');
+        var steps = new List<WorkflowStep>();
+
+        var i = Array.FindIndex(lines, l => l.TrimEnd() == "    steps:");
+        if (i < 0) return steps;
+        i++;
+
+        while (i < lines.Length)
+        {
+            var line = lines[i];
+            if (LeadingSpaces(line) < StepIndent && line.Trim().Length > 0)
+            {
+                break;
+            }
+
+            if (line.StartsWith("      - ", StringComparison.Ordinal))
+            {
+                var stepLines = new List<string> { line };
+                var start = i;
+                i++;
+                while (i < lines.Length)
+                {
+                    var l = lines[i];
+                    if (l.StartsWith("      - ", StringComparison.Ordinal)) break;
+                    if (l.Trim().Length > 0 && LeadingSpaces(l) < StepIndent) break;
+                    stepLines.Add(l);
+                    i++;
+                }
+
+                steps.Add(ParseStep(stepLines, FieldIndent));
+            }
+            else
+            {
+                i++;
+            }
+        }
+
+        return steps;
+    }
+
+    private static WorkflowStep ParseStep(List<string> stepLines, int fieldIndent)
+    {
+        string? name = null, ifCond = null, run = null, uses = null, id = null;
+
+        // Normalize first line: "      - name: Foo" → treat as field at fieldIndent.
+        var first = stepLines[0];
+        var firstAfterDash = first.Substring(8); // skip "      - "
+        var normalized = new List<string> { new string(' ', fieldIndent) + firstAfterDash };
+        for (var k = 1; k < stepLines.Count; k++) normalized.Add(stepLines[k]);
+
+        for (var k = 0; k < normalized.Count; k++)
+        {
+            var line = normalized[k];
+            if (line.Trim().Length == 0) continue;
+            if (LeadingSpaces(line) != fieldIndent) continue;
+
+            var trimmed = line.TrimStart();
+            var colon = trimmed.IndexOf(':');
+            if (colon < 0) continue;
+
+            var key = trimmed.Substring(0, colon);
+            var rest = trimmed.Substring(colon + 1).TrimStart();
+
+            switch (key)
+            {
+                case "name": name = UnquoteInline(rest); break;
+                case "if": ifCond = UnquoteInline(rest); break;
+                case "uses": uses = UnquoteInline(rest); break;
+                case "id": id = UnquoteInline(rest); break;
+                case "run":
+                    run = CaptureScalar(rest, normalized, ref k, fieldIndent);
+                    break;
+            }
+        }
+
+        return new WorkflowStep(name, ifCond, run, uses, id);
+    }
+
+    private static string CaptureScalar(string rest, List<string> lines, ref int index, int fieldIndent)
+    {
+        if (rest.Length == 0 || rest[0] == '|' || rest[0] == '>')
+        {
+            var body = new System.Text.StringBuilder();
+            var childIndent = fieldIndent + 2;
+            for (var k = index + 1; k < lines.Count; k++)
+            {
+                var l = lines[k];
+                if (l.Trim().Length == 0)
+                {
+                    body.AppendLine();
+                    index = k;
+                    continue;
+                }
+                if (LeadingSpaces(l) < childIndent) break;
+                body.AppendLine(l.Substring(childIndent));
+                index = k;
+            }
+            return body.ToString().TrimEnd('\n');
+        }
+
+        return UnquoteInline(rest);
+    }
+
+    private static string UnquoteInline(string value)
+    {
+        var v = value.Trim();
+        if (v.Length >= 2 && ((v[0] == '"' && v[^1] == '"') || (v[0] == '\'' && v[^1] == '\'')))
+        {
+            v = v.Substring(1, v.Length - 2);
+        }
+        return v;
+    }
+
+    private static int LeadingSpaces(string line)
+    {
+        var n = 0;
+        while (n < line.Length && line[n] == ' ') n++;
+        return n;
     }
 
     private static string ReadWorkflow(string fileName)
