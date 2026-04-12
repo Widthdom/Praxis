@@ -256,8 +256,13 @@ public sealed class DbErrorLogger : IErrorLogger
     private static string BuildFullStackTrace(Exception ex)
     {
         var sb = new System.Text.StringBuilder();
+        // Populate `visited` at enqueue-time so sibling duplicates within the same
+        // AggregateException's InnerExceptions can be recognised before they are
+        // pushed onto the traversal stack (at pop-time it would be too late — the
+        // shared child would already have been queued for output twice).
         var visited = new HashSet<Exception>(ReferenceEqualityComparer.Instance);
         var stack = new Stack<(Exception Exception, int Depth)>();
+        visited.Add(ex);
         stack.Push((ex, 0));
         var remainingNodes = MaxExceptionNodes;
 
@@ -274,12 +279,6 @@ public sealed class DbErrorLogger : IErrorLogger
             if (depth >= MaxExceptionChainDepth)
             {
                 sb.AppendLine($"...(truncated at depth {depth})");
-                continue;
-            }
-
-            if (!visited.Add(current))
-            {
-                sb.AppendLine($"...(cycle detected at {current.GetType().FullName ?? current.GetType().Name})");
                 continue;
             }
 
@@ -300,24 +299,53 @@ public sealed class DbErrorLogger : IErrorLogger
 
             if (current is AggregateException agg)
             {
-                // Bound the *queue growth* by the remaining node budget, not just the pop loop.
-                // Otherwise a 10M-child aggregate would still eagerly allocate 10M stack entries
-                // before the budget check ever fired, defeating the whole point of the cap.
-                var childrenToEnqueue = Math.Min(agg.InnerExceptions.Count, Math.Max(0, remainingNodes));
-                if (childrenToEnqueue < agg.InnerExceptions.Count)
+                var toEnqueue = new List<Exception>();
+                var duplicateCount = 0;
+                var truncated = false;
+                for (var i = 0; i < agg.InnerExceptions.Count; i++)
                 {
-                    sb.AppendLine($"...({agg.InnerExceptions.Count - childrenToEnqueue} aggregate child(ren) not enqueued: node budget reached)");
+                    var child = agg.InnerExceptions[i];
+                    if (!visited.Add(child))
+                    {
+                        duplicateCount++;
+                        continue;
+                    }
+
+                    if (toEnqueue.Count >= remainingNodes)
+                    {
+                        // Revert: we can't process this one but it isn't a duplicate either.
+                        visited.Remove(child);
+                        sb.AppendLine($"...({agg.InnerExceptions.Count - i} aggregate child(ren) not enqueued: node budget reached)");
+                        truncated = true;
+                        break;
+                    }
+
+                    toEnqueue.Add(child);
+                }
+
+                if (duplicateCount > 0)
+                {
+                    sb.AppendLine(truncated
+                        ? $"...({duplicateCount} duplicate child reference(s) also skipped)"
+                        : $"...({duplicateCount} duplicate aggregate child reference(s) skipped)");
                 }
 
                 // Push in reverse so natural order is preserved in output.
-                for (var i = childrenToEnqueue - 1; i >= 0; i--)
+                for (var i = toEnqueue.Count - 1; i >= 0; i--)
                 {
-                    stack.Push((agg.InnerExceptions[i], depth + 1));
+                    stack.Push((toEnqueue[i], depth + 1));
                 }
             }
             else if (current.InnerException is not null)
             {
-                stack.Push((current.InnerException, depth + 1));
+                if (visited.Add(current.InnerException))
+                {
+                    stack.Push((current.InnerException, depth + 1));
+                }
+                else
+                {
+                    sb.AppendLine($"...(cycle detected at {current.InnerException.GetType().FullName ?? current.InnerException.GetType().Name})");
+                }
             }
         }
 
@@ -368,24 +396,36 @@ public sealed class DbErrorLogger : IErrorLogger
 
         if (ex is AggregateException agg)
         {
-            // Cap child-edge iterations, not just distinct-node visits — otherwise an
-            // aggregate of N repeated references iterates N times emitting shared-reference
-            // markers without ever decrementing the node budget.
-            var maxEdges = Math.Min(agg.InnerExceptions.Count, Math.Max(0, budget.RemainingNodes));
-            for (var i = 0; i < maxEdges; i++)
+            // Scan every child position so later distinct exceptions after duplicates are
+            // still serialized while node budget remains. Duplicates are O(1) each and
+            // collapsed into one summary marker per aggregate.
+            var duplicateCount = 0;
+            for (var i = 0; i < agg.InnerExceptions.Count; i++)
             {
+                var child = agg.InnerExceptions[i];
+                if (budget.Visited.Contains(child))
+                {
+                    duplicateCount++;
+                    continue;
+                }
+
                 if (budget.RemainingNodes <= 0)
                 {
                     parts.Add($"...({agg.InnerExceptions.Count - i} aggregate child(ren) omitted after node budget)");
+                    if (duplicateCount > 0)
+                    {
+                        parts.Add($"...({duplicateCount} duplicate child reference(s) also skipped)");
+                    }
+
                     return;
                 }
 
-                AppendExceptionTypes(parts, agg.InnerExceptions[i], depth + 1, budget);
+                AppendExceptionTypes(parts, child, depth + 1, budget);
             }
 
-            if (maxEdges < agg.InnerExceptions.Count)
+            if (duplicateCount > 0)
             {
-                parts.Add($"...({agg.InnerExceptions.Count - maxEdges} aggregate child edge(s) skipped after node budget)");
+                parts.Add($"...({duplicateCount} duplicate aggregate child reference(s) skipped)");
             }
 
             return;
@@ -423,21 +463,33 @@ public sealed class DbErrorLogger : IErrorLogger
 
         if (ex is AggregateException agg)
         {
-            var maxEdges = Math.Min(agg.InnerExceptions.Count, Math.Max(0, budget.RemainingNodes));
-            for (var i = 0; i < maxEdges; i++)
+            var duplicateCount = 0;
+            for (var i = 0; i < agg.InnerExceptions.Count; i++)
             {
+                var child = agg.InnerExceptions[i];
+                if (budget.Visited.Contains(child))
+                {
+                    duplicateCount++;
+                    continue;
+                }
+
                 if (budget.RemainingNodes <= 0)
                 {
                     parts.Add($"...({agg.InnerExceptions.Count - i} aggregate child(ren) omitted after node budget)");
+                    if (duplicateCount > 0)
+                    {
+                        parts.Add($"...({duplicateCount} duplicate child reference(s) also skipped)");
+                    }
+
                     return;
                 }
 
-                AppendExceptionMessages(parts, agg.InnerExceptions[i], $"[{i}] ", depth + 1, budget);
+                AppendExceptionMessages(parts, child, $"[{i}] ", depth + 1, budget);
             }
 
-            if (maxEdges < agg.InnerExceptions.Count)
+            if (duplicateCount > 0)
             {
-                parts.Add($"...({agg.InnerExceptions.Count - maxEdges} aggregate child edge(s) skipped after node budget)");
+                parts.Add($"...({duplicateCount} duplicate aggregate child reference(s) skipped)");
             }
 
             return;

@@ -182,28 +182,39 @@ public static class CrashFileLogger
 
         if (ex is AggregateException agg)
         {
-            // Hard-cap the number of child edges we iterate, not just the number of
-            // distinct nodes we visit. Otherwise an aggregate built from N repeated
-            // references (e.g. Enumerable.Repeat(sharedEx, 50_000)) would visit-cache
-            // on every duplicate and still iterate N times emitting a shared-reference
-            // marker per edge, stalling the synchronous crash-log path and ballooning
-            // crash.log by ~N lines.
-            var maxEdges = Math.Min(agg.InnerExceptions.Count, Math.Max(0, budget.RemainingNodes));
-            for (var i = 0; i < maxEdges; i++)
+            // Scan every child position so a later distinct exception after a run of
+            // duplicates is still serialized while node budget remains. Duplicates are
+            // cheap (one hashset lookup) and collapsed into a single summary line, so
+            // a 100k repeated-ref aggregate still produces O(1) output.
+            var duplicateCount = 0;
+            var truncated = false;
+            for (var i = 0; i < agg.InnerExceptions.Count; i++)
             {
+                var child = agg.InnerExceptions[i];
+                if (budget.Visited.Contains(child))
+                {
+                    duplicateCount++;
+                    continue;
+                }
+
                 if (budget.RemainingNodes <= 0)
                 {
                     sb.AppendLine($"{indent}--- AggregateException truncated: {agg.InnerExceptions.Count - i} more child(ren) omitted after reaching node budget ---");
-                    return;
+                    truncated = true;
+                    break;
                 }
 
                 sb.AppendLine($"{indent}--- AggregateException[{i}] ---");
-                AppendExceptionChain(sb, agg.InnerExceptions[i], depth + 1, budget);
+                AppendExceptionChain(sb, child, depth + 1, budget);
             }
 
-            if (maxEdges < agg.InnerExceptions.Count)
+            if (duplicateCount > 0 && !truncated)
             {
-                sb.AppendLine($"{indent}--- AggregateException truncated: {agg.InnerExceptions.Count - maxEdges} more child edge(s) not iterated (node budget reached) ---");
+                sb.AppendLine($"{indent}--- AggregateException: {duplicateCount} duplicate child reference(s) skipped (already serialized elsewhere) ---");
+            }
+            else if (duplicateCount > 0)
+            {
+                sb.AppendLine($"{indent}--- AggregateException: {duplicateCount} duplicate child reference(s) also skipped ---");
             }
         }
         else if (ex.InnerException is not null)

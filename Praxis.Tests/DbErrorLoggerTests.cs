@@ -159,8 +159,8 @@ public class DbErrorLoggerTests
 
         // Deterministic proof that the cap engaged: truncation markers present AND
         // each field's length is bounded by O(MaxExceptionNodes), not O(children).
-        Assert.Contains("skipped after node budget", entry.ExceptionType);
-        Assert.Contains("skipped after node budget", entry.Message);
+        Assert.Contains("omitted after node budget", entry.ExceptionType);
+        Assert.Contains("omitted after node budget", entry.Message);
         Assert.Contains("not enqueued: node budget reached", entry.StackTrace);
         Assert.True(entry.ExceptionType.Length < 100_000, $"ExceptionType grew to {entry.ExceptionType.Length} chars — cap did not engage.");
         Assert.True(entry.Message.Length < 100_000, $"Message grew to {entry.Message.Length} chars — cap did not engage.");
@@ -222,15 +222,52 @@ public class DbErrorLoggerTests
 
         // Deterministic proof that the edge cap engaged: truncation markers present AND
         // persisted field lengths are O(budget), not O(100k).
-        Assert.Contains("aggregate child edge(s) skipped after node budget", entry.ExceptionType);
-        Assert.Contains("aggregate child edge(s) skipped after node budget", entry.Message);
-        Assert.Contains("not enqueued: node budget reached", entry.StackTrace);
-        Assert.True(entry.ExceptionType.Length < 100_000, $"ExceptionType grew to {entry.ExceptionType.Length} chars — edge cap did not engage.");
-        Assert.True(entry.Message.Length < 100_000, $"Message grew to {entry.Message.Length} chars — edge cap did not engage.");
-        Assert.True(entry.StackTrace.Length < 200_000, $"StackTrace grew to {entry.StackTrace.Length} chars — edge cap did not engage.");
+        // For a pure repeated-reference aggregate, duplicates don't drain the node budget,
+        // so we expect a consolidated duplicate-summary marker rather than budget truncation.
+        Assert.Contains("duplicate aggregate child reference(s) skipped", entry.ExceptionType);
+        Assert.Contains("duplicate aggregate child reference(s) skipped", entry.Message);
+        Assert.Contains("duplicate aggregate child reference(s) skipped", entry.StackTrace);
+        Assert.True(entry.ExceptionType.Length < 100_000, $"ExceptionType grew to {entry.ExceptionType.Length} chars — duplicates not consolidated.");
+        Assert.True(entry.Message.Length < 100_000, $"Message grew to {entry.Message.Length} chars — duplicates not consolidated.");
+        Assert.True(entry.StackTrace.Length < 200_000, $"StackTrace grew to {entry.StackTrace.Length} chars — duplicates not consolidated.");
 
         var content = File.ReadAllText(CrashFileLogger.LogFilePath);
-        Assert.Contains("more child edge(s) not iterated (node budget reached)", content);
+        Assert.Contains("duplicate child reference(s) skipped", content);
+    }
+
+    [Fact]
+    public async Task Log_MixedAggregate_StillLogsUniqueTailAfterDuplicates()
+    {
+        var repo = new FakeAppRepository();
+        var logger = new DbErrorLogger(repo);
+
+        // [shared, shared, ..., shared, uniqueTail] — codex adversarial regression.
+        // Duplicates must not exhaust the iteration budget before the unique tail is
+        // reached, otherwise the persisted record hides the failure that explains the incident.
+        var shared = new InvalidOperationException("shared-leaf");
+        var uniqueTail = new NullReferenceException("unique-tail-that-explains-the-incident");
+        var mixed = new Exception[5000];
+        for (var i = 0; i < mixed.Length - 1; i++) mixed[i] = shared;
+        mixed[^1] = uniqueTail;
+        var agg = new AggregateException("mixed-dup-then-unique", mixed);
+
+        var ex = Record.Exception(() => logger.Log(agg, "mixed-agg"));
+        Assert.Null(ex);
+
+        await logger.FlushAsync(TimeSpan.FromSeconds(5));
+
+        var entry = Assert.Single(repo.ErrorLogs);
+
+        // Both the duplicate summary AND the unique tail must appear in the persisted record.
+        Assert.Contains("NullReferenceException", entry.ExceptionType);
+        Assert.Contains("unique-tail-that-explains-the-incident", entry.Message);
+        Assert.Contains("NullReferenceException", entry.StackTrace);
+        Assert.Contains("duplicate aggregate child reference(s) skipped", entry.ExceptionType);
+
+        // crash.log must also contain the unique tail.
+        var content = File.ReadAllText(CrashFileLogger.LogFilePath);
+        Assert.Contains("unique-tail-that-explains-the-incident", content);
+        Assert.Contains("NullReferenceException", content);
     }
 
     [Fact]
@@ -262,9 +299,9 @@ public class DbErrorLoggerTests
         // untracked) collapses to a linear list of distinct nodes plus shared-reference
         // markers. ExceptionType serializes ≤ ~50 type-name entries; without tracking it
         // would serialize ~1024 entries separated by " -> ".
-        Assert.Contains("shared", entry.ExceptionType);
-        Assert.Contains("shared reference", entry.Message);
-        Assert.Contains("cycle detected", entry.StackTrace);
+        Assert.Contains("duplicate aggregate child reference(s) skipped", entry.ExceptionType);
+        Assert.Contains("duplicate aggregate child reference(s) skipped", entry.Message);
+        Assert.Contains("duplicate aggregate child reference(s) skipped", entry.StackTrace);
         Assert.True(entry.ExceptionType.Split(" -> ").Length < 64, $"ExceptionType contains {entry.ExceptionType.Split(" -> ").Length} segments — suggests exponential expansion.");
     }
 
