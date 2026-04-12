@@ -111,6 +111,25 @@ public static class CrashFileLogger
         }
     }
 
+    /// <summary>
+    /// Returns a message suitable for logging without triggering
+    /// <see cref="AggregateException.Message"/>'s linear expansion over every
+    /// inner exception (which would blow up on wide aggregates). The inner
+    /// messages are still captured below through the bounded child traversal.
+    /// </summary>
+    private static string SafeMessage(Exception ex)
+    {
+        if (ex is AggregateException agg)
+        {
+            var baseField = typeof(Exception).GetField("_message",
+                System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+            var baseMessage = baseField?.GetValue(agg) as string ?? string.Empty;
+            return $"AggregateException ({agg.InnerExceptions.Count} inner): {baseMessage}";
+        }
+
+        return ex.Message;
+    }
+
     private static void AppendExceptionChain(StringBuilder sb, Exception ex, int depth, TraversalBudget budget)
     {
         var indent = new string(' ', (depth + 1) * 2);
@@ -141,7 +160,7 @@ public static class CrashFileLogger
         }
 
         sb.AppendLine($"{indent}Type: {ex.GetType().FullName ?? ex.GetType().Name}");
-        sb.AppendLine($"{indent}Message: {ex.Message}");
+        sb.AppendLine($"{indent}Message: {SafeMessage(ex)}");
 
         if (!string.IsNullOrWhiteSpace(ex.StackTrace))
         {
@@ -163,7 +182,14 @@ public static class CrashFileLogger
 
         if (ex is AggregateException agg)
         {
-            for (var i = 0; i < agg.InnerExceptions.Count; i++)
+            // Hard-cap the number of child edges we iterate, not just the number of
+            // distinct nodes we visit. Otherwise an aggregate built from N repeated
+            // references (e.g. Enumerable.Repeat(sharedEx, 50_000)) would visit-cache
+            // on every duplicate and still iterate N times emitting a shared-reference
+            // marker per edge, stalling the synchronous crash-log path and ballooning
+            // crash.log by ~N lines.
+            var maxEdges = Math.Min(agg.InnerExceptions.Count, Math.Max(0, budget.RemainingNodes));
+            for (var i = 0; i < maxEdges; i++)
             {
                 if (budget.RemainingNodes <= 0)
                 {
@@ -173,6 +199,11 @@ public static class CrashFileLogger
 
                 sb.AppendLine($"{indent}--- AggregateException[{i}] ---");
                 AppendExceptionChain(sb, agg.InnerExceptions[i], depth + 1, budget);
+            }
+
+            if (maxEdges < agg.InnerExceptions.Count)
+            {
+                sb.AppendLine($"{indent}--- AggregateException truncated: {agg.InnerExceptions.Count - maxEdges} more child edge(s) not iterated (node budget reached) ---");
             }
         }
         else if (ex.InnerException is not null)

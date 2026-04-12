@@ -160,8 +160,8 @@ public class DbErrorLoggerTests
 
         var entry = Assert.Single(repo.ErrorLogs);
         Assert.Equal("Error", entry.Level);
-        Assert.Contains("omitted after node budget", entry.ExceptionType);
-        Assert.Contains("omitted after node budget", entry.Message);
+        Assert.Contains("skipped after node budget", entry.ExceptionType);
+        Assert.Contains("skipped after node budget", entry.Message);
         Assert.Contains("not enqueued: node budget reached", entry.StackTrace);
 
         // crash.log should also show the per-call truncation marker, not every child.
@@ -202,6 +202,41 @@ public class DbErrorLoggerTests
 
         var entry = Assert.Single(repo.ErrorLogs);
         Assert.Contains("not enqueued: node budget reached", entry.StackTrace);
+    }
+
+    [Fact]
+    public async Task Log_RepeatedReferenceAggregate_IteratesAtMostNodeBudgetEdges()
+    {
+        var repo = new FakeAppRepository();
+        var logger = new DbErrorLogger(repo);
+
+        // Same reference repeated 100_000 times. Without an edge cap, each builder
+        // iterates 100k times emitting shared-reference markers per duplicate,
+        // bloating ExceptionType/Message/StackTrace and stalling the caller thread.
+        var shared = new InvalidOperationException("shared-leaf");
+        var repeated = new Exception[100_000];
+        for (var i = 0; i < repeated.Length; i++) repeated[i] = shared;
+        var agg = new AggregateException("repeated-refs", repeated);
+
+        var beforeAlloc = GC.GetTotalAllocatedBytes(precise: true);
+        var sw = System.Diagnostics.Stopwatch.StartNew();
+        var ex = Record.Exception(() => logger.Log(agg, "repeated-refs"));
+        sw.Stop();
+        var deltaAlloc = GC.GetTotalAllocatedBytes(precise: true) - beforeAlloc;
+
+        Assert.Null(ex);
+        Assert.True(sw.ElapsedMilliseconds < 1500, $"Log took {sw.ElapsedMilliseconds} ms — repeated-ref edges not capped.");
+        Assert.True(deltaAlloc < 16L * 1024 * 1024, $"Log allocated {deltaAlloc:N0} bytes — edge loop not bounded.");
+
+        await logger.FlushAsync(TimeSpan.FromSeconds(5));
+
+        var entry = Assert.Single(repo.ErrorLogs);
+        Assert.Contains("aggregate child edge(s) skipped after node budget", entry.ExceptionType);
+        Assert.Contains("aggregate child edge(s) skipped after node budget", entry.Message);
+        Assert.Contains("not enqueued: node budget reached", entry.StackTrace);
+
+        var content = File.ReadAllText(CrashFileLogger.LogFilePath);
+        Assert.Contains("more child edge(s) not iterated (node budget reached)", content);
     }
 
     [Fact]

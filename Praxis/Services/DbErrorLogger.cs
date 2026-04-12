@@ -286,9 +286,10 @@ public sealed class DbErrorLogger : IErrorLogger
             remainingNodes--;
 
             sb.Append(current.GetType().FullName ?? current.GetType().Name);
-            if (!string.IsNullOrEmpty(current.Message))
+            var currentMsg = SafeMessage(current);
+            if (!string.IsNullOrEmpty(currentMsg))
             {
-                sb.Append(": ").Append(current.Message);
+                sb.Append(": ").Append(currentMsg);
             }
 
             sb.AppendLine();
@@ -323,6 +324,25 @@ public sealed class DbErrorLogger : IErrorLogger
         return sb.ToString().TrimEnd();
     }
 
+    /// <summary>
+    /// Wraps <see cref="AggregateException.Message"/> which expands linearly over
+    /// every inner exception — so a wide aggregate would allocate megabytes on a
+    /// single property read. Inner messages are still captured by the bounded
+    /// child traversal that follows.
+    /// </summary>
+    private static string SafeMessage(Exception ex)
+    {
+        if (ex is AggregateException agg)
+        {
+            var baseField = typeof(Exception).GetField("_message",
+                System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+            var baseMessage = baseField?.GetValue(agg) as string ?? string.Empty;
+            return $"AggregateException ({agg.InnerExceptions.Count} inner): {baseMessage}";
+        }
+
+        return ex.Message;
+    }
+
     private static void AppendExceptionTypes(List<string> parts, Exception ex, int depth, Budget budget)
     {
         if (depth >= MaxExceptionChainDepth)
@@ -348,7 +368,11 @@ public sealed class DbErrorLogger : IErrorLogger
 
         if (ex is AggregateException agg)
         {
-            for (var i = 0; i < agg.InnerExceptions.Count; i++)
+            // Cap child-edge iterations, not just distinct-node visits — otherwise an
+            // aggregate of N repeated references iterates N times emitting shared-reference
+            // markers without ever decrementing the node budget.
+            var maxEdges = Math.Min(agg.InnerExceptions.Count, Math.Max(0, budget.RemainingNodes));
+            for (var i = 0; i < maxEdges; i++)
             {
                 if (budget.RemainingNodes <= 0)
                 {
@@ -357,6 +381,11 @@ public sealed class DbErrorLogger : IErrorLogger
                 }
 
                 AppendExceptionTypes(parts, agg.InnerExceptions[i], depth + 1, budget);
+            }
+
+            if (maxEdges < agg.InnerExceptions.Count)
+            {
+                parts.Add($"...({agg.InnerExceptions.Count - maxEdges} aggregate child edge(s) skipped after node budget)");
             }
 
             return;
@@ -389,11 +418,13 @@ public sealed class DbErrorLogger : IErrorLogger
         }
 
         budget.RemainingNodes--;
-        parts.Add(string.IsNullOrEmpty(prefix) ? ex.Message : $"{prefix}{ex.Message}");
+        var msg = SafeMessage(ex);
+        parts.Add(string.IsNullOrEmpty(prefix) ? msg : $"{prefix}{msg}");
 
         if (ex is AggregateException agg)
         {
-            for (var i = 0; i < agg.InnerExceptions.Count; i++)
+            var maxEdges = Math.Min(agg.InnerExceptions.Count, Math.Max(0, budget.RemainingNodes));
+            for (var i = 0; i < maxEdges; i++)
             {
                 if (budget.RemainingNodes <= 0)
                 {
@@ -402,6 +433,11 @@ public sealed class DbErrorLogger : IErrorLogger
                 }
 
                 AppendExceptionMessages(parts, agg.InnerExceptions[i], $"[{i}] ", depth + 1, budget);
+            }
+
+            if (maxEdges < agg.InnerExceptions.Count)
+            {
+                parts.Add($"...({agg.InnerExceptions.Count - maxEdges} aggregate child edge(s) skipped after node budget)");
             }
 
             return;
