@@ -139,17 +139,46 @@ public static class CrashFileLogger
     /// inner exception (which would blow up on wide aggregates). The inner
     /// messages are still captured below through the bounded child traversal.
     /// </summary>
+    /// <summary>
+    /// Size below which <see cref="AggregateException.Message"/> is cheap enough
+    /// to invoke directly (it enumerates every inner exception). Above the
+    /// threshold we fall back to a synthetic bounded summary, trading the
+    /// caller-supplied top-level text for guaranteed O(1) work and no dependence
+    /// on private framework fields.
+    /// </summary>
+    internal const int SmallAggregateMessageThreshold = 8;
+
     private static string SafeMessage(Exception ex)
     {
         if (ex is AggregateException agg)
         {
-            var baseField = typeof(Exception).GetField("_message",
-                System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
-            var baseMessage = baseField?.GetValue(agg) as string ?? string.Empty;
-            return $"AggregateException ({agg.InnerExceptions.Count} inner): {baseMessage}";
+            // `.Message` on AggregateException recursively expands every inner
+            // exception's message, so it is only cheap when the immediate children
+            // are few AND none of them are themselves AggregateExceptions (a
+            // nested wrapper could still expand transitively into a huge graph).
+            if (agg.InnerExceptions.Count <= SmallAggregateMessageThreshold &&
+                !HasNestedAggregate(agg))
+            {
+                return agg.Message;
+            }
+
+            return $"AggregateException ({agg.InnerExceptions.Count} inner exceptions; top-level summary omitted — wide/nested aggregate)";
         }
 
         return ex.Message;
+    }
+
+    private static bool HasNestedAggregate(AggregateException agg)
+    {
+        for (var i = 0; i < agg.InnerExceptions.Count; i++)
+        {
+            if (agg.InnerExceptions[i] is AggregateException)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static void AppendExceptionChain(StringBuilder sb, Exception ex, int depth, TraversalBudget budget)

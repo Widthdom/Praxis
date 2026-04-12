@@ -236,6 +236,87 @@ public class DbErrorLoggerTests
     }
 
     [Fact]
+    public async Task Log_SmallAggregate_PreservesTopLevelMessageViaPublicApi()
+    {
+        var repo = new FakeAppRepository();
+        var logger = new DbErrorLogger(repo);
+
+        // Under the small-aggregate threshold (8): .Message is cheap, so the caller-
+        // supplied top-level summary must be preserved in persisted records without
+        // any reflection on private framework fields.
+        var agg = new AggregateException(
+            "top-level-operator-hint",
+            new InvalidOperationException("child-a"),
+            new NullReferenceException("child-b"));
+
+        logger.Log(agg, "small-agg");
+        await logger.FlushAsync(TimeSpan.FromSeconds(5));
+
+        var entry = Assert.Single(repo.ErrorLogs);
+        Assert.Contains("top-level-operator-hint", entry.Message);
+
+        var content = File.ReadAllText(CrashFileLogger.LogFilePath);
+        Assert.Contains("top-level-operator-hint", content);
+    }
+
+    [Fact]
+    public async Task Log_StackTrace_IncludesPerChildIndexLabels()
+    {
+        var repo = new FakeAppRepository();
+        var logger = new DbErrorLogger(repo);
+
+        // Real multi-child aggregate with distinct stacks. BuildFullStackTrace must
+        // emit explicit [i] labels so an operator can correlate each stack with its
+        // slot in the aggregate — matching CrashFileLogger's "AggregateException[i]"
+        // shape.
+        Exception ThrowAndCatch(string message)
+        {
+            try { throw new InvalidOperationException(message); }
+            catch (Exception caught) { return caught; }
+        }
+
+        var agg = new AggregateException("multi-child",
+            ThrowAndCatch("alpha"),
+            ThrowAndCatch("bravo"),
+            ThrowAndCatch("charlie"));
+
+        logger.Log(agg, "stack-labels");
+        await logger.FlushAsync(TimeSpan.FromSeconds(5));
+
+        var entry = Assert.Single(repo.ErrorLogs);
+
+        // Each child's stack must be prefixed with its aggregate slot index.
+        Assert.Contains("[0] System.InvalidOperationException: alpha", entry.StackTrace);
+        Assert.Contains("[1] System.InvalidOperationException: bravo", entry.StackTrace);
+        Assert.Contains("[2] System.InvalidOperationException: charlie", entry.StackTrace);
+    }
+
+    [Fact]
+    public async Task Log_StackTrace_TailSampleCarriesTailSampleLabel()
+    {
+        var repo = new FakeAppRepository();
+        var logger = new DbErrorLogger(repo);
+
+        // Far-tail distinct exception should surface via tail sample AND carry the
+        // "(tail sample)" label so operators know the stack came from the sampled
+        // tail, not the prefix.
+        var shared = new InvalidOperationException("noise");
+        var rootCauseMarker = Guid.NewGuid().ToString("N");
+        var rootCause = new NullReferenceException($"root-cause-{rootCauseMarker}");
+        var children = new Exception[100_000];
+        for (var i = 0; i < children.Length - 1; i++) children[i] = shared;
+        children[^1] = rootCause;
+        var agg = new AggregateException("storm", children);
+
+        logger.Log(agg, "tail-label");
+        await logger.FlushAsync(TimeSpan.FromSeconds(5));
+
+        var entry = Assert.Single(repo.ErrorLogs);
+        Assert.Contains("(tail sample)", entry.StackTrace);
+        Assert.Contains(rootCauseMarker, entry.StackTrace);
+    }
+
+    [Fact]
     public async Task Log_DeepAggregateWithWideFanOut_StaysBoundedAtDepthCap()
     {
         var repo = new FakeAppRepository();

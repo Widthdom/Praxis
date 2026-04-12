@@ -277,14 +277,17 @@ public sealed class DbErrorLogger : IErrorLogger
         // pushed onto the traversal stack (at pop-time it would be too late — the
         // shared child would already have been queued for output twice).
         var visited = new HashSet<Exception>(ReferenceEqualityComparer.Instance);
-        var stack = new Stack<(Exception Exception, int Depth)>();
+        // Label is an optional "[i]" / "[i] (tail sample)" marker prefixed to the
+        // child's header so operators can correlate a stack with its slot inside
+        // the parent AggregateException — matching CrashFileLogger's shape.
+        var stack = new Stack<(Exception Exception, int Depth, string? Label)>();
         visited.Add(ex);
-        stack.Push((ex, 0));
+        stack.Push((ex, 0, null));
         var remainingNodes = MaxExceptionNodes;
 
         while (stack.Count > 0)
         {
-            var (current, depth) = stack.Pop();
+            var (current, depth, label) = stack.Pop();
 
             if (remainingNodes <= 0)
             {
@@ -299,6 +302,11 @@ public sealed class DbErrorLogger : IErrorLogger
             }
 
             remainingNodes--;
+
+            if (!string.IsNullOrEmpty(label))
+            {
+                sb.Append(label);
+            }
 
             sb.Append(current.GetType().FullName ?? current.GetType().Name);
             var currentMsg = SafeMessage(current);
@@ -321,7 +329,7 @@ public sealed class DbErrorLogger : IErrorLogger
                     continue;
                 }
 
-                var toEnqueue = new List<Exception>();
+                var toEnqueue = new List<(Exception Child, string Label)>();
                 var duplicateCount = 0;
                 var truncated = false;
                 var count = agg.InnerExceptions.Count;
@@ -346,7 +354,7 @@ public sealed class DbErrorLogger : IErrorLogger
                         break;
                     }
 
-                    toEnqueue.Add(child);
+                    toEnqueue.Add((child, $"[{i}] "));
                 }
 
                 if (!truncated && middleSkipped > 0)
@@ -369,7 +377,7 @@ public sealed class DbErrorLogger : IErrorLogger
                             break;
                         }
 
-                        toEnqueue.Add(child);
+                        toEnqueue.Add((child, $"[{i}] (tail sample) "));
                     }
                 }
 
@@ -382,14 +390,14 @@ public sealed class DbErrorLogger : IErrorLogger
 
                 for (var i = toEnqueue.Count - 1; i >= 0; i--)
                 {
-                    stack.Push((toEnqueue[i], depth + 1));
+                    stack.Push((toEnqueue[i].Child, depth + 1, toEnqueue[i].Label));
                 }
             }
             else if (current.InnerException is not null)
             {
                 if (visited.Add(current.InnerException))
                 {
-                    stack.Push((current.InnerException, depth + 1));
+                    stack.Push((current.InnerException, depth + 1, "--> "));
                 }
                 else
                 {
@@ -411,13 +419,29 @@ public sealed class DbErrorLogger : IErrorLogger
     {
         if (ex is AggregateException agg)
         {
-            var baseField = typeof(Exception).GetField("_message",
-                System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
-            var baseMessage = baseField?.GetValue(agg) as string ?? string.Empty;
-            return $"AggregateException ({agg.InnerExceptions.Count} inner): {baseMessage}";
+            if (agg.InnerExceptions.Count <= CrashFileLogger.SmallAggregateMessageThreshold &&
+                !HasNestedAggregate(agg))
+            {
+                return agg.Message;
+            }
+
+            return $"AggregateException ({agg.InnerExceptions.Count} inner exceptions; top-level summary omitted — wide/nested aggregate)";
         }
 
         return ex.Message;
+    }
+
+    private static bool HasNestedAggregate(AggregateException agg)
+    {
+        for (var i = 0; i < agg.InnerExceptions.Count; i++)
+        {
+            if (agg.InnerExceptions[i] is AggregateException)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static void AppendExceptionTypes(List<string> parts, Exception ex, int depth, Budget budget)
