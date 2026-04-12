@@ -6,6 +6,12 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 
 ## [Unreleased]
 
+### Fixed
+- `CrashFileLogger.AppendExceptionChain` and `DbErrorLogger`'s exception-type / message builders now cap recursion at depth 32 and emit an explicit truncation marker, protecting the last-resort crash logger from StackOverflow on pathological inner-exception chains
+
+### Tests
+- Added deep inner-exception-chain safety tests for `CrashFileLogger.WriteException` and `DbErrorLogger.Log`
+
 ### [1.1.7] - 2026-04-12
 
 ### Fixed
@@ -217,6 +223,12 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 形式は Keep a Changelog に準拠し、バージョン管理は Semantic Versioning に従います。
 
 ## [Unreleased]
+
+### 修正
+- `CrashFileLogger.AppendExceptionChain` と `DbErrorLogger` の例外型/メッセージ構築を深さ 32 で上限化し、明示的な truncation マーカーを出力するよう修正。病的に深い inner exception チェーンで last-resort クラッシュロガーが StackOverflow に至らないよう保護
+
+### テスト
+- `CrashFileLogger.WriteException` と `DbErrorLogger.Log` に深い inner exception チェーン安全性テストを追加
 
 ### [1.1.7] - 2026-04-12
 

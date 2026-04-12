@@ -8,6 +8,12 @@ public sealed class DbErrorLogger : IErrorLogger
     private const int RetentionDays = 30;
     private const int FlushPollIntervalMs = 10;
 
+    /// <summary>
+    /// Maximum depth of inner-exception recursion when serializing a chain.
+    /// Matches <see cref="CrashFileLogger.MaxExceptionChainDepth"/>.
+    /// </summary>
+    private const int MaxExceptionChainDepth = 32;
+
     private readonly IAppRepository repository;
     private readonly ConcurrentQueue<ErrorLogEntry> pendingWrites = new();
     private volatile int drainRunning;
@@ -209,7 +215,7 @@ public sealed class DbErrorLogger : IErrorLogger
     private static string BuildExceptionTypeChain(Exception ex)
     {
         var parts = new List<string>();
-        AppendExceptionTypes(parts, ex);
+        AppendExceptionTypes(parts, ex, depth: 0);
 
         return string.Join(" -> ", parts);
     }
@@ -220,7 +226,7 @@ public sealed class DbErrorLogger : IErrorLogger
     private static string BuildFullMessage(Exception ex)
     {
         var parts = new List<string>();
-        AppendExceptionMessages(parts, ex, prefix: string.Empty);
+        AppendExceptionMessages(parts, ex, prefix: string.Empty, depth: 0);
 
         return string.Join(" -> ", parts);
     }
@@ -234,15 +240,21 @@ public sealed class DbErrorLogger : IErrorLogger
         return ex.ToString();
     }
 
-    private static void AppendExceptionTypes(List<string> parts, Exception ex)
+    private static void AppendExceptionTypes(List<string> parts, Exception ex, int depth)
     {
+        if (depth >= MaxExceptionChainDepth)
+        {
+            parts.Add($"...(truncated at depth {depth})");
+            return;
+        }
+
         parts.Add(ex.GetType().FullName ?? ex.GetType().Name);
 
         if (ex is AggregateException agg)
         {
             foreach (var inner in agg.InnerExceptions)
             {
-                AppendExceptionTypes(parts, inner);
+                AppendExceptionTypes(parts, inner, depth + 1);
             }
 
             return;
@@ -250,19 +262,25 @@ public sealed class DbErrorLogger : IErrorLogger
 
         if (ex.InnerException is not null)
         {
-            AppendExceptionTypes(parts, ex.InnerException);
+            AppendExceptionTypes(parts, ex.InnerException, depth + 1);
         }
     }
 
-    private static void AppendExceptionMessages(List<string> parts, Exception ex, string prefix)
+    private static void AppendExceptionMessages(List<string> parts, Exception ex, string prefix, int depth)
     {
+        if (depth >= MaxExceptionChainDepth)
+        {
+            parts.Add($"...(truncated at depth {depth})");
+            return;
+        }
+
         parts.Add(string.IsNullOrEmpty(prefix) ? ex.Message : $"{prefix}{ex.Message}");
 
         if (ex is AggregateException agg)
         {
             for (var i = 0; i < agg.InnerExceptions.Count; i++)
             {
-                AppendExceptionMessages(parts, agg.InnerExceptions[i], $"[{i}] ");
+                AppendExceptionMessages(parts, agg.InnerExceptions[i], $"[{i}] ", depth + 1);
             }
 
             return;
@@ -270,7 +288,7 @@ public sealed class DbErrorLogger : IErrorLogger
 
         if (ex.InnerException is not null)
         {
-            AppendExceptionMessages(parts, ex.InnerException, prefix: string.Empty);
+            AppendExceptionMessages(parts, ex.InnerException, prefix: string.Empty, depth + 1);
         }
     }
 }

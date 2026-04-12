@@ -85,6 +85,30 @@ public class DbErrorLoggerTests
     }
 
     [Fact]
+    public async Task Log_DoesNotStackOverflow_OnDeepInnerExceptionChain()
+    {
+        var repo = new FakeAppRepository();
+        var logger = new DbErrorLogger(repo);
+
+        // Chain depth well beyond the internal cap so truncation must kick in.
+        Exception current = new InvalidOperationException("leaf");
+        for (var i = 0; i < 200; i++)
+        {
+            current = new InvalidOperationException($"wrap-{i}", current);
+        }
+
+        var ex = Record.Exception(() => logger.Log(current, "deep-chain"));
+        Assert.Null(ex);
+
+        await logger.FlushAsync(TimeSpan.FromSeconds(5));
+
+        var entry = Assert.Single(repo.ErrorLogs);
+        Assert.Equal("Error", entry.Level);
+        Assert.Contains("truncated at depth", entry.ExceptionType);
+        Assert.Contains("truncated at depth", entry.Message);
+    }
+
+    [Fact]
     public async Task FlushAsync_WritesWarningEntriesToRepository()
     {
         var repo = new FakeAppRepository();

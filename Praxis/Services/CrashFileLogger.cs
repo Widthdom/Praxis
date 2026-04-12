@@ -19,6 +19,13 @@ public static class CrashFileLogger
     /// </summary>
     private const long MaxLogSize = 512 * 1024;
 
+    /// <summary>
+    /// Maximum depth of inner-exception recursion when serializing an exception chain.
+    /// Protects the last-resort logger from StackOverflow on pathological chains
+    /// (e.g. a self-referential AggregateException).
+    /// </summary>
+    internal const int MaxExceptionChainDepth = 32;
+
     public static string LogFilePath => CrashLogPath;
 
     /// <summary>
@@ -93,6 +100,12 @@ public static class CrashFileLogger
     private static void AppendExceptionChain(StringBuilder sb, Exception ex, int depth)
     {
         var indent = new string(' ', (depth + 1) * 2);
+
+        if (depth >= MaxExceptionChainDepth)
+        {
+            sb.AppendLine($"{indent}--- Exception chain truncated at depth {depth} (max {MaxExceptionChainDepth}) ---");
+            return;
+        }
 
         if (depth > 0)
         {

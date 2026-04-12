@@ -171,6 +171,25 @@ public class CrashFileLoggerTests
     }
 
     [Fact]
+    public void WriteException_DoesNotStackOverflow_OnDeepInnerExceptionChain()
+    {
+        // Build a chain deeper than the configured cap so the depth guard must kick in.
+        Exception current = new InvalidOperationException("leaf");
+        for (var i = 0; i < 200; i++)
+        {
+            current = new InvalidOperationException($"wrap-{i}", current);
+        }
+
+        var marker = $"DeepChain-{Guid.NewGuid()}";
+        var ex = Record.Exception(() => CrashFileLogger.WriteException(marker, current));
+        Assert.Null(ex);
+
+        var content = File.ReadAllText(CrashFileLogger.LogFilePath);
+        Assert.Contains(marker, content);
+        Assert.Contains("Exception chain truncated", content);
+    }
+
+    [Fact]
     public void ResolveCrashLogDirectory_UsesTrimmedLocalAppData_OnWindows()
     {
         var result = InvokeResolveCrashLogDirectory(
