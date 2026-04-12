@@ -162,11 +162,46 @@ public class DbErrorLoggerTests
         Assert.Equal("Error", entry.Level);
         Assert.Contains("omitted after node budget", entry.ExceptionType);
         Assert.Contains("omitted after node budget", entry.Message);
-        Assert.Contains("graph truncated after", entry.StackTrace);
+        Assert.Contains("not enqueued: node budget reached", entry.StackTrace);
 
         // crash.log should also show the per-call truncation marker, not every child.
         var content = File.ReadAllText(CrashFileLogger.LogFilePath);
         Assert.Contains("AggregateException truncated", content);
+    }
+
+    [Fact]
+    public async Task Log_VeryWideAggregate_BoundsTraversalAllocationsNotJustOutput()
+    {
+        var repo = new FakeAppRepository();
+        var logger = new DbErrorLogger(repo);
+
+        // 50k distinct failures under one aggregate. If BuildFullStackTrace enqueued all
+        // children before applying the node budget, this would allocate ~50k traversal
+        // entries synchronously. With pre-enqueue capping it allocates ≤ MaxExceptionNodes.
+        var children = new Exception[50_000];
+        for (var i = 0; i < children.Length; i++)
+        {
+            children[i] = new InvalidOperationException($"c{i}");
+        }
+        var agg = new AggregateException("storm", children);
+
+        var beforeAlloc = GC.GetTotalAllocatedBytes(precise: true);
+        var sw = System.Diagnostics.Stopwatch.StartNew();
+        var ex = Record.Exception(() => logger.Log(agg, "failure-storm"));
+        sw.Stop();
+        var deltaAlloc = GC.GetTotalAllocatedBytes(precise: true) - beforeAlloc;
+
+        Assert.Null(ex);
+        Assert.True(sw.ElapsedMilliseconds < 1500, $"Log took {sw.ElapsedMilliseconds} ms — enqueue was not bounded by budget.");
+        // Without the pre-enqueue cap the traversal stack alone would be on the order of
+        // 50k * (entry + tuple) ≈ 1-2 MB per builder. We expect bounded work ≪ that for
+        // the traversal itself; allow headroom for StringBuilder growth and message text.
+        Assert.True(deltaAlloc < 16L * 1024 * 1024, $"Log allocated {deltaAlloc:N0} bytes — above bounded budget.");
+
+        await logger.FlushAsync(TimeSpan.FromSeconds(5));
+
+        var entry = Assert.Single(repo.ErrorLogs);
+        Assert.Contains("not enqueued: node budget reached", entry.StackTrace);
     }
 
     [Fact]

@@ -299,8 +299,17 @@ public sealed class DbErrorLogger : IErrorLogger
 
             if (current is AggregateException agg)
             {
+                // Bound the *queue growth* by the remaining node budget, not just the pop loop.
+                // Otherwise a 10M-child aggregate would still eagerly allocate 10M stack entries
+                // before the budget check ever fired, defeating the whole point of the cap.
+                var childrenToEnqueue = Math.Min(agg.InnerExceptions.Count, Math.Max(0, remainingNodes));
+                if (childrenToEnqueue < agg.InnerExceptions.Count)
+                {
+                    sb.AppendLine($"...({agg.InnerExceptions.Count - childrenToEnqueue} aggregate child(ren) not enqueued: node budget reached)");
+                }
+
                 // Push in reverse so natural order is preserved in output.
-                for (var i = agg.InnerExceptions.Count - 1; i >= 0; i--)
+                for (var i = childrenToEnqueue - 1; i >= 0; i--)
                 {
                     stack.Push((agg.InnerExceptions[i], depth + 1));
                 }
