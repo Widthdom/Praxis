@@ -26,6 +26,20 @@ public static class CrashFileLogger
     /// </summary>
     internal const int MaxExceptionChainDepth = 32;
 
+    /// <summary>
+    /// Total number of exception nodes the last-resort logger will serialize
+    /// in a single call. Guards against wide <see cref="AggregateException"/>
+    /// fan-out (thousands of task failures under one aggregate) synchronously
+    /// blocking the UI or ballooning crash.log.
+    /// </summary>
+    internal const int MaxExceptionNodes = 256;
+
+    private sealed class TraversalBudget
+    {
+        public int RemainingNodes = MaxExceptionNodes;
+        public readonly HashSet<Exception> Visited = new(ReferenceEqualityComparer.Instance);
+    }
+
     public static string LogFilePath => CrashLogPath;
 
     /// <summary>
@@ -45,8 +59,7 @@ public static class CrashFileLogger
             }
             else
             {
-                var visited = new HashSet<Exception>(ReferenceEqualityComparer.Instance);
-                AppendExceptionChain(sb, exception, depth: 0, visited);
+                AppendExceptionChain(sb, exception, depth: 0, new TraversalBudget());
             }
 
             sb.AppendLine(new string('-', 80));
@@ -98,7 +111,7 @@ public static class CrashFileLogger
         }
     }
 
-    private static void AppendExceptionChain(StringBuilder sb, Exception ex, int depth, HashSet<Exception> visited)
+    private static void AppendExceptionChain(StringBuilder sb, Exception ex, int depth, TraversalBudget budget)
     {
         var indent = new string(' ', (depth + 1) * 2);
 
@@ -108,11 +121,19 @@ public static class CrashFileLogger
             return;
         }
 
-        if (!visited.Add(ex))
+        if (budget.RemainingNodes <= 0)
+        {
+            sb.AppendLine($"{indent}--- Exception graph truncated after {MaxExceptionNodes} total nodes ---");
+            return;
+        }
+
+        if (!budget.Visited.Add(ex))
         {
             sb.AppendLine($"{indent}--- Already serialized: {ex.GetType().FullName ?? ex.GetType().Name} (shared/cyclic reference) ---");
             return;
         }
+
+        budget.RemainingNodes--;
 
         if (depth > 0)
         {
@@ -144,13 +165,19 @@ public static class CrashFileLogger
         {
             for (var i = 0; i < agg.InnerExceptions.Count; i++)
             {
+                if (budget.RemainingNodes <= 0)
+                {
+                    sb.AppendLine($"{indent}--- AggregateException truncated: {agg.InnerExceptions.Count - i} more child(ren) omitted after reaching node budget ---");
+                    return;
+                }
+
                 sb.AppendLine($"{indent}--- AggregateException[{i}] ---");
-                AppendExceptionChain(sb, agg.InnerExceptions[i], depth + 1, visited);
+                AppendExceptionChain(sb, agg.InnerExceptions[i], depth + 1, budget);
             }
         }
         else if (ex.InnerException is not null)
         {
-            AppendExceptionChain(sb, ex.InnerException, depth + 1, visited);
+            AppendExceptionChain(sb, ex.InnerException, depth + 1, budget);
         }
     }
 

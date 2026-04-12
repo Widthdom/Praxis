@@ -134,6 +134,42 @@ public class DbErrorLoggerTests
     }
 
     [Fact]
+    public async Task Log_WideAggregateFanOut_IsBoundedByNodeBudget()
+    {
+        var repo = new FakeAppRepository();
+        var logger = new DbErrorLogger(repo);
+
+        // 5000 distinct task failures under one aggregate. Without a node budget
+        // this would synchronously serialize thousands of nodes on the crash path
+        // and balloon the DB payload.
+        var children = new Exception[5000];
+        for (var i = 0; i < children.Length; i++)
+        {
+            children[i] = new InvalidOperationException($"child-{i}");
+        }
+        var agg = new AggregateException("wide", children);
+
+        var sw = System.Diagnostics.Stopwatch.StartNew();
+        var ex = Record.Exception(() => logger.Log(agg, "wide-fanout"));
+        sw.Stop();
+
+        Assert.Null(ex);
+        Assert.True(sw.ElapsedMilliseconds < 1500, $"Log took {sw.ElapsedMilliseconds} ms — node budget did not engage.");
+
+        await logger.FlushAsync(TimeSpan.FromSeconds(5));
+
+        var entry = Assert.Single(repo.ErrorLogs);
+        Assert.Equal("Error", entry.Level);
+        Assert.Contains("omitted after node budget", entry.ExceptionType);
+        Assert.Contains("omitted after node budget", entry.Message);
+        Assert.Contains("graph truncated after", entry.StackTrace);
+
+        // crash.log should also show the per-call truncation marker, not every child.
+        var content = File.ReadAllText(CrashFileLogger.LogFilePath);
+        Assert.Contains("AggregateException truncated", content);
+    }
+
+    [Fact]
     public async Task Log_SharedAggregateSubtree_IsSerializedLinearlyInDistinctNodes()
     {
         var repo = new FakeAppRepository();

@@ -14,6 +14,21 @@ public sealed class DbErrorLogger : IErrorLogger
     /// </summary>
     private const int MaxExceptionChainDepth = 32;
 
+    /// <summary>
+    /// Total number of exception nodes serialized per log call. Matches
+    /// <see cref="CrashFileLogger.MaxExceptionNodes"/> and applies to
+    /// type-chain, message, and stack-trace builders so a wide
+    /// <see cref="AggregateException"/> cannot explode DB payload size or
+    /// stall the logging path.
+    /// </summary>
+    private const int MaxExceptionNodes = 256;
+
+    private sealed class Budget
+    {
+        public int RemainingNodes = MaxExceptionNodes;
+        public readonly HashSet<Exception> Visited = new(ReferenceEqualityComparer.Instance);
+    }
+
     private readonly IAppRepository repository;
     private readonly ConcurrentQueue<ErrorLogEntry> pendingWrites = new();
     private volatile int drainRunning;
@@ -215,8 +230,7 @@ public sealed class DbErrorLogger : IErrorLogger
     private static string BuildExceptionTypeChain(Exception ex)
     {
         var parts = new List<string>();
-        var visited = new HashSet<Exception>(ReferenceEqualityComparer.Instance);
-        AppendExceptionTypes(parts, ex, depth: 0, visited);
+        AppendExceptionTypes(parts, ex, depth: 0, new Budget());
 
         return string.Join(" -> ", parts);
     }
@@ -227,8 +241,7 @@ public sealed class DbErrorLogger : IErrorLogger
     private static string BuildFullMessage(Exception ex)
     {
         var parts = new List<string>();
-        var visited = new HashSet<Exception>(ReferenceEqualityComparer.Instance);
-        AppendExceptionMessages(parts, ex, prefix: string.Empty, depth: 0, visited);
+        AppendExceptionMessages(parts, ex, prefix: string.Empty, depth: 0, new Budget());
 
         return string.Join(" -> ", parts);
     }
@@ -246,10 +259,17 @@ public sealed class DbErrorLogger : IErrorLogger
         var visited = new HashSet<Exception>(ReferenceEqualityComparer.Instance);
         var stack = new Stack<(Exception Exception, int Depth)>();
         stack.Push((ex, 0));
+        var remainingNodes = MaxExceptionNodes;
 
         while (stack.Count > 0)
         {
             var (current, depth) = stack.Pop();
+
+            if (remainingNodes <= 0)
+            {
+                sb.AppendLine($"...(graph truncated after {MaxExceptionNodes} total nodes, {stack.Count + 1} remaining)");
+                break;
+            }
 
             if (depth >= MaxExceptionChainDepth)
             {
@@ -262,6 +282,8 @@ public sealed class DbErrorLogger : IErrorLogger
                 sb.AppendLine($"...(cycle detected at {current.GetType().FullName ?? current.GetType().Name})");
                 continue;
             }
+
+            remainingNodes--;
 
             sb.Append(current.GetType().FullName ?? current.GetType().Name);
             if (!string.IsNullOrEmpty(current.Message))
@@ -292,7 +314,7 @@ public sealed class DbErrorLogger : IErrorLogger
         return sb.ToString().TrimEnd();
     }
 
-    private static void AppendExceptionTypes(List<string> parts, Exception ex, int depth, HashSet<Exception> visited)
+    private static void AppendExceptionTypes(List<string> parts, Exception ex, int depth, Budget budget)
     {
         if (depth >= MaxExceptionChainDepth)
         {
@@ -300,19 +322,32 @@ public sealed class DbErrorLogger : IErrorLogger
             return;
         }
 
-        if (!visited.Add(ex))
+        if (budget.RemainingNodes <= 0)
+        {
+            parts.Add($"...(node budget {MaxExceptionNodes} exhausted)");
+            return;
+        }
+
+        if (!budget.Visited.Add(ex))
         {
             parts.Add($"...(shared {ex.GetType().FullName ?? ex.GetType().Name})");
             return;
         }
 
+        budget.RemainingNodes--;
         parts.Add(ex.GetType().FullName ?? ex.GetType().Name);
 
         if (ex is AggregateException agg)
         {
-            foreach (var inner in agg.InnerExceptions)
+            for (var i = 0; i < agg.InnerExceptions.Count; i++)
             {
-                AppendExceptionTypes(parts, inner, depth + 1, visited);
+                if (budget.RemainingNodes <= 0)
+                {
+                    parts.Add($"...({agg.InnerExceptions.Count - i} aggregate child(ren) omitted after node budget)");
+                    return;
+                }
+
+                AppendExceptionTypes(parts, agg.InnerExceptions[i], depth + 1, budget);
             }
 
             return;
@@ -320,11 +355,11 @@ public sealed class DbErrorLogger : IErrorLogger
 
         if (ex.InnerException is not null)
         {
-            AppendExceptionTypes(parts, ex.InnerException, depth + 1, visited);
+            AppendExceptionTypes(parts, ex.InnerException, depth + 1, budget);
         }
     }
 
-    private static void AppendExceptionMessages(List<string> parts, Exception ex, string prefix, int depth, HashSet<Exception> visited)
+    private static void AppendExceptionMessages(List<string> parts, Exception ex, string prefix, int depth, Budget budget)
     {
         if (depth >= MaxExceptionChainDepth)
         {
@@ -332,19 +367,32 @@ public sealed class DbErrorLogger : IErrorLogger
             return;
         }
 
-        if (!visited.Add(ex))
+        if (budget.RemainingNodes <= 0)
+        {
+            parts.Add($"{prefix}...(node budget {MaxExceptionNodes} exhausted)");
+            return;
+        }
+
+        if (!budget.Visited.Add(ex))
         {
             parts.Add($"{prefix}...(shared reference)");
             return;
         }
 
+        budget.RemainingNodes--;
         parts.Add(string.IsNullOrEmpty(prefix) ? ex.Message : $"{prefix}{ex.Message}");
 
         if (ex is AggregateException agg)
         {
             for (var i = 0; i < agg.InnerExceptions.Count; i++)
             {
-                AppendExceptionMessages(parts, agg.InnerExceptions[i], $"[{i}] ", depth + 1, visited);
+                if (budget.RemainingNodes <= 0)
+                {
+                    parts.Add($"...({agg.InnerExceptions.Count - i} aggregate child(ren) omitted after node budget)");
+                    return;
+                }
+
+                AppendExceptionMessages(parts, agg.InnerExceptions[i], $"[{i}] ", depth + 1, budget);
             }
 
             return;
@@ -352,7 +400,7 @@ public sealed class DbErrorLogger : IErrorLogger
 
         if (ex.InnerException is not null)
         {
-            AppendExceptionMessages(parts, ex.InnerException, prefix: string.Empty, depth + 1, visited);
+            AppendExceptionMessages(parts, ex.InnerException, prefix: string.Empty, depth + 1, budget);
         }
     }
 }
