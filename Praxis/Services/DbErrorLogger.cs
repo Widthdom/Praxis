@@ -307,6 +307,12 @@ public sealed class DbErrorLogger : IErrorLogger
 
             if (current is AggregateException agg)
             {
+                if (depth + 1 >= MaxExceptionChainDepth)
+                {
+                    sb.AppendLine($"...({agg.InnerExceptions.Count} child(ren) not enqueued: would exceed depth cap {MaxExceptionChainDepth})");
+                    continue;
+                }
+
                 var toEnqueue = new List<Exception>();
                 var duplicateCount = 0;
                 var truncated = false;
@@ -410,6 +416,15 @@ public sealed class DbErrorLogger : IErrorLogger
 
         if (ex is AggregateException agg)
         {
+            // Short-circuit: if child recursion would immediately hit the depth cap,
+            // skip sibling scanning entirely so a deep aggregate cannot emit one
+            // "...(truncated at depth N)" segment per child up to the edge-scan cap.
+            if (depth + 1 >= MaxExceptionChainDepth)
+            {
+                parts.Add($"...({agg.InnerExceptions.Count} child(ren) not serialized: would exceed depth cap {MaxExceptionChainDepth})");
+                return;
+            }
+
             var duplicateCount = 0;
             var scanLimit = Math.Min(agg.InnerExceptions.Count, MaxAggregateChildEdgeScan);
             for (var i = 0; i < scanLimit; i++)
@@ -480,6 +495,12 @@ public sealed class DbErrorLogger : IErrorLogger
 
         if (ex is AggregateException agg)
         {
+            if (depth + 1 >= MaxExceptionChainDepth)
+            {
+                parts.Add($"...({agg.InnerExceptions.Count} child(ren) not serialized: would exceed depth cap {MaxExceptionChainDepth})");
+                return;
+            }
+
             var duplicateCount = 0;
             var scanLimit = Math.Min(agg.InnerExceptions.Count, MaxAggregateChildEdgeScan);
             for (var i = 0; i < scanLimit; i++)

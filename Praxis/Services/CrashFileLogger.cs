@@ -194,6 +194,16 @@ public static class CrashFileLogger
 
         if (ex is AggregateException agg)
         {
+            // If child recursion would hit the depth cap, skip the entire sibling scan
+            // and emit one marker. Otherwise every child returns via the depth guard
+            // before consuming budget or being marked visited, so the loop would still
+            // iterate up to MaxAggregateChildEdgeScan and emit one marker per child.
+            if (depth + 1 >= MaxExceptionChainDepth)
+            {
+                sb.AppendLine($"{indent}--- AggregateException: {agg.InnerExceptions.Count} child(ren) not serialized (would exceed depth cap {MaxExceptionChainDepth}) ---");
+                return;
+            }
+
             // Scan every child position so a later distinct exception after a run of
             // duplicates is still serialized while node budget remains. Duplicates are
             // cheap (one hashset lookup) and collapsed into a single summary line, so

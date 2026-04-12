@@ -236,6 +236,60 @@ public class DbErrorLoggerTests
     }
 
     [Fact]
+    public async Task Log_DeepAggregateWithWideFanOut_StaysBoundedAtDepthCap()
+    {
+        var repo = new FakeAppRepository();
+        var logger = new DbErrorLogger(repo);
+
+        // Wrap a 4000-child aggregate at depth 31. Without the pre-enqueue depth
+        // guard, each child would recurse to depth 32, return immediately via the
+        // depth cap without consuming node budget, and let the sibling loop emit
+        // one "...(truncated at depth 32)" marker per child — i.e. O(4000) markers
+        // per builder. With the guard, the entire sibling scan is short-circuited
+        // and exactly one "would exceed depth cap" marker is emitted per aggregate
+        // frame that hits the depth limit.
+        var wide = new Exception[4000];
+        for (var i = 0; i < wide.Length; i++) wide[i] = new InvalidOperationException($"leaf-{i}");
+        var deepWide = new AggregateException("deep-wide", wide);
+        Exception current = deepWide;
+        for (var i = 0; i < 31; i++)
+        {
+            current = new AggregateException($"level-{i}", current);
+        }
+
+        var ex = Record.Exception(() => logger.Log(current, "deep-wide"));
+        Assert.Null(ex);
+
+        await logger.FlushAsync(TimeSpan.FromSeconds(5));
+
+        var entry = Assert.Single(repo.ErrorLogs);
+
+        // Bounded field sizes: without the fix these would grow O(MaxAggregateChildEdgeScan).
+        Assert.True(entry.ExceptionType.Length < 10_000, $"ExceptionType grew to {entry.ExceptionType.Length} chars — depth guard not engaged.");
+        Assert.True(entry.Message.Length < 10_000, $"Message grew to {entry.Message.Length} chars — depth guard not engaged.");
+
+        // Exactly one depth-cap marker per builder (no O(N) repetition).
+        Assert.Contains("would exceed depth cap", entry.ExceptionType);
+        Assert.Contains("would exceed depth cap", entry.Message);
+        Assert.Contains("would exceed depth cap", entry.StackTrace);
+        Assert.Equal(1, CountSubstring(entry.ExceptionType, "would exceed depth cap"));
+        Assert.Equal(1, CountSubstring(entry.Message, "would exceed depth cap"));
+        Assert.Equal(1, CountSubstring(entry.StackTrace, "would exceed depth cap"));
+    }
+
+    private static int CountSubstring(string haystack, string needle)
+    {
+        var count = 0;
+        var i = 0;
+        while ((i = haystack.IndexOf(needle, i, StringComparison.Ordinal)) >= 0)
+        {
+            count++;
+            i += needle.Length;
+        }
+        return count;
+    }
+
+    [Fact]
     public async Task Log_AggregateScanIsCapped_IndependentOfChildCount()
     {
         var repo = new FakeAppRepository();
