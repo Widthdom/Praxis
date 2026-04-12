@@ -260,6 +260,31 @@ public class DbErrorLoggerTests
     }
 
     [Fact]
+    public async Task Log_NestedAggregateWrapper_PreservesTopLevelSummary()
+    {
+        var repo = new FakeAppRepository();
+        var logger = new DbErrorLogger(repo);
+
+        // Common shape: an outer AggregateException wraps another small AggregateException
+        // that wraps a leaf. The wrapper summary ("sync user-42") is often the only
+        // operation-specific breadcrumb, so it must survive in both persisted stores.
+        // Total graph size here is 3 nodes — well under the expansion cap.
+        var leaf = new InvalidOperationException("leaf");
+        var innerAgg = new AggregateException("child", leaf);
+        var outerAgg = new AggregateException("sync user-42", innerAgg);
+
+        logger.Log(outerAgg, "nested-wrapper");
+        await logger.FlushAsync(TimeSpan.FromSeconds(5));
+
+        var entry = Assert.Single(repo.ErrorLogs);
+        Assert.Contains("sync user-42", entry.Message);
+        Assert.Contains("sync user-42", entry.StackTrace);
+
+        var content = File.ReadAllText(CrashFileLogger.LogFilePath);
+        Assert.Contains("sync user-42", content);
+    }
+
+    [Fact]
     public async Task Log_StackTrace_IncludesPerChildIndexLabels()
     {
         var repo = new FakeAppRepository();

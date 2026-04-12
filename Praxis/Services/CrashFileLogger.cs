@@ -148,18 +148,19 @@ public static class CrashFileLogger
     /// </summary>
     internal const int SmallAggregateMessageThreshold = 8;
 
+    /// <summary>
+    /// Upper bound on total descendants a `.Message` invocation may safely
+    /// expand. Allows nested aggregates whose full tree is still small.
+    /// </summary>
+    internal const int AggregateMessageExpansionCap = SmallAggregateMessageThreshold * 4;
+
     private static string SafeMessage(Exception ex)
     {
         if (ex is AggregateException agg)
         {
-            // `.Message` on AggregateException recursively expands every inner
-            // exception's message, so it is only cheap when the immediate children
-            // are few AND none of them are themselves AggregateExceptions (a
-            // nested wrapper could still expand transitively into a huge graph).
-            if (agg.InnerExceptions.Count <= SmallAggregateMessageThreshold &&
-                !HasNestedAggregate(agg))
+            if (TryGetAggregateTopLevelSummary(agg, out var summary))
             {
-                return agg.Message;
+                return summary;
             }
 
             return $"AggregateException ({agg.InnerExceptions.Count} inner exceptions; top-level summary omitted — wide/nested aggregate)";
@@ -168,17 +169,53 @@ public static class CrashFileLogger
         return ex.Message;
     }
 
-    private static bool HasNestedAggregate(AggregateException agg)
+    /// <summary>
+    /// Returns <see cref="AggregateException.Message"/> only after confirming the
+    /// total descendant count is bounded, so invoking <c>.Message</c> (which
+    /// expands every inner exception recursively) cannot explode on a large
+    /// nested graph. Uses a bounded BFS that bails as soon as the cap would be
+    /// exceeded — a wide or deeply-nested wrapper exits after inspecting at most
+    /// <see cref="AggregateMessageExpansionCap"/> nodes.
+    /// </summary>
+    internal static bool TryGetAggregateTopLevelSummary(AggregateException agg, out string summary)
     {
-        for (var i = 0; i < agg.InnerExceptions.Count; i++)
+        var queue = new Queue<Exception>();
+        queue.Enqueue(agg);
+        var visited = 0;
+
+        while (queue.Count > 0)
         {
-            if (agg.InnerExceptions[i] is AggregateException)
+            if (visited + queue.Count > AggregateMessageExpansionCap)
             {
-                return true;
+                summary = string.Empty;
+                return false;
+            }
+
+            var e = queue.Dequeue();
+            visited++;
+
+            if (e is AggregateException a)
+            {
+                if (visited + queue.Count + a.InnerExceptions.Count > AggregateMessageExpansionCap)
+                {
+                    summary = string.Empty;
+                    return false;
+                }
+
+                for (var i = 0; i < a.InnerExceptions.Count; i++)
+                {
+                    queue.Enqueue(a.InnerExceptions[i]);
+                }
+            }
+            else if (e.InnerException is not null)
+            {
+                queue.Enqueue(e.InnerException);
             }
         }
 
-        return false;
+        // Safe: total tree size <= cap, so .Message expansion is bounded.
+        summary = agg.Message;
+        return true;
     }
 
     private static void AppendExceptionChain(StringBuilder sb, Exception ex, int depth, TraversalBudget budget)

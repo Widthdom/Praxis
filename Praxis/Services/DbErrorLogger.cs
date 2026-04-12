@@ -419,29 +419,15 @@ public sealed class DbErrorLogger : IErrorLogger
     {
         if (ex is AggregateException agg)
         {
-            if (agg.InnerExceptions.Count <= CrashFileLogger.SmallAggregateMessageThreshold &&
-                !HasNestedAggregate(agg))
+            if (CrashFileLogger.TryGetAggregateTopLevelSummary(agg, out var summary))
             {
-                return agg.Message;
+                return summary;
             }
 
             return $"AggregateException ({agg.InnerExceptions.Count} inner exceptions; top-level summary omitted — wide/nested aggregate)";
         }
 
         return ex.Message;
-    }
-
-    private static bool HasNestedAggregate(AggregateException agg)
-    {
-        for (var i = 0; i < agg.InnerExceptions.Count; i++)
-        {
-            if (agg.InnerExceptions[i] is AggregateException)
-            {
-                return true;
-            }
-        }
-
-        return false;
     }
 
     private static void AppendExceptionTypes(List<string> parts, Exception ex, int depth, Budget budget)
