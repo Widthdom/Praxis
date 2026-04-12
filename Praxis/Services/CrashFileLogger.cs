@@ -19,6 +19,64 @@ public static class CrashFileLogger
     /// </summary>
     private const long MaxLogSize = 512 * 1024;
 
+    /// <summary>
+    /// Maximum depth of inner-exception recursion when serializing an exception chain.
+    /// Protects the last-resort logger from StackOverflow on pathological chains
+    /// (e.g. a self-referential AggregateException).
+    /// </summary>
+    internal const int MaxExceptionChainDepth = 32;
+
+    /// <summary>
+    /// Total number of exception nodes the last-resort logger will serialize
+    /// in a single call. Guards against wide <see cref="AggregateException"/>
+    /// fan-out (thousands of task failures under one aggregate) synchronously
+    /// blocking the UI or ballooning crash.log.
+    /// </summary>
+    internal const int MaxExceptionNodes = 256;
+
+    /// <summary>
+    /// Per-<see cref="AggregateException"/> child-edge scan cap, independent of the
+    /// node budget. Bounds synchronous work at the logger level: without this cap,
+    /// an aggregate of N repeated references would iterate N hashset lookups (cheap
+    /// per-op but O(N)) on the caller thread, four times over (two DB builders +
+    /// stack-trace + crash-file). With the cap, work is O(budget) regardless of
+    /// aggregate width. A later distinct tail beyond this cap is intentionally not
+    /// preserved on the synchronous error path — bounded logging is the higher
+    /// priority when the app is already in distress.
+    /// </summary>
+    internal const int MaxAggregateChildEdgeScan = 4096;
+
+    /// <summary>
+    /// Size of the suffix sample scanned after the prefix edge-scan cap kicks in.
+    /// Ensures a far-tail distinct exception (e.g. the actual root cause at the
+    /// end of a huge duplicate-noise aggregate) still reaches persisted logs
+    /// instead of being silently discarded. Total synchronous scan positions per
+    /// aggregate stay bounded at roughly <see cref="MaxAggregateChildEdgeScan"/> +
+    /// <see cref="MaxAggregateChildTailSample"/>.
+    /// </summary>
+    internal const int MaxAggregateChildTailSample = 128;
+
+    /// <summary>
+    /// Minimum number of node-budget slots reserved for the tail sample before
+    /// the prefix loop starts consuming budget. Guarantees a far-tail distinct
+    /// exception survives even on an all-unique wide aggregate where the prefix
+    /// alone would otherwise exhaust the budget.
+    /// </summary>
+    internal const int AggregateChildTailReserve = 16;
+
+    /// <summary>
+    /// Evenly-spaced sample points taken from the middle region (between prefix
+    /// scan and tail sample) so a distinct interior child is not deterministically
+    /// lost on very wide aggregates.
+    /// </summary>
+    internal const int MaxAggregateChildMiddleSample = 8;
+
+    private sealed class TraversalBudget
+    {
+        public int RemainingNodes = MaxExceptionNodes;
+        public readonly HashSet<Exception> Visited = new(ReferenceEqualityComparer.Instance);
+    }
+
     public static string LogFilePath => CrashLogPath;
 
     /// <summary>
@@ -38,7 +96,7 @@ public static class CrashFileLogger
             }
             else
             {
-                AppendExceptionChain(sb, exception, depth: 0);
+                AppendExceptionChain(sb, exception, depth: 0, new TraversalBudget());
             }
 
             sb.AppendLine(new string('-', 80));
@@ -90,9 +148,114 @@ public static class CrashFileLogger
         }
     }
 
-    private static void AppendExceptionChain(StringBuilder sb, Exception ex, int depth)
+    /// <summary>
+    /// Returns a message suitable for logging without triggering
+    /// <see cref="AggregateException.Message"/>'s linear expansion over every
+    /// inner exception (which would blow up on wide aggregates). The inner
+    /// messages are still captured below through the bounded child traversal.
+    /// </summary>
+    /// <summary>
+    /// Size below which <see cref="AggregateException.Message"/> is cheap enough
+    /// to invoke directly (it enumerates every inner exception). Above the
+    /// threshold we fall back to a synthetic bounded summary, trading the
+    /// caller-supplied top-level text for guaranteed O(1) work and no dependence
+    /// on private framework fields.
+    /// </summary>
+    internal const int SmallAggregateMessageThreshold = 8;
+
+    /// <summary>
+    /// Upper bound on total descendants a `.Message` invocation may safely
+    /// expand. Allows nested aggregates whose full tree is still small.
+    /// </summary>
+    internal const int AggregateMessageExpansionCap = SmallAggregateMessageThreshold * 4;
+
+    private static string SafeMessage(Exception ex)
+    {
+        if (ex is AggregateException agg)
+        {
+            if (TryGetAggregateTopLevelSummary(agg, out var summary))
+            {
+                return summary;
+            }
+
+            return $"AggregateException ({agg.InnerExceptions.Count} inner exceptions; top-level summary omitted — wide/nested aggregate)";
+        }
+
+        return ex.Message;
+    }
+
+    /// <summary>
+    /// Returns <see cref="AggregateException.Message"/> only after confirming the
+    /// total descendant count is bounded, so invoking <c>.Message</c> (which
+    /// expands every inner exception recursively) cannot explode on a large
+    /// nested graph. Uses a bounded BFS that bails as soon as the cap would be
+    /// exceeded — a wide or deeply-nested wrapper exits after inspecting at most
+    /// <see cref="AggregateMessageExpansionCap"/> nodes.
+    /// </summary>
+    internal static bool TryGetAggregateTopLevelSummary(AggregateException agg, out string summary)
+    {
+        var queue = new Queue<Exception>();
+        queue.Enqueue(agg);
+        var visited = 0;
+
+        while (queue.Count > 0)
+        {
+            if (visited + queue.Count > AggregateMessageExpansionCap)
+            {
+                summary = string.Empty;
+                return false;
+            }
+
+            var e = queue.Dequeue();
+            visited++;
+
+            if (e is AggregateException a)
+            {
+                if (visited + queue.Count + a.InnerExceptions.Count > AggregateMessageExpansionCap)
+                {
+                    summary = string.Empty;
+                    return false;
+                }
+
+                for (var i = 0; i < a.InnerExceptions.Count; i++)
+                {
+                    queue.Enqueue(a.InnerExceptions[i]);
+                }
+            }
+            else if (e.InnerException is not null)
+            {
+                queue.Enqueue(e.InnerException);
+            }
+        }
+
+        // Safe: total tree size <= cap, so .Message expansion is bounded.
+        summary = agg.Message;
+        return true;
+    }
+
+    private static void AppendExceptionChain(StringBuilder sb, Exception ex, int depth, TraversalBudget budget)
     {
         var indent = new string(' ', (depth + 1) * 2);
+
+        if (depth >= MaxExceptionChainDepth)
+        {
+            sb.AppendLine($"{indent}--- Exception chain truncated at depth {depth} (max {MaxExceptionChainDepth}) ---");
+            return;
+        }
+
+        if (budget.RemainingNodes <= 0)
+        {
+            sb.AppendLine($"{indent}--- Exception graph truncated after {MaxExceptionNodes} total nodes ---");
+            return;
+        }
+
+        if (!budget.Visited.Add(ex))
+        {
+            sb.AppendLine($"{indent}--- Already serialized: {ex.GetType().FullName ?? ex.GetType().Name} (shared/cyclic reference) ---");
+            return;
+        }
+
+        budget.RemainingNodes--;
 
         if (depth > 0)
         {
@@ -100,7 +263,7 @@ public static class CrashFileLogger
         }
 
         sb.AppendLine($"{indent}Type: {ex.GetType().FullName ?? ex.GetType().Name}");
-        sb.AppendLine($"{indent}Message: {ex.Message}");
+        sb.AppendLine($"{indent}Message: {SafeMessage(ex)}");
 
         if (!string.IsNullOrWhiteSpace(ex.StackTrace))
         {
@@ -122,15 +285,103 @@ public static class CrashFileLogger
 
         if (ex is AggregateException agg)
         {
-            for (var i = 0; i < agg.InnerExceptions.Count; i++)
+            // If child recursion would hit the depth cap, skip the entire sibling scan
+            // and emit one marker. Otherwise every child returns via the depth guard
+            // before consuming budget or being marked visited, so the loop would still
+            // iterate up to MaxAggregateChildEdgeScan and emit one marker per child.
+            if (depth + 1 >= MaxExceptionChainDepth)
             {
+                sb.AppendLine($"{indent}--- AggregateException: {agg.InnerExceptions.Count} child(ren) not serialized (would exceed depth cap {MaxExceptionChainDepth}) ---");
+                return;
+            }
+
+            // Scan every child position so a later distinct exception after a run of
+            // duplicates is still serialized while node budget remains. Duplicates are
+            // cheap (one hashset lookup) and collapsed into a single summary line, so
+            // a 100k repeated-ref aggregate still produces O(1) output.
+            var duplicateCount = 0;
+            var count = agg.InnerExceptions.Count;
+            var scanPrefix = Math.Min(count, MaxAggregateChildEdgeScan);
+            var tailStart = Math.Max(scanPrefix, count - MaxAggregateChildTailSample);
+            var middleSkipped = tailStart - scanPrefix;
+            var hasTail = tailStart < count;
+
+            // Reserve budget so prefix exhaustion cannot starve the tail / interior
+            // sample regions. Ordering: prefix (bounded), interior samples, tail.
+            var reservedForTail = hasTail ? Math.Min(count - tailStart, AggregateChildTailReserve) : 0;
+            var reservedForMiddle = middleSkipped > 0 ? Math.Min(middleSkipped, MaxAggregateChildMiddleSample) : 0;
+            var prefixBudget = Math.Max(0, budget.RemainingNodes - reservedForTail - reservedForMiddle);
+
+            var prefixProcessed = 0;
+            for (var i = 0; i < scanPrefix; i++)
+            {
+                var child = agg.InnerExceptions[i];
+                if (budget.Visited.Contains(child))
+                {
+                    duplicateCount++;
+                    continue;
+                }
+
+                if (prefixProcessed >= prefixBudget)
+                {
+                    sb.AppendLine($"{indent}--- AggregateException: prefix capped at {prefixProcessed} distinct child(ren) to reserve budget for interior/tail samples ---");
+                    break;
+                }
+
                 sb.AppendLine($"{indent}--- AggregateException[{i}] ---");
-                AppendExceptionChain(sb, agg.InnerExceptions[i], depth + 1);
+                AppendExceptionChain(sb, child, depth + 1, budget);
+                prefixProcessed++;
+            }
+
+            if (reservedForMiddle > 0)
+            {
+                sb.AppendLine($"{indent}--- AggregateException: {middleSkipped} middle child(ren) not fully scanned; sampling {reservedForMiddle} evenly spaced ---");
+                for (var s = 0; s < reservedForMiddle; s++)
+                {
+                    var mIdx = scanPrefix + (int)((long)middleSkipped * s / reservedForMiddle);
+                    var child = agg.InnerExceptions[mIdx];
+                    if (budget.Visited.Contains(child))
+                    {
+                        duplicateCount++;
+                        continue;
+                    }
+
+                    if (budget.RemainingNodes <= reservedForTail)
+                    {
+                        break;
+                    }
+
+                    sb.AppendLine($"{indent}--- AggregateException[{mIdx}] (middle sample) ---");
+                    AppendExceptionChain(sb, child, depth + 1, budget);
+                }
+            }
+
+            if (hasTail)
+            {
+                var tailBegin = Math.Max(tailStart, count - reservedForTail);
+                sb.AppendLine($"{indent}--- AggregateException: sampling last {count - tailBegin} tail child(ren) ---");
+                for (var i = tailBegin; i < count; i++)
+                {
+                    var child = agg.InnerExceptions[i];
+                    if (budget.Visited.Contains(child))
+                    {
+                        duplicateCount++;
+                        continue;
+                    }
+
+                    sb.AppendLine($"{indent}--- AggregateException[{i}] (tail sample) ---");
+                    AppendExceptionChain(sb, child, depth + 1, budget);
+                }
+            }
+
+            if (duplicateCount > 0)
+            {
+                sb.AppendLine($"{indent}--- AggregateException: {duplicateCount} duplicate child reference(s) skipped ---");
             }
         }
         else if (ex.InnerException is not null)
         {
-            AppendExceptionChain(sb, ex.InnerException, depth + 1);
+            AppendExceptionChain(sb, ex.InnerException, depth + 1, budget);
         }
     }
 

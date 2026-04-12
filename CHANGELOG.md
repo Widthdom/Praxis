@@ -6,6 +6,41 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 
 ## [Unreleased]
 
+### Fixed
+- `CrashFileLogger.AppendExceptionChain` and `DbErrorLogger`'s exception-type / message builders now cap recursion at depth 32 and emit an explicit truncation marker, protecting the last-resort crash logger from StackOverflow on pathological inner-exception chains
+- `DbErrorLogger.BuildFullStackTrace` now traverses the inner-exception graph iteratively with the same depth cap and reference-equality cycle detection instead of delegating to `Exception.ToString()`, so the DB logger's stack-trace field cannot stack-overflow or balloon on pathological or cyclic exception graphs
+- `CrashFileLogger.AppendExceptionChain` and `DbErrorLogger`'s exception-type / message builders now also track visited exceptions by reference equality, so a shared `AggregateException` subtree referenced from multiple parent slots is serialized once with a `shared/cyclic reference` marker instead of fanning out exponentially before the depth cap engages
+- `CrashFileLogger` and `DbErrorLogger` now cap total exception-node serialization at 256 per call (in addition to depth 32) so a wide `AggregateException` fan-out — thousands of task failures under one aggregate — cannot synchronously stall the UI, balloon `crash.log`, or bloat the DB error-log payload
+- `DbErrorLogger.BuildFullStackTrace` now bounds traversal-stack *growth* by the remaining node budget before enqueueing `AggregateException` children, not just after popping them. Previously a 50k-child aggregate still allocated 50k traversal entries synchronously before the cap fired; now allocation stays proportional to the 256-node budget regardless of aggregate width
+- `CrashFileLogger.AppendExceptionChain` and `DbErrorLogger`'s type/message builders now hard-cap `AggregateException` child-edge iterations at the remaining node budget so a repeated-reference aggregate (e.g. `Enumerable.Repeat(sharedEx, 100_000)`) cannot iterate O(N) shared-reference markers. Both loggers share a `TryGetAggregateTopLevelSummary` helper that uses a bounded BFS to confirm the full descendant tree is under `AggregateMessageExpansionCap` (32) before invoking `AggregateException.Message`. Small nested wrappers like `new AggregateException("sync user-42", new AggregateException(...))` therefore keep their caller-supplied summary in persisted logs; wide or deep aggregates fall back to a synthetic bounded summary. No private framework fields are inspected
+- `AggregateException` traversal now scans every child position so a later distinct exception after duplicated leading children is still serialized while node budget remains. Duplicates cost one hashset lookup each and collapse into a single per-aggregate summary marker. `BuildFullStackTrace` adds to `visited` at enqueue-time (instead of pop-time) so sibling duplicates within the same aggregate are recognised before being pushed onto the traversal stack
+- Added a per-aggregate child-edge scan cap (`MaxAggregateChildEdgeScan = 4096`) to both `CrashFileLogger` and `DbErrorLogger` so synchronous work stays O(budget), not O(child count), even for aggregates with millions of repeated references
+- Added a suffix sample window (`MaxAggregateChildTailSample = 128`) to both loggers on top of the prefix scan. A far-tail distinct exception — the realistic "failure storm ends with the actionable root cause" shape — is still persisted in all three DB fields and in `crash.log` instead of being silently dropped after the prefix cap. The middle region (between prefix scan and tail sample) is clipped with an explicit `"middle child(ren) not scanned"` marker so operators know a suffix sample was used
+- Reserved tail + interior budget (`AggregateChildTailReserve = 16`, `MaxAggregateChildMiddleSample = 8`) before the prefix loop in both loggers. Prefix processing is capped at `remainingNodes − reservedTail − reservedMiddle`, so an all-unique wide aggregate (the realistic `Task.WhenAll` storm) can no longer starve the tail sample; the actionable last-index child survives in both DB fields and `crash.log`. Interior positions are evenly-spaced sampled so a distinct middle-region root cause is not deterministically lost. Tail iteration goes from end inward so the final indices are always preserved
+- `DbErrorLogger.BuildFullStackTrace` now accounts for `stack.Count` (ancestor-discovered siblings already pending) in its enqueue cap, so nested-wide aggregates cannot queue `remainingNodes` new frames on top of many already-pending siblings and blow past the 256-node bound
+- `DbErrorLogger.BuildFullStackTrace` now emits `[i]` slot labels for every queued `AggregateException` child (and `[i] (tail sample)` for children surfaced through the suffix sample), so the DB stack-trace field correlates 1:1 with `CrashFileLogger`'s `AggregateException[i]` markers on the same failure
+- Added a pre-enqueue depth-cap short-circuit in both loggers: when an `AggregateException` sits at `depth == MaxExceptionChainDepth - 1`, its sibling loop is skipped entirely and a single marker is emitted. Previously each depth-truncated child returned before consuming node budget, letting the sibling scan iterate up to the edge-scan cap and emit one truncation marker per child
+
+### Tests
+- Added deep inner-exception-chain safety tests for `CrashFileLogger.WriteException` and `DbErrorLogger.Log`
+- Added cyclic inner-exception graph regression test for `DbErrorLogger.Log` that asserts stack-trace persistence records a cycle marker rather than recursing
+- Added shared-`AggregateException`-subtree regression test for `DbErrorLogger.Log` that asserts a fan-out-of-10 graph (1024 paths untracked → 11 distinct nodes) serializes linearly and logs shared-reference markers across all three fields
+- Added wide-`AggregateException`-fan-out regression test (5000 children) that asserts node-budget truncation markers appear on all three DB fields and in `crash.log` and that each persisted field's length stays O(budget), not O(children)
+- Added very-wide-`AggregateException` stress regression (50 000 children) that asserts the persisted stack-trace field length stays O(budget), proving traversal-stack growth is bounded (deterministic output-shape check instead of flaky wall-clock assertions)
+- Added repeated-reference-`AggregateException` stress regression (100 000 copies of the same leaf) that asserts truncation markers + O(budget) field lengths across all three DB fields and `crash.log`, proving edge-loop iteration is capped regardless of duplicate-reference visit-caching
+- Added mixed-`AggregateException` regression (`[shared × 2999, uniqueTail]`, within the 4096 edge-scan cap) that asserts the tail's distinct `NullReferenceException` still appears in all three DB fields and in `crash.log`, guarding against duplicate-heavy aggregates hiding the failure that actually explains an incident
+- Added middle-region scan-cap regression (100 000 children with a unique GUID-marked needle at position 50 000) that asserts the needle does NOT appear in any persisted field *and* the `"middle child(ren) not scanned"` truncation marker IS emitted — direct behavioural guard against a regression that removes the per-aggregate edge cap
+- Added far-tail root-cause regression (100 000 children with a unique GUID-marked `NullReferenceException` at position 99 999) that asserts the tail sample window surfaces the root cause in all three DB fields and in `crash.log` — guard against a regression that drops the suffix sample and hides the actionable failure
+- Added all-unique-wide regression (100 000 distinct children with actionable `NullReferenceException` at the final index) that asserts the reserved tail budget preserves the last-index root cause across all DB fields and `crash.log` — direct guard for the adversarial shape where the prefix alone would exhaust the node budget
+- Added nested-wide regression (outer aggregate of 5 inner aggregates of 1 000 children each) that asserts persisted output length stays bounded — guard for the `stack.Count` accounting in `BuildFullStackTrace`
+- Added small-aggregate top-level-message regression that asserts a 2-child aggregate's caller-supplied summary is preserved via public API (no reflection) in both persisted stores
+- Added nested-wrapper regression (`AggregateException("sync user-42", AggregateException("child", leaf))`) that asserts the outer wrapper summary survives in all DB fields and in `crash.log`
+- Added per-child-index-label regressions for `BuildFullStackTrace` that assert `[0]`, `[1]`, `[2]` slot prefixes and a `(tail sample)` annotation on children surfaced through the suffix window
+- Added deep-wide regression (4000-child aggregate wrapped at depth 31) that asserts exactly one `"would exceed depth cap"` marker per builder and bounded field lengths — direct guard against a regression that removes the pre-enqueue depth short-circuit
+- Expanded `CiCoverageWorkflowPolicyTests` to assert `fetch-depth: 0`, GA SDK pinning, MAUI workload install flags, Xcode first-launch / compatibility gate, platform frameworks, and delivery-workflow Windows RID guard so documented CI/release invariants no longer rely on reviewer memory
+- Scoped `CiCoverageWorkflowPolicyTests` assertions to individual jobs (`core-tests`, `windows-build`, `mac-build`, delivery `package` + matrix entries) so a regression dropping an invariant from one job cannot pass green just because a sibling job still contains the same string
+- `CiCoverageWorkflowPolicyTests` now parses workflow steps structurally (name/if/run/uses/id) for the critical Xcode-gate invariants. The delivery `Initialize Xcode` / `Check Xcode compatibility` / `Publish app` step guards are asserted against their actual `if:` expressions and `run:` bodies, so a comment or mis-scoped step condition cannot satisfy the test
+
 ### [1.1.7] - 2026-04-12
 
 ### Fixed
@@ -217,6 +252,12 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 形式は Keep a Changelog に準拠し、バージョン管理は Semantic Versioning に従います。
 
 ## [Unreleased]
+
+### 修正
+- `CrashFileLogger.AppendExceptionChain` と `DbErrorLogger` の例外型/メッセージ構築を深さ 32 で上限化し、明示的な truncation マーカーを出力するよう修正。病的に深い inner exception チェーンで last-resort クラッシュロガーが StackOverflow に至らないよう保護
+
+### テスト
+- `CrashFileLogger.WriteException` と `DbErrorLogger.Log` に深い inner exception チェーン安全性テストを追加
 
 ### [1.1.7] - 2026-04-12
 

@@ -85,6 +85,532 @@ public class DbErrorLoggerTests
     }
 
     [Fact]
+    public async Task Log_DoesNotStackOverflow_OnDeepInnerExceptionChain()
+    {
+        var repo = new FakeAppRepository();
+        var logger = new DbErrorLogger(repo);
+
+        // Chain depth well beyond the internal cap so truncation must kick in.
+        Exception current = new InvalidOperationException("leaf");
+        for (var i = 0; i < 200; i++)
+        {
+            current = new InvalidOperationException($"wrap-{i}", current);
+        }
+
+        var ex = Record.Exception(() => logger.Log(current, "deep-chain"));
+        Assert.Null(ex);
+
+        await logger.FlushAsync(TimeSpan.FromSeconds(5));
+
+        var entry = Assert.Single(repo.ErrorLogs);
+        Assert.Equal("Error", entry.Level);
+        Assert.Contains("truncated at depth", entry.ExceptionType);
+        Assert.Contains("truncated at depth", entry.Message);
+        Assert.Contains("truncated at depth", entry.StackTrace);
+    }
+
+    [Fact]
+    public async Task Log_DoesNotStackOverflow_OnCyclicInnerExceptionGraph()
+    {
+        var repo = new FakeAppRepository();
+        var logger = new DbErrorLogger(repo);
+
+        // Construct a self-referential inner-exception cycle via reflection.
+        var a = new InvalidOperationException("a");
+        var b = new InvalidOperationException("b", a);
+        var innerField = typeof(Exception).GetField("_innerException",
+            System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+        Assert.NotNull(innerField);
+        innerField!.SetValue(a, b);
+
+        var ex = Record.Exception(() => logger.Log(b, "cycle"));
+        Assert.Null(ex);
+
+        await logger.FlushAsync(TimeSpan.FromSeconds(5));
+
+        var entry = Assert.Single(repo.ErrorLogs);
+        Assert.Equal("Error", entry.Level);
+        Assert.Contains("cycle detected", entry.StackTrace);
+    }
+
+    [Fact]
+    public async Task Log_WideAggregateFanOut_IsBoundedByNodeBudget()
+    {
+        var repo = new FakeAppRepository();
+        var logger = new DbErrorLogger(repo);
+
+        // 5000 distinct task failures under one aggregate. Without a node budget
+        // this would synchronously serialize thousands of nodes on the crash path
+        // and balloon the DB payload.
+        var children = new Exception[5000];
+        for (var i = 0; i < children.Length; i++)
+        {
+            children[i] = new InvalidOperationException($"child-{i}");
+        }
+        var agg = new AggregateException("wide", children);
+
+        var ex = Record.Exception(() => logger.Log(agg, "wide-fanout"));
+        Assert.Null(ex);
+
+        await logger.FlushAsync(TimeSpan.FromSeconds(5));
+
+        var entry = Assert.Single(repo.ErrorLogs);
+        Assert.Equal("Error", entry.Level);
+
+        // Deterministic proof that the cap engaged: truncation markers present AND
+        // each field's length is bounded by O(MaxExceptionNodes), not O(children).
+        Assert.Contains("prefix capped at", entry.ExceptionType);
+        Assert.Contains("prefix capped at", entry.Message);
+        Assert.Contains("prefix capped at", entry.StackTrace);
+        Assert.True(entry.ExceptionType.Length < 100_000, $"ExceptionType grew to {entry.ExceptionType.Length} chars — cap did not engage.");
+        Assert.True(entry.Message.Length < 100_000, $"Message grew to {entry.Message.Length} chars — cap did not engage.");
+
+        // crash.log should also show the per-call truncation marker, not every child.
+        var content = File.ReadAllText(CrashFileLogger.LogFilePath);
+        Assert.Contains("prefix capped at", content);
+    }
+
+    [Fact]
+    public async Task Log_VeryWideAggregate_BoundsTraversalAllocationsNotJustOutput()
+    {
+        var repo = new FakeAppRepository();
+        var logger = new DbErrorLogger(repo);
+
+        // 50k distinct failures under one aggregate. If BuildFullStackTrace enqueued all
+        // children before applying the node budget, this would allocate ~50k traversal
+        // entries synchronously. With pre-enqueue capping it allocates ≤ MaxExceptionNodes.
+        var children = new Exception[50_000];
+        for (var i = 0; i < children.Length; i++)
+        {
+            children[i] = new InvalidOperationException($"c{i}");
+        }
+        var agg = new AggregateException("storm", children);
+
+        var ex = Record.Exception(() => logger.Log(agg, "failure-storm"));
+        Assert.Null(ex);
+
+        await logger.FlushAsync(TimeSpan.FromSeconds(5));
+
+        var entry = Assert.Single(repo.ErrorLogs);
+
+        // Deterministic proof of bounded traversal: StackTrace field length is O(budget),
+        // not O(children). 50k children without the cap would produce multi-MB output.
+        Assert.Contains("prefix capped at", entry.StackTrace);
+        Assert.True(entry.StackTrace.Length < 200_000, $"StackTrace grew to {entry.StackTrace.Length} chars — traversal-stack growth not bounded.");
+    }
+
+    [Fact]
+    public async Task Log_RepeatedReferenceAggregate_IteratesAtMostNodeBudgetEdges()
+    {
+        var repo = new FakeAppRepository();
+        var logger = new DbErrorLogger(repo);
+
+        // Same reference repeated 100_000 times. Without an edge cap, each builder
+        // iterates 100k times emitting shared-reference markers per duplicate,
+        // bloating ExceptionType/Message/StackTrace and stalling the caller thread.
+        var shared = new InvalidOperationException("shared-leaf");
+        var repeated = new Exception[100_000];
+        for (var i = 0; i < repeated.Length; i++) repeated[i] = shared;
+        var agg = new AggregateException("repeated-refs", repeated);
+
+        var ex = Record.Exception(() => logger.Log(agg, "repeated-refs"));
+        Assert.Null(ex);
+
+        await logger.FlushAsync(TimeSpan.FromSeconds(5));
+
+        var entry = Assert.Single(repo.ErrorLogs);
+
+        // Deterministic proof that the edge cap engaged: truncation markers present AND
+        // persisted field lengths are O(budget), not O(100k).
+        // For a pure repeated-reference aggregate, duplicates don't drain the node budget,
+        // so we expect a consolidated duplicate-summary marker rather than budget truncation.
+        Assert.Contains("duplicate aggregate child reference(s) skipped", entry.ExceptionType);
+        Assert.Contains("duplicate aggregate child reference(s) skipped", entry.Message);
+        Assert.Contains("duplicate aggregate child reference(s) skipped", entry.StackTrace);
+        Assert.True(entry.ExceptionType.Length < 100_000, $"ExceptionType grew to {entry.ExceptionType.Length} chars — duplicates not consolidated.");
+        Assert.True(entry.Message.Length < 100_000, $"Message grew to {entry.Message.Length} chars — duplicates not consolidated.");
+        Assert.True(entry.StackTrace.Length < 200_000, $"StackTrace grew to {entry.StackTrace.Length} chars — duplicates not consolidated.");
+
+        var content = File.ReadAllText(CrashFileLogger.LogFilePath);
+        Assert.Contains("duplicate child reference(s) skipped", content);
+    }
+
+    [Fact]
+    public async Task Log_SmallAggregate_PreservesTopLevelMessageViaPublicApi()
+    {
+        var repo = new FakeAppRepository();
+        var logger = new DbErrorLogger(repo);
+
+        // Under the small-aggregate threshold (8): .Message is cheap, so the caller-
+        // supplied top-level summary must be preserved in persisted records without
+        // any reflection on private framework fields.
+        var agg = new AggregateException(
+            "top-level-operator-hint",
+            new InvalidOperationException("child-a"),
+            new NullReferenceException("child-b"));
+
+        logger.Log(agg, "small-agg");
+        await logger.FlushAsync(TimeSpan.FromSeconds(5));
+
+        var entry = Assert.Single(repo.ErrorLogs);
+        Assert.Contains("top-level-operator-hint", entry.Message);
+
+        var content = File.ReadAllText(CrashFileLogger.LogFilePath);
+        Assert.Contains("top-level-operator-hint", content);
+    }
+
+    [Fact]
+    public async Task Log_NestedAggregateWrapper_PreservesTopLevelSummary()
+    {
+        var repo = new FakeAppRepository();
+        var logger = new DbErrorLogger(repo);
+
+        // Common shape: an outer AggregateException wraps another small AggregateException
+        // that wraps a leaf. The wrapper summary ("sync user-42") is often the only
+        // operation-specific breadcrumb, so it must survive in both persisted stores.
+        // Total graph size here is 3 nodes — well under the expansion cap.
+        var leaf = new InvalidOperationException("leaf");
+        var innerAgg = new AggregateException("child", leaf);
+        var outerAgg = new AggregateException("sync user-42", innerAgg);
+
+        logger.Log(outerAgg, "nested-wrapper");
+        await logger.FlushAsync(TimeSpan.FromSeconds(5));
+
+        var entry = Assert.Single(repo.ErrorLogs);
+        Assert.Contains("sync user-42", entry.Message);
+        Assert.Contains("sync user-42", entry.StackTrace);
+
+        var content = File.ReadAllText(CrashFileLogger.LogFilePath);
+        Assert.Contains("sync user-42", content);
+    }
+
+    [Fact]
+    public async Task Log_StackTrace_IncludesPerChildIndexLabels()
+    {
+        var repo = new FakeAppRepository();
+        var logger = new DbErrorLogger(repo);
+
+        // Real multi-child aggregate with distinct stacks. BuildFullStackTrace must
+        // emit explicit [i] labels so an operator can correlate each stack with its
+        // slot in the aggregate — matching CrashFileLogger's "AggregateException[i]"
+        // shape.
+        Exception ThrowAndCatch(string message)
+        {
+            try { throw new InvalidOperationException(message); }
+            catch (Exception caught) { return caught; }
+        }
+
+        var agg = new AggregateException("multi-child",
+            ThrowAndCatch("alpha"),
+            ThrowAndCatch("bravo"),
+            ThrowAndCatch("charlie"));
+
+        logger.Log(agg, "stack-labels");
+        await logger.FlushAsync(TimeSpan.FromSeconds(5));
+
+        var entry = Assert.Single(repo.ErrorLogs);
+
+        // Each child's stack must be prefixed with its aggregate slot index.
+        Assert.Contains("[0] System.InvalidOperationException: alpha", entry.StackTrace);
+        Assert.Contains("[1] System.InvalidOperationException: bravo", entry.StackTrace);
+        Assert.Contains("[2] System.InvalidOperationException: charlie", entry.StackTrace);
+    }
+
+    [Fact]
+    public async Task Log_StackTrace_TailSampleCarriesTailSampleLabel()
+    {
+        var repo = new FakeAppRepository();
+        var logger = new DbErrorLogger(repo);
+
+        // Far-tail distinct exception should surface via tail sample AND carry the
+        // "(tail sample)" label so operators know the stack came from the sampled
+        // tail, not the prefix.
+        var shared = new InvalidOperationException("noise");
+        var rootCauseMarker = Guid.NewGuid().ToString("N");
+        var rootCause = new NullReferenceException($"root-cause-{rootCauseMarker}");
+        var children = new Exception[100_000];
+        for (var i = 0; i < children.Length - 1; i++) children[i] = shared;
+        children[^1] = rootCause;
+        var agg = new AggregateException("storm", children);
+
+        logger.Log(agg, "tail-label");
+        await logger.FlushAsync(TimeSpan.FromSeconds(5));
+
+        var entry = Assert.Single(repo.ErrorLogs);
+        Assert.Contains("(tail sample)", entry.StackTrace);
+        Assert.Contains(rootCauseMarker, entry.StackTrace);
+    }
+
+    [Fact]
+    public async Task Log_AllUniqueWideAggregate_PreservesActionableTailViaReservedBudget()
+    {
+        var repo = new FakeAppRepository();
+        var logger = new DbErrorLogger(repo);
+
+        // Adversarial: 100_000 *distinct* failures with the actionable one at the
+        // final index. Without a reserved tail budget the prefix alone would
+        // exhaust the 256-node budget long before the tail window runs, so the
+        // root cause disappears from all persisted fields. With the reservation
+        // the last-index exception must survive in DB fields and crash.log.
+        var rootCauseMarker = Guid.NewGuid().ToString("N");
+        var children = new Exception[100_000];
+        for (var i = 0; i < children.Length - 1; i++)
+        {
+            children[i] = new InvalidOperationException($"u-{i}");
+        }
+        children[^1] = new NullReferenceException($"actionable-{rootCauseMarker}");
+        var agg = new AggregateException("all-unique-storm", children);
+
+        logger.Log(agg, "all-unique-tail");
+        await logger.FlushAsync(TimeSpan.FromSeconds(5));
+
+        var entry = Assert.Single(repo.ErrorLogs);
+        Assert.Contains("NullReferenceException", entry.ExceptionType);
+        Assert.Contains(rootCauseMarker, entry.Message);
+        Assert.Contains(rootCauseMarker, entry.StackTrace);
+
+        var content = File.ReadAllText(CrashFileLogger.LogFilePath);
+        Assert.Contains(rootCauseMarker, content);
+    }
+
+    [Fact]
+    public async Task Log_NestedWideAggregates_KeepPendingQueueWithinBudget()
+    {
+        var repo = new FakeAppRepository();
+        var logger = new DbErrorLogger(repo);
+
+        // Nested wide: outer has 5 wide children, each of which is itself a wide
+        // aggregate with 1000 children. Without stack.Count accounting in
+        // BuildFullStackTrace, every outer child would queue up to MaxExceptionNodes
+        // new frames on top of already-pending siblings, blowing past the cap.
+        AggregateException MakeInner(int seed)
+        {
+            var inner = new Exception[1000];
+            for (var i = 0; i < inner.Length; i++) inner[i] = new InvalidOperationException($"seed{seed}-i{i}");
+            return new AggregateException($"inner-{seed}", inner);
+        }
+
+        var outer = new AggregateException("outer",
+            MakeInner(1), MakeInner(2), MakeInner(3), MakeInner(4), MakeInner(5));
+
+        logger.Log(outer, "nested-wide");
+        await logger.FlushAsync(TimeSpan.FromSeconds(5));
+
+        var entry = Assert.Single(repo.ErrorLogs);
+        // Bounded persisted stack-trace length — worst case without the bound was
+        // ~5 × 1000 = 5000 child serialisations; with the bound output stays well
+        // under that.
+        Assert.True(entry.StackTrace.Length < 200_000, $"StackTrace grew to {entry.StackTrace.Length} chars — nested-wide bound missing.");
+        Assert.True(entry.Message.Length < 200_000, $"Message grew to {entry.Message.Length} chars — nested-wide bound missing.");
+    }
+
+    [Fact]
+    public async Task Log_DeepAggregateWithWideFanOut_StaysBoundedAtDepthCap()
+    {
+        var repo = new FakeAppRepository();
+        var logger = new DbErrorLogger(repo);
+
+        // Wrap a 4000-child aggregate at depth 31. Without the pre-enqueue depth
+        // guard, each child would recurse to depth 32, return immediately via the
+        // depth cap without consuming node budget, and let the sibling loop emit
+        // one "...(truncated at depth 32)" marker per child — i.e. O(4000) markers
+        // per builder. With the guard, the entire sibling scan is short-circuited
+        // and exactly one "would exceed depth cap" marker is emitted per aggregate
+        // frame that hits the depth limit.
+        var wide = new Exception[4000];
+        for (var i = 0; i < wide.Length; i++) wide[i] = new InvalidOperationException($"leaf-{i}");
+        var deepWide = new AggregateException("deep-wide", wide);
+        Exception current = deepWide;
+        for (var i = 0; i < 31; i++)
+        {
+            current = new AggregateException($"level-{i}", current);
+        }
+
+        var ex = Record.Exception(() => logger.Log(current, "deep-wide"));
+        Assert.Null(ex);
+
+        await logger.FlushAsync(TimeSpan.FromSeconds(5));
+
+        var entry = Assert.Single(repo.ErrorLogs);
+
+        // Bounded field sizes: without the fix these would grow O(MaxAggregateChildEdgeScan).
+        Assert.True(entry.ExceptionType.Length < 10_000, $"ExceptionType grew to {entry.ExceptionType.Length} chars — depth guard not engaged.");
+        Assert.True(entry.Message.Length < 10_000, $"Message grew to {entry.Message.Length} chars — depth guard not engaged.");
+
+        // Exactly one depth-cap marker per builder (no O(N) repetition).
+        Assert.Contains("would exceed depth cap", entry.ExceptionType);
+        Assert.Contains("would exceed depth cap", entry.Message);
+        Assert.Contains("would exceed depth cap", entry.StackTrace);
+        Assert.Equal(1, CountSubstring(entry.ExceptionType, "would exceed depth cap"));
+        Assert.Equal(1, CountSubstring(entry.Message, "would exceed depth cap"));
+        Assert.Equal(1, CountSubstring(entry.StackTrace, "would exceed depth cap"));
+    }
+
+    private static int CountSubstring(string haystack, string needle)
+    {
+        var count = 0;
+        var i = 0;
+        while ((i = haystack.IndexOf(needle, i, StringComparison.Ordinal)) >= 0)
+        {
+            count++;
+            i += needle.Length;
+        }
+        return count;
+    }
+
+    [Fact]
+    public async Task Log_AggregateScanIsCapped_ButSamplesHeadAndTail()
+    {
+        var repo = new FakeAppRepository();
+        var logger = new DbErrorLogger(repo);
+
+        // 100_000 children with a unique needle placed in the MIDDLE region —
+        // outside both the prefix edge-scan cap (4096) and the tail sample
+        // (128). The middle must NOT appear (proving synchronous work is
+        // O(budget), not O(child count)), BUT the "middle not scanned" marker
+        // must appear so operators know the graph was clipped. A regression that
+        // removed the scan cap would iterate all 100k slots and make the middle
+        // needle appear here.
+        var shared = new InvalidOperationException("shared-leaf");
+        var middleMarker = Guid.NewGuid().ToString("N");
+        var middleNeedle = new NullReferenceException($"middle-needle-{middleMarker}");
+        var children = new Exception[100_000];
+        for (var i = 0; i < children.Length; i++) children[i] = shared;
+        children[50_000] = middleNeedle;
+        var agg = new AggregateException("scan-cap-guard", children);
+
+        var ex = Record.Exception(() => logger.Log(agg, "scan-cap"));
+        Assert.Null(ex);
+
+        await logger.FlushAsync(TimeSpan.FromSeconds(5));
+
+        var entry = Assert.Single(repo.ErrorLogs);
+
+        Assert.DoesNotContain(middleMarker, entry.ExceptionType);
+        Assert.DoesNotContain(middleMarker, entry.Message);
+        Assert.DoesNotContain(middleMarker, entry.StackTrace);
+
+        Assert.Contains("middle child(ren) not fully scanned", entry.ExceptionType);
+        Assert.Contains("middle child(ren) not fully scanned", entry.Message);
+        Assert.Contains("middle child(ren) not fully scanned", entry.StackTrace);
+
+        var content = File.ReadAllText(CrashFileLogger.LogFilePath);
+        Assert.Contains("middle child(ren) not fully scanned", content);
+        Assert.DoesNotContain(middleMarker, content);
+    }
+
+    [Fact]
+    public async Task Log_FarTailDistinctException_IsCapturedByTailSample()
+    {
+        var repo = new FakeAppRepository();
+        var logger = new DbErrorLogger(repo);
+
+        // 100_000 children where the actionable root cause sits at the very end —
+        // the realistic "failure storm ends with the real error" shape. The tail
+        // sample window (128) MUST surface it in all three DB fields and in
+        // crash.log even though position 99_999 is far beyond the prefix cap.
+        var shared = new InvalidOperationException("noise");
+        var rootCauseMarker = Guid.NewGuid().ToString("N");
+        var rootCause = new NullReferenceException($"root-cause-{rootCauseMarker}");
+        var children = new Exception[100_000];
+        for (var i = 0; i < children.Length - 1; i++) children[i] = shared;
+        children[^1] = rootCause;
+        var agg = new AggregateException("failure-storm-with-root-cause", children);
+
+        var ex = Record.Exception(() => logger.Log(agg, "tail-sample"));
+        Assert.Null(ex);
+
+        await logger.FlushAsync(TimeSpan.FromSeconds(5));
+
+        var entry = Assert.Single(repo.ErrorLogs);
+
+        // Tail sample must have surfaced the root cause.
+        Assert.Contains("NullReferenceException", entry.ExceptionType);
+        Assert.Contains(rootCauseMarker, entry.Message);
+        Assert.Contains(rootCauseMarker, entry.StackTrace);
+
+        // And the truncation marker must still document the scan policy.
+        Assert.Contains("middle child(ren) not fully scanned", entry.ExceptionType);
+
+        var content = File.ReadAllText(CrashFileLogger.LogFilePath);
+        Assert.Contains(rootCauseMarker, content);
+        Assert.Contains("sampling last", content);
+    }
+
+    [Fact]
+    public async Task Log_MixedAggregate_StillLogsUniqueTailAfterDuplicates()
+    {
+        var repo = new FakeAppRepository();
+        var logger = new DbErrorLogger(repo);
+
+        // [shared, shared, ..., shared, uniqueTail] — codex adversarial regression.
+        // Duplicates must not exhaust the iteration budget before the unique tail is
+        // reached, otherwise the persisted record hides the failure that explains the incident.
+        var shared = new InvalidOperationException("shared-leaf");
+        var uniqueTail = new NullReferenceException("unique-tail-that-explains-the-incident");
+        // Tail position kept within the per-aggregate edge-scan cap (4096) so the
+        // unique failure is preserved on the synchronous logging path. Scans beyond
+        // the cap are covered by Log_AggregateScanIsCapped_IndependentOfChildCount.
+        var mixed = new Exception[3000];
+        for (var i = 0; i < mixed.Length - 1; i++) mixed[i] = shared;
+        mixed[^1] = uniqueTail;
+        var agg = new AggregateException("mixed-dup-then-unique", mixed);
+
+        var ex = Record.Exception(() => logger.Log(agg, "mixed-agg"));
+        Assert.Null(ex);
+
+        await logger.FlushAsync(TimeSpan.FromSeconds(5));
+
+        var entry = Assert.Single(repo.ErrorLogs);
+
+        // Both the duplicate summary AND the unique tail must appear in the persisted record.
+        Assert.Contains("NullReferenceException", entry.ExceptionType);
+        Assert.Contains("unique-tail-that-explains-the-incident", entry.Message);
+        Assert.Contains("NullReferenceException", entry.StackTrace);
+        Assert.Contains("duplicate aggregate child reference(s) skipped", entry.ExceptionType);
+
+        // crash.log must also contain the unique tail.
+        var content = File.ReadAllText(CrashFileLogger.LogFilePath);
+        Assert.Contains("unique-tail-that-explains-the-incident", content);
+        Assert.Contains("NullReferenceException", content);
+    }
+
+    [Fact]
+    public async Task Log_SharedAggregateSubtree_IsSerializedLinearlyInDistinctNodes()
+    {
+        var repo = new FakeAppRepository();
+        var logger = new DbErrorLogger(repo);
+
+        // A shared inner subtree referenced from multiple parent slots would expand
+        // exponentially without reference-equality tracking. Build a fan-out of depth 10
+        // where each level re-uses the same shared child in two slots — 2^10 = 1024
+        // serialized paths without tracking, 11 distinct nodes with it.
+        var shared = new InvalidOperationException("leaf");
+        Exception current = shared;
+        for (var i = 0; i < 10; i++)
+        {
+            current = new AggregateException($"level-{i}", current, current);
+        }
+
+        var ex = Record.Exception(() => logger.Log(current, "shared-subtree"));
+        Assert.Null(ex);
+
+        await logger.FlushAsync(TimeSpan.FromSeconds(5));
+
+        var entry = Assert.Single(repo.ErrorLogs);
+        Assert.Equal("Error", entry.Level);
+
+        // Deterministic proof: with reference tracking the fan-out of depth 10 (1024 paths
+        // untracked) collapses to a linear list of distinct nodes plus shared-reference
+        // markers. ExceptionType serializes ≤ ~50 type-name entries; without tracking it
+        // would serialize ~1024 entries separated by " -> ".
+        Assert.Contains("duplicate aggregate child reference(s) skipped", entry.ExceptionType);
+        Assert.Contains("duplicate aggregate child reference(s) skipped", entry.Message);
+        Assert.Contains("duplicate aggregate child reference(s) skipped", entry.StackTrace);
+        Assert.True(entry.ExceptionType.Split(" -> ").Length < 64, $"ExceptionType contains {entry.ExceptionType.Split(" -> ").Length} segments — suggests exponential expansion.");
+    }
+
+    [Fact]
     public async Task FlushAsync_WritesWarningEntriesToRepository()
     {
         var repo = new FakeAppRepository();
