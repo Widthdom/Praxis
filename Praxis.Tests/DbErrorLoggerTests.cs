@@ -159,15 +159,15 @@ public class DbErrorLoggerTests
 
         // Deterministic proof that the cap engaged: truncation markers present AND
         // each field's length is bounded by O(MaxExceptionNodes), not O(children).
-        Assert.Contains("omitted after node budget", entry.ExceptionType);
-        Assert.Contains("omitted after node budget", entry.Message);
-        Assert.Contains("not enqueued: node budget reached", entry.StackTrace);
+        Assert.Contains("prefix capped at", entry.ExceptionType);
+        Assert.Contains("prefix capped at", entry.Message);
+        Assert.Contains("prefix capped at", entry.StackTrace);
         Assert.True(entry.ExceptionType.Length < 100_000, $"ExceptionType grew to {entry.ExceptionType.Length} chars — cap did not engage.");
         Assert.True(entry.Message.Length < 100_000, $"Message grew to {entry.Message.Length} chars — cap did not engage.");
 
         // crash.log should also show the per-call truncation marker, not every child.
         var content = File.ReadAllText(CrashFileLogger.LogFilePath);
-        Assert.Contains("AggregateException truncated", content);
+        Assert.Contains("prefix capped at", content);
     }
 
     [Fact]
@@ -195,7 +195,7 @@ public class DbErrorLoggerTests
 
         // Deterministic proof of bounded traversal: StackTrace field length is O(budget),
         // not O(children). 50k children without the cap would produce multi-MB output.
-        Assert.Contains("not enqueued: node budget reached", entry.StackTrace);
+        Assert.Contains("prefix capped at", entry.StackTrace);
         Assert.True(entry.StackTrace.Length < 200_000, $"StackTrace grew to {entry.StackTrace.Length} chars — traversal-stack growth not bounded.");
     }
 
@@ -342,6 +342,69 @@ public class DbErrorLoggerTests
     }
 
     [Fact]
+    public async Task Log_AllUniqueWideAggregate_PreservesActionableTailViaReservedBudget()
+    {
+        var repo = new FakeAppRepository();
+        var logger = new DbErrorLogger(repo);
+
+        // Adversarial: 100_000 *distinct* failures with the actionable one at the
+        // final index. Without a reserved tail budget the prefix alone would
+        // exhaust the 256-node budget long before the tail window runs, so the
+        // root cause disappears from all persisted fields. With the reservation
+        // the last-index exception must survive in DB fields and crash.log.
+        var rootCauseMarker = Guid.NewGuid().ToString("N");
+        var children = new Exception[100_000];
+        for (var i = 0; i < children.Length - 1; i++)
+        {
+            children[i] = new InvalidOperationException($"u-{i}");
+        }
+        children[^1] = new NullReferenceException($"actionable-{rootCauseMarker}");
+        var agg = new AggregateException("all-unique-storm", children);
+
+        logger.Log(agg, "all-unique-tail");
+        await logger.FlushAsync(TimeSpan.FromSeconds(5));
+
+        var entry = Assert.Single(repo.ErrorLogs);
+        Assert.Contains("NullReferenceException", entry.ExceptionType);
+        Assert.Contains(rootCauseMarker, entry.Message);
+        Assert.Contains(rootCauseMarker, entry.StackTrace);
+
+        var content = File.ReadAllText(CrashFileLogger.LogFilePath);
+        Assert.Contains(rootCauseMarker, content);
+    }
+
+    [Fact]
+    public async Task Log_NestedWideAggregates_KeepPendingQueueWithinBudget()
+    {
+        var repo = new FakeAppRepository();
+        var logger = new DbErrorLogger(repo);
+
+        // Nested wide: outer has 5 wide children, each of which is itself a wide
+        // aggregate with 1000 children. Without stack.Count accounting in
+        // BuildFullStackTrace, every outer child would queue up to MaxExceptionNodes
+        // new frames on top of already-pending siblings, blowing past the cap.
+        AggregateException MakeInner(int seed)
+        {
+            var inner = new Exception[1000];
+            for (var i = 0; i < inner.Length; i++) inner[i] = new InvalidOperationException($"seed{seed}-i{i}");
+            return new AggregateException($"inner-{seed}", inner);
+        }
+
+        var outer = new AggregateException("outer",
+            MakeInner(1), MakeInner(2), MakeInner(3), MakeInner(4), MakeInner(5));
+
+        logger.Log(outer, "nested-wide");
+        await logger.FlushAsync(TimeSpan.FromSeconds(5));
+
+        var entry = Assert.Single(repo.ErrorLogs);
+        // Bounded persisted stack-trace length — worst case without the bound was
+        // ~5 × 1000 = 5000 child serialisations; with the bound output stays well
+        // under that.
+        Assert.True(entry.StackTrace.Length < 200_000, $"StackTrace grew to {entry.StackTrace.Length} chars — nested-wide bound missing.");
+        Assert.True(entry.Message.Length < 200_000, $"Message grew to {entry.Message.Length} chars — nested-wide bound missing.");
+    }
+
+    [Fact]
     public async Task Log_DeepAggregateWithWideFanOut_StaysBoundedAtDepthCap()
     {
         var repo = new FakeAppRepository();
@@ -427,12 +490,12 @@ public class DbErrorLoggerTests
         Assert.DoesNotContain(middleMarker, entry.Message);
         Assert.DoesNotContain(middleMarker, entry.StackTrace);
 
-        Assert.Contains("middle child(ren) not scanned", entry.ExceptionType);
-        Assert.Contains("middle child(ren) not scanned", entry.Message);
-        Assert.Contains("middle child(ren) not scanned", entry.StackTrace);
+        Assert.Contains("middle child(ren) not fully scanned", entry.ExceptionType);
+        Assert.Contains("middle child(ren) not fully scanned", entry.Message);
+        Assert.Contains("middle child(ren) not fully scanned", entry.StackTrace);
 
         var content = File.ReadAllText(CrashFileLogger.LogFilePath);
-        Assert.Contains("middle child(ren) not scanned", content);
+        Assert.Contains("middle child(ren) not fully scanned", content);
         Assert.DoesNotContain(middleMarker, content);
     }
 
@@ -467,7 +530,7 @@ public class DbErrorLoggerTests
         Assert.Contains(rootCauseMarker, entry.StackTrace);
 
         // And the truncation marker must still document the scan policy.
-        Assert.Contains("middle child(ren) not scanned", entry.ExceptionType);
+        Assert.Contains("middle child(ren) not fully scanned", entry.ExceptionType);
 
         var content = File.ReadAllText(CrashFileLogger.LogFilePath);
         Assert.Contains(rootCauseMarker, content);

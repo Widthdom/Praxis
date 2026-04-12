@@ -56,6 +56,21 @@ public static class CrashFileLogger
     /// </summary>
     internal const int MaxAggregateChildTailSample = 128;
 
+    /// <summary>
+    /// Minimum number of node-budget slots reserved for the tail sample before
+    /// the prefix loop starts consuming budget. Guarantees a far-tail distinct
+    /// exception survives even on an all-unique wide aggregate where the prefix
+    /// alone would otherwise exhaust the budget.
+    /// </summary>
+    internal const int AggregateChildTailReserve = 16;
+
+    /// <summary>
+    /// Evenly-spaced sample points taken from the middle region (between prefix
+    /// scan and tail sample) so a distinct interior child is not deterministically
+    /// lost on very wide aggregates.
+    /// </summary>
+    internal const int MaxAggregateChildMiddleSample = 8;
+
     private sealed class TraversalBudget
     {
         public int RemainingNodes = MaxExceptionNodes;
@@ -285,12 +300,19 @@ public static class CrashFileLogger
             // cheap (one hashset lookup) and collapsed into a single summary line, so
             // a 100k repeated-ref aggregate still produces O(1) output.
             var duplicateCount = 0;
-            var truncated = false;
             var count = agg.InnerExceptions.Count;
             var scanPrefix = Math.Min(count, MaxAggregateChildEdgeScan);
             var tailStart = Math.Max(scanPrefix, count - MaxAggregateChildTailSample);
             var middleSkipped = tailStart - scanPrefix;
+            var hasTail = tailStart < count;
 
+            // Reserve budget so prefix exhaustion cannot starve the tail / interior
+            // sample regions. Ordering: prefix (bounded), interior samples, tail.
+            var reservedForTail = hasTail ? Math.Min(count - tailStart, AggregateChildTailReserve) : 0;
+            var reservedForMiddle = middleSkipped > 0 ? Math.Min(middleSkipped, MaxAggregateChildMiddleSample) : 0;
+            var prefixBudget = Math.Max(0, budget.RemainingNodes - reservedForTail - reservedForMiddle);
+
+            var prefixProcessed = 0;
             for (var i = 0; i < scanPrefix; i++)
             {
                 var child = agg.InnerExceptions[i];
@@ -300,23 +322,45 @@ public static class CrashFileLogger
                     continue;
                 }
 
-                if (budget.RemainingNodes <= 0)
+                if (prefixProcessed >= prefixBudget)
                 {
-                    sb.AppendLine($"{indent}--- AggregateException truncated: {count - i} more child(ren) omitted after reaching node budget ---");
-                    truncated = true;
+                    sb.AppendLine($"{indent}--- AggregateException: prefix capped at {prefixProcessed} distinct child(ren) to reserve budget for interior/tail samples ---");
                     break;
                 }
 
                 sb.AppendLine($"{indent}--- AggregateException[{i}] ---");
                 AppendExceptionChain(sb, child, depth + 1, budget);
+                prefixProcessed++;
             }
 
-            // Suffix sample so a far-tail distinct exception (potential root cause) is not
-            // silently dropped when only the duplicate-noise prefix fits in the scan cap.
-            if (!truncated && middleSkipped > 0)
+            if (reservedForMiddle > 0)
             {
-                sb.AppendLine($"{indent}--- AggregateException: {middleSkipped} middle child(ren) not scanned (edge-scan cap {MaxAggregateChildEdgeScan}); sampling last {count - tailStart} ---");
-                for (var i = tailStart; i < count; i++)
+                sb.AppendLine($"{indent}--- AggregateException: {middleSkipped} middle child(ren) not fully scanned; sampling {reservedForMiddle} evenly spaced ---");
+                for (var s = 0; s < reservedForMiddle; s++)
+                {
+                    var mIdx = scanPrefix + (int)((long)middleSkipped * s / reservedForMiddle);
+                    var child = agg.InnerExceptions[mIdx];
+                    if (budget.Visited.Contains(child))
+                    {
+                        duplicateCount++;
+                        continue;
+                    }
+
+                    if (budget.RemainingNodes <= reservedForTail)
+                    {
+                        break;
+                    }
+
+                    sb.AppendLine($"{indent}--- AggregateException[{mIdx}] (middle sample) ---");
+                    AppendExceptionChain(sb, child, depth + 1, budget);
+                }
+            }
+
+            if (hasTail)
+            {
+                var tailBegin = Math.Max(tailStart, count - reservedForTail);
+                sb.AppendLine($"{indent}--- AggregateException: sampling last {count - tailBegin} tail child(ren) ---");
+                for (var i = tailBegin; i < count; i++)
                 {
                     var child = agg.InnerExceptions[i];
                     if (budget.Visited.Contains(child))
@@ -325,25 +369,14 @@ public static class CrashFileLogger
                         continue;
                     }
 
-                    if (budget.RemainingNodes <= 0)
-                    {
-                        sb.AppendLine($"{indent}--- AggregateException truncated: {count - i} more tail child(ren) omitted after reaching node budget ---");
-                        truncated = true;
-                        break;
-                    }
-
                     sb.AppendLine($"{indent}--- AggregateException[{i}] (tail sample) ---");
                     AppendExceptionChain(sb, child, depth + 1, budget);
                 }
             }
 
-            if (duplicateCount > 0 && !truncated)
+            if (duplicateCount > 0)
             {
-                sb.AppendLine($"{indent}--- AggregateException: {duplicateCount} duplicate child reference(s) skipped (already serialized elsewhere) ---");
-            }
-            else if (duplicateCount > 0)
-            {
-                sb.AppendLine($"{indent}--- AggregateException: {duplicateCount} duplicate child reference(s) also skipped ---");
+                sb.AppendLine($"{indent}--- AggregateException: {duplicateCount} duplicate child reference(s) skipped ---");
             }
         }
         else if (ex.InnerException is not null)
