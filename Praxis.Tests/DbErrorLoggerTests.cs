@@ -236,6 +236,50 @@ public class DbErrorLoggerTests
     }
 
     [Fact]
+    public async Task Log_AggregateScanIsCapped_IndependentOfChildCount()
+    {
+        var repo = new FakeAppRepository();
+        var logger = new DbErrorLogger(repo);
+
+        // 100_000 children with a distinctive unique tail placed WELL beyond the
+        // per-aggregate edge-scan cap (4096). The scan MUST stop before reaching
+        // position 99_999, so the tail's distinctive message must NOT appear in
+        // the persisted record — proving synchronous work is O(budget), not
+        // O(child count), even when duplicates don't drain the node budget.
+        // A regression that removes the scan cap (as 40849ac did) would iterate
+        // all 100k slots and make the tail appear here; this test is the direct
+        // behavioural guard for that class of regression.
+        var shared = new InvalidOperationException("shared-leaf");
+        var tailMarker = Guid.NewGuid().ToString("N"); // unique, unmistakable
+        var uniqueTail = new NullReferenceException($"far-tail-{tailMarker}");
+        var children = new Exception[100_000];
+        for (var i = 0; i < children.Length - 1; i++) children[i] = shared;
+        children[^1] = uniqueTail;
+        var agg = new AggregateException("unbounded-scan-guard", children);
+
+        var ex = Record.Exception(() => logger.Log(agg, "scan-cap"));
+        Assert.Null(ex);
+
+        await logger.FlushAsync(TimeSpan.FromSeconds(5));
+
+        var entry = Assert.Single(repo.ErrorLogs);
+
+        // Tail is beyond cap → must NOT be in the persisted record.
+        Assert.DoesNotContain(tailMarker, entry.ExceptionType);
+        Assert.DoesNotContain(tailMarker, entry.Message);
+        Assert.DoesNotContain(tailMarker, entry.StackTrace);
+
+        // Scan-cap truncation marker must be explicit so operators know the graph was clipped.
+        Assert.Contains("trailing child(ren) not scanned", entry.ExceptionType);
+        Assert.Contains("trailing child(ren) not scanned", entry.Message);
+        Assert.Contains("trailing child(ren) not scanned", entry.StackTrace);
+
+        var content = File.ReadAllText(CrashFileLogger.LogFilePath);
+        Assert.Contains("trailing child(ren) not scanned (edge-scan cap", content);
+        Assert.DoesNotContain(tailMarker, content);
+    }
+
+    [Fact]
     public async Task Log_MixedAggregate_StillLogsUniqueTailAfterDuplicates()
     {
         var repo = new FakeAppRepository();
@@ -246,7 +290,10 @@ public class DbErrorLoggerTests
         // reached, otherwise the persisted record hides the failure that explains the incident.
         var shared = new InvalidOperationException("shared-leaf");
         var uniqueTail = new NullReferenceException("unique-tail-that-explains-the-incident");
-        var mixed = new Exception[5000];
+        // Tail position kept within the per-aggregate edge-scan cap (4096) so the
+        // unique failure is preserved on the synchronous logging path. Scans beyond
+        // the cap are covered by Log_AggregateScanIsCapped_IndependentOfChildCount.
+        var mixed = new Exception[3000];
         for (var i = 0; i < mixed.Length - 1; i++) mixed[i] = shared;
         mixed[^1] = uniqueTail;
         var agg = new AggregateException("mixed-dup-then-unique", mixed);

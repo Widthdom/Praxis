@@ -34,6 +34,18 @@ public static class CrashFileLogger
     /// </summary>
     internal const int MaxExceptionNodes = 256;
 
+    /// <summary>
+    /// Per-<see cref="AggregateException"/> child-edge scan cap, independent of the
+    /// node budget. Bounds synchronous work at the logger level: without this cap,
+    /// an aggregate of N repeated references would iterate N hashset lookups (cheap
+    /// per-op but O(N)) on the caller thread, four times over (two DB builders +
+    /// stack-trace + crash-file). With the cap, work is O(budget) regardless of
+    /// aggregate width. A later distinct tail beyond this cap is intentionally not
+    /// preserved on the synchronous error path — bounded logging is the higher
+    /// priority when the app is already in distress.
+    /// </summary>
+    internal const int MaxAggregateChildEdgeScan = 4096;
+
     private sealed class TraversalBudget
     {
         public int RemainingNodes = MaxExceptionNodes;
@@ -188,7 +200,8 @@ public static class CrashFileLogger
             // a 100k repeated-ref aggregate still produces O(1) output.
             var duplicateCount = 0;
             var truncated = false;
-            for (var i = 0; i < agg.InnerExceptions.Count; i++)
+            var scanLimit = Math.Min(agg.InnerExceptions.Count, MaxAggregateChildEdgeScan);
+            for (var i = 0; i < scanLimit; i++)
             {
                 var child = agg.InnerExceptions[i];
                 if (budget.Visited.Contains(child))
@@ -215,6 +228,11 @@ public static class CrashFileLogger
             else if (duplicateCount > 0)
             {
                 sb.AppendLine($"{indent}--- AggregateException: {duplicateCount} duplicate child reference(s) also skipped ---");
+            }
+
+            if (scanLimit < agg.InnerExceptions.Count)
+            {
+                sb.AppendLine($"{indent}--- AggregateException: {agg.InnerExceptions.Count - scanLimit} trailing child(ren) not scanned (edge-scan cap {MaxAggregateChildEdgeScan}) ---");
             }
         }
         else if (ex.InnerException is not null)

@@ -23,6 +23,14 @@ public sealed class DbErrorLogger : IErrorLogger
     /// </summary>
     private const int MaxExceptionNodes = 256;
 
+    /// <summary>
+    /// Per-<see cref="AggregateException"/> child-edge scan cap, independent of the
+    /// node budget. Matches <see cref="CrashFileLogger.MaxAggregateChildEdgeScan"/>.
+    /// Bounds synchronous work at O(budget) even when an aggregate contains
+    /// millions of repeated references.
+    /// </summary>
+    private const int MaxAggregateChildEdgeScan = 4096;
+
     private sealed class Budget
     {
         public int RemainingNodes = MaxExceptionNodes;
@@ -302,7 +310,8 @@ public sealed class DbErrorLogger : IErrorLogger
                 var toEnqueue = new List<Exception>();
                 var duplicateCount = 0;
                 var truncated = false;
-                for (var i = 0; i < agg.InnerExceptions.Count; i++)
+                var scanLimit = Math.Min(agg.InnerExceptions.Count, MaxAggregateChildEdgeScan);
+                for (var i = 0; i < scanLimit; i++)
                 {
                     var child = agg.InnerExceptions[i];
                     if (!visited.Add(child))
@@ -328,6 +337,11 @@ public sealed class DbErrorLogger : IErrorLogger
                     sb.AppendLine(truncated
                         ? $"...({duplicateCount} duplicate child reference(s) also skipped)"
                         : $"...({duplicateCount} duplicate aggregate child reference(s) skipped)");
+                }
+
+                if (scanLimit < agg.InnerExceptions.Count)
+                {
+                    sb.AppendLine($"...({agg.InnerExceptions.Count - scanLimit} trailing child(ren) not scanned)");
                 }
 
                 // Push in reverse so natural order is preserved in output.
@@ -396,11 +410,9 @@ public sealed class DbErrorLogger : IErrorLogger
 
         if (ex is AggregateException agg)
         {
-            // Scan every child position so later distinct exceptions after duplicates are
-            // still serialized while node budget remains. Duplicates are O(1) each and
-            // collapsed into one summary marker per aggregate.
             var duplicateCount = 0;
-            for (var i = 0; i < agg.InnerExceptions.Count; i++)
+            var scanLimit = Math.Min(agg.InnerExceptions.Count, MaxAggregateChildEdgeScan);
+            for (var i = 0; i < scanLimit; i++)
             {
                 var child = agg.InnerExceptions[i];
                 if (budget.Visited.Contains(child))
@@ -426,6 +438,11 @@ public sealed class DbErrorLogger : IErrorLogger
             if (duplicateCount > 0)
             {
                 parts.Add($"...({duplicateCount} duplicate aggregate child reference(s) skipped)");
+            }
+
+            if (scanLimit < agg.InnerExceptions.Count)
+            {
+                parts.Add($"...({agg.InnerExceptions.Count - scanLimit} trailing child(ren) not scanned)");
             }
 
             return;
@@ -464,7 +481,8 @@ public sealed class DbErrorLogger : IErrorLogger
         if (ex is AggregateException agg)
         {
             var duplicateCount = 0;
-            for (var i = 0; i < agg.InnerExceptions.Count; i++)
+            var scanLimit = Math.Min(agg.InnerExceptions.Count, MaxAggregateChildEdgeScan);
+            for (var i = 0; i < scanLimit; i++)
             {
                 var child = agg.InnerExceptions[i];
                 if (budget.Visited.Contains(child))
@@ -490,6 +508,11 @@ public sealed class DbErrorLogger : IErrorLogger
             if (duplicateCount > 0)
             {
                 parts.Add($"...({duplicateCount} duplicate aggregate child reference(s) skipped)");
+            }
+
+            if (scanLimit < agg.InnerExceptions.Count)
+            {
+                parts.Add($"...({agg.InnerExceptions.Count - scanLimit} trailing child(ren) not scanned)");
             }
 
             return;
