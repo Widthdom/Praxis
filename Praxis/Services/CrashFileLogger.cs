@@ -46,6 +46,16 @@ public static class CrashFileLogger
     /// </summary>
     internal const int MaxAggregateChildEdgeScan = 4096;
 
+    /// <summary>
+    /// Size of the suffix sample scanned after the prefix edge-scan cap kicks in.
+    /// Ensures a far-tail distinct exception (e.g. the actual root cause at the
+    /// end of a huge duplicate-noise aggregate) still reaches persisted logs
+    /// instead of being silently discarded. Total synchronous scan positions per
+    /// aggregate stay bounded at roughly <see cref="MaxAggregateChildEdgeScan"/> +
+    /// <see cref="MaxAggregateChildTailSample"/>.
+    /// </summary>
+    internal const int MaxAggregateChildTailSample = 128;
+
     private sealed class TraversalBudget
     {
         public int RemainingNodes = MaxExceptionNodes;
@@ -210,8 +220,12 @@ public static class CrashFileLogger
             // a 100k repeated-ref aggregate still produces O(1) output.
             var duplicateCount = 0;
             var truncated = false;
-            var scanLimit = Math.Min(agg.InnerExceptions.Count, MaxAggregateChildEdgeScan);
-            for (var i = 0; i < scanLimit; i++)
+            var count = agg.InnerExceptions.Count;
+            var scanPrefix = Math.Min(count, MaxAggregateChildEdgeScan);
+            var tailStart = Math.Max(scanPrefix, count - MaxAggregateChildTailSample);
+            var middleSkipped = tailStart - scanPrefix;
+
+            for (var i = 0; i < scanPrefix; i++)
             {
                 var child = agg.InnerExceptions[i];
                 if (budget.Visited.Contains(child))
@@ -222,13 +236,39 @@ public static class CrashFileLogger
 
                 if (budget.RemainingNodes <= 0)
                 {
-                    sb.AppendLine($"{indent}--- AggregateException truncated: {agg.InnerExceptions.Count - i} more child(ren) omitted after reaching node budget ---");
+                    sb.AppendLine($"{indent}--- AggregateException truncated: {count - i} more child(ren) omitted after reaching node budget ---");
                     truncated = true;
                     break;
                 }
 
                 sb.AppendLine($"{indent}--- AggregateException[{i}] ---");
                 AppendExceptionChain(sb, child, depth + 1, budget);
+            }
+
+            // Suffix sample so a far-tail distinct exception (potential root cause) is not
+            // silently dropped when only the duplicate-noise prefix fits in the scan cap.
+            if (!truncated && middleSkipped > 0)
+            {
+                sb.AppendLine($"{indent}--- AggregateException: {middleSkipped} middle child(ren) not scanned (edge-scan cap {MaxAggregateChildEdgeScan}); sampling last {count - tailStart} ---");
+                for (var i = tailStart; i < count; i++)
+                {
+                    var child = agg.InnerExceptions[i];
+                    if (budget.Visited.Contains(child))
+                    {
+                        duplicateCount++;
+                        continue;
+                    }
+
+                    if (budget.RemainingNodes <= 0)
+                    {
+                        sb.AppendLine($"{indent}--- AggregateException truncated: {count - i} more tail child(ren) omitted after reaching node budget ---");
+                        truncated = true;
+                        break;
+                    }
+
+                    sb.AppendLine($"{indent}--- AggregateException[{i}] (tail sample) ---");
+                    AppendExceptionChain(sb, child, depth + 1, budget);
+                }
             }
 
             if (duplicateCount > 0 && !truncated)
@@ -238,11 +278,6 @@ public static class CrashFileLogger
             else if (duplicateCount > 0)
             {
                 sb.AppendLine($"{indent}--- AggregateException: {duplicateCount} duplicate child reference(s) also skipped ---");
-            }
-
-            if (scanLimit < agg.InnerExceptions.Count)
-            {
-                sb.AppendLine($"{indent}--- AggregateException: {agg.InnerExceptions.Count - scanLimit} trailing child(ren) not scanned (edge-scan cap {MaxAggregateChildEdgeScan}) ---");
             }
         }
         else if (ex.InnerException is not null)

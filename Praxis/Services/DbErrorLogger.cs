@@ -31,6 +31,14 @@ public sealed class DbErrorLogger : IErrorLogger
     /// </summary>
     private const int MaxAggregateChildEdgeScan = 4096;
 
+    /// <summary>
+    /// Suffix sample size. Matches <see cref="CrashFileLogger.MaxAggregateChildTailSample"/>.
+    /// Ensures a far-tail distinct exception is still persisted when the prefix
+    /// scan fills up with duplicate noise, without growing synchronous work
+    /// beyond the combined prefix + tail budget.
+    /// </summary>
+    private const int MaxAggregateChildTailSample = 128;
+
     private sealed class Budget
     {
         public int RemainingNodes = MaxExceptionNodes;
@@ -316,8 +324,12 @@ public sealed class DbErrorLogger : IErrorLogger
                 var toEnqueue = new List<Exception>();
                 var duplicateCount = 0;
                 var truncated = false;
-                var scanLimit = Math.Min(agg.InnerExceptions.Count, MaxAggregateChildEdgeScan);
-                for (var i = 0; i < scanLimit; i++)
+                var count = agg.InnerExceptions.Count;
+                var scanPrefix = Math.Min(count, MaxAggregateChildEdgeScan);
+                var tailStart = Math.Max(scanPrefix, count - MaxAggregateChildTailSample);
+                var middleSkipped = tailStart - scanPrefix;
+
+                for (var i = 0; i < scanPrefix; i++)
                 {
                     var child = agg.InnerExceptions[i];
                     if (!visited.Add(child))
@@ -328,14 +340,37 @@ public sealed class DbErrorLogger : IErrorLogger
 
                     if (toEnqueue.Count >= remainingNodes)
                     {
-                        // Revert: we can't process this one but it isn't a duplicate either.
                         visited.Remove(child);
-                        sb.AppendLine($"...({agg.InnerExceptions.Count - i} aggregate child(ren) not enqueued: node budget reached)");
+                        sb.AppendLine($"...({count - i} aggregate child(ren) not enqueued: node budget reached)");
                         truncated = true;
                         break;
                     }
 
                     toEnqueue.Add(child);
+                }
+
+                if (!truncated && middleSkipped > 0)
+                {
+                    sb.AppendLine($"...({middleSkipped} middle child(ren) not scanned; sampling last {count - tailStart})");
+                    for (var i = tailStart; i < count; i++)
+                    {
+                        var child = agg.InnerExceptions[i];
+                        if (!visited.Add(child))
+                        {
+                            duplicateCount++;
+                            continue;
+                        }
+
+                        if (toEnqueue.Count >= remainingNodes)
+                        {
+                            visited.Remove(child);
+                            sb.AppendLine($"...({count - i} tail child(ren) not enqueued: node budget reached)");
+                            truncated = true;
+                            break;
+                        }
+
+                        toEnqueue.Add(child);
+                    }
                 }
 
                 if (duplicateCount > 0)
@@ -345,12 +380,6 @@ public sealed class DbErrorLogger : IErrorLogger
                         : $"...({duplicateCount} duplicate aggregate child reference(s) skipped)");
                 }
 
-                if (scanLimit < agg.InnerExceptions.Count)
-                {
-                    sb.AppendLine($"...({agg.InnerExceptions.Count - scanLimit} trailing child(ren) not scanned)");
-                }
-
-                // Push in reverse so natural order is preserved in output.
                 for (var i = toEnqueue.Count - 1; i >= 0; i--)
                 {
                     stack.Push((toEnqueue[i], depth + 1));
@@ -426,8 +455,12 @@ public sealed class DbErrorLogger : IErrorLogger
             }
 
             var duplicateCount = 0;
-            var scanLimit = Math.Min(agg.InnerExceptions.Count, MaxAggregateChildEdgeScan);
-            for (var i = 0; i < scanLimit; i++)
+            var count = agg.InnerExceptions.Count;
+            var scanPrefix = Math.Min(count, MaxAggregateChildEdgeScan);
+            var tailStart = Math.Max(scanPrefix, count - MaxAggregateChildTailSample);
+            var middleSkipped = tailStart - scanPrefix;
+
+            for (var i = 0; i < scanPrefix; i++)
             {
                 var child = agg.InnerExceptions[i];
                 if (budget.Visited.Contains(child))
@@ -438,7 +471,7 @@ public sealed class DbErrorLogger : IErrorLogger
 
                 if (budget.RemainingNodes <= 0)
                 {
-                    parts.Add($"...({agg.InnerExceptions.Count - i} aggregate child(ren) omitted after node budget)");
+                    parts.Add($"...({count - i} aggregate child(ren) omitted after node budget)");
                     if (duplicateCount > 0)
                     {
                         parts.Add($"...({duplicateCount} duplicate child reference(s) also skipped)");
@@ -450,14 +483,36 @@ public sealed class DbErrorLogger : IErrorLogger
                 AppendExceptionTypes(parts, child, depth + 1, budget);
             }
 
+            if (middleSkipped > 0)
+            {
+                parts.Add($"...({middleSkipped} middle child(ren) not scanned; sampling last {count - tailStart})");
+                for (var i = tailStart; i < count; i++)
+                {
+                    var child = agg.InnerExceptions[i];
+                    if (budget.Visited.Contains(child))
+                    {
+                        duplicateCount++;
+                        continue;
+                    }
+
+                    if (budget.RemainingNodes <= 0)
+                    {
+                        parts.Add($"...({count - i} tail child(ren) omitted after node budget)");
+                        if (duplicateCount > 0)
+                        {
+                            parts.Add($"...({duplicateCount} duplicate child reference(s) also skipped)");
+                        }
+
+                        return;
+                    }
+
+                    AppendExceptionTypes(parts, child, depth + 1, budget);
+                }
+            }
+
             if (duplicateCount > 0)
             {
                 parts.Add($"...({duplicateCount} duplicate aggregate child reference(s) skipped)");
-            }
-
-            if (scanLimit < agg.InnerExceptions.Count)
-            {
-                parts.Add($"...({agg.InnerExceptions.Count - scanLimit} trailing child(ren) not scanned)");
             }
 
             return;
@@ -502,8 +557,12 @@ public sealed class DbErrorLogger : IErrorLogger
             }
 
             var duplicateCount = 0;
-            var scanLimit = Math.Min(agg.InnerExceptions.Count, MaxAggregateChildEdgeScan);
-            for (var i = 0; i < scanLimit; i++)
+            var count = agg.InnerExceptions.Count;
+            var scanPrefix = Math.Min(count, MaxAggregateChildEdgeScan);
+            var tailStart = Math.Max(scanPrefix, count - MaxAggregateChildTailSample);
+            var middleSkipped = tailStart - scanPrefix;
+
+            for (var i = 0; i < scanPrefix; i++)
             {
                 var child = agg.InnerExceptions[i];
                 if (budget.Visited.Contains(child))
@@ -514,7 +573,7 @@ public sealed class DbErrorLogger : IErrorLogger
 
                 if (budget.RemainingNodes <= 0)
                 {
-                    parts.Add($"...({agg.InnerExceptions.Count - i} aggregate child(ren) omitted after node budget)");
+                    parts.Add($"...({count - i} aggregate child(ren) omitted after node budget)");
                     if (duplicateCount > 0)
                     {
                         parts.Add($"...({duplicateCount} duplicate child reference(s) also skipped)");
@@ -526,14 +585,36 @@ public sealed class DbErrorLogger : IErrorLogger
                 AppendExceptionMessages(parts, child, $"[{i}] ", depth + 1, budget);
             }
 
+            if (middleSkipped > 0)
+            {
+                parts.Add($"...({middleSkipped} middle child(ren) not scanned; sampling last {count - tailStart})");
+                for (var i = tailStart; i < count; i++)
+                {
+                    var child = agg.InnerExceptions[i];
+                    if (budget.Visited.Contains(child))
+                    {
+                        duplicateCount++;
+                        continue;
+                    }
+
+                    if (budget.RemainingNodes <= 0)
+                    {
+                        parts.Add($"...({count - i} tail child(ren) omitted after node budget)");
+                        if (duplicateCount > 0)
+                        {
+                            parts.Add($"...({duplicateCount} duplicate child reference(s) also skipped)");
+                        }
+
+                        return;
+                    }
+
+                    AppendExceptionMessages(parts, child, $"[{i}] ", depth + 1, budget);
+                }
+            }
+
             if (duplicateCount > 0)
             {
                 parts.Add($"...({duplicateCount} duplicate aggregate child reference(s) skipped)");
-            }
-
-            if (scanLimit < agg.InnerExceptions.Count)
-            {
-                parts.Add($"...({agg.InnerExceptions.Count - scanLimit} trailing child(ren) not scanned)");
             }
 
             return;

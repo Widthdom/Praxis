@@ -290,26 +290,25 @@ public class DbErrorLoggerTests
     }
 
     [Fact]
-    public async Task Log_AggregateScanIsCapped_IndependentOfChildCount()
+    public async Task Log_AggregateScanIsCapped_ButSamplesHeadAndTail()
     {
         var repo = new FakeAppRepository();
         var logger = new DbErrorLogger(repo);
 
-        // 100_000 children with a distinctive unique tail placed WELL beyond the
-        // per-aggregate edge-scan cap (4096). The scan MUST stop before reaching
-        // position 99_999, so the tail's distinctive message must NOT appear in
-        // the persisted record — proving synchronous work is O(budget), not
-        // O(child count), even when duplicates don't drain the node budget.
-        // A regression that removes the scan cap (as 40849ac did) would iterate
-        // all 100k slots and make the tail appear here; this test is the direct
-        // behavioural guard for that class of regression.
+        // 100_000 children with a unique needle placed in the MIDDLE region —
+        // outside both the prefix edge-scan cap (4096) and the tail sample
+        // (128). The middle must NOT appear (proving synchronous work is
+        // O(budget), not O(child count)), BUT the "middle not scanned" marker
+        // must appear so operators know the graph was clipped. A regression that
+        // removed the scan cap would iterate all 100k slots and make the middle
+        // needle appear here.
         var shared = new InvalidOperationException("shared-leaf");
-        var tailMarker = Guid.NewGuid().ToString("N"); // unique, unmistakable
-        var uniqueTail = new NullReferenceException($"far-tail-{tailMarker}");
+        var middleMarker = Guid.NewGuid().ToString("N");
+        var middleNeedle = new NullReferenceException($"middle-needle-{middleMarker}");
         var children = new Exception[100_000];
-        for (var i = 0; i < children.Length - 1; i++) children[i] = shared;
-        children[^1] = uniqueTail;
-        var agg = new AggregateException("unbounded-scan-guard", children);
+        for (var i = 0; i < children.Length; i++) children[i] = shared;
+        children[50_000] = middleNeedle;
+        var agg = new AggregateException("scan-cap-guard", children);
 
         var ex = Record.Exception(() => logger.Log(agg, "scan-cap"));
         Assert.Null(ex);
@@ -318,19 +317,55 @@ public class DbErrorLoggerTests
 
         var entry = Assert.Single(repo.ErrorLogs);
 
-        // Tail is beyond cap → must NOT be in the persisted record.
-        Assert.DoesNotContain(tailMarker, entry.ExceptionType);
-        Assert.DoesNotContain(tailMarker, entry.Message);
-        Assert.DoesNotContain(tailMarker, entry.StackTrace);
+        Assert.DoesNotContain(middleMarker, entry.ExceptionType);
+        Assert.DoesNotContain(middleMarker, entry.Message);
+        Assert.DoesNotContain(middleMarker, entry.StackTrace);
 
-        // Scan-cap truncation marker must be explicit so operators know the graph was clipped.
-        Assert.Contains("trailing child(ren) not scanned", entry.ExceptionType);
-        Assert.Contains("trailing child(ren) not scanned", entry.Message);
-        Assert.Contains("trailing child(ren) not scanned", entry.StackTrace);
+        Assert.Contains("middle child(ren) not scanned", entry.ExceptionType);
+        Assert.Contains("middle child(ren) not scanned", entry.Message);
+        Assert.Contains("middle child(ren) not scanned", entry.StackTrace);
 
         var content = File.ReadAllText(CrashFileLogger.LogFilePath);
-        Assert.Contains("trailing child(ren) not scanned (edge-scan cap", content);
-        Assert.DoesNotContain(tailMarker, content);
+        Assert.Contains("middle child(ren) not scanned", content);
+        Assert.DoesNotContain(middleMarker, content);
+    }
+
+    [Fact]
+    public async Task Log_FarTailDistinctException_IsCapturedByTailSample()
+    {
+        var repo = new FakeAppRepository();
+        var logger = new DbErrorLogger(repo);
+
+        // 100_000 children where the actionable root cause sits at the very end —
+        // the realistic "failure storm ends with the real error" shape. The tail
+        // sample window (128) MUST surface it in all three DB fields and in
+        // crash.log even though position 99_999 is far beyond the prefix cap.
+        var shared = new InvalidOperationException("noise");
+        var rootCauseMarker = Guid.NewGuid().ToString("N");
+        var rootCause = new NullReferenceException($"root-cause-{rootCauseMarker}");
+        var children = new Exception[100_000];
+        for (var i = 0; i < children.Length - 1; i++) children[i] = shared;
+        children[^1] = rootCause;
+        var agg = new AggregateException("failure-storm-with-root-cause", children);
+
+        var ex = Record.Exception(() => logger.Log(agg, "tail-sample"));
+        Assert.Null(ex);
+
+        await logger.FlushAsync(TimeSpan.FromSeconds(5));
+
+        var entry = Assert.Single(repo.ErrorLogs);
+
+        // Tail sample must have surfaced the root cause.
+        Assert.Contains("NullReferenceException", entry.ExceptionType);
+        Assert.Contains(rootCauseMarker, entry.Message);
+        Assert.Contains(rootCauseMarker, entry.StackTrace);
+
+        // And the truncation marker must still document the scan policy.
+        Assert.Contains("middle child(ren) not scanned", entry.ExceptionType);
+
+        var content = File.ReadAllText(CrashFileLogger.LogFilePath);
+        Assert.Contains(rootCauseMarker, content);
+        Assert.Contains("sampling last", content);
     }
 
     [Fact]
