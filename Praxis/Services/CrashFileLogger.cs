@@ -89,19 +89,7 @@ public static class CrashFileLogger
     /// </summary>
     public static void WriteException(string source, Exception? exception)
     {
-        try
-        {
-            var normalizedSource = NormalizeSource(source);
-            var sb = new StringBuilder();
-            sb.AppendLine($"[{DateTimeOffset.Now:yyyy-MM-dd HH:mm:ss.fff zzz}] {normalizedSource}");
-            sb.Append(FormatExceptionPayload(exception));
-            sb.AppendLine(new string('-', 80));
-            WriteToDisk(sb.ToString());
-        }
-        catch
-        {
-            // Must never throw — this is the last-resort logger.
-        }
+        _ = TryWriteException(source, exception);
     }
 
     /// <summary>
@@ -110,20 +98,7 @@ public static class CrashFileLogger
     /// </summary>
     public static void WriteInfo(string source, string message)
     {
-        try
-        {
-            var normalizedSource = NormalizeSource(source);
-            var normalizedMessage = NormalizeMessagePayload(message);
-            var sb = new StringBuilder();
-            sb.AppendLine($"[{DateTimeOffset.Now:yyyy-MM-dd HH:mm:ss.fff zzz}] INFO {normalizedSource}");
-            sb.AppendLine($"  {normalizedMessage}");
-            sb.AppendLine(new string('-', 80));
-            WriteToDisk(sb.ToString());
-        }
-        catch
-        {
-            // Must never throw.
-        }
+        _ = TryWriteInfo(source, message);
     }
 
     /// <summary>
@@ -132,20 +107,7 @@ public static class CrashFileLogger
     /// </summary>
     public static void WriteWarning(string source, string message)
     {
-        try
-        {
-            var normalizedSource = NormalizeSource(source);
-            var normalizedMessage = NormalizeMessagePayload(message);
-            var sb = new StringBuilder();
-            sb.AppendLine($"[{DateTimeOffset.Now:yyyy-MM-dd HH:mm:ss.fff zzz}] WARN {normalizedSource}");
-            sb.AppendLine($"  {normalizedMessage}");
-            sb.AppendLine(new string('-', 80));
-            WriteToDisk(sb.ToString());
-        }
-        catch
-        {
-            // Must never throw.
-        }
+        _ = TryWriteWarning(source, message);
     }
 
     internal static string NormalizeSource(string? source)
@@ -161,6 +123,62 @@ public static class CrashFileLogger
         => string.IsNullOrWhiteSpace(message)
             ? string.Empty
             : message.ReplaceLineEndings(" ").Trim();
+
+    internal static bool TryWriteException(string source, Exception? exception)
+    {
+        try
+        {
+            var normalizedSource = NormalizeSource(source);
+            var sb = new StringBuilder();
+            sb.AppendLine($"[{DateTimeOffset.Now:yyyy-MM-dd HH:mm:ss.fff zzz}] {normalizedSource}");
+            sb.Append(FormatExceptionPayload(exception));
+            sb.AppendLine(new string('-', 80));
+            WriteToDisk(sb.ToString());
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    internal static bool TryWriteInfo(string source, string message)
+    {
+        try
+        {
+            var normalizedSource = NormalizeSource(source);
+            var normalizedMessage = NormalizeMessagePayload(message);
+            var sb = new StringBuilder();
+            sb.AppendLine($"[{DateTimeOffset.Now:yyyy-MM-dd HH:mm:ss.fff zzz}] INFO {normalizedSource}");
+            sb.AppendLine($"  {normalizedMessage}");
+            sb.AppendLine(new string('-', 80));
+            WriteToDisk(sb.ToString());
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    internal static bool TryWriteWarning(string source, string message)
+    {
+        try
+        {
+            var normalizedSource = NormalizeSource(source);
+            var normalizedMessage = NormalizeMessagePayload(message);
+            var sb = new StringBuilder();
+            sb.AppendLine($"[{DateTimeOffset.Now:yyyy-MM-dd HH:mm:ss.fff zzz}] WARN {normalizedSource}");
+            sb.AppendLine($"  {normalizedMessage}");
+            sb.AppendLine(new string('-', 80));
+            WriteToDisk(sb.ToString());
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
 
     internal static string SafeExceptionMessage(Exception ex)
     {

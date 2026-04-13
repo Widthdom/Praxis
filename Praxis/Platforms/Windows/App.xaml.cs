@@ -34,9 +34,11 @@ public partial class App : MauiWinUIApplication
 			}
 			catch (Exception ex)
 			{
-				var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);
-				CrashFileLogger.WriteException(nameof(App), ex);
-				CrashFileLogger.WriteWarning(nameof(App), $"Failed to create startup log directory '{startupLogDirectory}': {safeMessage}");
+				SecondaryFailureLogger.ReportStartupLogFailure(
+					nameof(App),
+					startupLogDirectory,
+					"Failed to create startup log directory",
+					ex);
 			}
 		}
 
@@ -87,16 +89,32 @@ public partial class App : MauiWinUIApplication
 
 	private static void WriteStartupLog(string source, Exception? exception)
 	{
-		var content = BuildStartupExceptionLogContent(source, exception);
 		try
 		{
-			AppendStartupLogContent(content);
+			var content = BuildStartupExceptionLogContent(source, exception);
+
+			try
+			{
+				AppendStartupLogContent(content);
+			}
+			catch (Exception ex)
+			{
+				SecondaryFailureLogger.ReportStartupLogFailure(
+					nameof(App),
+					StartupLogPath,
+					"Failed to append startup log",
+					ex,
+					exception);
+			}
 		}
 		catch (Exception ex)
 		{
-			var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);
-			CrashFileLogger.WriteException(nameof(App), ex);
-			CrashFileLogger.WriteWarning(nameof(App), $"Failed to append startup log '{StartupLogPath}': {safeMessage}");
+			SecondaryFailureLogger.ReportStartupLogFailure(
+				nameof(App),
+				StartupLogPath,
+				"Failed to build startup log payload for",
+				ex,
+				exception);
 		}
 	}
 
@@ -104,17 +122,30 @@ public partial class App : MauiWinUIApplication
 	{
 		try
 		{
-			var sb = new StringBuilder();
-			sb.AppendLine($"[{DateTimeOffset.Now:yyyy-MM-dd HH:mm:ss.fff zzz}] {source}");
-			sb.AppendLine(message);
-			sb.AppendLine(new string('-', 80));
-			AppendStartupLogContent(sb.ToString());
+			var content = BuildStartupMessageLogContent(source, message);
+
+			try
+			{
+				AppendStartupLogContent(content);
+			}
+			catch (Exception ex)
+			{
+				SecondaryFailureLogger.ReportStartupLogFailure(
+					nameof(App),
+					StartupLogPath,
+					"Failed to append startup log",
+					ex,
+					originalMessage: message);
+			}
 		}
 		catch (Exception ex)
 		{
-			var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);
-			CrashFileLogger.WriteException(nameof(App), ex);
-			CrashFileLogger.WriteWarning(nameof(App), $"Failed to append startup log '{StartupLogPath}': {safeMessage}");
+			SecondaryFailureLogger.ReportStartupLogFailure(
+				nameof(App),
+				StartupLogPath,
+				"Failed to build startup log payload for",
+				ex,
+				originalMessage: message);
 		}
 	}
 
@@ -123,6 +154,15 @@ public partial class App : MauiWinUIApplication
 		var sb = new StringBuilder();
 		sb.AppendLine($"[{DateTimeOffset.Now:yyyy-MM-dd HH:mm:ss.fff zzz}] {source}");
 		sb.Append(CrashFileLogger.FormatExceptionPayload(exception));
+		sb.AppendLine(new string('-', 80));
+		return sb.ToString();
+	}
+
+	private static string BuildStartupMessageLogContent(string source, string message)
+	{
+		var sb = new StringBuilder();
+		sb.AppendLine($"[{DateTimeOffset.Now:yyyy-MM-dd HH:mm:ss.fff zzz}] {source}");
+		sb.AppendLine(message);
 		sb.AppendLine(new string('-', 80));
 		return sb.ToString();
 	}

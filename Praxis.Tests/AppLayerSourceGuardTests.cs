@@ -239,14 +239,18 @@ public class AppLayerSourceGuardTests
         Assert.Contains("AppStoragePaths.WindowsLocalAppDataRoot", source);
         Assert.Contains("private static bool globalExceptionLoggingHooked;", source);
         Assert.Contains("if (globalExceptionLoggingHooked)", source);
-        Assert.Equal(3, CountOccurrences(source, "var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);"));
         Assert.Contains("var content = BuildStartupExceptionLogContent(source, exception);", source);
+        Assert.Contains("var content = BuildStartupMessageLogContent(source, message);", source);
         Assert.Contains("sb.Append(CrashFileLogger.FormatExceptionPayload(exception));", source);
+        Assert.Contains("private static string BuildStartupMessageLogContent(string source, string message)", source);
         Assert.Contains("AppendStartupLogContent(content);", source);
         Assert.DoesNotContain("exception.ToString()", source, StringComparison.Ordinal);
-        Assert.Contains("CrashFileLogger.WriteException(nameof(App), ex);", source);
-        Assert.Contains("CrashFileLogger.WriteWarning(nameof(App), $\"Failed to create startup log directory '{startupLogDirectory}': {safeMessage}\");", source);
-        Assert.Contains("CrashFileLogger.WriteWarning(nameof(App), $\"Failed to append startup log '{StartupLogPath}': {safeMessage}\");", source);
+        Assert.Equal(5, CountOccurrences(source, "SecondaryFailureLogger.ReportStartupLogFailure("));
+        Assert.Contains("SecondaryFailureLogger.ReportStartupLogFailure(", source);
+        Assert.Contains("\"Failed to create startup log directory\"", source);
+        Assert.Contains("\"Failed to append startup log\"", source);
+        Assert.Contains("\"Failed to build startup log payload for\"", source);
+        Assert.DoesNotContain("CrashFileLogger.WriteWarning(nameof(App), $\"Failed to append startup log", source, StringComparison.Ordinal);
     }
 
     [Fact]
