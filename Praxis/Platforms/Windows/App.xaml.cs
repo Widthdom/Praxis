@@ -34,8 +34,9 @@ public partial class App : MauiWinUIApplication
 			}
 			catch (Exception ex)
 			{
+				var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);
 				CrashFileLogger.WriteException(nameof(App), ex);
-				CrashFileLogger.WriteWarning(nameof(App), $"Failed to create startup log directory '{startupLogDirectory}': {ex.Message}");
+				CrashFileLogger.WriteWarning(nameof(App), $"Failed to create startup log directory '{startupLogDirectory}': {safeMessage}");
 			}
 		}
 
@@ -107,8 +108,9 @@ public partial class App : MauiWinUIApplication
 		}
 		catch (Exception ex)
 		{
+			var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);
 			CrashFileLogger.WriteException(nameof(App), ex);
-			CrashFileLogger.WriteWarning(nameof(App), $"Failed to append startup log '{StartupLogPath}': {ex.Message}");
+			CrashFileLogger.WriteWarning(nameof(App), $"Failed to append startup log '{StartupLogPath}': {safeMessage}");
 		}
 	}
 
@@ -127,8 +129,9 @@ public partial class App : MauiWinUIApplication
 		}
 		catch (Exception ex)
 		{
+			var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);
 			CrashFileLogger.WriteException(nameof(App), ex);
-			CrashFileLogger.WriteWarning(nameof(App), $"Failed to append startup log '{StartupLogPath}': {ex.Message}");
+			CrashFileLogger.WriteWarning(nameof(App), $"Failed to append startup log '{StartupLogPath}': {safeMessage}");
 		}
 	}
 }

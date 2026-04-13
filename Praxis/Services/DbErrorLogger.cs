@@ -161,8 +161,9 @@ public sealed class DbErrorLogger : IErrorLogger
         }
         catch (Exception ex)
         {
+            var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);
             CrashFileLogger.WriteException(nameof(DbErrorLogger), ex);
-            CrashFileLogger.WriteWarning(nameof(DbErrorLogger), $"Flush failed unexpectedly: {ex.Message}");
+            CrashFileLogger.WriteWarning(nameof(DbErrorLogger), $"Flush failed unexpectedly: {safeMessage}");
         }
     }
 
@@ -183,8 +184,9 @@ public sealed class DbErrorLogger : IErrorLogger
         }
         catch (Exception ex)
         {
+            var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);
             CrashFileLogger.WriteException(nameof(DbErrorLogger), ex);
-            CrashFileLogger.WriteWarning(nameof(DbErrorLogger), $"Drain loop failed unexpectedly: {ex.Message}");
+            CrashFileLogger.WriteWarning(nameof(DbErrorLogger), $"Drain loop failed unexpectedly: {safeMessage}");
         }
         finally
         {
@@ -221,8 +223,9 @@ public sealed class DbErrorLogger : IErrorLogger
                 }
                 catch (Exception ex)
                 {
+                    var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);
                     CrashFileLogger.WriteException(nameof(DbErrorLogger), ex);
-                    CrashFileLogger.WriteWarning(nameof(DbErrorLogger), $"Failed to purge old error logs after persisting '{entry.Context}': {ex.Message}");
+                    CrashFileLogger.WriteWarning(nameof(DbErrorLogger), $"Failed to purge old error logs after persisting '{entry.Context}': {safeMessage}");
                 }
             }
         }
@@ -235,8 +238,9 @@ public sealed class DbErrorLogger : IErrorLogger
         }
         catch (Exception ex)
         {
+            var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);
             CrashFileLogger.WriteException(nameof(DbErrorLogger), ex);
-            CrashFileLogger.WriteWarning(nameof(DbErrorLogger), $"Failed to persist {entry.Level} log for '{entry.Context}': {ex.Message}");
+            CrashFileLogger.WriteWarning(nameof(DbErrorLogger), $"Failed to persist {entry.Level} log for '{entry.Context}': {safeMessage}");
         }
         finally
         {

@@ -88,8 +88,9 @@ public class AppLayerSourceGuardTests
 
         Assert.Contains("TryFlushLogs(TimeSpan.FromSeconds(2), \"AppDomain.UnhandledException\");", source);
         Assert.Contains("TryFlushLogs(TimeSpan.FromSeconds(3), \"App.ProcessExit\");", source);
+        Assert.Contains("var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);", source);
         Assert.Contains("CrashFileLogger.WriteException(context, ex);", source);
-        Assert.Contains("CrashFileLogger.WriteWarning(context, $\"Log flush failed: {ex.Message}\");", source);
+        Assert.Contains("CrashFileLogger.WriteWarning(context, $\"Log flush failed: {safeMessage}\");", source);
     }
 
     [Fact]
@@ -196,8 +197,12 @@ public class AppLayerSourceGuardTests
     {
         var source = ReadRepositoryFile("Praxis", "Services", "DbErrorLogger.cs");
 
+        Assert.Equal(4, CountOccurrences(source, "var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);"));
         Assert.Contains("CrashFileLogger.WriteException(nameof(DbErrorLogger), ex);", source);
-        Assert.Contains("CrashFileLogger.WriteWarning(nameof(DbErrorLogger), $\"Drain loop failed unexpectedly: {ex.Message}\");", source);
+        Assert.Contains("CrashFileLogger.WriteWarning(nameof(DbErrorLogger), $\"Drain loop failed unexpectedly: {safeMessage}\");", source);
+        Assert.Contains("CrashFileLogger.WriteWarning(nameof(DbErrorLogger), $\"Flush failed unexpectedly: {safeMessage}\");", source);
+        Assert.Contains("CrashFileLogger.WriteWarning(nameof(DbErrorLogger), $\"Failed to purge old error logs after persisting '{entry.Context}': {safeMessage}\");", source);
+        Assert.Contains("CrashFileLogger.WriteWarning(nameof(DbErrorLogger), $\"Failed to persist {entry.Level} log for '{entry.Context}': {safeMessage}\");", source);
     }
 
     [Fact]
@@ -234,9 +239,10 @@ public class AppLayerSourceGuardTests
         Assert.Contains("AppStoragePaths.WindowsLocalAppDataRoot", source);
         Assert.Contains("private static bool globalExceptionLoggingHooked;", source);
         Assert.Contains("if (globalExceptionLoggingHooked)", source);
+        Assert.Equal(3, CountOccurrences(source, "var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);"));
         Assert.Contains("CrashFileLogger.WriteException(nameof(App), ex);", source);
-        Assert.Contains("CrashFileLogger.WriteWarning(nameof(App), $\"Failed to create startup log directory '{startupLogDirectory}': {ex.Message}\");", source);
-        Assert.Contains("CrashFileLogger.WriteWarning(nameof(App), $\"Failed to append startup log '{StartupLogPath}': {ex.Message}\");", source);
+        Assert.Contains("CrashFileLogger.WriteWarning(nameof(App), $\"Failed to create startup log directory '{startupLogDirectory}': {safeMessage}\");", source);
+        Assert.Contains("CrashFileLogger.WriteWarning(nameof(App), $\"Failed to append startup log '{StartupLogPath}': {safeMessage}\");", source);
     }
 
     [Fact]
