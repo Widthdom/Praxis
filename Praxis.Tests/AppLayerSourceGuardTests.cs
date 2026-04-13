@@ -294,6 +294,19 @@ public class AppLayerSourceGuardTests
     }
 
     [Fact]
+    public void MainViewModel_ActionsWarningHelpers_UseSafeWarningMessageBuilder()
+    {
+        var source = ReadRepositoryFile("Praxis", "ViewModels", "MainViewModel.Actions.cs");
+
+        Assert.Contains("BuildSafeWarningMessage(\"Conflict resolution callback failed\", ex)", source);
+        Assert.Contains("ex => BuildSafeWarningMessage($\"{operation} failed\", ex)", source);
+        Assert.Contains("ex => BuildSafeWarningMessage($\"{operation} completed locally, but window sync notification failed\", ex)", source);
+        Assert.Contains("ex => BuildSafeWarningMessage($\"{operation} applied locally, but theme persistence failed\", ex)", source);
+        Assert.Contains("ex => BuildSafeWarningMessage($\"{operation} completed locally, but dock persistence failed\", ex)", source);
+        Assert.Equal(2, CountOccurrences(source, "errorLogger.LogWarning(BuildSafeWarningMessage(warningFactory, ex), context);"));
+    }
+
+    [Fact]
     public void AppStoragePaths_LegacyMigrationFailures_AreWarningLogged_AndSkipped()
     {
         var source = ReadRepositoryFile("Praxis", "Services", "AppStoragePaths.cs");

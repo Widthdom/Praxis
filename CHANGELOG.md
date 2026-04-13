@@ -17,7 +17,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - Expanded `CommandWorkingDirectoryPolicyTests` to cover mixed-case shell executable names and uppercase env-expanded shell paths
 - Expanded `LaunchTargetResolverTests` to cover quoted relative/`file://` path prefixes, quoted-boundary path names, and malformed quoted URL handling both before and after env expansion
 - Expanded `CrashFileLoggerTests`, `DbErrorLoggerTests`, `SecondaryFailureLoggerTests`, and `AppLayerSourceGuardTests` to cover multiline exception-message normalization, throwing custom exception getters / data formatters, and startup-log failure diagnostics that fall back to an independent file when the primary crash sink cannot be written
-- Expanded `MainViewModelWorkflowIntegrationTests` and `AppLayerSourceGuardTests` to cover hostile exception-message getters on external theme sync, command lookup fallback, and conflict callback warning paths
+- Expanded `MainViewModelWorkflowIntegrationTests` and `AppLayerSourceGuardTests` to cover hostile exception-message getters on `MainViewModel` warning paths, including external theme sync, command lookup fallback, conflict callbacks, clipboard follow-up logging, sync notifications, and theme persistence
 ### [1.1.9] - 2026-04-14
 
 ### Fixed
