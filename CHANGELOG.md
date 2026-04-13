@@ -6,6 +6,8 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 
 ## [Unreleased]
 
+### [1.1.9] - 2026-04-14
+
 ### Fixed
 - `CrashFileLogger` and `DbErrorLogger` now normalize null Warning/Info message payloads to `(no message payload)` before writing to `crash.log` or persisting `ErrorLogEntity` rows, so degraded logging paths keep explicit evidence instead of blank message fields
 
@@ -265,6 +267,8 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 
 ## [Unreleased]
 
+### [1.1.9] - 2026-04-14
+
 ### 修正
 - `CrashFileLogger` と `DbErrorLogger` は、Warning / Info の message payload が `null` の場合でも `crash.log` と `ErrorLogEntity` へ書き込む前に `(no message payload)` へ正規化するようにし、劣化時のログ経路でも空欄ではなく明示的な診断証跡を残すよう修正
 
@@ -469,7 +473,8 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - 重複 `using` ディレクティブの削除と `using` 順序の正規化
 - `MainViewModel` と各 partial クラスに主要ライフサイクルイベントの `LogInfo` 呼び出しを追加
 
-[Unreleased]: https://github.com/Widthdom/Praxis/compare/v1.1.8...HEAD
+[Unreleased]: https://github.com/Widthdom/Praxis/compare/v1.1.9...HEAD
+[1.1.9]: https://github.com/Widthdom/Praxis/compare/v1.1.8...v1.1.9
 [1.1.8]: https://github.com/Widthdom/Praxis/compare/v1.1.7...v1.1.8
 [1.1.7]: https://github.com/Widthdom/Praxis/compare/v1.1.6...v1.1.7
 [1.1.6]: https://github.com/Widthdom/Praxis/compare/v1.1.5...v1.1.6
