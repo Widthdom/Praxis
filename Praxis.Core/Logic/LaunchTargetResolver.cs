@@ -152,6 +152,11 @@ public static class LaunchTargetResolver
             return false;
         }
 
+        if (value.Contains("://", StringComparison.Ordinal))
+        {
+            return false;
+        }
+
         return Path.IsPathRooted(value) ||
                string.Equals(value, ".", StringComparison.Ordinal) ||
                string.Equals(value, "..", StringComparison.Ordinal) ||

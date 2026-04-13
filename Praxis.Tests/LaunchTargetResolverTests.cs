@@ -214,6 +214,34 @@ public class LaunchTargetResolverTests
         }
     }
 
+    [Theory]
+    [InlineData("\"https://example.com\"/path")]
+    [InlineData("'https://example.com'/path")]
+    public void Resolve_ReturnsNone_ForMalformedQuotedUrlPrefixes(string value)
+    {
+        var result = LaunchTargetResolver.Resolve(value);
+        Assert.Equal(LaunchTargetKind.None, result.Kind);
+        Assert.Equal(string.Empty, result.Target);
+    }
+
+    [Fact]
+    public void Resolve_ExpandedEnvironmentVariable_DoesNotNormalizeMalformedQuotedUrlPrefix()
+    {
+        const string key = "PRAXIS_TEST_URL_PREFIX_QUOTED";
+        var oldValue = Environment.GetEnvironmentVariable(key);
+        try
+        {
+            Environment.SetEnvironmentVariable(key, "\"https://example.com\"");
+            var result = LaunchTargetResolver.Resolve("%PRAXIS_TEST_URL_PREFIX_QUOTED%/path");
+            Assert.Equal(LaunchTargetKind.None, result.Kind);
+            Assert.Equal(string.Empty, result.Target);
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable(key, oldValue);
+        }
+    }
+
     [Fact]
     public void Resolve_ExpandsSingleQuotedEnvironmentVariables_ForHttpUrlValues()
     {
