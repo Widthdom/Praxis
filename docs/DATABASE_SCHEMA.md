@@ -149,9 +149,9 @@ Purpose: application error logs (exception, warning, and info logging).
 | `TimestampUtc` | `datetime` | Yes | No | Timestamp when the entry was logged (UTC) |
 
 Application-level behavior:
-- Error entries written by `DbErrorLogger` via `IErrorLogger.Log(exception, context)`. Exception type chains, concatenated inner messages, and bounded stack output (including nested inner exceptions inside `AggregateException`, aggregate child index labels, duplicate-collapse markers, and middle/tail sampling markers for very wide aggregates) are captured. A null exception payload is persisted as an Error entry with the placeholder message `(no exception payload)` instead of throwing from the logger.
-- Warning entries written by `DbErrorLogger` via `IErrorLogger.LogWarning(message, context)`. A null message payload is normalized to `(no message payload)` before both crash-file and DB persistence.
-- Info entries written by `DbErrorLogger` via `IErrorLogger.LogInfo(message, context)`. A null message payload is normalized to `(no message payload)` before both crash-file and DB persistence.
+- Error entries written by `DbErrorLogger` via `IErrorLogger.Log(exception, context)`. Exception type chains, concatenated inner messages, and bounded stack output (including nested inner exceptions inside `AggregateException`, aggregate child index labels, duplicate-collapse markers, and middle/tail sampling markers for very wide aggregates) are captured. Context is normalized to a single line, and a null exception payload is persisted as an Error entry with the placeholder message `(no exception payload)` instead of throwing from the logger.
+- Warning entries written by `DbErrorLogger` via `IErrorLogger.LogWarning(message, context)`. Context and message payload are normalized to a single line before both crash-file and DB persistence; null/blank payloads become `(unknown context)` and `(no message payload)`.
+- Info entries written by `DbErrorLogger` via `IErrorLogger.LogInfo(message, context)`. Context and message payload are normalized to a single line before both crash-file and DB persistence; null/blank payloads become `(unknown context)` and `(no message payload)`.
 - All log calls first write synchronously to a file-based crash log (`CrashFileLogger` → `crash.log`) for crash-safe persistence, then enqueue for async DB write.
 - `FlushAsync(timeout)` is the graceful-shutdown path: it waits for both queued entries and already-dequeued in-flight DB writes until the timeout elapses.
 - Retention cleanup: `DELETE FROM ErrorLogEntity WHERE TimestampUtc < threshold` (30-day retention; cleanup is triggered only when Error entries are written, and deletes all rows older than the threshold regardless of Level).
@@ -166,7 +166,7 @@ Purpose: synchronous file-based fallback for crash-safe logging (not stored in S
   - macOS (Mac Catalyst): `~/Library/Application Support/Praxis/crash.log`
 - Written synchronously by `CrashFileLogger` on every `IErrorLogger` call (Error/Warning/Info levels).
 - Automatic rotation at 512 KB (`crash.log` → `crash.log.old`).
-- Contains timestamped entries with full exception chains, stack traces, and `Exception.Data` dictionaries.
+- Contains timestamped entries with full exception chains, stack traces, and `Exception.Data` dictionaries; breadcrumb-style source/context/message fields are normalized to a single line and use placeholders when blank.
 - Intended as a diagnostic fallback when the SQLite database is unavailable or the process terminates before async DB writes complete.
 
 ## Table: AppSettingEntity

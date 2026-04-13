@@ -57,14 +57,15 @@ public sealed class DbErrorLogger : IErrorLogger
 
     public void Log(Exception exception, string context)
     {
+        var normalizedContext = CrashFileLogger.NormalizeContext(context);
         if (exception is null)
         {
-            CrashFileLogger.WriteException($"ERROR [{context}]", null);
+            CrashFileLogger.WriteException($"ERROR [{normalizedContext}]", null);
 
             var nullEntry = new ErrorLogEntry
             {
                 Level = "Error",
-                Context = context,
+                Context = normalizedContext,
                 ExceptionType = string.Empty,
                 Message = "(no exception payload)",
                 StackTrace = string.Empty,
@@ -77,13 +78,13 @@ public sealed class DbErrorLogger : IErrorLogger
         }
 
         // 1. Write to crash file synchronously — survives abrupt termination.
-        CrashFileLogger.WriteException($"ERROR [{context}]", exception);
+        CrashFileLogger.WriteException($"ERROR [{normalizedContext}]", exception);
 
         // 2. Build a rich entry that captures the full exception chain.
         var entry = new ErrorLogEntry
         {
             Level = "Error",
-            Context = context,
+            Context = normalizedContext,
             ExceptionType = BuildExceptionTypeChain(exception),
             Message = BuildFullMessage(exception),
             StackTrace = BuildFullStackTrace(exception),
@@ -97,13 +98,14 @@ public sealed class DbErrorLogger : IErrorLogger
 
     public void LogWarning(string message, string context)
     {
+        var normalizedContext = CrashFileLogger.NormalizeContext(context);
         var normalizedMessage = NormalizeMessagePayload(message);
-        CrashFileLogger.WriteWarning(context, normalizedMessage);
+        CrashFileLogger.WriteWarning(normalizedContext, normalizedMessage);
 
         var entry = new ErrorLogEntry
         {
             Level = "Warning",
-            Context = context,
+            Context = normalizedContext,
             ExceptionType = string.Empty,
             Message = normalizedMessage,
             StackTrace = string.Empty,
@@ -116,13 +118,14 @@ public sealed class DbErrorLogger : IErrorLogger
 
     public void LogInfo(string message, string context)
     {
+        var normalizedContext = CrashFileLogger.NormalizeContext(context);
         var normalizedMessage = NormalizeMessagePayload(message);
-        CrashFileLogger.WriteInfo(context, normalizedMessage);
+        CrashFileLogger.WriteInfo(normalizedContext, normalizedMessage);
 
         var entry = new ErrorLogEntry
         {
             Level = "Info",
-            Context = context,
+            Context = normalizedContext,
             ExceptionType = string.Empty,
             Message = normalizedMessage,
             StackTrace = string.Empty,
@@ -242,7 +245,7 @@ public sealed class DbErrorLogger : IErrorLogger
     }
 
     private static string NormalizeMessagePayload(string? message)
-        => message ?? CrashFileLogger.MissingMessagePayloadPlaceholder;
+        => CrashFileLogger.NormalizeMessagePayload(message);
 
     /// <summary>
     /// Builds a string showing the full type chain, e.g.

@@ -173,16 +173,19 @@ public class AppLayerSourceGuardTests
 
         AssertMethodContainsInOrder(source,
             "public void Log(Exception exception, string context)",
-            "CrashFileLogger.WriteException($\"ERROR [{context}]\", exception);",
+            "var normalizedContext = CrashFileLogger.NormalizeContext(context);",
+            "CrashFileLogger.WriteException($\"ERROR [{normalizedContext}]\", exception);",
             "pendingWrites.Enqueue(entry);");
         AssertMethodContainsInOrder(source,
             "public void LogWarning(string message, string context)",
-            "CrashFileLogger.WriteWarning(context, normalizedMessage);",
+            "var normalizedContext = CrashFileLogger.NormalizeContext(context);",
+            "CrashFileLogger.WriteWarning(normalizedContext, normalizedMessage);",
             "pendingWrites.Enqueue(entry);");
         Assert.Contains("var normalizedMessage = NormalizeMessagePayload(message);", source);
         AssertMethodContainsInOrder(source,
             "public void LogInfo(string message, string context)",
-            "CrashFileLogger.WriteInfo(context, normalizedMessage);",
+            "var normalizedContext = CrashFileLogger.NormalizeContext(context);",
+            "CrashFileLogger.WriteInfo(normalizedContext, normalizedMessage);",
             "pendingWrites.Enqueue(entry);");
         Assert.Contains("var normalizedMessage = NormalizeMessagePayload(message);", source);
     }
@@ -427,16 +430,26 @@ public class AppLayerSourceGuardTests
         return count;
     }
 
-    private static void AssertMethodContainsInOrder(string text, string methodSignature, string first, string second)
+    private static void AssertMethodContainsInOrder(string text, string methodSignature, params string[] markers)
     {
         var methodStart = text.IndexOf(methodSignature, StringComparison.Ordinal);
         Assert.True(methodStart >= 0, $"Missing method: {methodSignature}");
+        Assert.True(markers.Length >= 2, "At least two ordered markers are required.");
 
         var methodBody = text[methodStart..];
-        var firstIndex = methodBody.IndexOf(first, StringComparison.Ordinal);
-        var secondIndex = methodBody.IndexOf(second, StringComparison.Ordinal);
+        var previousIndex = -1;
+        string? previousMarker = null;
+        foreach (var marker in markers)
+        {
+            var currentIndex = methodBody.IndexOf(marker, StringComparison.Ordinal);
+            Assert.True(currentIndex >= 0, $"Missing marker: {marker}");
+            if (previousMarker is not null)
+            {
+                Assert.True(currentIndex > previousIndex, $"Expected '{previousMarker}' to appear before '{marker}'.");
+            }
 
-        Assert.True(firstIndex >= 0, $"Missing marker: {first}");
-        Assert.True(secondIndex > firstIndex, $"Expected '{first}' to appear before '{second}'.");
+            previousIndex = currentIndex;
+            previousMarker = marker;
+        }
     }
 }

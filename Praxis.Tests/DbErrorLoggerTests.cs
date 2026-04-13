@@ -39,6 +39,27 @@ public class DbErrorLoggerTests
     }
 
     [Fact]
+    public async Task Log_BlankContext_UsesPlaceholderInFileAndDatabase()
+    {
+        var repo = new FakeAppRepository();
+        var logger = new DbErrorLogger(repo);
+        var marker = $"blank-context-{Guid.NewGuid():N}";
+
+        logger.Log(new InvalidOperationException(marker), " \r\n ");
+
+        await logger.FlushAsync(TimeSpan.FromSeconds(5));
+
+        var entry = Assert.Single(repo.ErrorLogs);
+        Assert.Equal("Error", entry.Level);
+        Assert.Equal(CrashFileLogger.MissingContextPlaceholder, entry.Context);
+        Assert.Contains(marker, entry.Message);
+
+        var content = File.ReadAllText(CrashFileLogger.LogFilePath);
+        Assert.Contains($"ERROR [{CrashFileLogger.MissingContextPlaceholder}]", content);
+        Assert.Contains(marker, content);
+    }
+
+    [Fact]
     public void LogInfo_DoesNotThrow()
     {
         var repo = new FakeAppRepository();
@@ -69,6 +90,26 @@ public class DbErrorLoggerTests
     }
 
     [Fact]
+    public async Task LogInfo_MultilineMessage_IsCollapsedToSingleLine()
+    {
+        var repo = new FakeAppRepository();
+        var logger = new DbErrorLogger(repo);
+        var first = $"info-a-{Guid.NewGuid():N}";
+        var second = $"info-b-{Guid.NewGuid():N}";
+
+        logger.LogInfo($"{first}\r\n{second}", "info-multiline");
+
+        await logger.FlushAsync(TimeSpan.FromSeconds(5));
+
+        var entry = Assert.Single(repo.ErrorLogs);
+        Assert.Equal("Info", entry.Level);
+        Assert.Equal($"{first} {second}", entry.Message);
+
+        var content = File.ReadAllText(CrashFileLogger.LogFilePath);
+        Assert.Contains($"{first} {second}", content);
+    }
+
+    [Fact]
     public void LogWarning_DoesNotThrow()
     {
         var repo = new FakeAppRepository();
@@ -96,6 +137,27 @@ public class DbErrorLoggerTests
         var content = File.ReadAllText(CrashFileLogger.LogFilePath);
         Assert.Contains(CrashFileLogger.MissingMessagePayloadPlaceholder, content);
         Assert.Contains(context, content);
+    }
+
+    [Fact]
+    public async Task LogWarning_BlankMessage_AndMultilineContext_AreNormalizedInFileAndDatabase()
+    {
+        var repo = new FakeAppRepository();
+        var logger = new DbErrorLogger(repo);
+        var context = $"warn-{Guid.NewGuid():N}";
+
+        logger.LogWarning(" \r\n ", $"  {context}\r\nchild  ");
+
+        await logger.FlushAsync(TimeSpan.FromSeconds(5));
+
+        var entry = Assert.Single(repo.ErrorLogs);
+        Assert.Equal("Warning", entry.Level);
+        Assert.Equal($"{context} child", entry.Context);
+        Assert.Equal(CrashFileLogger.MissingMessagePayloadPlaceholder, entry.Message);
+
+        var content = File.ReadAllText(CrashFileLogger.LogFilePath);
+        Assert.Contains($"WARN {context} child", content);
+        Assert.Contains(CrashFileLogger.MissingMessagePayloadPlaceholder, content);
     }
 
     [Fact]

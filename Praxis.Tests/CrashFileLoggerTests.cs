@@ -103,6 +103,17 @@ public class CrashFileLoggerTests
     }
 
     [Fact]
+    public void WriteInfo_BlankMessage_UsesPlaceholder_AndSourceIsNormalized()
+    {
+        var sourceMarker = $"source-{Guid.NewGuid():N}";
+        CrashFileLogger.WriteInfo($"  {sourceMarker}\r\nchild  ", " \r\n ");
+
+        var content = File.ReadAllText(CrashFileLogger.LogFilePath);
+        Assert.Contains($"INFO {sourceMarker} child", content);
+        Assert.Contains(CrashFileLogger.MissingMessagePayloadPlaceholder, content);
+    }
+
+    [Fact]
     public void WriteWarning_WritesToFile()
     {
         var marker = $"WarnTest-{Guid.NewGuid()}";
@@ -119,6 +130,29 @@ public class CrashFileLoggerTests
 
         var content = File.ReadAllText(CrashFileLogger.LogFilePath);
         Assert.Contains(CrashFileLogger.MissingMessagePayloadPlaceholder, content);
+    }
+
+    [Fact]
+    public void WriteWarning_MultilineMessage_IsCollapsedToSingleLine()
+    {
+        var first = $"warn-a-{Guid.NewGuid():N}";
+        var second = $"warn-b-{Guid.NewGuid():N}";
+        CrashFileLogger.WriteWarning("test", $"{first}\r\n{second}");
+
+        var content = File.ReadAllText(CrashFileLogger.LogFilePath);
+        Assert.Contains($"{first} {second}", content);
+        Assert.DoesNotContain($"{first}\n{second}", content, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void WriteException_BlankSource_UsesPlaceholder()
+    {
+        var marker = $"blank-source-{Guid.NewGuid():N}";
+        CrashFileLogger.WriteException(" \r\n ", new InvalidOperationException(marker));
+
+        var content = File.ReadAllText(CrashFileLogger.LogFilePath);
+        Assert.Contains(CrashFileLogger.MissingSourcePlaceholder, content);
+        Assert.Contains(marker, content);
     }
 
     [Fact]

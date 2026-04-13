@@ -70,6 +70,8 @@ public static class CrashFileLogger
     /// lost on very wide aggregates.
     /// </summary>
     internal const int MaxAggregateChildMiddleSample = 8;
+    internal const string MissingSourcePlaceholder = "(unknown source)";
+    internal const string MissingContextPlaceholder = "(unknown context)";
     internal const string MissingMessagePayloadPlaceholder = "(no message payload)";
 
     private sealed class TraversalBudget
@@ -88,8 +90,9 @@ public static class CrashFileLogger
     {
         try
         {
+            var normalizedSource = NormalizeSource(source);
             var sb = new StringBuilder();
-            sb.AppendLine($"[{DateTimeOffset.Now:yyyy-MM-dd HH:mm:ss.fff zzz}] {source}");
+            sb.AppendLine($"[{DateTimeOffset.Now:yyyy-MM-dd HH:mm:ss.fff zzz}] {normalizedSource}");
 
             if (exception is null)
             {
@@ -117,9 +120,10 @@ public static class CrashFileLogger
     {
         try
         {
+            var normalizedSource = NormalizeSource(source);
             var normalizedMessage = NormalizeMessagePayload(message);
             var sb = new StringBuilder();
-            sb.AppendLine($"[{DateTimeOffset.Now:yyyy-MM-dd HH:mm:ss.fff zzz}] INFO {source}");
+            sb.AppendLine($"[{DateTimeOffset.Now:yyyy-MM-dd HH:mm:ss.fff zzz}] INFO {normalizedSource}");
             sb.AppendLine($"  {normalizedMessage}");
             sb.AppendLine(new string('-', 80));
             WriteToDisk(sb.ToString());
@@ -138,9 +142,10 @@ public static class CrashFileLogger
     {
         try
         {
+            var normalizedSource = NormalizeSource(source);
             var normalizedMessage = NormalizeMessagePayload(message);
             var sb = new StringBuilder();
-            sb.AppendLine($"[{DateTimeOffset.Now:yyyy-MM-dd HH:mm:ss.fff zzz}] WARN {source}");
+            sb.AppendLine($"[{DateTimeOffset.Now:yyyy-MM-dd HH:mm:ss.fff zzz}] WARN {normalizedSource}");
             sb.AppendLine($"  {normalizedMessage}");
             sb.AppendLine(new string('-', 80));
             WriteToDisk(sb.ToString());
@@ -151,8 +156,25 @@ public static class CrashFileLogger
         }
     }
 
-    private static string NormalizeMessagePayload(string? message)
-        => message ?? MissingMessagePayloadPlaceholder;
+    internal static string NormalizeSource(string? source)
+        => NormalizeInlineField(source, MissingSourcePlaceholder);
+
+    internal static string NormalizeContext(string? context)
+        => NormalizeInlineField(context, MissingContextPlaceholder);
+
+    internal static string NormalizeMessagePayload(string? message)
+        => NormalizeInlineField(message, MissingMessagePayloadPlaceholder);
+
+    private static string NormalizeInlineField(string? value, string placeholder)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return placeholder;
+        }
+
+        var normalized = value.ReplaceLineEndings(" ").Trim();
+        return string.IsNullOrWhiteSpace(normalized) ? placeholder : normalized;
+    }
 
     /// <summary>
     /// Returns a message suitable for logging without triggering
