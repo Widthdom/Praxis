@@ -458,6 +458,13 @@ public class DbErrorLoggerTests
         return count;
     }
 
+    private static void AssertPersistFailureExceptionLogged(string content, string level, string context)
+    {
+        Assert.Contains($"Failed to persist {level} log for '{context}': Simulated DB failure", content);
+        Assert.Contains("Type: System.Exception", content);
+        Assert.Contains("Message: Simulated DB failure", content);
+    }
+
     [Fact]
     public async Task Log_AggregateScanIsCapped_ButSamplesHeadAndTail()
     {
@@ -856,7 +863,7 @@ public class DbErrorLoggerTests
 
         var content = File.ReadAllText(CrashFileLogger.LogFilePath);
         Assert.Contains(message, content);
-        Assert.Contains($"Failed to persist Warning log for '{context}': Simulated DB failure", content);
+        AssertPersistFailureExceptionLogged(content, "Warning", context);
     }
 
     [Fact]
@@ -874,7 +881,7 @@ public class DbErrorLoggerTests
 
         var content = File.ReadAllText(CrashFileLogger.LogFilePath);
         Assert.Contains(message, content);
-        Assert.Contains($"Failed to persist Info log for '{context}': Simulated DB failure", content);
+        AssertPersistFailureExceptionLogged(content, "Info", context);
     }
 
     [Fact]
