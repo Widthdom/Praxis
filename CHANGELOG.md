@@ -9,10 +9,13 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 ### Fixed
 - `CommandWorkingDirectoryPolicy` now treats Windows shell executable names case-insensitively, so uppercase or mixed-case `cmd.exe` / `powershell.exe` / `pwsh.exe` / `wt.exe` paths still switch `WorkingDirectory` to the user profile instead of inheriting the Praxis process directory
 - `LaunchTargetResolver` now preserves valid path targets whose first or last character is a quote, normalizes env-expanded quoted rooted/home/relative and `file://` path prefixes, and explicitly excludes quoted non-file URI-scheme prefixes so malformed quoted URLs still fail closed
+- `CrashFileLogger` now keeps crash-log records alive even when custom exception `Message` / `StackTrace` getters or `Exception.Data` key/value `ToString()` implementations throw, and exception messages are flattened to single-line output so malformed payloads do not corrupt inline log formatting
+- `DbErrorLogger` now persists the same single-line exception-message normalization and getter-failure fallback markers into `ErrorLogEntity`, and app/process-exit flush failures plus Windows startup-log write failures now record the full exception body to `crash.log` before their warning breadcrumb
 
 ### Tests
 - Expanded `CommandWorkingDirectoryPolicyTests` to cover mixed-case shell executable names and uppercase env-expanded shell paths
 - Expanded `LaunchTargetResolverTests` to cover quoted relative/`file://` path prefixes, quoted-boundary path names, and malformed quoted URL handling both before and after env expansion
+- Expanded `CrashFileLoggerTests`, `DbErrorLoggerTests`, and `AppLayerSourceGuardTests` to cover multiline exception-message normalization, throwing custom exception getters / data formatters, and full-exception crash logging for flush/startup-log failure paths
 ### [1.1.9] - 2026-04-14
 
 ### Fixed

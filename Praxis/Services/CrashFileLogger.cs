@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Text;
 
 namespace Praxis.Services;
@@ -165,6 +166,35 @@ public static class CrashFileLogger
     internal static string NormalizeMessagePayload(string? message)
         => NormalizeInlineField(message, MissingMessagePayloadPlaceholder);
 
+    internal static string NormalizeExceptionMessage(string? message)
+        => string.IsNullOrWhiteSpace(message)
+            ? string.Empty
+            : message.ReplaceLineEndings(" ").Trim();
+
+    internal static string SafeExceptionMessage(Exception ex)
+    {
+        try
+        {
+            return NormalizeExceptionMessage(ex.Message);
+        }
+        catch (Exception getterEx)
+        {
+            return $"(failed to read exception message: {DescribeLoggingFailure(getterEx)})";
+        }
+    }
+
+    internal static string SafeExceptionStackTrace(Exception ex)
+    {
+        try
+        {
+            return ex.StackTrace ?? string.Empty;
+        }
+        catch (Exception getterEx)
+        {
+            return $"(failed to read stack trace: {DescribeLoggingFailure(getterEx)})";
+        }
+    }
+
     private static string NormalizeInlineField(string? value, string placeholder)
     {
         if (string.IsNullOrWhiteSpace(value))
@@ -209,7 +239,7 @@ public static class CrashFileLogger
             return $"AggregateException ({agg.InnerExceptions.Count} inner exceptions; top-level summary omitted — wide/nested aggregate)";
         }
 
-        return ex.Message;
+        return SafeExceptionMessage(ex);
     }
 
     /// <summary>
@@ -257,7 +287,7 @@ public static class CrashFileLogger
         }
 
         // Safe: total tree size <= cap, so .Message expansion is bounded.
-        summary = agg.Message;
+        summary = SafeExceptionMessage(agg);
         return true;
     }
 
@@ -293,23 +323,17 @@ public static class CrashFileLogger
         sb.AppendLine($"{indent}Type: {ex.GetType().FullName ?? ex.GetType().Name}");
         sb.AppendLine($"{indent}Message: {SafeMessage(ex)}");
 
-        if (!string.IsNullOrWhiteSpace(ex.StackTrace))
+        var stackTrace = SafeExceptionStackTrace(ex);
+        if (!string.IsNullOrWhiteSpace(stackTrace))
         {
             sb.AppendLine($"{indent}StackTrace:");
-            foreach (var line in ex.StackTrace.Split('\n'))
+            foreach (var line in stackTrace.Split('\n'))
             {
                 sb.AppendLine($"{indent}  {line.TrimEnd()}");
             }
         }
 
-        if (ex.Data.Count > 0)
-        {
-            sb.AppendLine($"{indent}Data:");
-            foreach (var key in ex.Data.Keys)
-            {
-                sb.AppendLine($"{indent}  {key} = {ex.Data[key]}");
-            }
-        }
+        AppendExceptionData(sb, ex, indent);
 
         if (ex is AggregateException agg)
         {
@@ -520,5 +544,65 @@ public static class CrashFileLogger
         }
 
         return trimmed;
+    }
+
+    private static void AppendExceptionData(StringBuilder sb, Exception ex, string indent)
+    {
+        try
+        {
+            if (ex.Data.Count == 0)
+            {
+                return;
+            }
+
+            sb.AppendLine($"{indent}Data:");
+            foreach (DictionaryEntry entry in ex.Data)
+            {
+                var safeKey = FormatExceptionDataItem(entry.Key, "key");
+                var safeValue = FormatExceptionDataItem(entry.Value, "value");
+                sb.AppendLine($"{indent}  {safeKey} = {safeValue}");
+            }
+        }
+        catch (Exception dataEx)
+        {
+            sb.AppendLine($"{indent}Data: (failed to enumerate Exception.Data: {DescribeLoggingFailure(dataEx)})");
+        }
+    }
+
+    private static string FormatExceptionDataItem(object? value, string role)
+    {
+        if (value is null)
+        {
+            return "(null)";
+        }
+
+        try
+        {
+            var text = NormalizeExceptionMessage(value.ToString());
+            return string.IsNullOrEmpty(text) ? "(empty)" : text;
+        }
+        catch (Exception formatEx)
+        {
+            return $"(failed to format data {role}: {DescribeLoggingFailure(formatEx)})";
+        }
+    }
+
+    private static string DescribeLoggingFailure(Exception ex)
+    {
+        var typeName = ex.GetType().FullName ?? ex.GetType().Name;
+        string? message;
+        try
+        {
+            message = ex.Message;
+        }
+        catch
+        {
+            message = null;
+        }
+
+        var normalizedMessage = NormalizeExceptionMessage(message);
+        return string.IsNullOrEmpty(normalizedMessage)
+            ? typeName
+            : $"{typeName}: {normalizedMessage}";
     }
 }

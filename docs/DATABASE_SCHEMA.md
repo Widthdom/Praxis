@@ -149,7 +149,7 @@ Purpose: application error logs (exception, warning, and info logging).
 | `TimestampUtc` | `datetime` | Yes | No | Timestamp when the entry was logged (UTC) |
 
 Application-level behavior:
-- Error entries written by `DbErrorLogger` via `IErrorLogger.Log(exception, context)`. Exception type chains, concatenated inner messages, and bounded stack output (including nested inner exceptions inside `AggregateException`, aggregate child index labels, duplicate-collapse markers, and middle/tail sampling markers for very wide aggregates) are captured. Context is normalized to a single line, and a null exception payload is persisted as an Error entry with the placeholder message `(no exception payload)` instead of throwing from the logger.
+- Error entries written by `DbErrorLogger` via `IErrorLogger.Log(exception, context)`. Exception type chains, concatenated single-line inner messages, and bounded stack output (including nested inner exceptions inside `AggregateException`, aggregate child index labels, duplicate-collapse markers, and middle/tail sampling markers for very wide aggregates) are captured. Context is normalized to a single line, and a null exception payload is persisted as an Error entry with the placeholder message `(no exception payload)` instead of throwing from the logger. Custom `Message` / `StackTrace` getters that throw degrade to inline fallback markers instead of aborting logging.
 - Warning entries written by `DbErrorLogger` via `IErrorLogger.LogWarning(message, context)`. Context and message payload are normalized to a single line before both crash-file and DB persistence; null/blank payloads become `(unknown context)` and `(no message payload)`.
 - Info entries written by `DbErrorLogger` via `IErrorLogger.LogInfo(message, context)`. Context and message payload are normalized to a single line before both crash-file and DB persistence; null/blank payloads become `(unknown context)` and `(no message payload)`.
 - All log calls first write synchronously to a file-based crash log (`CrashFileLogger` → `crash.log`) for crash-safe persistence, then enqueue for async DB write.
@@ -166,7 +166,7 @@ Purpose: synchronous file-based fallback for crash-safe logging (not stored in S
   - macOS (Mac Catalyst): `~/Library/Application Support/Praxis/crash.log`
 - Written synchronously by `CrashFileLogger` on every `IErrorLogger` call (Error/Warning/Info levels).
 - Automatic rotation at 512 KB (`crash.log` → `crash.log.old`).
-- Contains timestamped entries with full exception chains, stack traces, and `Exception.Data` dictionaries; breadcrumb-style source/context/message fields are normalized to a single line and use placeholders when blank.
+- Contains timestamped entries with full exception chains, stack traces, and `Exception.Data` dictionaries; breadcrumb-style source/context/message fields are normalized to a single line and use placeholders when blank, exception messages are flattened to one line, and `Exception.Data` key/value formatting failures are replaced with inline fallback markers instead of aborting the crash record.
 - Intended as a diagnostic fallback when the SQLite database is unavailable or the process terminates before async DB writes complete.
 
 ## Table: AppSettingEntity
@@ -247,11 +247,12 @@ Praxis が使う SQLite テーブル設計を明文化します。
 - `UpdatedAtUtc` だけが異なり内容が一致する場合は非競合として扱います。
 - `LaunchLogEntity.Source` の現行値は `button` / `command` です。
 - `LaunchLogEntity` は保持期間超過分を `TimestampUtc` 条件で一括削除します。
-- `ErrorLogEntity` は `IErrorLogger.Log(exception, context)`（Error）、`IErrorLogger.LogWarning(message, context)`（Warning）、および `IErrorLogger.LogInfo(message, context)`（Info）経由で `DbErrorLogger` が書き込みます。全ログ呼び出しはまず `CrashFileLogger` でファイルに同期書き込みし、その後 DB への非同期書き込みをキューイングします。例外 payload が `null` でもロガー自体は落ちず、`(no exception payload)` を持つ Error エントリとして扱います。Warning/Info の message payload が `null` の場合も空値のままにせず `(no message payload)` へ正規化して `crash.log` と DB の双方へ残します。`AggregateException` 配下にさらに InnerException がネストしている場合も、型チェーンとメッセージチェーンに含めます。StackTrace 列は `Exception.ToString()` 丸ごとではなく、各例外ノードの `Exception.StackTrace` を基に aggregate 子 index ラベル、duplicate 集約マーカー、very wide aggregate 向け middle/tail sampling マーカー付きで構築した有界出力です。`FlushAsync(timeout)` はグレースフルシャットダウン経路として、保留キューだけでなくすでに dequeue 済みの in-flight DB 書き込みもタイムアウトまで待機し、timeout や予期しない flush 失敗でも `crash.log` に例外本体と warning breadcrumb を残します。保持期間クリーンアップは Error エントリ書き込み時にのみ発動し、Level を問わず閾値より古い全行を削除します（30 日保持）。Error/Warning/Info いずれの DB 書き込み失敗でも、また purge 失敗でも、クラッシュファイルに記録済みの本体を残したまま `crash.log` に例外本体と warning breadcrumb の両方を追加します。
+- `ErrorLogEntity` は `IErrorLogger.Log(exception, context)`（Error）、`IErrorLogger.LogWarning(message, context)`（Warning）、および `IErrorLogger.LogInfo(message, context)`（Info）経由で `DbErrorLogger` が書き込みます。全ログ呼び出しはまず `CrashFileLogger` でファイルに同期書き込みし、その後 DB への非同期書き込みをキューイングします。例外 payload が `null` でもロガー自体は落ちず、`(no exception payload)` を持つ Error エントリとして扱います。Warning/Info の message payload が `null` の場合も空値のままにせず `(no message payload)` へ正規化して `crash.log` と DB の双方へ残します。例外メッセージは単一行へ正規化され、`Message` / `StackTrace` getter を投げる custom exception でも inline fallback marker に劣化して記録を落としません。`AggregateException` 配下にさらに InnerException がネストしている場合も、型チェーンとメッセージチェーンに含めます。StackTrace 列は `Exception.ToString()` 丸ごとではなく、各例外ノードの `Exception.StackTrace` を基に aggregate 子 index ラベル、duplicate 集約マーカー、very wide aggregate 向け middle/tail sampling マーカー付きで構築した有界出力です。`FlushAsync(timeout)` はグレースフルシャットダウン経路として、保留キューだけでなくすでに dequeue 済みの in-flight DB 書き込みもタイムアウトまで待機し、timeout や予期しない flush 失敗でも `crash.log` に例外本体と warning breadcrumb を残します。保持期間クリーンアップは Error エントリ書き込み時にのみ発動し、Level を問わず閾値より古い全行を削除します（30 日保持）。Error/Warning/Info いずれの DB 書き込み失敗でも、また purge 失敗でも、クラッシュファイルに記録済みの本体を残したまま `crash.log` に例外本体と warning breadcrumb の両方を追加します。
 - `crash.log` はクラッシュ安全ロギング用の同期ファイルベースフォールバックです（SQLite 外）:
   - Windows: `%LOCALAPPDATA%\Praxis\crash.log`
   - macOS（Mac Catalyst）: `~/Library/Application Support/Praxis/crash.log`
   - 512 KB で自動ローテーション（`crash.log` → `crash.log.old`）
+  - source/context/message の行内項目と exception message は単一行へ正規化し、`Exception.Data` の key/value `ToString()` や custom exception getter が投げても inline fallback marker に置き換えて crash record 自体は残します
   - SQLite が利用不可、または非同期 DB 書き込み完了前にプロセスが終了した場合の診断用フォールバックです。
 - `AppSettingEntity` の既知キー:
   - `theme`（`Light` / `Dark` / `System`。数値 enum 文字列は無効として扱い `System` にフォールバックし、範囲外 enum 値の保存も `System` に正規化する）

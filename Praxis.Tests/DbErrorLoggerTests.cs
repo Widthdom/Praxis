@@ -236,6 +236,63 @@ public class DbErrorLoggerTests
     }
 
     [Fact]
+    public async Task Log_MultilineExceptionMessages_AreCollapsedInDatabaseAndCrashFile()
+    {
+        var repo = new FakeAppRepository();
+        var logger = new DbErrorLogger(repo);
+        var first = $"outer-a-{Guid.NewGuid():N}";
+        var second = $"outer-b-{Guid.NewGuid():N}";
+        var third = $"inner-a-{Guid.NewGuid():N}";
+        var fourth = $"inner-b-{Guid.NewGuid():N}";
+        var exception = new InvalidOperationException($"{first}\r\n{second}",
+            new ArgumentException($"{third}\n{fourth}"));
+
+        logger.Log(exception, "multiline-message");
+        await logger.FlushAsync(TimeSpan.FromSeconds(5));
+
+        var entry = Assert.Single(repo.ErrorLogs);
+        Assert.Contains($"{first} {second}", entry.Message);
+        Assert.Contains($"{third} {fourth}", entry.Message);
+        Assert.DoesNotContain($"{first}\n{second}", entry.Message, StringComparison.Ordinal);
+
+        var content = File.ReadAllText(CrashFileLogger.LogFilePath);
+        Assert.Contains($"Message: {first} {second}", content);
+        Assert.Contains($"Message: {third} {fourth}", content);
+    }
+
+    [Fact]
+    public async Task Log_WhenExceptionMessageGetterThrows_PersistsFailureMarker()
+    {
+        var repo = new FakeAppRepository();
+        var logger = new DbErrorLogger(repo);
+
+        logger.Log(new ThrowingMessageException(), "message-getter");
+        await logger.FlushAsync(TimeSpan.FromSeconds(5));
+
+        var entry = Assert.Single(repo.ErrorLogs);
+        Assert.Contains("failed to read exception message: System.InvalidOperationException: message getter failure", entry.Message);
+
+        var content = File.ReadAllText(CrashFileLogger.LogFilePath);
+        Assert.Contains("failed to read exception message: System.InvalidOperationException: message getter failure", content);
+    }
+
+    [Fact]
+    public async Task Log_WhenExceptionStackTraceGetterThrows_PersistsFailureMarker()
+    {
+        var repo = new FakeAppRepository();
+        var logger = new DbErrorLogger(repo);
+
+        logger.Log(new ThrowingStackTraceException(), "stacktrace-getter");
+        await logger.FlushAsync(TimeSpan.FromSeconds(5));
+
+        var entry = Assert.Single(repo.ErrorLogs);
+        Assert.Contains("failed to read stack trace: System.InvalidOperationException: stack trace getter failure", entry.StackTrace);
+
+        var content = File.ReadAllText(CrashFileLogger.LogFilePath);
+        Assert.Contains("failed to read stack trace: System.InvalidOperationException: stack trace getter failure", content);
+    }
+
+    [Fact]
     public async Task Log_WideAggregateFanOut_IsBoundedByNodeBudget()
     {
         var repo = new FakeAppRepository();
@@ -1134,5 +1191,15 @@ public class DbErrorLoggerTests
         public Task<ThemeMode> GetThemeAsync(CancellationToken cancellationToken = default) => Task.FromResult(ThemeMode.System);
         public Task<IReadOnlyList<Guid>> GetDockButtonIdsAsync(CancellationToken cancellationToken = default) => Task.FromResult<IReadOnlyList<Guid>>([]);
         public Task SetDockButtonIdsAsync(IReadOnlyList<Guid> ids, CancellationToken cancellationToken = default) => Task.CompletedTask;
+    }
+
+    private sealed class ThrowingMessageException : Exception
+    {
+        public override string Message => throw new InvalidOperationException("message getter failure");
+    }
+
+    private sealed class ThrowingStackTraceException : Exception
+    {
+        public override string? StackTrace => throw new InvalidOperationException("stack trace getter failure");
     }
 }

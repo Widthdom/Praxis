@@ -324,9 +324,10 @@ public sealed class DbErrorLogger : IErrorLogger
             }
 
             sb.AppendLine();
-            if (!string.IsNullOrEmpty(current.StackTrace))
+            var stackTrace = CrashFileLogger.SafeExceptionStackTrace(current);
+            if (!string.IsNullOrEmpty(stackTrace))
             {
-                sb.AppendLine(current.StackTrace);
+                sb.AppendLine(stackTrace);
             }
 
             if (current is AggregateException agg)
@@ -459,7 +460,7 @@ public sealed class DbErrorLogger : IErrorLogger
             return $"AggregateException ({agg.InnerExceptions.Count} inner exceptions; top-level summary omitted — wide/nested aggregate)";
         }
 
-        return ex.Message;
+        return CrashFileLogger.SafeExceptionMessage(ex);
     }
 
     private static void AppendExceptionTypes(List<string> parts, Exception ex, int depth, Budget budget)

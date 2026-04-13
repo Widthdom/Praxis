@@ -162,6 +162,7 @@ public partial class App : Application
         }
         catch (Exception ex)
         {
+            CrashFileLogger.WriteException(context, ex);
             CrashFileLogger.WriteWarning(context, $"Log flush failed: {ex.Message}");
         }
     }
