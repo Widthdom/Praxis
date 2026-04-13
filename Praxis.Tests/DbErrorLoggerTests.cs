@@ -842,6 +842,42 @@ public class DbErrorLoggerTests
     }
 
     [Fact]
+    public async Task LogWarning_DoesNotThrow_WhenRepositoryFails()
+    {
+        var repo = new FailingAppRepository();
+        var logger = new DbErrorLogger(repo);
+        var context = $"warn-repo-fail-{Guid.NewGuid():N}";
+        var message = $"warn repo fail test {Guid.NewGuid():N}";
+
+        logger.LogWarning(message, context);
+
+        var ex = await Record.ExceptionAsync(() => logger.FlushAsync(TimeSpan.FromSeconds(2)));
+        Assert.Null(ex);
+
+        var content = File.ReadAllText(CrashFileLogger.LogFilePath);
+        Assert.Contains(message, content);
+        Assert.Contains($"Failed to persist Warning log for '{context}': Simulated DB failure", content);
+    }
+
+    [Fact]
+    public async Task LogInfo_DoesNotThrow_WhenRepositoryFails()
+    {
+        var repo = new FailingAppRepository();
+        var logger = new DbErrorLogger(repo);
+        var context = $"info-repo-fail-{Guid.NewGuid():N}";
+        var message = $"info repo fail test {Guid.NewGuid():N}";
+
+        logger.LogInfo(message, context);
+
+        var ex = await Record.ExceptionAsync(() => logger.FlushAsync(TimeSpan.FromSeconds(2)));
+        Assert.Null(ex);
+
+        var content = File.ReadAllText(CrashFileLogger.LogFilePath);
+        Assert.Contains(message, content);
+        Assert.Contains($"Failed to persist Info log for '{context}': Simulated DB failure", content);
+    }
+
+    [Fact]
     public async Task Log_PreservesErrorContext_OnPersistedEntry()
     {
         var repo = new FakeAppRepository();
