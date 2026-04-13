@@ -186,6 +186,88 @@ public class LaunchTargetResolverTests
         }
     }
 
+    [Theory]
+    [InlineData("\"../docs\"/readme.txt", "../docs/readme.txt")]
+    [InlineData("\"docs/subdir\"/readme.txt", "docs/subdir/readme.txt")]
+    public void Resolve_NormalizesQuotedRelativePathPrefixes(string value, string expected)
+    {
+        var result = LaunchTargetResolver.Resolve(value);
+        Assert.Equal(LaunchTargetKind.FileSystemPath, result.Kind);
+        Assert.Equal(expected, result.Target);
+    }
+
+    [Fact]
+    public void Resolve_ExpandsEnvironmentVariables_ThenNormalizesQuotedRelativePathPrefix()
+    {
+        const string key = "PRAXIS_TEST_RELATIVE_QUOTED";
+        var oldValue = Environment.GetEnvironmentVariable(key);
+        try
+        {
+            Environment.SetEnvironmentVariable(key, "\"../docs\"");
+            var result = LaunchTargetResolver.Resolve("%PRAXIS_TEST_RELATIVE_QUOTED%/readme.txt");
+            Assert.Equal(LaunchTargetKind.FileSystemPath, result.Kind);
+            Assert.Equal("../docs/readme.txt", result.Target);
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable(key, oldValue);
+        }
+    }
+
+    [Theory]
+    [InlineData("\"https://example.com\"/path")]
+    [InlineData("'https://example.com'/path")]
+    public void Resolve_ReturnsNone_ForMalformedQuotedUrlPrefixes(string value)
+    {
+        var result = LaunchTargetResolver.Resolve(value);
+        Assert.Equal(LaunchTargetKind.None, result.Kind);
+        Assert.Equal(string.Empty, result.Target);
+    }
+
+    [Fact]
+    public void Resolve_ExpandedEnvironmentVariable_DoesNotNormalizeMalformedQuotedUrlPrefix()
+    {
+        const string key = "PRAXIS_TEST_URL_PREFIX_QUOTED";
+        var oldValue = Environment.GetEnvironmentVariable(key);
+        try
+        {
+            Environment.SetEnvironmentVariable(key, "\"https://example.com\"");
+            var result = LaunchTargetResolver.Resolve("%PRAXIS_TEST_URL_PREFIX_QUOTED%/path");
+            Assert.Equal(LaunchTargetKind.None, result.Kind);
+            Assert.Equal(string.Empty, result.Target);
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable(key, oldValue);
+        }
+    }
+
+    [Fact]
+    public void Resolve_NormalizesQuotedFileUriPrefix()
+    {
+        var result = LaunchTargetResolver.Resolve("\"file:///tmp/base\"/child.txt");
+        Assert.Equal(LaunchTargetKind.FileSystemPath, result.Kind);
+        Assert.Equal("/tmp/base/child.txt", result.Target);
+    }
+
+    [Fact]
+    public void Resolve_ExpandedEnvironmentVariable_NormalizesQuotedFileUriPrefix()
+    {
+        const string key = "PRAXIS_TEST_FILE_URL_PREFIX_QUOTED";
+        var oldValue = Environment.GetEnvironmentVariable(key);
+        try
+        {
+            Environment.SetEnvironmentVariable(key, "\"file:///tmp/base\"");
+            var result = LaunchTargetResolver.Resolve("%PRAXIS_TEST_FILE_URL_PREFIX_QUOTED%/child.txt");
+            Assert.Equal(LaunchTargetKind.FileSystemPath, result.Kind);
+            Assert.Equal("/tmp/base/child.txt", result.Target);
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable(key, oldValue);
+        }
+    }
+
     [Fact]
     public void Resolve_ExpandsSingleQuotedEnvironmentVariables_ForHttpUrlValues()
     {
@@ -262,5 +344,16 @@ public class LaunchTargetResolverTests
         var result = LaunchTargetResolver.Resolve("\"https://example.com");
         Assert.Equal(LaunchTargetKind.None, result.Kind);
         Assert.Equal(string.Empty, result.Target);
+    }
+
+    [Theory]
+    [InlineData("\"drafts\"/notes.txt")]
+    [InlineData("\"drafts/notes.txt")]
+    [InlineData("/tmp/report\"")]
+    public void Resolve_PreservesPathLikeValues_WhoseBoundaryCharacterIsAQuote(string value)
+    {
+        var result = LaunchTargetResolver.Resolve(value);
+        Assert.Equal(LaunchTargetKind.FileSystemPath, result.Kind);
+        Assert.Equal(value, result.Target);
     }
 }

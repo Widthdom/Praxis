@@ -31,7 +31,8 @@ public static class CommandWorkingDirectoryPolicy
         }
 
         var lastSeparator = Math.Max(trimmed.LastIndexOf('/'), trimmed.LastIndexOf('\\'));
-        return lastSeparator >= 0 ? trimmed[(lastSeparator + 1)..] : trimmed;
+        var fileName = lastSeparator >= 0 ? trimmed[(lastSeparator + 1)..] : trimmed;
+        return fileName.ToLowerInvariant();
     }
 
     private static string TrimEnclosingQuotes(string value)

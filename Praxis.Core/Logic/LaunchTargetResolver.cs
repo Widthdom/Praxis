@@ -107,17 +107,67 @@ public static class LaunchTargetResolver
             return normalized;
         }
 
-        if (trimmed.Length >= 3 && (trimmed[0] == '"' || trimmed[0] == '\''))
+        if (TryNormalizeQuotedPathPrefix(trimmed, out var normalizedQuotedPathPrefix))
         {
-            var closingQuoteIndex = trimmed.IndexOf(trimmed[0], 1);
-            if (closingQuoteIndex > 0 &&
-                closingQuoteIndex < trimmed.Length - 1 &&
-                (trimmed[closingQuoteIndex + 1] == '/' || trimmed[closingQuoteIndex + 1] == '\\'))
-            {
-                return trimmed[1..closingQuoteIndex] + trimmed[(closingQuoteIndex + 1)..];
-            }
+            return normalizedQuotedPathPrefix;
         }
 
         return trimmed;
+    }
+
+    private static bool TryNormalizeQuotedPathPrefix(string value, out string normalized)
+    {
+        normalized = string.Empty;
+        if (value.Length < 3 || (value[0] != '"' && value[0] != '\''))
+        {
+            return false;
+        }
+
+        var closingQuoteIndex = value.IndexOf(value[0], 1);
+        if (closingQuoteIndex <= 0 || closingQuoteIndex >= value.Length - 1)
+        {
+            return false;
+        }
+
+        var separator = value[closingQuoteIndex + 1];
+        if (separator != '/' && separator != '\\')
+        {
+            return false;
+        }
+
+        var quotedPrefix = value[1..closingQuoteIndex].Trim();
+        if (!LooksLikeExpandablePathPrefix(quotedPrefix))
+        {
+            return false;
+        }
+
+        normalized = quotedPrefix + value[(closingQuoteIndex + 1)..];
+        return true;
+    }
+
+    private static bool LooksLikeExpandablePathPrefix(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return false;
+        }
+
+        if (value.Contains("://", StringComparison.Ordinal))
+        {
+            return Uri.TryCreate(value, UriKind.Absolute, out var uri) && uri.IsFile;
+        }
+
+        return Path.IsPathRooted(value) ||
+               string.Equals(value, ".", StringComparison.Ordinal) ||
+               string.Equals(value, "..", StringComparison.Ordinal) ||
+               string.Equals(value, "~", StringComparison.Ordinal) ||
+               value.StartsWith("./", StringComparison.Ordinal) ||
+               value.StartsWith(".\\", StringComparison.Ordinal) ||
+               value.StartsWith("../", StringComparison.Ordinal) ||
+               value.StartsWith("..\\", StringComparison.Ordinal) ||
+               value.StartsWith("~/", StringComparison.Ordinal) ||
+               value.StartsWith("~\\", StringComparison.Ordinal) ||
+               value.Contains('/') ||
+               value.Contains('\\');
     }
 }
