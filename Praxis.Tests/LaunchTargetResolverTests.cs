@@ -263,4 +263,16 @@ public class LaunchTargetResolverTests
         Assert.Equal(LaunchTargetKind.None, result.Kind);
         Assert.Equal(string.Empty, result.Target);
     }
+
+    [Theory]
+    [InlineData("\"C:\\Temp\\file.txt")]
+    [InlineData("C:\\Temp\\file.txt\"")]
+    [InlineData("\"~/Documents/Praxis")]
+    [InlineData("~/Documents/Praxis\"")]
+    public void Resolve_ReturnsNone_ForUnbalancedWrappingQuote_OnPathLikeValues(string value)
+    {
+        var result = LaunchTargetResolver.Resolve(value);
+        Assert.Equal(LaunchTargetKind.None, result.Kind);
+        Assert.Equal(string.Empty, result.Target);
+    }
 }

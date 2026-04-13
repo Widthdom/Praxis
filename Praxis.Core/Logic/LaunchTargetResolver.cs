@@ -118,6 +118,28 @@ public static class LaunchTargetResolver
             }
         }
 
+        if (HasMalformedWrappingQuote(trimmed))
+        {
+            return string.Empty;
+        }
+
         return trimmed;
+    }
+
+    private static bool HasMalformedWrappingQuote(string value)
+    {
+        if (string.IsNullOrEmpty(value))
+        {
+            return false;
+        }
+
+        var startsWithQuote = value[0] == '"' || value[0] == '\'';
+        var endsWithQuote = value[^1] == '"' || value[^1] == '\'';
+        if (!startsWithQuote && !endsWithQuote)
+        {
+            return false;
+        }
+
+        return value.Length < 2 || !startsWithQuote || !endsWithQuote || value[0] != value[^1];
     }
 }
