@@ -94,6 +94,15 @@ public class CrashFileLoggerTests
     }
 
     [Fact]
+    public void WriteInfo_NullMessage_UsesPlaceholder()
+    {
+        CrashFileLogger.WriteInfo("test", null!);
+
+        var content = File.ReadAllText(CrashFileLogger.LogFilePath);
+        Assert.Contains(CrashFileLogger.MissingMessagePayloadPlaceholder, content);
+    }
+
+    [Fact]
     public void WriteWarning_WritesToFile()
     {
         var marker = $"WarnTest-{Guid.NewGuid()}";
@@ -101,6 +110,15 @@ public class CrashFileLoggerTests
 
         var content = File.ReadAllText(CrashFileLogger.LogFilePath);
         Assert.Contains(marker, content);
+    }
+
+    [Fact]
+    public void WriteWarning_NullMessage_UsesPlaceholder()
+    {
+        CrashFileLogger.WriteWarning("test", null!);
+
+        var content = File.ReadAllText(CrashFileLogger.LogFilePath);
+        Assert.Contains(CrashFileLogger.MissingMessagePayloadPlaceholder, content);
     }
 
     [Fact]

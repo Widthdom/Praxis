@@ -49,6 +49,26 @@ public class DbErrorLoggerTests
     }
 
     [Fact]
+    public async Task LogInfo_NullMessage_UsesPlaceholderInFileAndDatabase()
+    {
+        var repo = new FakeAppRepository();
+        var logger = new DbErrorLogger(repo);
+        var context = $"info-null-{Guid.NewGuid():N}";
+
+        logger.LogInfo(null!, context);
+
+        await logger.FlushAsync(TimeSpan.FromSeconds(5));
+
+        var entry = Assert.Single(repo.ErrorLogs);
+        Assert.Equal("Info", entry.Level);
+        Assert.Equal(CrashFileLogger.MissingMessagePayloadPlaceholder, entry.Message);
+
+        var content = File.ReadAllText(CrashFileLogger.LogFilePath);
+        Assert.Contains(CrashFileLogger.MissingMessagePayloadPlaceholder, content);
+        Assert.Contains(context, content);
+    }
+
+    [Fact]
     public void LogWarning_DoesNotThrow()
     {
         var repo = new FakeAppRepository();
@@ -56,6 +76,26 @@ public class DbErrorLoggerTests
 
         var ex = Record.Exception(() => logger.LogWarning("warn message", "context"));
         Assert.Null(ex);
+    }
+
+    [Fact]
+    public async Task LogWarning_NullMessage_UsesPlaceholderInFileAndDatabase()
+    {
+        var repo = new FakeAppRepository();
+        var logger = new DbErrorLogger(repo);
+        var context = $"warn-null-{Guid.NewGuid():N}";
+
+        logger.LogWarning(null!, context);
+
+        await logger.FlushAsync(TimeSpan.FromSeconds(5));
+
+        var entry = Assert.Single(repo.ErrorLogs);
+        Assert.Equal("Warning", entry.Level);
+        Assert.Equal(CrashFileLogger.MissingMessagePayloadPlaceholder, entry.Message);
+
+        var content = File.ReadAllText(CrashFileLogger.LogFilePath);
+        Assert.Contains(CrashFileLogger.MissingMessagePayloadPlaceholder, content);
+        Assert.Contains(context, content);
     }
 
     [Fact]
