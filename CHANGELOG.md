@@ -8,11 +8,11 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 
 ### Fixed
 - `CommandWorkingDirectoryPolicy` now treats Windows shell executable names case-insensitively, so uppercase or mixed-case `cmd.exe` / `powershell.exe` / `pwsh.exe` / `wt.exe` paths still switch `WorkingDirectory` to the user profile instead of inheriting the Praxis process directory
-- `LaunchTargetResolver` now rejects path-like arguments with one-sided wrapping quotes, so malformed values like `"C:\Temp\file.txt` no longer fall through as bogus filesystem targets while malformed quoted URLs already fail closed
+- `LaunchTargetResolver` now preserves valid path targets whose first or last character is a quote, while still normalizing env-expanded quoted rooted/home path prefixes and leaving malformed quoted URLs fail-closed
 
 ### Tests
 - Expanded `CommandWorkingDirectoryPolicyTests` to cover mixed-case shell executable names and uppercase env-expanded shell paths
-- Expanded `LaunchTargetResolverTests` to cover malformed one-sided wrapping quotes on path-like inputs
+- Expanded `LaunchTargetResolverTests` to cover quoted-boundary path names alongside malformed quoted URL handling
 ### [1.1.9] - 2026-04-14
 
 ### Fixed

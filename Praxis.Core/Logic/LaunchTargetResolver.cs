@@ -107,39 +107,54 @@ public static class LaunchTargetResolver
             return normalized;
         }
 
-        if (trimmed.Length >= 3 && (trimmed[0] == '"' || trimmed[0] == '\''))
+        if (TryNormalizeQuotedPathPrefix(trimmed, out var normalizedQuotedPathPrefix))
         {
-            var closingQuoteIndex = trimmed.IndexOf(trimmed[0], 1);
-            if (closingQuoteIndex > 0 &&
-                closingQuoteIndex < trimmed.Length - 1 &&
-                (trimmed[closingQuoteIndex + 1] == '/' || trimmed[closingQuoteIndex + 1] == '\\'))
-            {
-                return trimmed[1..closingQuoteIndex] + trimmed[(closingQuoteIndex + 1)..];
-            }
-        }
-
-        if (HasMalformedWrappingQuote(trimmed))
-        {
-            return string.Empty;
+            return normalizedQuotedPathPrefix;
         }
 
         return trimmed;
     }
 
-    private static bool HasMalformedWrappingQuote(string value)
+    private static bool TryNormalizeQuotedPathPrefix(string value, out string normalized)
     {
-        if (string.IsNullOrEmpty(value))
+        normalized = string.Empty;
+        if (value.Length < 3 || (value[0] != '"' && value[0] != '\''))
         {
             return false;
         }
 
-        var startsWithQuote = value[0] == '"' || value[0] == '\'';
-        var endsWithQuote = value[^1] == '"' || value[^1] == '\'';
-        if (!startsWithQuote && !endsWithQuote)
+        var closingQuoteIndex = value.IndexOf(value[0], 1);
+        if (closingQuoteIndex <= 0 || closingQuoteIndex >= value.Length - 1)
         {
             return false;
         }
 
-        return value.Length < 2 || !startsWithQuote || !endsWithQuote || value[0] != value[^1];
+        var separator = value[closingQuoteIndex + 1];
+        if (separator != '/' && separator != '\\')
+        {
+            return false;
+        }
+
+        var quotedPrefix = value[1..closingQuoteIndex].Trim();
+        if (!LooksLikeExpandablePathPrefix(quotedPrefix))
+        {
+            return false;
+        }
+
+        normalized = quotedPrefix + value[(closingQuoteIndex + 1)..];
+        return true;
+    }
+
+    private static bool LooksLikeExpandablePathPrefix(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return false;
+        }
+
+        return Path.IsPathRooted(value) ||
+               string.Equals(value, "~", StringComparison.Ordinal) ||
+               value.StartsWith("~/", StringComparison.Ordinal) ||
+               value.StartsWith("~\\", StringComparison.Ordinal);
     }
 }

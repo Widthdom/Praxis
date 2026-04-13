@@ -265,14 +265,13 @@ public class LaunchTargetResolverTests
     }
 
     [Theory]
-    [InlineData("\"C:\\Temp\\file.txt")]
-    [InlineData("C:\\Temp\\file.txt\"")]
-    [InlineData("\"~/Documents/Praxis")]
-    [InlineData("~/Documents/Praxis\"")]
-    public void Resolve_ReturnsNone_ForUnbalancedWrappingQuote_OnPathLikeValues(string value)
+    [InlineData("\"drafts\"/notes.txt")]
+    [InlineData("\"drafts/notes.txt")]
+    [InlineData("/tmp/report\"")]
+    public void Resolve_PreservesPathLikeValues_WhoseBoundaryCharacterIsAQuote(string value)
     {
         var result = LaunchTargetResolver.Resolve(value);
-        Assert.Equal(LaunchTargetKind.None, result.Kind);
-        Assert.Equal(string.Empty, result.Target);
+        Assert.Equal(LaunchTargetKind.FileSystemPath, result.Kind);
+        Assert.Equal(value, result.Target);
     }
 }
