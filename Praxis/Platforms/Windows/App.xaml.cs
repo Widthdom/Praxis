@@ -87,24 +87,10 @@ public partial class App : MauiWinUIApplication
 
 	private static void WriteStartupLog(string source, Exception? exception)
 	{
+		var content = BuildStartupExceptionLogContent(source, exception);
 		try
 		{
-			var sb = new StringBuilder();
-			sb.AppendLine($"[{DateTimeOffset.Now:yyyy-MM-dd HH:mm:ss.fff zzz}] {source}");
-			if (exception is null)
-			{
-				sb.AppendLine("(no exception payload)");
-			}
-			else
-			{
-				sb.AppendLine(exception.ToString());
-			}
-
-			sb.AppendLine(new string('-', 80));
-			lock (LogLock)
-			{
-				File.AppendAllText(StartupLogPath, sb.ToString(), Encoding.UTF8);
-			}
+			AppendStartupLogContent(content);
 		}
 		catch (Exception ex)
 		{
@@ -122,16 +108,30 @@ public partial class App : MauiWinUIApplication
 			sb.AppendLine($"[{DateTimeOffset.Now:yyyy-MM-dd HH:mm:ss.fff zzz}] {source}");
 			sb.AppendLine(message);
 			sb.AppendLine(new string('-', 80));
-			lock (LogLock)
-			{
-				File.AppendAllText(StartupLogPath, sb.ToString(), Encoding.UTF8);
-			}
+			AppendStartupLogContent(sb.ToString());
 		}
 		catch (Exception ex)
 		{
 			var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);
 			CrashFileLogger.WriteException(nameof(App), ex);
 			CrashFileLogger.WriteWarning(nameof(App), $"Failed to append startup log '{StartupLogPath}': {safeMessage}");
+		}
+	}
+
+	private static string BuildStartupExceptionLogContent(string source, Exception? exception)
+	{
+		var sb = new StringBuilder();
+		sb.AppendLine($"[{DateTimeOffset.Now:yyyy-MM-dd HH:mm:ss.fff zzz}] {source}");
+		sb.Append(CrashFileLogger.FormatExceptionPayload(exception));
+		sb.AppendLine(new string('-', 80));
+		return sb.ToString();
+	}
+
+	private static void AppendStartupLogContent(string content)
+	{
+		lock (LogLock)
+		{
+			File.AppendAllText(StartupLogPath, content, Encoding.UTF8);
 		}
 	}
 }

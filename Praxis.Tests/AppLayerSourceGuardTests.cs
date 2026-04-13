@@ -240,6 +240,10 @@ public class AppLayerSourceGuardTests
         Assert.Contains("private static bool globalExceptionLoggingHooked;", source);
         Assert.Contains("if (globalExceptionLoggingHooked)", source);
         Assert.Equal(3, CountOccurrences(source, "var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);"));
+        Assert.Contains("var content = BuildStartupExceptionLogContent(source, exception);", source);
+        Assert.Contains("sb.Append(CrashFileLogger.FormatExceptionPayload(exception));", source);
+        Assert.Contains("AppendStartupLogContent(content);", source);
+        Assert.DoesNotContain("exception.ToString()", source, StringComparison.Ordinal);
         Assert.Contains("CrashFileLogger.WriteException(nameof(App), ex);", source);
         Assert.Contains("CrashFileLogger.WriteWarning(nameof(App), $\"Failed to create startup log directory '{startupLogDirectory}': {safeMessage}\");", source);
         Assert.Contains("CrashFileLogger.WriteWarning(nameof(App), $\"Failed to append startup log '{StartupLogPath}': {safeMessage}\");", source);

@@ -266,6 +266,24 @@ public class CrashFileLoggerTests
     }
 
     [Fact]
+    public void FormatExceptionPayload_WhenMessageGetterThrows_PreservesOriginalExceptionType()
+    {
+        var content = CrashFileLogger.FormatExceptionPayload(new ThrowingMessageException());
+
+        Assert.Contains("Type: Praxis.Tests.CrashFileLoggerTests+ThrowingMessageException", content);
+        Assert.Contains("failed to read exception message: System.InvalidOperationException: message getter failure", content);
+    }
+
+    [Fact]
+    public void FormatExceptionPayload_WhenStackTraceGetterThrows_PreservesOriginalExceptionType()
+    {
+        var content = CrashFileLogger.FormatExceptionPayload(new ThrowingStackTraceException());
+
+        Assert.Contains("Type: Praxis.Tests.CrashFileLoggerTests+ThrowingStackTraceException", content);
+        Assert.Contains("failed to read stack trace: System.InvalidOperationException: stack trace getter failure", content);
+    }
+
+    [Fact]
     public void WriteException_WhenExceptionDataFormattingThrows_WritesFallbackMarker()
     {
         var ex = new Exception("data formatting");

@@ -94,16 +94,7 @@ public static class CrashFileLogger
             var normalizedSource = NormalizeSource(source);
             var sb = new StringBuilder();
             sb.AppendLine($"[{DateTimeOffset.Now:yyyy-MM-dd HH:mm:ss.fff zzz}] {normalizedSource}");
-
-            if (exception is null)
-            {
-                sb.AppendLine("  (no exception payload)");
-            }
-            else
-            {
-                AppendExceptionChain(sb, exception, depth: 0, new TraversalBudget());
-            }
-
+            sb.Append(FormatExceptionPayload(exception));
             sb.AppendLine(new string('-', 80));
             WriteToDisk(sb.ToString());
         }
@@ -192,6 +183,28 @@ public static class CrashFileLogger
         catch (Exception getterEx)
         {
             return $"(failed to read stack trace: {DescribeLoggingFailure(getterEx)})";
+        }
+    }
+
+    internal static string FormatExceptionPayload(Exception? exception)
+    {
+        try
+        {
+            var sb = new StringBuilder();
+            if (exception is null)
+            {
+                sb.AppendLine("  (no exception payload)");
+            }
+            else
+            {
+                AppendExceptionChain(sb, exception, depth: 0, new TraversalBudget());
+            }
+
+            return sb.ToString();
+        }
+        catch (Exception formatterEx)
+        {
+            return $"  (failed to format exception payload: {DescribeLoggingFailure(formatterEx)}){Environment.NewLine}";
         }
     }
 
