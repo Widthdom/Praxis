@@ -97,14 +97,15 @@ public sealed class DbErrorLogger : IErrorLogger
 
     public void LogWarning(string message, string context)
     {
-        CrashFileLogger.WriteWarning(context, message);
+        var normalizedMessage = NormalizeMessagePayload(message);
+        CrashFileLogger.WriteWarning(context, normalizedMessage);
 
         var entry = new ErrorLogEntry
         {
             Level = "Warning",
             Context = context,
             ExceptionType = string.Empty,
-            Message = message,
+            Message = normalizedMessage,
             StackTrace = string.Empty,
             TimestampUtc = DateTime.UtcNow,
         };
@@ -115,14 +116,15 @@ public sealed class DbErrorLogger : IErrorLogger
 
     public void LogInfo(string message, string context)
     {
-        CrashFileLogger.WriteInfo(context, message);
+        var normalizedMessage = NormalizeMessagePayload(message);
+        CrashFileLogger.WriteInfo(context, normalizedMessage);
 
         var entry = new ErrorLogEntry
         {
             Level = "Info",
             Context = context,
             ExceptionType = string.Empty,
-            Message = message,
+            Message = normalizedMessage,
             StackTrace = string.Empty,
             TimestampUtc = DateTime.UtcNow,
         };
@@ -238,6 +240,9 @@ public sealed class DbErrorLogger : IErrorLogger
             Interlocked.Decrement(ref activeWrites);
         }
     }
+
+    private static string NormalizeMessagePayload(string? message)
+        => message ?? CrashFileLogger.MissingMessagePayloadPlaceholder;
 
     /// <summary>
     /// Builds a string showing the full type chain, e.g.

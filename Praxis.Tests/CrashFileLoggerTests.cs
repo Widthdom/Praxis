@@ -94,6 +94,15 @@ public class CrashFileLoggerTests
     }
 
     [Fact]
+    public void WriteInfo_NullMessage_UsesPlaceholder()
+    {
+        CrashFileLogger.WriteInfo("test", null!);
+
+        var content = File.ReadAllText(CrashFileLogger.LogFilePath);
+        Assert.Contains(CrashFileLogger.MissingMessagePayloadPlaceholder, content);
+    }
+
+    [Fact]
     public void WriteWarning_WritesToFile()
     {
         var marker = $"WarnTest-{Guid.NewGuid()}";
@@ -101,6 +110,15 @@ public class CrashFileLoggerTests
 
         var content = File.ReadAllText(CrashFileLogger.LogFilePath);
         Assert.Contains(marker, content);
+    }
+
+    [Fact]
+    public void WriteWarning_NullMessage_UsesPlaceholder()
+    {
+        CrashFileLogger.WriteWarning("test", null!);
+
+        var content = File.ReadAllText(CrashFileLogger.LogFilePath);
+        Assert.Contains(CrashFileLogger.MissingMessagePayloadPlaceholder, content);
     }
 
     [Fact]
@@ -134,6 +152,29 @@ public class CrashFileLoggerTests
         Assert.Contains(marker2, content);
         Assert.Contains("AggregateException[0]", content);
         Assert.Contains("AggregateException[1]", content);
+    }
+
+    [Fact]
+    public void WriteException_WideAggregate_UsesBoundedSummaryAndTailSampling()
+    {
+        var middleMarker = $"AggMiddle-{Guid.NewGuid()}";
+        var tailMarker = $"AggTail-{Guid.NewGuid()}";
+        var children = Enumerable.Range(0, 5000)
+            .Select(i => (Exception)new InvalidOperationException(
+                i == 4500 ? middleMarker :
+                i == 4999 ? tailMarker :
+                $"AggChild-{i}"))
+            .ToArray();
+        var agg = new AggregateException("wide aggregate", children);
+
+        CrashFileLogger.WriteException("test", agg);
+
+        var content = File.ReadAllText(CrashFileLogger.LogFilePath);
+        Assert.Contains("top-level summary omitted", content);
+        Assert.Contains("middle child(ren) not fully scanned", content);
+        Assert.Contains("sampling last", content);
+        Assert.Contains(tailMarker, content);
+        Assert.DoesNotContain(middleMarker, content);
     }
 
     [Fact]

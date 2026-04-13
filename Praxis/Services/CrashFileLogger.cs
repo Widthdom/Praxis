@@ -70,6 +70,7 @@ public static class CrashFileLogger
     /// lost on very wide aggregates.
     /// </summary>
     internal const int MaxAggregateChildMiddleSample = 8;
+    internal const string MissingMessagePayloadPlaceholder = "(no message payload)";
 
     private sealed class TraversalBudget
     {
@@ -116,9 +117,10 @@ public static class CrashFileLogger
     {
         try
         {
+            var normalizedMessage = NormalizeMessagePayload(message);
             var sb = new StringBuilder();
             sb.AppendLine($"[{DateTimeOffset.Now:yyyy-MM-dd HH:mm:ss.fff zzz}] INFO {source}");
-            sb.AppendLine($"  {message}");
+            sb.AppendLine($"  {normalizedMessage}");
             sb.AppendLine(new string('-', 80));
             WriteToDisk(sb.ToString());
         }
@@ -136,9 +138,10 @@ public static class CrashFileLogger
     {
         try
         {
+            var normalizedMessage = NormalizeMessagePayload(message);
             var sb = new StringBuilder();
             sb.AppendLine($"[{DateTimeOffset.Now:yyyy-MM-dd HH:mm:ss.fff zzz}] WARN {source}");
-            sb.AppendLine($"  {message}");
+            sb.AppendLine($"  {normalizedMessage}");
             sb.AppendLine(new string('-', 80));
             WriteToDisk(sb.ToString());
         }
@@ -147,6 +150,9 @@ public static class CrashFileLogger
             // Must never throw.
         }
     }
+
+    private static string NormalizeMessagePayload(string? message)
+        => message ?? MissingMessagePayloadPlaceholder;
 
     /// <summary>
     /// Returns a message suitable for logging without triggering

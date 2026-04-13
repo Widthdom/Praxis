@@ -145,13 +145,13 @@ Purpose: application error logs (exception, warning, and info logging).
 | `Context` | `varchar` | Yes | No | Code context where the entry was logged (e.g. method name) |
 | `ExceptionType` | `varchar` | Yes | No | Full exception type chain (e.g. `InvalidOperationException -> NullReferenceException`; empty for Info/Warning entries) |
 | `Message` | `varchar` | Yes | No | Exception message chain or info/warning message |
-| `StackTrace` | `varchar` | Yes | No | Full exception output via `Exception.ToString()` (empty for Info/Warning entries) |
+| `StackTrace` | `varchar` | Yes | No | Bounded stack serialization built from per-exception `Exception.StackTrace` frames with aggregate child labels (empty for Info/Warning entries) |
 | `TimestampUtc` | `datetime` | Yes | No | Timestamp when the entry was logged (UTC) |
 
 Application-level behavior:
-- Error entries written by `DbErrorLogger` via `IErrorLogger.Log(exception, context)`. Exception type chains, concatenated inner messages, and full stack traces (including nested inner exceptions inside `AggregateException`) are captured. A null exception payload is persisted as an Error entry with the placeholder message `(no exception payload)` instead of throwing from the logger.
-- Warning entries written by `DbErrorLogger` via `IErrorLogger.LogWarning(message, context)`.
-- Info entries written by `DbErrorLogger` via `IErrorLogger.LogInfo(message, context)`.
+- Error entries written by `DbErrorLogger` via `IErrorLogger.Log(exception, context)`. Exception type chains, concatenated inner messages, and bounded stack output (including nested inner exceptions inside `AggregateException`, aggregate child index labels, duplicate-collapse markers, and middle/tail sampling markers for very wide aggregates) are captured. A null exception payload is persisted as an Error entry with the placeholder message `(no exception payload)` instead of throwing from the logger.
+- Warning entries written by `DbErrorLogger` via `IErrorLogger.LogWarning(message, context)`. A null message payload is normalized to `(no message payload)` before both crash-file and DB persistence.
+- Info entries written by `DbErrorLogger` via `IErrorLogger.LogInfo(message, context)`. A null message payload is normalized to `(no message payload)` before both crash-file and DB persistence.
 - All log calls first write synchronously to a file-based crash log (`CrashFileLogger` → `crash.log`) for crash-safe persistence, then enqueue for async DB write.
 - `FlushAsync(timeout)` is the graceful-shutdown path: it waits for both queued entries and already-dequeued in-flight DB writes until the timeout elapses.
 - Retention cleanup: `DELETE FROM ErrorLogEntity WHERE TimestampUtc < threshold` (30-day retention; cleanup is triggered only when Error entries are written, and deletes all rows older than the threshold regardless of Level).
@@ -247,7 +247,7 @@ Praxis が使う SQLite テーブル設計を明文化します。
 - `UpdatedAtUtc` だけが異なり内容が一致する場合は非競合として扱います。
 - `LaunchLogEntity.Source` の現行値は `button` / `command` です。
 - `LaunchLogEntity` は保持期間超過分を `TimestampUtc` 条件で一括削除します。
-- `ErrorLogEntity` は `IErrorLogger.Log(exception, context)`（Error）、`IErrorLogger.LogWarning(message, context)`（Warning）、および `IErrorLogger.LogInfo(message, context)`（Info）経由で `DbErrorLogger` が書き込みます。全ログ呼び出しはまず `CrashFileLogger` でファイルに同期書き込みし、その後 DB への非同期書き込みをキューイングします。例外 payload が `null` でもロガー自体は落ちず、`(no exception payload)` を持つ Error エントリとして扱います。`AggregateException` 配下にさらに InnerException がネストしている場合も、型チェーンとメッセージチェーンに含めます。`FlushAsync(timeout)` はグレースフルシャットダウン経路として、保留キューだけでなくすでに dequeue 済みの in-flight DB 書き込みもタイムアウトまで待機し、timeout や予期しない flush 失敗でも `crash.log` に例外本体と warning breadcrumb を残します。保持期間クリーンアップは Error エントリ書き込み時にのみ発動し、Level を問わず閾値より古い全行を削除します（30 日保持）。DB 書き込み失敗や purge 失敗も、クラッシュファイルに記録済みの本体を残したまま `crash.log` に例外本体と warning breadcrumb の両方を追加します。
+- `ErrorLogEntity` は `IErrorLogger.Log(exception, context)`（Error）、`IErrorLogger.LogWarning(message, context)`（Warning）、および `IErrorLogger.LogInfo(message, context)`（Info）経由で `DbErrorLogger` が書き込みます。全ログ呼び出しはまず `CrashFileLogger` でファイルに同期書き込みし、その後 DB への非同期書き込みをキューイングします。例外 payload が `null` でもロガー自体は落ちず、`(no exception payload)` を持つ Error エントリとして扱います。Warning/Info の message payload が `null` の場合も空値のままにせず `(no message payload)` へ正規化して `crash.log` と DB の双方へ残します。`AggregateException` 配下にさらに InnerException がネストしている場合も、型チェーンとメッセージチェーンに含めます。StackTrace 列は `Exception.ToString()` 丸ごとではなく、各例外ノードの `Exception.StackTrace` を基に aggregate 子 index ラベル、duplicate 集約マーカー、very wide aggregate 向け middle/tail sampling マーカー付きで構築した有界出力です。`FlushAsync(timeout)` はグレースフルシャットダウン経路として、保留キューだけでなくすでに dequeue 済みの in-flight DB 書き込みもタイムアウトまで待機し、timeout や予期しない flush 失敗でも `crash.log` に例外本体と warning breadcrumb を残します。保持期間クリーンアップは Error エントリ書き込み時にのみ発動し、Level を問わず閾値より古い全行を削除します（30 日保持）。Error/Warning/Info いずれの DB 書き込み失敗でも、また purge 失敗でも、クラッシュファイルに記録済みの本体を残したまま `crash.log` に例外本体と warning breadcrumb の両方を追加します。
 - `crash.log` はクラッシュ安全ロギング用の同期ファイルベースフォールバックです（SQLite 外）:
   - Windows: `%LOCALAPPDATA%\Praxis\crash.log`
   - macOS（Mac Catalyst）: `~/Library/Application Support/Praxis/crash.log`
