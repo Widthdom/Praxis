@@ -121,7 +121,7 @@ Test-specific operation and coverage inventory are documented in [`docs/TESTING_
     - `~/...`, `~\...`, and bare `~` are expanded to the user-profile path before existence checks
     - quoted tool paths are normalized before process launch, so `"C:\Program Files\App\app.exe"` works as a tool value
     - on Windows UNC paths (`\\\\server\\share...`), bypasses pre-check and opens via `explorer.exe` to allow auth prompt first
-  - When `tool` is a Windows shell-like executable (`cmd.exe`, `powershell`, `pwsh`, `wt`), overrides `WorkingDirectory` to the user profile so shells do not inherit the Praxis process directory
+  - When `tool` is a Windows shell-like executable (`cmd.exe`, `powershell`, `pwsh`, `wt`), overrides `WorkingDirectory` to the user profile so shells do not inherit the Praxis process directory; executable-name matching is case-insensitive even when the tool path comes from `%ComSpec%` / other expanded environment variables
 - [`Services/MauiClipboardService.cs`](../Praxis/Services/MauiClipboardService.cs)
   - Wraps MAUI clipboard reads/writes and now honors `CancellationToken` for both operations, including cancellation while awaiting the underlying MAUI task
 - [`Services/MauiThemeService.cs`](../Praxis/Services/MauiThemeService.cs)
