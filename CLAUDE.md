@@ -73,6 +73,7 @@ dotnet build Praxis/Praxis.csproj -c Release -f net10.0-maccatalyst -v minimal -
 
 This project uses **cdidx** for fast code search via a pre-built SQLite index (`.cdidx/codeindex.db`).
 **Query this database** instead of using `find`, `grep`, or `ls -R`. Use `rg` only as a fast fallback or for one-off raw-text checks.
+The tracked repository setting at `.claude/settings.json` denies `rg` / `grep` / `find`-style shell search commands so Claude sessions stay on the `cdidx` path by default.
 
 If the AI client has the `cdidx` MCP server configured, prefer those structured tools first. If MCP is not available in the current client, use the CLI workflow below.
 
@@ -495,6 +496,7 @@ dotnet build Praxis/Praxis.csproj -c Release -f net10.0-maccatalyst -v minimal -
 
 このリポジトリでは **`cdidx` を第一選択のコード検索手段** とします。
 `.cdidx/codeindex.db` に構築されたインデックスを検索し、`find`、`grep`、再帰 `ls` を第一選択にしないこと。`rg` は高速な補助か、生テキスト確認の一発用途に限ります。
+追跡対象の `.claude/settings.json` では `rg` / `grep` / `find` 系のシェル検索を拒否し、Claude セッションが既定で `cdidx` を使うように固定しています。
 
 AI クライアント側で `cdidx` の MCP サーバーが設定済みなら、まずその構造化ツールを優先して使うこと。現在のクライアントで MCP が使えない場合だけ、下記の CLI フローへフォールバックすること。
 
