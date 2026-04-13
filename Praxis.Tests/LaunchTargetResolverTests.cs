@@ -243,6 +243,32 @@ public class LaunchTargetResolverTests
     }
 
     [Fact]
+    public void Resolve_NormalizesQuotedFileUriPrefix()
+    {
+        var result = LaunchTargetResolver.Resolve("\"file:///tmp/base\"/child.txt");
+        Assert.Equal(LaunchTargetKind.FileSystemPath, result.Kind);
+        Assert.Equal("/tmp/base/child.txt", result.Target);
+    }
+
+    [Fact]
+    public void Resolve_ExpandedEnvironmentVariable_NormalizesQuotedFileUriPrefix()
+    {
+        const string key = "PRAXIS_TEST_FILE_URL_PREFIX_QUOTED";
+        var oldValue = Environment.GetEnvironmentVariable(key);
+        try
+        {
+            Environment.SetEnvironmentVariable(key, "\"file:///tmp/base\"");
+            var result = LaunchTargetResolver.Resolve("%PRAXIS_TEST_FILE_URL_PREFIX_QUOTED%/child.txt");
+            Assert.Equal(LaunchTargetKind.FileSystemPath, result.Kind);
+            Assert.Equal("/tmp/base/child.txt", result.Target);
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable(key, oldValue);
+        }
+    }
+
+    [Fact]
     public void Resolve_ExpandsSingleQuotedEnvironmentVariables_ForHttpUrlValues()
     {
         const string key = "PRAXIS_TEST_URL_SINGLE_QUOTED";

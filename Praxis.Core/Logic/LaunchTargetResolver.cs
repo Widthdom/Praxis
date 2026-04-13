@@ -154,7 +154,7 @@ public static class LaunchTargetResolver
 
         if (value.Contains("://", StringComparison.Ordinal))
         {
-            return false;
+            return Uri.TryCreate(value, UriKind.Absolute, out var uri) && uri.IsFile;
         }
 
         return Path.IsPathRooted(value) ||
