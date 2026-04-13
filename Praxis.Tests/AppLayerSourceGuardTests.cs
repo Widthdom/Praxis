@@ -271,8 +271,12 @@ public class AppLayerSourceGuardTests
         var source = ReadRepositoryFile("Praxis", "ViewModels", "MainViewModel.cs");
 
         Assert.Contains("errorLogger.Log(ex, nameof(SyncThemeFromExternalChangeAsync));", source);
-        Assert.Contains("External theme sync dispatch failed:", source);
+        Assert.Contains("BuildSafeWarningMessage(\"External theme sync dispatch failed\", ex)", source);
+        Assert.Contains("BuildSafeWarningMessage(\"External theme sync failed\", ex)", source);
+        Assert.Contains("BuildSafeWarningMessage(\"External reload failed\", ex)", source);
         Assert.Contains("TaskCreationOptions.RunContinuationsAsynchronously", source);
+        Assert.Contains("private static string BuildSafeWarningMessage(string prefix, Exception ex)", source);
+        Assert.Contains("private static string BuildSafeWarningMessage(Func<Exception, string> warningFactory, Exception ex)", source);
     }
 
     [Fact]
@@ -282,8 +286,10 @@ public class AppLayerSourceGuardTests
 
         Assert.Contains("errorLogger.Log(ex, nameof(DebouncedRefreshCommandSuggestionsAsync));", source);
         Assert.Contains("errorLogger.Log(ex, nameof(RefreshCommandSuggestionsOnMainThread));", source);
-        Assert.Contains("Command suggestion close dispatch failed:", source);
-        Assert.Contains("Command suggestion refresh dispatch failed:", source);
+        Assert.Contains("BuildSafeWarningMessage(\"Debounced command suggestion refresh failed\", ex)", source);
+        Assert.Contains("BuildSafeWarningMessage(\"Command suggestion close dispatch failed\", dispatchEx)", source);
+        Assert.Contains("BuildSafeWarningMessage(\"Command suggestion refresh dispatch failed\", ex)", source);
+        Assert.Contains("BuildSafeWarningMessage(\"Command lookup fallback failed\", ex)", source);
         Assert.Contains("catch (OperationCanceledException) when (token.IsCancellationRequested)", source);
     }
 

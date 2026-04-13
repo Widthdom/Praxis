@@ -217,14 +217,14 @@ public partial class MainViewModel : ObservableObject
                 catch (Exception ex)
                 {
                     errorLogger.Log(ex, nameof(SyncThemeFromExternalChangeAsync));
-                    errorLogger.LogWarning($"External theme sync dispatch failed: {ex.Message}", nameof(SyncThemeFromExternalChangeAsync));
+                    errorLogger.LogWarning(BuildSafeWarningMessage("External theme sync dispatch failed", ex), nameof(SyncThemeFromExternalChangeAsync));
                 }
             });
         }
         catch (Exception ex)
         {
             errorLogger.Log(ex, nameof(SyncThemeFromExternalChangeAsync));
-            errorLogger.LogWarning($"External theme sync failed: {ex.Message}", nameof(SyncThemeFromExternalChangeAsync));
+            errorLogger.LogWarning(BuildSafeWarningMessage("External theme sync failed", ex), nameof(SyncThemeFromExternalChangeAsync));
         }
     }
 
@@ -263,7 +263,7 @@ public partial class MainViewModel : ObservableObject
         catch (Exception ex)
         {
             errorLogger.Log(ex, nameof(ReloadFromExternalChangeAsync));
-            errorLogger.LogWarning($"External reload failed: {ex.Message}", nameof(ReloadFromExternalChangeAsync));
+            errorLogger.LogWarning(BuildSafeWarningMessage("External reload failed", ex), nameof(ReloadFromExternalChangeAsync));
         }
         finally
         {
@@ -302,7 +302,7 @@ public partial class MainViewModel : ObservableObject
         catch (Exception ex)
         {
             errorLogger.Log(ex, context);
-            errorLogger.LogWarning($"{operation} failed: {ex.Message}", context);
+            errorLogger.LogWarning(BuildSafeWarningMessage($"{operation} failed", ex), context);
             return fallback;
         }
     }
@@ -316,7 +316,7 @@ public partial class MainViewModel : ObservableObject
         catch (Exception ex)
         {
             errorLogger.Log(ex, context);
-            errorLogger.LogWarning($"Dock restore failed: {ex.Message}", context);
+            errorLogger.LogWarning(BuildSafeWarningMessage("Dock restore failed", ex), context);
             PruneDockButtonsToExistingButtons();
         }
     }
@@ -343,6 +343,21 @@ public partial class MainViewModel : ObservableObject
         }
 
         IsCommandSuggestionOpen = false;
+    }
+
+    private static string BuildSafeWarningMessage(string prefix, Exception ex)
+        => $"{prefix}: {CrashFileLogger.SafeExceptionMessage(ex)}";
+
+    private static string BuildSafeWarningMessage(Func<Exception, string> warningFactory, Exception ex)
+    {
+        try
+        {
+            return warningFactory(ex);
+        }
+        catch (Exception warningEx)
+        {
+            return $"Failed to build warning message for {ex.GetType().FullName ?? ex.GetType().Name}: {CrashFileLogger.SafeExceptionMessage(warningEx)}; original exception message: {CrashFileLogger.SafeExceptionMessage(ex)}";
+        }
     }
 }
 

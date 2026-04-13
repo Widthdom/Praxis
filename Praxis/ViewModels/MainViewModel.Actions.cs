@@ -335,7 +335,7 @@ public partial class MainViewModel
         catch (Exception ex)
         {
             errorLogger.Log(ex, nameof(ResolveConflictAsync));
-            errorLogger.LogWarning($"Conflict resolution callback failed: {ex.Message}", nameof(ResolveConflictAsync));
+            errorLogger.LogWarning(BuildSafeWarningMessage("Conflict resolution callback failed", ex), nameof(ResolveConflictAsync));
             return EditorConflictResolution.Cancel;
         }
     }
@@ -689,25 +689,25 @@ public partial class MainViewModel
             async () => await clipboardService.GetTextAsync() ?? string.Empty,
             fallback: string.Empty,
             context,
-            ex => $"{operation} failed: {ex.Message}");
+            ex => BuildSafeWarningMessage($"{operation} failed", ex));
 
     private async Task<bool> TrySetClipboardTextAsync(string text, string context, string operation)
         => await TryWithLoggedWarningAsync(
             () => clipboardService.SetTextAsync(text),
             context,
-            ex => $"{operation} failed: {ex.Message}");
+            ex => BuildSafeWarningMessage($"{operation} failed", ex));
 
     private async Task<bool> TryNotifyButtonsChangedAsync(string context, string operation)
         => await TryWithLoggedWarningAsync(
             () => stateSyncNotifier.NotifyButtonsChangedAsync(),
             context,
-            ex => $"{operation} completed locally, but window sync notification failed: {ex.Message}");
+            ex => BuildSafeWarningMessage($"{operation} completed locally, but window sync notification failed", ex));
 
     private async Task<bool> TryPersistThemeAsync(ThemeMode mode, string context, string operation)
         => await TryWithLoggedWarningAsync(
             () => repository.SetThemeAsync(mode),
             context,
-            ex => $"{operation} applied locally, but theme persistence failed: {ex.Message}");
+            ex => BuildSafeWarningMessage($"{operation} applied locally, but theme persistence failed", ex));
 
     private async Task<bool> TryPersistDockAsync(string context, string operation)
         => await TryPersistDockOrderAsync(DockButtons.Select(x => x.Id).ToList(), context, operation);
@@ -716,20 +716,20 @@ public partial class MainViewModel
         => await TryWithLoggedWarningAsync(
             () => repository.SetDockButtonIdsAsync(ids),
             context,
-            ex => $"{operation} completed locally, but dock persistence failed: {ex.Message}");
+            ex => BuildSafeWarningMessage($"{operation} completed locally, but dock persistence failed", ex));
 
     private async Task<bool> TryAddLaunchLogAsync(LaunchLogEntry entry, string context, string operation)
         => await TryWithLoggedWarningAsync(
             () => repository.AddLogAsync(entry),
             context,
-            ex => $"{operation} failed: {ex.Message}");
+            ex => BuildSafeWarningMessage($"{operation} failed", ex));
 
     private async Task<bool> TryPurgeLaunchLogsAsync(int retentionDays, string context, string operation)
     {
         return await TryWithLoggedWarningAsync(
             () => repository.PurgeOldLogsAsync(retentionDays),
             context,
-            ex => $"{operation} failed: {ex.Message}");
+            ex => BuildSafeWarningMessage($"{operation} failed", ex));
     }
 
     private async Task<T> TryWithLoggedFallbackAsync<T>(Func<Task<T>> operationAsync, T fallback, string context, Func<Exception, string> warningFactory)
@@ -741,7 +741,7 @@ public partial class MainViewModel
         catch (Exception ex)
         {
             errorLogger.Log(ex, context);
-            errorLogger.LogWarning(warningFactory(ex), context);
+            errorLogger.LogWarning(BuildSafeWarningMessage(warningFactory, ex), context);
             return fallback;
         }
     }
@@ -756,7 +756,7 @@ public partial class MainViewModel
         catch (Exception ex)
         {
             errorLogger.Log(ex, context);
-            errorLogger.LogWarning(warningFactory(ex), context);
+            errorLogger.LogWarning(BuildSafeWarningMessage(warningFactory, ex), context);
             return false;
         }
     }
