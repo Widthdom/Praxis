@@ -177,12 +177,14 @@ public class AppLayerSourceGuardTests
             "pendingWrites.Enqueue(entry);");
         AssertMethodContainsInOrder(source,
             "public void LogWarning(string message, string context)",
-            "CrashFileLogger.WriteWarning(context, message);",
+            "CrashFileLogger.WriteWarning(context, normalizedMessage);",
             "pendingWrites.Enqueue(entry);");
+        Assert.Contains("var normalizedMessage = NormalizeMessagePayload(message);", source);
         AssertMethodContainsInOrder(source,
             "public void LogInfo(string message, string context)",
-            "CrashFileLogger.WriteInfo(context, message);",
+            "CrashFileLogger.WriteInfo(context, normalizedMessage);",
             "pendingWrites.Enqueue(entry);");
+        Assert.Contains("var normalizedMessage = NormalizeMessagePayload(message);", source);
     }
 
     [Fact]
