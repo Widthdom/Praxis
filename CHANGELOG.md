@@ -6,6 +6,12 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 
 ## [Unreleased]
 
+### Fixed
+- `CrashFileLogger` and `DbErrorLogger` now normalize null Warning/Info message payloads to `(no message payload)` before writing to `crash.log` or persisting `ErrorLogEntity` rows, so degraded logging paths keep explicit evidence instead of blank message fields
+
+### Tests
+- Added regression coverage for null Warning/Info payload handling in both `CrashFileLoggerTests` and `DbErrorLoggerTests`, and tightened persistence-failure assertions so logging docs stay backed by executable checks
+
 ### [1.1.8] - 2026-04-13
 
 ### Fixed
