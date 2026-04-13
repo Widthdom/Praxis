@@ -261,6 +261,12 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 
 ## [Unreleased]
 
+### 修正
+- `CrashFileLogger` と `DbErrorLogger` は、Warning / Info の message payload が `null` の場合でも `crash.log` と `ErrorLogEntity` へ書き込む前に `(no message payload)` へ正規化するようにし、劣化時のログ経路でも空欄ではなく明示的な診断証跡を残すよう修正
+
+### テスト
+- `CrashFileLoggerTests` / `DbErrorLoggerTests` に Warning / Info の null payload 処理に対する回帰テストを追加し、ログ仕様の文書が実行可能な検証に裏打ちされるよう補強
+
 ### [1.1.8] - 2026-04-13
 
 ### 修正
