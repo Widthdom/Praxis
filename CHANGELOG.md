@@ -9,8 +9,12 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 ### Fixed
 - `CrashFileLogger` and `DbErrorLogger` now normalize null Warning/Info message payloads to `(no message payload)` before writing to `crash.log` or persisting `ErrorLogEntity` rows, so degraded logging paths keep explicit evidence instead of blank message fields
 
+### Changed
+- Repository guidance now tracks the current cdidx workflow more explicitly: `CLAUDE.md` was refreshed for cdidx 1.9.0, and tracked `.claude/settings.json` now denies `rg` / `grep` / `find`-style shell search commands so repo sessions stay on the cdidx-first path by default
+
 ### Tests
-- Added regression coverage for null Warning/Info payload handling in both `CrashFileLoggerTests` and `DbErrorLoggerTests`, and tightened persistence-failure assertions so logging docs stay backed by executable checks
+- Expanded logging regression coverage for persistence-failure breadcrumbs and null Warning/Info payload normalization in `CrashFileLoggerTests` and `DbErrorLoggerTests`
+- Updated `AppLayerSourceGuardTests` so the file-first logger ordering guard matches the normalized Warning/Info logging path
 
 ### [1.1.8] - 2026-04-13
 
@@ -264,8 +268,12 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 ### 修正
 - `CrashFileLogger` と `DbErrorLogger` は、Warning / Info の message payload が `null` の場合でも `crash.log` と `ErrorLogEntity` へ書き込む前に `(no message payload)` へ正規化するようにし、劣化時のログ経路でも空欄ではなく明示的な診断証跡を残すよう修正
 
+### 変更
+- リポジトリ運用ガイダンスを現行の cdidx ワークフローへ追従。`CLAUDE.md` を cdidx 1.9.0 向けに更新し、追跡対象の `.claude/settings.json` では `rg` / `grep` / `find` 系シェル検索を拒否して、既定で cdidx-first の検索経路を維持するように変更
+
 ### テスト
-- `CrashFileLoggerTests` / `DbErrorLoggerTests` に Warning / Info の null payload 処理に対する回帰テストを追加し、ログ仕様の文書が実行可能な検証に裏打ちされるよう補強
+- `CrashFileLoggerTests` / `DbErrorLoggerTests` の logging 回帰カバレッジを拡充し、永続化失敗 breadcrumb と Warning / Info の null payload 正規化を検証するよう追加
+- `AppLayerSourceGuardTests` を更新し、Warning / Info の正規化後も file-first logging 順序ガードが現在の実装と一致するよう追従
 
 ### [1.1.8] - 2026-04-13
 
