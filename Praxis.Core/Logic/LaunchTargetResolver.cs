@@ -153,8 +153,16 @@ public static class LaunchTargetResolver
         }
 
         return Path.IsPathRooted(value) ||
+               string.Equals(value, ".", StringComparison.Ordinal) ||
+               string.Equals(value, "..", StringComparison.Ordinal) ||
                string.Equals(value, "~", StringComparison.Ordinal) ||
+               value.StartsWith("./", StringComparison.Ordinal) ||
+               value.StartsWith(".\\", StringComparison.Ordinal) ||
+               value.StartsWith("../", StringComparison.Ordinal) ||
+               value.StartsWith("..\\", StringComparison.Ordinal) ||
                value.StartsWith("~/", StringComparison.Ordinal) ||
-               value.StartsWith("~\\", StringComparison.Ordinal);
+               value.StartsWith("~\\", StringComparison.Ordinal) ||
+               value.Contains('/') ||
+               value.Contains('\\');
     }
 }

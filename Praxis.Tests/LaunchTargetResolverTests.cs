@@ -186,6 +186,34 @@ public class LaunchTargetResolverTests
         }
     }
 
+    [Theory]
+    [InlineData("\"../docs\"/readme.txt", "../docs/readme.txt")]
+    [InlineData("\"docs/subdir\"/readme.txt", "docs/subdir/readme.txt")]
+    public void Resolve_NormalizesQuotedRelativePathPrefixes(string value, string expected)
+    {
+        var result = LaunchTargetResolver.Resolve(value);
+        Assert.Equal(LaunchTargetKind.FileSystemPath, result.Kind);
+        Assert.Equal(expected, result.Target);
+    }
+
+    [Fact]
+    public void Resolve_ExpandsEnvironmentVariables_ThenNormalizesQuotedRelativePathPrefix()
+    {
+        const string key = "PRAXIS_TEST_RELATIVE_QUOTED";
+        var oldValue = Environment.GetEnvironmentVariable(key);
+        try
+        {
+            Environment.SetEnvironmentVariable(key, "\"../docs\"");
+            var result = LaunchTargetResolver.Resolve("%PRAXIS_TEST_RELATIVE_QUOTED%/readme.txt");
+            Assert.Equal(LaunchTargetKind.FileSystemPath, result.Kind);
+            Assert.Equal("../docs/readme.txt", result.Target);
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable(key, oldValue);
+        }
+    }
+
     [Fact]
     public void Resolve_ExpandsSingleQuotedEnvironmentVariables_ForHttpUrlValues()
     {
