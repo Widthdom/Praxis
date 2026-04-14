@@ -417,6 +417,17 @@ public class CrashFileLoggerTests
     }
 
     [Fact]
+    public void SafeObjectDescription_WhenFormatterFailureMessageIsMultiline_CollapsesToSingleLine()
+    {
+        var markerA = $"object-format-a-{Guid.NewGuid():N}";
+        var markerB = $"object-format-b-{Guid.NewGuid():N}";
+
+        var content = CrashFileLogger.SafeObjectDescription(new ThrowingObjectToStringValue($"{markerA}\r\n{markerB}"));
+
+        Assert.Equal($"(failed to format object: System.InvalidOperationException: {markerA} {markerB})", content);
+    }
+
+    [Fact]
     public void SafeObjectDescription_WhenValueIsNull_ReturnsNullMarker()
     {
         var content = CrashFileLogger.SafeObjectDescription(null);
