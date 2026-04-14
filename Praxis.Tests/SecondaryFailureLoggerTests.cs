@@ -298,6 +298,17 @@ public class SecondaryFailureLoggerTests
     }
 
     [Fact]
+    public void NormalizePathForLog_WhenValueIsMultiline_CollapsesToSingleLine()
+    {
+        var markerA = $"secondary-path-a-{Guid.NewGuid():N}";
+        var markerB = $"secondary-path-b-{Guid.NewGuid():N}";
+
+        var result = InvokeNormalizePathForLog($"/tmp/{markerA}\r\n{markerB}/startup.log");
+
+        Assert.Equal($"/tmp/{markerA} {markerB}/startup.log", result);
+    }
+
+    [Fact]
     public void TryReportStartupLogFailure_NormalizesMultilineOriginalMessage_ToSingleLine()
     {
         var tempRootSentinel = Path.Combine(Path.GetTempPath(), $"secondary-original-multiline-sentinel-{Guid.NewGuid():N}.txt");
@@ -352,6 +363,15 @@ public class SecondaryFailureLoggerTests
     private static string InvokeNormalizeOperationForLog(string value)
     {
         var method = typeof(SecondaryFailureLogger).GetMethod("NormalizeOperationForLog", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+        Assert.NotNull(method);
+
+        var result = method.Invoke(null, [value]);
+        return Assert.IsType<string>(result);
+    }
+
+    private static string InvokeNormalizePathForLog(string value)
+    {
+        var method = typeof(SecondaryFailureLogger).GetMethod("NormalizePathForLog", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
         Assert.NotNull(method);
 
         var result = method.Invoke(null, [value]);
