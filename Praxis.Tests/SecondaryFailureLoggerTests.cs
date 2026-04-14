@@ -237,6 +237,53 @@ public class SecondaryFailureLoggerTests
         }
     }
 
+    [Fact]
+    public void TryReportStartupLogFailure_NormalizesMultilineOriginalMessage_ToSingleLine()
+    {
+        var tempRootSentinel = Path.Combine(Path.GetTempPath(), $"secondary-original-multiline-sentinel-{Guid.NewGuid():N}.txt");
+        var currentDirectoryRoot = Path.Combine(Path.GetTempPath(), $"secondary-original-multiline-root-{Guid.NewGuid():N}");
+        var targetPath = Path.Combine("broken-root", "startup.log");
+        var markerA = $"startup-a-{Guid.NewGuid():N}";
+        var markerB = $"startup-b-{Guid.NewGuid():N}";
+
+        File.WriteAllText(tempRootSentinel, "occupied");
+        Directory.CreateDirectory(currentDirectoryRoot);
+
+        try
+        {
+            var success = SecondaryFailureLogger.TryReportStartupLogFailure(
+                nameof(SecondaryFailureLoggerTests),
+                targetPath,
+                "Failed to append startup log",
+                new InvalidOperationException("append failed"),
+                originalException: null,
+                originalMessage: $"{markerA}\r\n{markerB}",
+                out var fallbackPath,
+                tryWriteException: static (_, _) => false,
+                tryWriteWarning: static (_, _) => false,
+                tempRootOverride: tempRootSentinel,
+                currentDirectoryOverride: currentDirectoryRoot);
+
+            Assert.True(success);
+            Assert.NotNull(fallbackPath);
+
+            var content = File.ReadAllText(fallbackPath!);
+            Assert.Contains($"Original startup message: {markerA} {markerB}", content);
+        }
+        finally
+        {
+            if (File.Exists(tempRootSentinel))
+            {
+                File.Delete(tempRootSentinel);
+            }
+
+            if (Directory.Exists(currentDirectoryRoot))
+            {
+                Directory.Delete(currentDirectoryRoot, recursive: true);
+            }
+        }
+    }
+
     private sealed class ThrowingMessageException : Exception
     {
         public override string Message => throw new InvalidOperationException("message getter failure");
