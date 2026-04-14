@@ -112,6 +112,33 @@ public class CrashFileLoggerTests
     }
 
     [Fact]
+    public void NormalizeMessagePayload_WhenValueIsNull_UsesPlaceholder()
+    {
+        var result = CrashFileLogger.NormalizeMessagePayload(null);
+
+        Assert.Equal(CrashFileLogger.MissingMessagePayloadPlaceholder, result);
+    }
+
+    [Fact]
+    public void NormalizeMessagePayload_WhenValueIsMultiline_CollapsesToSingleLine()
+    {
+        var markerA = $"payload-a-{Guid.NewGuid():N}";
+        var markerB = $"payload-b-{Guid.NewGuid():N}";
+
+        var result = CrashFileLogger.NormalizeMessagePayload($"{markerA}\r\n{markerB}");
+
+        Assert.Equal($"{markerA} {markerB}", result);
+    }
+
+    [Fact]
+    public void NormalizeMessagePayload_WhenValueIsWhitespace_UsesPlaceholder()
+    {
+        var result = CrashFileLogger.NormalizeMessagePayload(" \r\n\t ");
+
+        Assert.Equal(CrashFileLogger.MissingMessagePayloadPlaceholder, result);
+    }
+
+    [Fact]
     public void WriteException_WritesToFile()
     {
         var marker = $"CrashFileLoggerTests-{Guid.NewGuid()}";
