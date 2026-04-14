@@ -404,6 +404,25 @@ public class CrashFileLoggerTests
     }
 
     [Fact]
+    public void SafeExceptionMessage_WhenGetterFailureMessageIsMultiline_CollapsesFallbackMarkerToSingleLine()
+    {
+        var markerA = $"getter-a-{Guid.NewGuid():N}";
+        var markerB = $"getter-b-{Guid.NewGuid():N}";
+
+        var content = CrashFileLogger.SafeExceptionMessage(new ThrowingMessageWithMultilineGetterException($"{markerA}\r\n{markerB}"));
+
+        Assert.Equal($"(failed to read exception message: System.InvalidOperationException: {markerA} {markerB})", content);
+    }
+
+    [Fact]
+    public void SafeExceptionMessage_WhenGetterFailureMessageIsWhitespace_UsesTypeNameOnly()
+    {
+        var content = CrashFileLogger.SafeExceptionMessage(new ThrowingMessageWithWhitespaceGetterException());
+
+        Assert.Equal("(failed to read exception message: System.InvalidOperationException)", content);
+    }
+
+    [Fact]
     public void WriteException_WhenExceptionDataFormattingThrows_WritesFallbackMarker()
     {
         var ex = new Exception("data formatting");
@@ -534,6 +553,16 @@ public class CrashFileLoggerTests
     private sealed class ThrowingMessageException : Exception
     {
         public override string Message => throw new InvalidOperationException("message getter failure");
+    }
+
+    private sealed class ThrowingMessageWithMultilineGetterException(string getterMessage) : Exception
+    {
+        public override string Message => throw new InvalidOperationException(getterMessage);
+    }
+
+    private sealed class ThrowingMessageWithWhitespaceGetterException : Exception
+    {
+        public override string Message => throw new InvalidOperationException(" \r\n\t ");
     }
 
     private sealed class ThrowingStackTraceException : Exception
