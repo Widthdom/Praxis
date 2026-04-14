@@ -17,6 +17,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - `CommandExecutor` now uses the same safe exception-message helper for launch-target resolution and native process-start failure messages, so fallback warning/result construction no longer rethrows on hostile exception `Message` getters
 - `MauiThemeService` now uses the same safe exception-message helper for Mac dispatch-failure breadcrumbs, so theme-apply warning logging no longer rethrows on hostile exception `Message` getters
 - `FileStateSyncNotifier` now routes write/read/unexpected publish warning construction through the same safe exception-message helper, so sync breadcrumbs survive hostile exception `Message` getters
+- `Windows CommandEntryHandler` now uses the same safe exception-message helper for compatibility-triggered and unexpected `InputScope` assignment warnings, so WinUI fallback logging no longer rethrows on hostile exception `Message` getters
 
 ### Tests
 - Expanded `CommandWorkingDirectoryPolicyTests` to cover mixed-case shell executable names and uppercase env-expanded shell paths

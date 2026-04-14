@@ -220,8 +220,9 @@ public class AppLayerSourceGuardTests
         Assert.Contains("catch (Exception ex) when (WindowsInputScopeCompatibilityPolicy.ShouldDisableInputScopeOnException(ex))", source);
         Assert.Contains("catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)", source);
         Assert.Contains("inputScopeUnsupported = true;", source);
-        Assert.Contains("CrashFileLogger.WriteWarning(nameof(CommandEntryHandler), $\"InputScope assignment disabled after compatibility failure: {ex.Message}\");", source);
-        Assert.Contains("CrashFileLogger.WriteWarning(nameof(CommandEntryHandler), $\"InputScope assignment failed unexpectedly: {ex.Message}\");", source);
+        Assert.Equal(2, CountOccurrences(source, "var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);"));
+        Assert.Contains("CrashFileLogger.WriteWarning(nameof(CommandEntryHandler), $\"InputScope assignment disabled after compatibility failure: {safeMessage}\");", source);
+        Assert.Contains("CrashFileLogger.WriteWarning(nameof(CommandEntryHandler), $\"InputScope assignment failed unexpectedly: {safeMessage}\");", source);
         Assert.Contains("catch", source);
         Assert.Contains("return false;", source);
     }

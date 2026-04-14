@@ -61,12 +61,14 @@ public class CommandEntryHandler : EntryHandler
             // Some WinUI environments throw (for example E_RUNTIME_SETVALUE) when InputScope is assigned.
             // Mark as unsupported so later focuses skip InputScope writes and rely only on imm32 IME fallback.
             inputScopeUnsupported = true;
-            CrashFileLogger.WriteWarning(nameof(CommandEntryHandler), $"InputScope assignment disabled after compatibility failure: {ex.Message}");
+            var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);
+            CrashFileLogger.WriteWarning(nameof(CommandEntryHandler), $"InputScope assignment disabled after compatibility failure: {safeMessage}");
             return false;
         }
         catch (Exception ex)
         {
-            CrashFileLogger.WriteWarning(nameof(CommandEntryHandler), $"InputScope assignment failed unexpectedly: {ex.Message}");
+            var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);
+            CrashFileLogger.WriteWarning(nameof(CommandEntryHandler), $"InputScope assignment failed unexpectedly: {safeMessage}");
             return false;
         }
     }
