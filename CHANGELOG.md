@@ -66,6 +66,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - Expanded `AppLayerSourceGuardTests` to cover normalized reflected `UIKeyCommand` input names before Mac key-input warning breadcrumbs are assembled
 - Expanded `AppStoragePathsTests` and `AppLayerSourceGuardTests` to cover hostile exception-message getters on legacy migration warning construction
 - Expanded `AppStoragePathsTests` and `AppLayerSourceGuardTests` to cover migration source/comparison path normalization before legacy-migration breadcrumbs are written
+- Expanded `AppStoragePathsTests` to cover direct null logged-path normalization inside `NormalizePathForLog(...)`
 - Expanded `FileAppConfigServiceTests` and `AppLayerSourceGuardTests` to cover hostile exception-message getters on skipped-config warning construction
 - Expanded `FileAppConfigServiceTests` and `AppLayerSourceGuardTests` to cover config-path normalization before invalid-theme / skipped-config breadcrumbs are written
 - Expanded `CommandExecutorTests` and `AppLayerSourceGuardTests` to cover hostile exception-message getters on launch failure message construction

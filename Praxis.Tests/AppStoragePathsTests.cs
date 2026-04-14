@@ -120,6 +120,14 @@ public class AppStoragePathsTests
         Assert.Equal(CrashFileLogger.MissingMessagePayloadPlaceholder, result);
     }
 
+    [Fact]
+    public void NormalizePathForLog_WhenPathIsNull_UsesPlaceholder()
+    {
+        var result = InvokeNormalizePathForLog(null);
+
+        Assert.Equal(CrashFileLogger.MissingMessagePayloadPlaceholder, result);
+    }
+
     private static string? InvokeCombineAbsoluteFilePath(string? directoryPath, string fileName)
     {
         var method = typeof(AppStoragePaths).GetMethod("CombineAbsoluteFilePath", BindingFlags.NonPublic | BindingFlags.Static);
@@ -146,7 +154,7 @@ public class AppStoragePathsTests
         return Assert.IsType<string>(result);
     }
 
-    private static string InvokeNormalizePathForLog(string path)
+    private static string InvokeNormalizePathForLog(string? path)
     {
         var method = typeof(AppStoragePaths).GetMethod("NormalizePathForLog", BindingFlags.NonPublic | BindingFlags.Static);
         Assert.NotNull(method);
