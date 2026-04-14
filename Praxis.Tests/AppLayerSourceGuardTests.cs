@@ -269,8 +269,9 @@ public class AppLayerSourceGuardTests
         Assert.Contains("private static bool globalExceptionLoggingHooked;", source);
         Assert.Contains("if (globalExceptionLoggingHooked)", source);
         Assert.Contains("globalExceptionLoggingHooked = true;", source);
-        Assert.Contains("CrashFileLogger.WriteWarning(nameof(AppDelegate), $\"Failed to hook MarshalManagedException: {ex.Message}\");", source);
-        Assert.Contains("CrashFileLogger.WriteWarning(nameof(AppDelegate), $\"Failed to prioritize key command '{selectorName}': {ex.Message}\");", source);
+        Assert.Equal(2, CountOccurrences(source, "var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);"));
+        Assert.Contains("CrashFileLogger.WriteWarning(nameof(AppDelegate), $\"Failed to hook MarshalManagedException: {safeMessage}\");", source);
+        Assert.Contains("CrashFileLogger.WriteWarning(nameof(AppDelegate), $\"Failed to prioritize key command '{selectorName}': {safeMessage}\");", source);
     }
 
     [Fact]
@@ -366,13 +367,16 @@ public class AppLayerSourceGuardTests
         var commandEntrySource = ReadRepositoryFile("Praxis", "Platforms", "MacCatalyst", "Handlers", "CommandEntryHandler.cs");
 
         Assert.Contains("return TryResolveKeyInput(inputName) ?? fallback;", macEntrySource);
-        Assert.Contains("CrashFileLogger.WriteWarning(nameof(MacEntryHandler), $\"Failed to resolve UIKeyCommand input '{inputName}': {ex.Message}\");", macEntrySource);
+        Assert.Contains("var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);", macEntrySource);
+        Assert.Contains("CrashFileLogger.WriteWarning(nameof(MacEntryHandler), $\"Failed to resolve UIKeyCommand input '{inputName}': {safeMessage}\");", macEntrySource);
 
         Assert.Contains("return TryResolveKeyInput(inputName) ?? fallback;", macEditorSource);
-        Assert.Contains("CrashFileLogger.WriteWarning(nameof(MacEditorHandler), $\"Failed to resolve UIKeyCommand input '{inputName}': {ex.Message}\");", macEditorSource);
+        Assert.Contains("var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);", macEditorSource);
+        Assert.Contains("CrashFileLogger.WriteWarning(nameof(MacEditorHandler), $\"Failed to resolve UIKeyCommand input '{inputName}': {safeMessage}\");", macEditorSource);
 
         Assert.Contains("return TryResolveKeyInput(inputName) ?? fallback;", commandEntrySource);
-        Assert.Contains("CrashFileLogger.WriteWarning(nameof(CommandEntryHandler), $\"Failed to resolve UIKeyCommand input '{inputName}': {ex.Message}\");", commandEntrySource);
+        Assert.Contains("var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);", commandEntrySource);
+        Assert.Contains("CrashFileLogger.WriteWarning(nameof(CommandEntryHandler), $\"Failed to resolve UIKeyCommand input '{inputName}': {safeMessage}\");", commandEntrySource);
     }
 
     [Fact]

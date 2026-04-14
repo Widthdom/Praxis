@@ -348,7 +348,8 @@ public class MacEditorHandler : EditorHandler
         }
         catch (Exception ex)
         {
-            CrashFileLogger.WriteWarning(nameof(MacEditorHandler), $"Failed to resolve UIKeyCommand input '{inputName}': {ex.Message}");
+            var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);
+            CrashFileLogger.WriteWarning(nameof(MacEditorHandler), $"Failed to resolve UIKeyCommand input '{inputName}': {safeMessage}");
         }
 
         return null;
