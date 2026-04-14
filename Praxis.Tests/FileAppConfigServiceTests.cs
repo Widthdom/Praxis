@@ -204,6 +204,14 @@ public class FileAppConfigServiceTests
         Assert.Empty(result);
     }
 
+    [Fact]
+    public void NormalizeAbsoluteDirectory_WhenValueIsNull_ReturnsNull()
+    {
+        var result = InvokeNormalizeAbsoluteDirectory(null);
+
+        Assert.Null(result);
+    }
+
     private static ThemeMode InvokeResolveThemeModeFromCandidates(IEnumerable<string> candidatePaths, JsonSerializerOptions options)
     {
         var method = typeof(FileAppConfigService).GetMethod("ResolveThemeModeFromCandidates", BindingFlags.NonPublic | BindingFlags.Static);
@@ -238,6 +246,14 @@ public class FileAppConfigServiceTests
 
         var result = method.Invoke(null, [path]);
         return Assert.IsType<string>(result);
+    }
+
+    private static string? InvokeNormalizeAbsoluteDirectory(string? path)
+    {
+        var method = typeof(FileAppConfigService).GetMethod("NormalizeAbsoluteDirectory", BindingFlags.NonPublic | BindingFlags.Static);
+        Assert.NotNull(method);
+
+        return method.Invoke(null, [path]) as string;
     }
 
     private sealed class ThrowingUnauthorizedAccessException : UnauthorizedAccessException
