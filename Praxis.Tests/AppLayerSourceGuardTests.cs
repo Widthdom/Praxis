@@ -340,7 +340,8 @@ public class AppLayerSourceGuardTests
         var source = ReadRepositoryFile("Praxis", "Services", "MauiThemeService.cs");
 
         Assert.Contains("if (Application.Current.UserAppTheme == appTheme)", source);
-        Assert.Contains("CrashFileLogger.WriteWarning(nameof(MauiThemeService), $\"ApplyMacWindowStyle dispatch failed: {ex.Message}\");", source);
+        Assert.Contains("var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);", source);
+        Assert.Contains("CrashFileLogger.WriteWarning(nameof(MauiThemeService), $\"ApplyMacWindowStyle dispatch failed: {safeMessage}\");", source);
     }
 
     [Fact]

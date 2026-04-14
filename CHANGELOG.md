@@ -15,6 +15,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - `AppStoragePaths` now uses the same safe exception-message helper for legacy database migration and invalid-path-comparison warnings, so startup migration keeps skipping bad candidates even when an exception's `Message` getter is hostile
 - `FileAppConfigService` now uses the same safe exception-message helper when skipped config reads throw `IOException` / `UnauthorizedAccessException` / `JsonException`, so warning logging still persists a breadcrumb even if the exception's `Message` getter is hostile
 - `CommandExecutor` now uses the same safe exception-message helper for launch-target resolution and native process-start failure messages, so fallback warning/result construction no longer rethrows on hostile exception `Message` getters
+- `MauiThemeService` now uses the same safe exception-message helper for Mac dispatch-failure breadcrumbs, so theme-apply warning logging no longer rethrows on hostile exception `Message` getters
 
 ### Tests
 - Expanded `CommandWorkingDirectoryPolicyTests` to cover mixed-case shell executable names and uppercase env-expanded shell paths
