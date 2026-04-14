@@ -170,6 +170,11 @@ public class AppLayerSourceGuardTests
     {
         var source = ReadRepositoryFile("Praxis", "Services", "CommandExecutor.cs");
         Assert.Contains("var normalizedTool = ExpandHomePath(NormalizeToolPath(tool));", source);
+        Assert.Contains("private static string NormalizeTargetForLog(string value)", source);
+        Assert.Contains("var normalizedToolForLog = NormalizeTargetForLog(tool);", source);
+        Assert.Contains("var normalizedUrlForLog = NormalizeTargetForLog(url);", source);
+        Assert.Contains("var normalizedArgumentsForLog = NormalizeTargetForLog(arguments);", source);
+        Assert.Contains("var normalizedExpandedForLog = NormalizeTargetForLog(expanded);", source);
         Assert.Contains("private static string BuildFailureMessage(string prefix, Exception ex)", source);
         Assert.Contains("var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);", source);
     }
@@ -179,9 +184,10 @@ public class AppLayerSourceGuardTests
     {
         var source = ReadRepositoryFile("Praxis", "Services", "CommandExecutor.cs");
 
-        Assert.Contains("var warningMessage = BuildFailureMessage($\"Launch target resolution failed for '{arguments}':\", ex);", source);
+        Assert.Contains("var warningMessage = BuildFailureMessage($\"Launch target resolution failed for '{normalizedArgumentsForLog}':\", ex);", source);
         Assert.Contains("var resultMessage = BuildFailureMessage(\"Launch target resolution failed:\", ex);", source);
         Assert.Contains("var failureMessage = BuildFailureMessage(failurePrefix, ex);", source);
+        Assert.Contains("return Task.FromResult(StartProcess(psi, \"Executed.\", $\"Process launch failed for tool '{normalizedToolForLog}'.\"));", source);
         Assert.Contains("CrashFileLogger.WriteWarning(nameof(CommandExecutor), warningMessage);", source);
         Assert.Contains("CrashFileLogger.WriteWarning(nameof(CommandExecutor), failureMessage);", source);
         Assert.Contains("CrashFileLogger.WriteWarning(nameof(CommandExecutor), $\"{failurePrefix} No process handle was returned.\");", source);

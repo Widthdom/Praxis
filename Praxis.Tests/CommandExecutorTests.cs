@@ -175,6 +175,25 @@ public class CommandExecutorTests
         Assert.Equal($"{prefix} (empty)", result);
     }
 
+    [Fact]
+    public void NormalizeTargetForLog_WhenValueIsMultiline_CollapsesToSingleLine()
+    {
+        var markerA = $"target-a-{Guid.NewGuid():N}";
+        var markerB = $"target-b-{Guid.NewGuid():N}";
+
+        var result = InvokeNormalizeTargetForLog($"{markerA}\r\n{markerB}");
+
+        Assert.Equal($"{markerA} {markerB}", result);
+    }
+
+    [Fact]
+    public void NormalizeTargetForLog_WhenValueIsWhitespace_UsesPlaceholder()
+    {
+        var result = InvokeNormalizeTargetForLog(" \r\n\t ");
+
+        Assert.Equal(CrashFileLogger.MissingMessagePayloadPlaceholder, result);
+    }
+
     private static string InvokeExpandHomePath(string value)
     {
         var method = typeof(CommandExecutor).GetMethod("ExpandHomePath", BindingFlags.NonPublic | BindingFlags.Static);
@@ -235,6 +254,15 @@ public class CommandExecutorTests
         Assert.NotNull(method);
 
         var result = method.Invoke(null, [prefix, ex]);
+        return Assert.IsType<string>(result);
+    }
+
+    private static string InvokeNormalizeTargetForLog(string value)
+    {
+        var method = typeof(CommandExecutor).GetMethod("NormalizeTargetForLog", BindingFlags.NonPublic | BindingFlags.Static);
+        Assert.NotNull(method);
+
+        var result = method.Invoke(null, [value]);
         return Assert.IsType<string>(result);
     }
 

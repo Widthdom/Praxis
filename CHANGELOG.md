@@ -17,6 +17,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - `FileAppConfigService` now uses the same safe exception-message helper when skipped config reads throw `IOException` / `UnauthorizedAccessException` / `JsonException`, so warning logging still persists a breadcrumb even if the exception's `Message` getter is hostile
 - `FileAppConfigService` now also normalizes logged config path fragments before interpolating them into invalid-theme / skipped-config breadcrumbs, so newline-bearing candidate paths cannot break crash-log line structure
 - `CommandExecutor` now uses the same safe exception-message helper for launch-target resolution and native process-start failure messages, so fallback warning/result construction no longer rethrows on hostile exception `Message` getters
+- `CommandExecutor` now also normalizes logged tool / URL / path / argument fragments before interpolating them into failure prefixes, so newline-bearing launch targets cannot break crash-log breadcrumb formatting
 - `MauiThemeService` now uses the same safe exception-message helper for Mac dispatch-failure breadcrumbs, so theme-apply warning logging no longer rethrows on hostile exception `Message` getters
 - `FileStateSyncNotifier` now routes write/read/unexpected publish warning construction through the same safe exception-message helper, so sync breadcrumbs survive hostile exception `Message` getters
 - `FileStateSyncNotifier` now also normalizes malformed payload and observed-source fragments before interpolating them into crash-log warning/info lines, so sync breadcrumbs stay single-line even if the sync file contains embedded newlines or whitespace-only payload markers
@@ -38,6 +39,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - Expanded `FileAppConfigServiceTests` and `AppLayerSourceGuardTests` to cover hostile exception-message getters on skipped-config warning construction
 - Expanded `FileAppConfigServiceTests` and `AppLayerSourceGuardTests` to cover config-path normalization before invalid-theme / skipped-config breadcrumbs are written
 - Expanded `CommandExecutorTests` and `AppLayerSourceGuardTests` to cover hostile exception-message getters on launch failure message construction
+- Expanded `CommandExecutorTests` and `AppLayerSourceGuardTests` to cover tool / URL / path / argument normalization before launch-failure breadcrumbs are assembled
 - Added `FileStateSyncNotifierTests` and expanded `AppLayerSourceGuardTests` to cover hostile exception-message getters on sync warning construction
 - Expanded `FileStateSyncNotifierTests` and `AppLayerSourceGuardTests` to cover malformed/observed sync payload normalization before those fragments reach warning/info crash-log lines
 ### [1.1.9] - 2026-04-14
