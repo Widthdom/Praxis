@@ -47,6 +47,40 @@ public class SecondaryFailureLoggerTests
     }
 
     [Fact]
+    public void TryAppendFallbackContent_ReturnsFalse_WhenAllFallbackRootsAreBlocked()
+    {
+        var tempRootSentinel = Path.Combine(Path.GetTempPath(), $"secondary-blocked-temp-{Guid.NewGuid():N}.txt");
+        var currentRootSentinel = Path.Combine(Path.GetTempPath(), $"secondary-blocked-current-{Guid.NewGuid():N}.txt");
+
+        File.WriteAllText(tempRootSentinel, "occupied");
+        File.WriteAllText(currentRootSentinel, "occupied");
+
+        try
+        {
+            var success = SecondaryFailureLogger.TryAppendFallbackContent(
+                "blocked",
+                out var writtenPath,
+                tempRootSentinel,
+                currentRootSentinel);
+
+            Assert.False(success);
+            Assert.Null(writtenPath);
+        }
+        finally
+        {
+            if (File.Exists(tempRootSentinel))
+            {
+                File.Delete(tempRootSentinel);
+            }
+
+            if (File.Exists(currentRootSentinel))
+            {
+                File.Delete(currentRootSentinel);
+            }
+        }
+    }
+
+    [Fact]
     public void TryReportStartupLogFailure_WritesFallbackFile_WhenPrimaryCrashSinkFails()
     {
         var tempRootSentinel = Path.Combine(Path.GetTempPath(), $"secondary-report-sentinel-{Guid.NewGuid():N}.txt");
