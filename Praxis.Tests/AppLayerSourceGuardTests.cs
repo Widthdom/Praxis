@@ -273,6 +273,16 @@ public class AppLayerSourceGuardTests
     }
 
     [Fact]
+    public void SecondaryFailureLogger_PreservesOriginalStartupMessages_EvenWhenWhitespaceOnly()
+    {
+        var source = ReadRepositoryFile("Praxis", "Services", "SecondaryFailureLogger.cs");
+
+        Assert.Contains("else if (originalMessage is not null)", source);
+        Assert.Contains("CrashFileLogger.NormalizeMessagePayload(originalMessage)", source);
+        Assert.DoesNotContain("else if (!string.IsNullOrWhiteSpace(originalMessage))", source, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void MacAppDelegate_GuardsDuplicateGlobalExceptionHookRegistration()
     {
         var source = ReadRepositoryFile("Praxis", "Platforms", "MacCatalyst", "AppDelegate.cs");
