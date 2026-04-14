@@ -202,6 +202,15 @@ public class CrashFileLoggerTests
     }
 
     [Fact]
+    public void WriteException_WhitespaceOnlyMessage_UsesEmptyMarker()
+    {
+        CrashFileLogger.WriteException("test", new WhitespaceMessageException());
+
+        var content = File.ReadAllText(CrashFileLogger.LogFilePath);
+        Assert.Contains("Message: (empty)", content);
+    }
+
+    [Fact]
     public void WriteException_WideAggregate_UsesBoundedSummaryAndTailSampling()
     {
         var middleMarker = $"AggMiddle-{Guid.NewGuid()}";
