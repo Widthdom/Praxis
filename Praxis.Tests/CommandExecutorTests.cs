@@ -194,6 +194,14 @@ public class CommandExecutorTests
         Assert.Equal(CrashFileLogger.MissingMessagePayloadPlaceholder, result);
     }
 
+    [Fact]
+    public void NormalizeTargetForLog_WhenValueIsNull_UsesPlaceholder()
+    {
+        var result = InvokeNormalizeTargetForLog(null);
+
+        Assert.Equal(CrashFileLogger.MissingMessagePayloadPlaceholder, result);
+    }
+
     private static string InvokeExpandHomePath(string value)
     {
         var method = typeof(CommandExecutor).GetMethod("ExpandHomePath", BindingFlags.NonPublic | BindingFlags.Static);
@@ -257,7 +265,7 @@ public class CommandExecutorTests
         return Assert.IsType<string>(result);
     }
 
-    private static string InvokeNormalizeTargetForLog(string value)
+    private static string InvokeNormalizeTargetForLog(string? value)
     {
         var method = typeof(CommandExecutor).GetMethod("NormalizeTargetForLog", BindingFlags.NonPublic | BindingFlags.Static);
         Assert.NotNull(method);
