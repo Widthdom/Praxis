@@ -153,6 +153,28 @@ public class CommandExecutorTests
             result);
     }
 
+    [Fact]
+    public void BuildFailureMessage_WhenExceptionMessageIsMultiline_CollapsesToSingleLine()
+    {
+        var prefix = $"CommandExecutor failure {Guid.NewGuid():N}";
+        var markerA = $"command-a-{Guid.NewGuid():N}";
+        var markerB = $"command-b-{Guid.NewGuid():N}";
+
+        var result = InvokeBuildFailureMessage(prefix, new MultilineMessageException($"{markerA}\r\n{markerB}"));
+
+        Assert.Equal($"{prefix} {markerA} {markerB}", result);
+    }
+
+    [Fact]
+    public void BuildFailureMessage_WhenExceptionMessageIsWhitespace_UsesEmptyMarker()
+    {
+        var prefix = $"CommandExecutor failure {Guid.NewGuid():N}";
+
+        var result = InvokeBuildFailureMessage(prefix, new WhitespaceMessageException());
+
+        Assert.Equal($"{prefix} (empty)", result);
+    }
+
     private static string InvokeExpandHomePath(string value)
     {
         var method = typeof(CommandExecutor).GetMethod("ExpandHomePath", BindingFlags.NonPublic | BindingFlags.Static);
@@ -219,5 +241,15 @@ public class CommandExecutorTests
     private sealed class ThrowingMessageException : Exception
     {
         public override string Message => throw new InvalidOperationException("message getter failure");
+    }
+
+    private sealed class MultilineMessageException(string value) : Exception
+    {
+        public override string Message => value;
+    }
+
+    private sealed class WhitespaceMessageException : Exception
+    {
+        public override string Message => " \r\n\t ";
     }
 }
