@@ -46,22 +46,28 @@ public sealed class FileAppConfigService : IAppConfigService
             }
             catch (IOException ex)
             {
-                CrashFileLogger.WriteWarning(nameof(FileAppConfigService), $"Skipping config '{path}': {ex.Message}");
+                WriteSkippedConfigWarning(path, ex);
                 continue;
             }
             catch (UnauthorizedAccessException ex)
             {
-                CrashFileLogger.WriteWarning(nameof(FileAppConfigService), $"Skipping config '{path}': {ex.Message}");
+                WriteSkippedConfigWarning(path, ex);
                 continue;
             }
             catch (JsonException ex)
             {
-                CrashFileLogger.WriteWarning(nameof(FileAppConfigService), $"Skipping config '{path}': {ex.Message}");
+                WriteSkippedConfigWarning(path, ex);
                 continue;
             }
         }
 
         return ThemeMode.System;
+    }
+
+    private static void WriteSkippedConfigWarning(string path, Exception ex)
+    {
+        var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);
+        CrashFileLogger.WriteWarning(nameof(FileAppConfigService), $"Skipping config '{path}': {safeMessage}");
     }
 
     private static void AppendCandidatePath(List<string> candidates, string? directory)

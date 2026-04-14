@@ -121,6 +121,18 @@ public class FileAppConfigServiceTests
     }
 
     [Fact]
+    public void WriteSkippedConfigWarning_WhenExceptionMessageGetterThrows_UsesFallbackMarker()
+    {
+        var marker = $"config-warning-{Guid.NewGuid():N}";
+        var path = $"/tmp/{marker}/praxis.config.json";
+
+        InvokeWriteSkippedConfigWarning(path, new ThrowingUnauthorizedAccessException());
+
+        var content = File.ReadAllText(CrashFileLogger.LogFilePath);
+        Assert.Contains($"Skipping config '{path}': (failed to read exception message: System.InvalidOperationException: message getter failure)", content);
+    }
+
+    [Fact]
     public void EnumerateCandidatePaths_DeduplicatesEquivalentDirectories()
     {
         var path = "/tmp/praxis-config";
@@ -147,5 +159,19 @@ public class FileAppConfigServiceTests
 
         var result = method.Invoke(null, [baseDirectory, appDataDirectory]);
         return Assert.IsAssignableFrom<IReadOnlyList<string>>(result);
+    }
+
+    private static void InvokeWriteSkippedConfigWarning(string path, Exception ex)
+    {
+        var method = typeof(FileAppConfigService).GetMethod("WriteSkippedConfigWarning", BindingFlags.NonPublic | BindingFlags.Static);
+        Assert.NotNull(method);
+
+        var invocation = Record.Exception(() => method.Invoke(null, [path, ex]));
+        Assert.Null(invocation);
+    }
+
+    private sealed class ThrowingUnauthorizedAccessException : UnauthorizedAccessException
+    {
+        public override string Message => throw new InvalidOperationException("message getter failure");
     }
 }
