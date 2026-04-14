@@ -309,6 +309,14 @@ public class SecondaryFailureLoggerTests
     }
 
     [Fact]
+    public void NormalizePathForLog_WhenValueIsWhitespace_UsesPlaceholder()
+    {
+        var result = InvokeNormalizePathForLog(" \r\n\t ");
+
+        Assert.Equal(CrashFileLogger.MissingMessagePayloadPlaceholder, result);
+    }
+
+    [Fact]
     public void TryReportStartupLogFailure_NormalizesMultilineOriginalMessage_ToSingleLine()
     {
         var tempRootSentinel = Path.Combine(Path.GetTempPath(), $"secondary-original-multiline-sentinel-{Guid.NewGuid():N}.txt");
