@@ -409,6 +409,14 @@ public class CrashFileLoggerTests
     }
 
     [Fact]
+    public void SafeObjectDescription_WhenValueIsNull_ReturnsNullMarker()
+    {
+        var content = CrashFileLogger.SafeObjectDescription(null);
+
+        Assert.Equal("(null)", content);
+    }
+
+    [Fact]
     public void SafeObjectDescription_WhenToStringIsMultiline_CollapsesToSingleLine()
     {
         var markerA = $"object-a-{Guid.NewGuid():N}";
