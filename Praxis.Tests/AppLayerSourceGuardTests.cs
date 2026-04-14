@@ -7,6 +7,8 @@ public class AppLayerSourceGuardTests
     {
         var source = ReadRepositoryFile("Praxis", "MainPage.xaml.cs");
         Assert.Contains("CrashFileLogger.WriteException(\"MainPage.InitializeComponent\", ex);", source);
+        Assert.Contains("var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);", source);
+        Assert.Contains("new Label { Text = safeMessage },", source);
     }
 
     [Fact]
@@ -28,6 +30,8 @@ public class AppLayerSourceGuardTests
     public void MainPage_InitializationAlertFailure_IsCrashLogged()
     {
         var source = ReadRepositoryFile("Praxis", "MainPage.xaml.cs");
+        Assert.Contains("var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);", source);
+        Assert.Contains("await DisplayAlertAsync(\"Initialization Error\", safeMessage, \"OK\");", source);
         Assert.Contains("CrashFileLogger.WriteException(\"MainPage.OnAppearing.DisplayAlertAsync\", alertEx);", source);
     }
 
@@ -79,6 +83,8 @@ public class AppLayerSourceGuardTests
         Assert.Contains("if (page is MainPage)", source);
         Assert.Contains("rootPage = page;", source);
         Assert.Contains("Root page resolution fell back to an error page; cache not updated.", source);
+        Assert.Contains("var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);", source);
+        Assert.Contains("new Label { Text = safeMessage },", source);
     }
 
     [Fact]

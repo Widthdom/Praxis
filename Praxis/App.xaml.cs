@@ -179,6 +179,7 @@ public partial class App : Application
         catch (Exception ex)
         {
             errorLogger?.Log(ex, nameof(ResolveRootPage));
+            var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);
             return new ContentPage
             {
                 Title = "Praxis",
@@ -191,7 +192,7 @@ public partial class App : Application
                         Children =
                         {
                             new Label { Text = "Failed to initialize MainPage." },
-                            new Label { Text = ex.Message },
+                            new Label { Text = safeMessage },
                         },
                     },
                 },

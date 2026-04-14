@@ -30,13 +30,14 @@ public partial class MainPage : ContentPage
         {
             xamlLoaded = false;
             CrashFileLogger.WriteException("MainPage.InitializeComponent", ex);
+            var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);
             Content = new VerticalStackLayout
             {
                 Padding = 24,
                 Children =
                 {
                     new Label { Text = "MainPage XAML load failed." },
-                    new Label { Text = ex.Message },
+                    new Label { Text = safeMessage },
                 },
             };
         }
@@ -161,7 +162,8 @@ public partial class MainPage : ContentPage
             CrashFileLogger.WriteException("MainPage.OnAppearing.InitializeAsync", ex);
             try
             {
-                await DisplayAlertAsync("Initialization Error", ex.Message, "OK");
+                var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);
+                await DisplayAlertAsync("Initialization Error", safeMessage, "OK");
             }
             catch (Exception alertEx)
             {
