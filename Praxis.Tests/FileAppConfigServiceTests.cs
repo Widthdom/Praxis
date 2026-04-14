@@ -212,6 +212,14 @@ public class FileAppConfigServiceTests
         Assert.Null(result);
     }
 
+    [Fact]
+    public void NormalizeAbsoluteDirectory_WhenQuotedRelativeValue_ReturnsNull()
+    {
+        var result = InvokeNormalizeAbsoluteDirectory("  \"relative/config\"  ");
+
+        Assert.Null(result);
+    }
+
     private static ThemeMode InvokeResolveThemeModeFromCandidates(IEnumerable<string> candidatePaths, JsonSerializerOptions options)
     {
         var method = typeof(FileAppConfigService).GetMethod("ResolveThemeModeFromCandidates", BindingFlags.NonPublic | BindingFlags.Static);

@@ -72,6 +72,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - Expanded `FileAppConfigServiceTests` to cover direct null logged-config-path normalization inside `NormalizePathForLog(...)`
 - Expanded `FileAppConfigServiceTests` to cover candidate enumeration rejecting blank/relative config roots
 - Expanded `FileAppConfigServiceTests` to cover direct null `NormalizeAbsoluteDirectory(...)` helper behavior
+- Expanded `FileAppConfigServiceTests` to cover quoted-relative rejection inside `NormalizeAbsoluteDirectory(...)`
 - Expanded `CommandExecutorTests` and `AppLayerSourceGuardTests` to cover hostile exception-message getters on launch failure message construction
 - Expanded `CommandExecutorTests` and `AppLayerSourceGuardTests` to cover tool / URL / path / argument normalization before launch-failure breadcrumbs are assembled
 - Expanded `CommandExecutorTests` to cover direct null target-fragment normalization inside `NormalizeTargetForLog(...)`
