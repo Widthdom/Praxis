@@ -1024,6 +1024,22 @@ public class DbErrorLoggerTests
     }
 
     [Fact]
+    public async Task Log_NormalizesMultilineContext_InPersistFailureBreadcrumb()
+    {
+        var repo = new FailingAppRepository();
+        var logger = new DbErrorLogger(repo);
+        var context = $"repo-fail-context-{Guid.NewGuid():N}";
+
+        logger.Log(new Exception("repo fail test"), $"  {context}\r\nchild  ");
+
+        var ex = await Record.ExceptionAsync(() => logger.FlushAsync(TimeSpan.FromSeconds(2)));
+        Assert.Null(ex);
+
+        var content = File.ReadAllText(CrashFileLogger.LogFilePath);
+        Assert.Contains($"Failed to persist Error log for '{context} child': Simulated DB failure", content);
+    }
+
+    [Fact]
     public async Task LogWarning_DoesNotThrow_WhenRepositoryFails()
     {
         var repo = new FailingAppRepository();
