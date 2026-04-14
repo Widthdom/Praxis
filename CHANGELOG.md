@@ -26,6 +26,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - `FileStateSyncNotifier` now also normalizes sync-file path fragments before interpolating them into write-success/write-failure breadcrumbs, so malformed storage paths cannot break crash-log line structure
 - `Windows CommandEntryHandler` now uses the same safe exception-message helper for compatibility-triggered and unexpected `InputScope` assignment warnings, so WinUI fallback logging no longer rethrows on hostile exception `Message` getters
 - Mac `AppDelegate` and the Mac entry/editor/command handlers now use the same safe exception-message helper for `MarshalManagedException` hook, key-command-priority, and `UIKeyCommand` input-resolution warning breadcrumbs, so those fallback paths no longer rethrow on hostile exception `Message` getters
+- Mac entry/editor/command handlers now also normalize reflected `UIKeyCommand` input names before interpolating them into warning breadcrumbs, so malformed reflection metadata cannot break crash-log line structure
 - Mac `Program` now uses the same safe exception-message helper for LaunchServices relay failure breadcrumbs, so open-relay warning logging no longer rethrows on hostile exception `Message` getters
 - Mac `Program` now also normalizes logged LaunchServices bundle-path fragments before interpolating them into relay breadcrumbs, so malformed bundle paths cannot break crash-log line structure
 - `MiddleClickBehavior` and `MainPage.MacCatalystBehavior` now use the same safe exception-message helper for `buttonMaskRequired`, deferred middle-click execution, Mac editor key-command creation, and CoreGraphics fallback warning breadcrumbs, so those degraded Mac input paths no longer rethrow on hostile exception `Message` getters
@@ -53,6 +54,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - Expanded `SecondaryFailureLoggerTests` to cover whitespace-only target-path normalization helper behavior
 - Expanded `SecondaryFailureLoggerTests` to cover multiline operation normalization helper behavior
 - Expanded `MainViewModelWorkflowIntegrationTests` and `AppLayerSourceGuardTests` to cover hostile exception-message getters on `MainViewModel` warning paths, including external theme sync, command lookup fallback, conflict callbacks, clipboard follow-up logging, sync notifications, and theme persistence
+- Expanded `AppLayerSourceGuardTests` to cover normalized reflected `UIKeyCommand` input names before Mac key-input warning breadcrumbs are assembled
 - Expanded `AppStoragePathsTests` and `AppLayerSourceGuardTests` to cover hostile exception-message getters on legacy migration warning construction
 - Expanded `AppStoragePathsTests` and `AppLayerSourceGuardTests` to cover migration source/comparison path normalization before legacy-migration breadcrumbs are written
 - Expanded `FileAppConfigServiceTests` and `AppLayerSourceGuardTests` to cover hostile exception-message getters on skipped-config warning construction
