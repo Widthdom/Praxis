@@ -945,6 +945,42 @@ public class MainViewModelWorkflowIntegrationTests
     }
 
     [Fact]
+    public async Task ExecuteButton_WhenClipboardWriteMessageIsMultiline_UsesSingleLineWarningAndStillSucceeds()
+    {
+        var repository = new InMemoryAppRepository();
+        await repository.UpsertButtonAsync(new LauncherButtonRecord
+        {
+            Id = Guid.NewGuid(),
+            Command = "build",
+            ButtonText = "Build",
+            Tool = "echo",
+            Arguments = "one",
+            ClipText = "copied",
+        });
+
+        var markerA = $"clipboard-a-{Guid.NewGuid():N}";
+        var markerB = $"clipboard-b-{Guid.NewGuid():N}";
+        var executor = new RecordingCommandExecutor((true, "ok"));
+        var clipboard = new RecordingClipboardService
+        {
+            ThrowOnSetText = new MultilineMessageException($"{markerA}\r\n{markerB}"),
+        };
+        var theme = new RecordingThemeService();
+        var syncNotifier = new TestStateSyncNotifier();
+        var logger = new RecordingErrorLogger();
+        var viewModel = new MainViewModel(repository, executor, clipboard, theme, syncNotifier, logger);
+        await viewModel.InitializeAsync();
+
+        await viewModel.ExecuteButtonCommand.ExecuteAsync(Assert.Single(viewModel.VisibleButtons));
+
+        Assert.Single(executor.Calls);
+        Assert.Single(repository.Logs);
+        Assert.Equal("Executed.", viewModel.StatusText);
+        Assert.Contains(logger.Warnings, x => x.Context == "ExecuteRecordAsync" && x.Message.Contains($"{markerA} {markerB}", StringComparison.Ordinal));
+        Assert.Contains(logger.Exceptions, x => x.Context == "ExecuteRecordAsync" && x.Exception is MultilineMessageException);
+    }
+
+    [Fact]
     public async Task SaveEditor_WhenSyncNotifyFails_StillPersistsAndLogsWarning()
     {
         var repository = new InMemoryAppRepository();
@@ -1032,6 +1068,38 @@ public class MainViewModelWorkflowIntegrationTests
         Assert.Equal("Saved.", viewModel.StatusText);
         Assert.Contains(logger.Warnings, x => x.Context == "SaveEditorAsync" && x.Message.Contains("(empty)", StringComparison.Ordinal));
         Assert.Contains(logger.Exceptions, x => x.Context == "SaveEditorAsync" && x.Exception is WhitespaceMessageException);
+    }
+
+    [Fact]
+    public async Task SaveEditor_WhenSyncNotifyMessageIsMultiline_UsesSingleLineWarningAndStillPersists()
+    {
+        var repository = new InMemoryAppRepository();
+        var executor = new RecordingCommandExecutor((true, "ok"));
+        var clipboard = new RecordingClipboardService();
+        var theme = new RecordingThemeService();
+        var markerA = $"sync-a-{Guid.NewGuid():N}";
+        var markerB = $"sync-b-{Guid.NewGuid():N}";
+        var syncNotifier = new TestStateSyncNotifier
+        {
+            ThrowOnNotify = new MultilineMessageException($"{markerA}\r\n{markerB}"),
+        };
+        var logger = new RecordingErrorLogger();
+        var viewModel = new MainViewModel(repository, executor, clipboard, theme, syncNotifier, logger);
+        await viewModel.InitializeAsync();
+
+        viewModel.CreateNewCommand.Execute(null);
+        viewModel.Editor.Command = "build";
+        viewModel.Editor.ButtonText = "Build";
+        viewModel.Editor.Tool = "echo";
+        viewModel.Editor.Arguments = "one";
+
+        await viewModel.SaveEditorCommand.ExecuteAsync(null);
+
+        Assert.Single(await repository.GetButtonsAsync());
+        Assert.False(viewModel.IsEditorOpen);
+        Assert.Equal("Saved.", viewModel.StatusText);
+        Assert.Contains(logger.Warnings, x => x.Context == "SaveEditorAsync" && x.Message.Contains($"{markerA} {markerB}", StringComparison.Ordinal));
+        Assert.Contains(logger.Exceptions, x => x.Context == "SaveEditorAsync" && x.Exception is MultilineMessageException);
     }
 
     [Fact]
@@ -1738,5 +1806,10 @@ public class MainViewModelWorkflowIntegrationTests
     private sealed class WhitespaceMessageException : Exception
     {
         public override string Message => " \r\n\t ";
+    }
+
+    private sealed class MultilineMessageException(string value) : Exception
+    {
+        public override string Message => value;
     }
 }
