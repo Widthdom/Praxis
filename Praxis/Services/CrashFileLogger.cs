@@ -184,7 +184,8 @@ public static class CrashFileLogger
     {
         try
         {
-            return NormalizeExceptionMessage(ex.Message);
+            var text = NormalizeExceptionMessage(ex.Message);
+            return string.IsNullOrEmpty(text) ? "(empty)" : text;
         }
         catch (Exception getterEx)
         {
