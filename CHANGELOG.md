@@ -22,6 +22,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - Mac `Program` now uses the same safe exception-message helper for LaunchServices relay failure breadcrumbs, so open-relay warning logging no longer rethrows on hostile exception `Message` getters
 - `MiddleClickBehavior` and `MainPage.MacCatalystBehavior` now use the same safe exception-message helper for `buttonMaskRequired`, deferred middle-click execution, Mac editor key-command creation, and CoreGraphics fallback warning breadcrumbs, so those degraded Mac input paths no longer rethrow on hostile exception `Message` getters
 - `MainPage` now uses the same safe exception-message helper for copy-notice, status-flash, Dock hover-exit, and Quick Look animation warning breadcrumbs, so those non-fatal UI recovery paths no longer rethrow on hostile exception `Message` getters
+- `MainPage` now also routes button-tap execution, secondary-tap create flow, modal primary-focus fallback, `UseSystemFocusVisuals`, and `IsTabStop` warning breadcrumbs through the same safe exception-message helper, so more Windows/UI fallback paths no longer rethrow on hostile exception `Message` getters
 
 ### Tests
 - Expanded `CommandWorkingDirectoryPolicyTests` to cover mixed-case shell executable names and uppercase env-expanded shell paths

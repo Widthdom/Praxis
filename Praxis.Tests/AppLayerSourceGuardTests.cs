@@ -234,9 +234,12 @@ public class AppLayerSourceGuardTests
         var pointerSource = ReadRepositoryFile("Praxis", "MainPage.PointerAndSelection.cs");
         var layoutSource = ReadRepositoryFile("Praxis", "MainPage.LayoutUtilities.cs");
 
-        Assert.Contains("CrashFileLogger.WriteWarning(nameof(DisableWindowsSystemFocusVisual), $\"Failed to disable UseSystemFocusVisuals: {ex.Message}\");", focusSource);
-        Assert.Contains("CrashFileLogger.WriteWarning(nameof(FocusModalPrimaryEditorField), $\"Failed to focus modal ButtonText entry: {ex.Message}\");", pointerSource);
-        Assert.Contains("CrashFileLogger.WriteWarning(nameof(SetTabStop), $\"Failed to set IsTabStop={isTabStop}: {ex.Message}\");", layoutSource);
+        Assert.Contains("var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);", focusSource);
+        Assert.Contains("CrashFileLogger.WriteWarning(nameof(DisableWindowsSystemFocusVisual), $\"Failed to disable UseSystemFocusVisuals: {safeMessage}\");", focusSource);
+        Assert.Contains("var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);", pointerSource);
+        Assert.Contains("CrashFileLogger.WriteWarning(nameof(FocusModalPrimaryEditorField), $\"Failed to focus modal ButtonText entry: {safeMessage}\");", pointerSource);
+        Assert.Contains("var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);", layoutSource);
+        Assert.Contains("CrashFileLogger.WriteWarning(nameof(SetTabStop), $\"Failed to set IsTabStop={isTabStop}: {safeMessage}\");", layoutSource);
     }
 
     [Fact]
@@ -447,14 +450,29 @@ public class AppLayerSourceGuardTests
     public void MainPage_ButtonTapExecutionFailures_AreWarningLogged()
     {
         var source = ReadRepositoryFile("Praxis", "MainPage.EditorAndInput.cs");
-        Assert.Contains("CrashFileLogger.WriteWarning(nameof(Draggable_Tapped), $\"Button tap execution failed for '{item.ButtonText}': {ex.Message}\");", source);
+        Assert.Contains("var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);", source);
+        Assert.Contains("CrashFileLogger.WriteWarning(nameof(Draggable_Tapped), $\"Button tap execution failed for '{item.ButtonText}': {safeMessage}\");", source);
     }
 
     [Fact]
     public void MainPage_SecondaryTapCreateFailures_AreWarningLogged()
     {
         var source = ReadRepositoryFile("Praxis", "MainPage.PointerAndSelection.cs");
-        Assert.Contains("CrashFileLogger.WriteWarning(nameof(PlacementCanvas_SecondaryTapped), $\"Secondary-tap create flow failed: {ex.Message}\");", source);
+        Assert.Equal(2, CountOccurrences(source, "var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);"));
+        Assert.Contains("CrashFileLogger.WriteWarning(nameof(PlacementCanvas_SecondaryTapped), $\"Secondary-tap create flow failed: {safeMessage}\");", source);
+        Assert.Contains("CrashFileLogger.WriteWarning(nameof(FocusModalPrimaryEditorField), $\"Failed to focus modal ButtonText entry: {safeMessage}\");", source);
+    }
+
+    [Fact]
+    public void MainPage_WindowsFocusFallbackFailures_AreWarningLogged()
+    {
+        var focusSource = ReadRepositoryFile("Praxis", "MainPage.FocusAndContext.cs");
+        var layoutSource = ReadRepositoryFile("Praxis", "MainPage.LayoutUtilities.cs");
+
+        Assert.Contains("var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);", focusSource);
+        Assert.Contains("CrashFileLogger.WriteWarning(nameof(DisableWindowsSystemFocusVisual), $\"Failed to disable UseSystemFocusVisuals: {safeMessage}\");", focusSource);
+        Assert.Contains("var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);", layoutSource);
+        Assert.Contains("CrashFileLogger.WriteWarning(nameof(SetTabStop), $\"Failed to set IsTabStop={isTabStop}: {safeMessage}\");", layoutSource);
     }
 
     private static string ReadRepositoryFile(params string[] segments)
