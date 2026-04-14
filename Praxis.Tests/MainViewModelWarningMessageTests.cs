@@ -38,6 +38,30 @@ public class MainViewModelWarningMessageTests
         Assert.Contains("original exception message: (empty)", result);
     }
 
+    [Fact]
+    public void BuildSafeWarningMessage_WithFactory_WhenFactoryFailureMessageIsWhitespace_UsesEmptyMarker()
+    {
+        var result = InvokeBuildSafeWarningMessage(
+            _ => throw new WhitespaceMessageException(),
+            new WhitespaceMessageException());
+
+        Assert.Contains("Failed to build warning message for", result);
+        Assert.Contains(": (empty); original exception message: (empty)", result);
+    }
+
+    [Fact]
+    public void BuildSafeWarningMessage_WithFactory_WhenOriginalExceptionMessageIsMultiline_UsesSingleLineFallback()
+    {
+        var markerA = $"original-a-{Guid.NewGuid():N}";
+        var markerB = $"original-b-{Guid.NewGuid():N}";
+
+        var result = InvokeBuildSafeWarningMessage(
+            _ => throw new InvalidOperationException("factory failed"),
+            new MultilineMessageException($"{markerA}\r\n{markerB}"));
+
+        Assert.Contains($"original exception message: {markerA} {markerB}", result);
+    }
+
     private static string InvokeBuildSafeWarningMessage(string prefix, Exception exception)
     {
         var method = typeof(MainViewModel).GetMethod(
