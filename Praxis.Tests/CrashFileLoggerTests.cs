@@ -120,6 +120,14 @@ public class CrashFileLoggerTests
     }
 
     [Fact]
+    public void NormalizeContext_WhenValueIsNull_UsesPlaceholder()
+    {
+        var result = CrashFileLogger.NormalizeContext(null);
+
+        Assert.Equal(CrashFileLogger.MissingContextPlaceholder, result);
+    }
+
+    [Fact]
     public void NormalizeMessagePayload_WhenValueIsNull_UsesPlaceholder()
     {
         var result = CrashFileLogger.NormalizeMessagePayload(null);
