@@ -277,6 +277,22 @@ public class DbErrorLoggerTests
     }
 
     [Fact]
+    public async Task Log_WhenExceptionMessageIsWhitespace_PersistsEmptyMarker()
+    {
+        var repo = new FakeAppRepository();
+        var logger = new DbErrorLogger(repo);
+
+        logger.Log(new WhitespaceMessageException(), "message-whitespace");
+        await logger.FlushAsync(TimeSpan.FromSeconds(5));
+
+        var entry = Assert.Single(repo.ErrorLogs);
+        Assert.Equal("(empty)", entry.Message);
+
+        var content = File.ReadAllText(CrashFileLogger.LogFilePath);
+        Assert.Contains("Message: (empty)", content);
+    }
+
+    [Fact]
     public async Task Log_WhenExceptionStackTraceGetterThrows_PersistsFailureMarker()
     {
         var repo = new FakeAppRepository();
