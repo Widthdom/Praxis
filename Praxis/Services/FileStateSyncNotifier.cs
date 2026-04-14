@@ -58,7 +58,7 @@ public sealed class FileStateSyncNotifier : IStateSyncNotifier
         }
         catch (Exception ex)
         {
-            CrashFileLogger.WriteWarning(nameof(FileStateSyncNotifier), $"Failed to write sync payload '{signalPath}': {ex.Message}");
+            CrashFileLogger.WriteWarning(nameof(FileStateSyncNotifier), BuildSyncWarningMessage($"Failed to write sync payload '{signalPath}':", ex));
             throw;
         }
     }
@@ -108,7 +108,7 @@ public sealed class FileStateSyncNotifier : IStateSyncNotifier
             {
                 if (readFailure is not null)
                 {
-                    CrashFileLogger.WriteWarning(nameof(FileStateSyncNotifier), $"Failed to read sync payload after retries: {readFailure.Message}");
+                    CrashFileLogger.WriteWarning(nameof(FileStateSyncNotifier), BuildSyncWarningMessage("Failed to read sync payload after retries:", readFailure));
                 }
 
                 return;
@@ -153,8 +153,14 @@ public sealed class FileStateSyncNotifier : IStateSyncNotifier
         catch (Exception ex)
         {
             CrashFileLogger.WriteException(nameof(FileStateSyncNotifier), ex);
-            CrashFileLogger.WriteWarning(nameof(FileStateSyncNotifier), $"Unexpected sync publish failure: {ex.Message}");
+            CrashFileLogger.WriteWarning(nameof(FileStateSyncNotifier), BuildSyncWarningMessage("Unexpected sync publish failure:", ex));
         }
+    }
+
+    private static string BuildSyncWarningMessage(string prefix, Exception ex)
+    {
+        var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);
+        return $"{prefix} {safeMessage}";
     }
 
     public void Dispose()

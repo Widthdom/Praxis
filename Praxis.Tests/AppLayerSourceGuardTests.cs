@@ -125,8 +125,9 @@ public class AppLayerSourceGuardTests
         var source = ReadRepositoryFile("Praxis", "Services", "FileStateSyncNotifier.cs");
 
         Assert.Contains("Exception? readFailure = null;", source);
-        Assert.Contains("CrashFileLogger.WriteWarning(nameof(FileStateSyncNotifier), $\"Failed to read sync payload after retries: {readFailure.Message}\");", source);
-        Assert.Contains("CrashFileLogger.WriteWarning(nameof(FileStateSyncNotifier), $\"Unexpected sync publish failure: {ex.Message}\");", source);
+        Assert.Contains("private static string BuildSyncWarningMessage(string prefix, Exception ex)", source);
+        Assert.Contains("CrashFileLogger.WriteWarning(nameof(FileStateSyncNotifier), BuildSyncWarningMessage(\"Failed to read sync payload after retries:\", readFailure));", source);
+        Assert.Contains("CrashFileLogger.WriteWarning(nameof(FileStateSyncNotifier), BuildSyncWarningMessage(\"Unexpected sync publish failure:\", ex));", source);
     }
 
     [Fact]
@@ -134,7 +135,8 @@ public class AppLayerSourceGuardTests
     {
         var source = ReadRepositoryFile("Praxis", "Services", "FileStateSyncNotifier.cs");
 
-        Assert.Contains("CrashFileLogger.WriteWarning(nameof(FileStateSyncNotifier), $\"Failed to write sync payload '{signalPath}': {ex.Message}\");", source);
+        Assert.Contains("var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);", source);
+        Assert.Contains("CrashFileLogger.WriteWarning(nameof(FileStateSyncNotifier), BuildSyncWarningMessage($\"Failed to write sync payload '{signalPath}':\", ex));", source);
     }
 
     [Fact]
