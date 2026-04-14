@@ -148,6 +148,58 @@ public class SecondaryFailureLoggerTests
     }
 
     [Fact]
+    public void TryReportStartupLogFailure_NormalizesMultilineTargetPathAndOperation_InFallbackContent()
+    {
+        var tempRootSentinel = Path.Combine(Path.GetTempPath(), $"secondary-target-sentinel-{Guid.NewGuid():N}.txt");
+        var currentDirectoryRoot = Path.Combine(Path.GetTempPath(), $"secondary-target-root-{Guid.NewGuid():N}");
+        var pathMarkerA = $"startup-path-a-{Guid.NewGuid():N}";
+        var pathMarkerB = $"startup-path-b-{Guid.NewGuid():N}";
+        var operationMarkerA = $"operation-a-{Guid.NewGuid():N}";
+        var operationMarkerB = $"operation-b-{Guid.NewGuid():N}";
+        var targetPath = $"/tmp/{pathMarkerA}\r\n{pathMarkerB}/startup.log";
+        var operation = $"{operationMarkerA}\r\n{operationMarkerB}";
+
+        File.WriteAllText(tempRootSentinel, "occupied");
+        Directory.CreateDirectory(currentDirectoryRoot);
+
+        try
+        {
+            var success = SecondaryFailureLogger.TryReportStartupLogFailure(
+                nameof(SecondaryFailureLoggerTests),
+                targetPath,
+                operation,
+                new InvalidOperationException("append failed"),
+                originalException: null,
+                originalMessage: null,
+                out var fallbackPath,
+                tryWriteException: static (_, _) => false,
+                tryWriteWarning: static (_, _) => false,
+                tempRootOverride: tempRootSentinel,
+                currentDirectoryOverride: currentDirectoryRoot);
+
+            Assert.True(success);
+            Assert.NotNull(fallbackPath);
+
+            var content = File.ReadAllText(fallbackPath!);
+            Assert.Contains($"TargetPath: /tmp/{pathMarkerA} {pathMarkerB}/startup.log", content);
+            Assert.Contains($"Operation: {operationMarkerA} {operationMarkerB}", content);
+            Assert.Contains($"Warning: {operationMarkerA} {operationMarkerB} '/tmp/{pathMarkerA} {pathMarkerB}/startup.log': append failed", content);
+        }
+        finally
+        {
+            if (File.Exists(tempRootSentinel))
+            {
+                File.Delete(tempRootSentinel);
+            }
+
+            if (Directory.Exists(currentDirectoryRoot))
+            {
+                Directory.Delete(currentDirectoryRoot, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
     public void TryReportStartupLogFailure_NormalizesWhitespaceFailureMessages_ToEmptyMarker()
     {
         var tempRootSentinel = Path.Combine(Path.GetTempPath(), $"secondary-empty-sentinel-{Guid.NewGuid():N}.txt");
@@ -238,6 +290,14 @@ public class SecondaryFailureLoggerTests
     }
 
     [Fact]
+    public void NormalizeOperationForLog_WhenValueIsWhitespace_UsesPlaceholder()
+    {
+        var result = InvokeNormalizeOperationForLog(" \r\n\t ");
+
+        Assert.Equal(CrashFileLogger.MissingMessagePayloadPlaceholder, result);
+    }
+
+    [Fact]
     public void TryReportStartupLogFailure_NormalizesMultilineOriginalMessage_ToSingleLine()
     {
         var tempRootSentinel = Path.Combine(Path.GetTempPath(), $"secondary-original-multiline-sentinel-{Guid.NewGuid():N}.txt");
@@ -287,6 +347,15 @@ public class SecondaryFailureLoggerTests
     private sealed class ThrowingMessageException : Exception
     {
         public override string Message => throw new InvalidOperationException("message getter failure");
+    }
+
+    private static string InvokeNormalizeOperationForLog(string value)
+    {
+        var method = typeof(SecondaryFailureLogger).GetMethod("NormalizeOperationForLog", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+        Assert.NotNull(method);
+
+        var result = method.Invoke(null, [value]);
+        return Assert.IsType<string>(result);
     }
 
     private sealed class ThrowingStackTraceException : Exception

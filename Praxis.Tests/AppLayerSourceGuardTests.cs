@@ -288,6 +288,11 @@ public class AppLayerSourceGuardTests
     {
         var source = ReadRepositoryFile("Praxis", "Services", "SecondaryFailureLogger.cs");
 
+        Assert.Contains("private static string NormalizePathForLog(string path)", source);
+        Assert.Contains("private static string NormalizeOperationForLog(string value)", source);
+        Assert.Contains("var normalizedTargetPath = NormalizePathForLog(targetPath);", source);
+        Assert.Contains("var normalizedOperation = NormalizeOperationForLog(operationDescription);", source);
+        Assert.Contains("var warningMessage = $\"{normalizedOperation} '{normalizedTargetPath}': {safeMessage}\";", source);
         Assert.Contains("else if (originalMessage is not null)", source);
         Assert.Contains("CrashFileLogger.NormalizeMessagePayload(originalMessage)", source);
         Assert.DoesNotContain("else if (!string.IsNullOrWhiteSpace(originalMessage))", source, StringComparison.Ordinal);

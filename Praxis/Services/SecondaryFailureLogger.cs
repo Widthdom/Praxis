@@ -46,8 +46,10 @@ internal static class SecondaryFailureLogger
             tryWriteWarning ??= CrashFileLogger.TryWriteWarning;
 
             var normalizedSource = CrashFileLogger.NormalizeSource(source);
+            var normalizedTargetPath = NormalizePathForLog(targetPath);
+            var normalizedOperation = NormalizeOperationForLog(operationDescription);
             var safeMessage = CrashFileLogger.SafeExceptionMessage(failureException);
-            var warningMessage = $"{operationDescription} '{targetPath}': {safeMessage}";
+            var warningMessage = $"{normalizedOperation} '{normalizedTargetPath}': {safeMessage}";
 
             var wroteException = tryWriteException(normalizedSource, failureException);
             var wroteWarning = tryWriteWarning(normalizedSource, warningMessage);
@@ -58,8 +60,8 @@ internal static class SecondaryFailureLogger
 
             var content = BuildStartupLogFailureFallbackContent(
                 normalizedSource,
-                targetPath,
-                operationDescription,
+                normalizedTargetPath,
+                normalizedOperation,
                 warningMessage,
                 wroteException,
                 wroteWarning,
@@ -160,6 +162,12 @@ internal static class SecondaryFailureLogger
                 $"{new string('-', 80)}{Environment.NewLine}";
         }
     }
+
+    private static string NormalizePathForLog(string path)
+        => CrashFileLogger.NormalizeMessagePayload(path);
+
+    private static string NormalizeOperationForLog(string value)
+        => CrashFileLogger.NormalizeMessagePayload(value);
 
     private static IEnumerable<string> EnumerateFallbackPaths(string? tempRootOverride, string? currentDirectoryOverride)
     {
