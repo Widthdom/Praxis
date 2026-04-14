@@ -298,6 +298,8 @@ public class AppLayerSourceGuardTests
     {
         var source = ReadRepositoryFile("Praxis", "ViewModels", "MainViewModel.Actions.cs");
 
+        Assert.Contains("private async Task<string> TryGetClipboardTextAsync(string context, string operation)", source);
+        Assert.Contains("async () => await clipboardService.GetTextAsync() ?? string.Empty,", source);
         Assert.Contains("BuildSafeWarningMessage(\"Conflict resolution callback failed\", ex)", source);
         Assert.Contains("ex => BuildSafeWarningMessage($\"{operation} failed\", ex)", source);
         Assert.Contains("ex => BuildSafeWarningMessage($\"{operation} completed locally, but window sync notification failed\", ex)", source);

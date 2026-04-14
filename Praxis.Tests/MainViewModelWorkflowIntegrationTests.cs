@@ -796,6 +796,29 @@ public class MainViewModelWorkflowIntegrationTests
     }
 
     [Fact]
+    public async Task OpenCreateEditorAtAsync_WhenClipboardReadMessageGetterThrows_UsesFallbackWarningAndOpensEditor()
+    {
+        var repository = new InMemoryAppRepository();
+        var executor = new RecordingCommandExecutor((true, "ok"));
+        var clipboard = new RecordingClipboardService
+        {
+            ThrowOnGetText = new ThrowingMessageException(),
+        };
+        var theme = new RecordingThemeService();
+        var syncNotifier = new TestStateSyncNotifier();
+        var logger = new RecordingErrorLogger();
+        var viewModel = new MainViewModel(repository, executor, clipboard, theme, syncNotifier, logger);
+        await viewModel.InitializeAsync();
+
+        await viewModel.OpenCreateEditorAtAsync(20, 20, useClipboardForArguments: true);
+
+        Assert.True(viewModel.IsEditorOpen);
+        Assert.Equal(string.Empty, viewModel.Editor.Arguments);
+        Assert.Contains(logger.Warnings, x => x.Context == "OpenCreateEditorAtAsync" && x.Message.Contains("failed to read exception message", StringComparison.Ordinal));
+        Assert.Contains(logger.Exceptions, x => x.Context == "OpenCreateEditorAtAsync" && x.Exception is ThrowingMessageException);
+    }
+
+    [Fact]
     public async Task CopyField_WhenClipboardWriteFails_LogsWarningAndSetsFailureStatus()
     {
         var repository = new InMemoryAppRepository();
