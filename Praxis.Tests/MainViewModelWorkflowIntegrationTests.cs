@@ -1310,6 +1310,29 @@ public class MainViewModelWorkflowIntegrationTests
         Assert.Contains(logger.Exceptions, x => x.Context == "ExecuteCommandMatchesAsync" && x.Exception is ThrowingMessageException);
     }
 
+    [Fact]
+    public async Task ExecuteCommandInput_WhenRepositoryLookupMessageIsWhitespace_LogsEmptyMarkerAndShowsCommandNotFound()
+    {
+        var repository = new InMemoryAppRepository
+        {
+            ThrowOnGetByCommand = new WhitespaceMessageException(),
+        };
+        var executor = new RecordingCommandExecutor((true, "ok"));
+        var clipboard = new RecordingClipboardService();
+        var theme = new RecordingThemeService();
+        var syncNotifier = new TestStateSyncNotifier();
+        var logger = new RecordingErrorLogger();
+        var viewModel = new MainViewModel(repository, executor, clipboard, theme, syncNotifier, logger);
+        await viewModel.InitializeAsync();
+        viewModel.CommandInput = "missing";
+
+        await viewModel.ExecuteCommandInputCommand.ExecuteAsync(null);
+
+        Assert.Equal("Command not found: missing", viewModel.StatusText);
+        Assert.Contains(logger.Warnings, x => x.Context == "ExecuteCommandMatchesAsync" && x.Message.Contains("(empty)", StringComparison.Ordinal));
+        Assert.Contains(logger.Exceptions, x => x.Context == "ExecuteCommandMatchesAsync" && x.Exception is WhitespaceMessageException);
+    }
+
     private static async Task WaitUntilAsync(Func<bool> condition, int timeoutMs = 2000)
     {
         var started = DateTime.UtcNow;
