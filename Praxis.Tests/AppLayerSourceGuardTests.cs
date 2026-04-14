@@ -156,6 +156,8 @@ public class AppLayerSourceGuardTests
     {
         var source = ReadRepositoryFile("Praxis", "Services", "CommandExecutor.cs");
         Assert.Contains("var normalizedTool = ExpandHomePath(NormalizeToolPath(tool));", source);
+        Assert.Contains("private static string BuildFailureMessage(string prefix, Exception ex)", source);
+        Assert.Contains("var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);", source);
     }
 
     [Fact]
@@ -163,8 +165,11 @@ public class AppLayerSourceGuardTests
     {
         var source = ReadRepositoryFile("Praxis", "Services", "CommandExecutor.cs");
 
-        Assert.Contains("CrashFileLogger.WriteWarning(nameof(CommandExecutor), $\"Launch target resolution failed for '{arguments}': {ex.Message}\");", source);
-        Assert.Contains("CrashFileLogger.WriteWarning(nameof(CommandExecutor), $\"{failurePrefix} {ex.Message}\");", source);
+        Assert.Contains("var warningMessage = BuildFailureMessage($\"Launch target resolution failed for '{arguments}':\", ex);", source);
+        Assert.Contains("var resultMessage = BuildFailureMessage(\"Launch target resolution failed:\", ex);", source);
+        Assert.Contains("var failureMessage = BuildFailureMessage(failurePrefix, ex);", source);
+        Assert.Contains("CrashFileLogger.WriteWarning(nameof(CommandExecutor), warningMessage);", source);
+        Assert.Contains("CrashFileLogger.WriteWarning(nameof(CommandExecutor), failureMessage);", source);
         Assert.Contains("CrashFileLogger.WriteWarning(nameof(CommandExecutor), $\"{failurePrefix} No process handle was returned.\");", source);
     }
 

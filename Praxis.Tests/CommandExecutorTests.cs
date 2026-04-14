@@ -141,6 +141,18 @@ public class CommandExecutorTests
         Assert.Contains(failurePrefix, content);
     }
 
+    [Fact]
+    public void BuildFailureMessage_WhenExceptionMessageGetterThrows_UsesFallbackMarker()
+    {
+        var prefix = $"CommandExecutor failure {Guid.NewGuid():N}";
+
+        var result = InvokeBuildFailureMessage(prefix, new ThrowingMessageException());
+
+        Assert.Equal(
+            $"{prefix} (failed to read exception message: System.InvalidOperationException: message getter failure)",
+            result);
+    }
+
     private static string InvokeExpandHomePath(string value)
     {
         var method = typeof(CommandExecutor).GetMethod("ExpandHomePath", BindingFlags.NonPublic | BindingFlags.Static);
@@ -193,5 +205,19 @@ public class CommandExecutorTests
 
         var result = method.Invoke(null, [startInfo, successMessage, failurePrefix]);
         return Assert.IsType<(bool Success, string Message)>(result);
+    }
+
+    private static string InvokeBuildFailureMessage(string prefix, Exception ex)
+    {
+        var method = typeof(CommandExecutor).GetMethod("BuildFailureMessage", BindingFlags.NonPublic | BindingFlags.Static);
+        Assert.NotNull(method);
+
+        var result = method.Invoke(null, [prefix, ex]);
+        return Assert.IsType<string>(result);
+    }
+
+    private sealed class ThrowingMessageException : Exception
+    {
+        public override string Message => throw new InvalidOperationException("message getter failure");
     }
 }

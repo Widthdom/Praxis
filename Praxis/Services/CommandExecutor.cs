@@ -138,8 +138,10 @@ public sealed class CommandExecutor : ICommandExecutor
         }
         catch (Exception ex)
         {
-            CrashFileLogger.WriteWarning(nameof(CommandExecutor), $"Launch target resolution failed for '{arguments}': {ex.Message}");
-            return Task.FromResult((false, $"Launch target resolution failed: {ex.Message}"));
+            var warningMessage = BuildFailureMessage($"Launch target resolution failed for '{arguments}':", ex);
+            var resultMessage = BuildFailureMessage("Launch target resolution failed:", ex);
+            CrashFileLogger.WriteWarning(nameof(CommandExecutor), warningMessage);
+            return Task.FromResult((false, resultMessage));
         }
     }
 
@@ -158,9 +160,16 @@ public sealed class CommandExecutor : ICommandExecutor
         }
         catch (Exception ex)
         {
-            CrashFileLogger.WriteWarning(nameof(CommandExecutor), $"{failurePrefix} {ex.Message}");
-            return (false, $"{failurePrefix} {ex.Message}");
+            var failureMessage = BuildFailureMessage(failurePrefix, ex);
+            CrashFileLogger.WriteWarning(nameof(CommandExecutor), failureMessage);
+            return (false, failureMessage);
         }
+    }
+
+    private static string BuildFailureMessage(string prefix, Exception ex)
+    {
+        var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);
+        return $"{prefix} {safeMessage}";
     }
 
     private static string ExpandHomePath(string value)
