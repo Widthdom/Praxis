@@ -298,6 +298,14 @@ public class SecondaryFailureLoggerTests
     }
 
     [Fact]
+    public void NormalizeOperationForLog_WhenValueIsNull_UsesPlaceholder()
+    {
+        var result = InvokeNormalizeOperationForLog(null);
+
+        Assert.Equal(CrashFileLogger.MissingMessagePayloadPlaceholder, result);
+    }
+
+    [Fact]
     public void NormalizeOperationForLog_WhenValueIsMultiline_CollapsesToSingleLine()
     {
         var markerA = $"secondary-operation-a-{Guid.NewGuid():N}";
@@ -323,6 +331,14 @@ public class SecondaryFailureLoggerTests
     public void NormalizePathForLog_WhenValueIsWhitespace_UsesPlaceholder()
     {
         var result = InvokeNormalizePathForLog(" \r\n\t ");
+
+        Assert.Equal(CrashFileLogger.MissingMessagePayloadPlaceholder, result);
+    }
+
+    [Fact]
+    public void NormalizePathForLog_WhenValueIsNull_UsesPlaceholder()
+    {
+        var result = InvokeNormalizePathForLog(null);
 
         Assert.Equal(CrashFileLogger.MissingMessagePayloadPlaceholder, result);
     }
@@ -379,7 +395,7 @@ public class SecondaryFailureLoggerTests
         public override string Message => throw new InvalidOperationException("message getter failure");
     }
 
-    private static string InvokeNormalizeOperationForLog(string value)
+    private static string InvokeNormalizeOperationForLog(string? value)
     {
         var method = typeof(SecondaryFailureLogger).GetMethod("NormalizeOperationForLog", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
         Assert.NotNull(method);
@@ -388,7 +404,7 @@ public class SecondaryFailureLoggerTests
         return Assert.IsType<string>(result);
     }
 
-    private static string InvokeNormalizePathForLog(string value)
+    private static string InvokeNormalizePathForLog(string? value)
     {
         var method = typeof(SecondaryFailureLogger).GetMethod("NormalizePathForLog", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
         Assert.NotNull(method);
