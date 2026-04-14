@@ -196,6 +196,14 @@ public class FileAppConfigServiceTests
         Assert.Equal("/tmp/praxis-config/praxis.config.json", result[0]);
     }
 
+    [Fact]
+    public void EnumerateCandidatePaths_IgnoresBlankOrRelativeDirectories()
+    {
+        var result = InvokeEnumerateCandidatePaths("relative/config", " \r\n\t ");
+
+        Assert.Empty(result);
+    }
+
     private static ThemeMode InvokeResolveThemeModeFromCandidates(IEnumerable<string> candidatePaths, JsonSerializerOptions options)
     {
         var method = typeof(FileAppConfigService).GetMethod("ResolveThemeModeFromCandidates", BindingFlags.NonPublic | BindingFlags.Static);
