@@ -284,6 +284,14 @@ public class CrashFileLoggerTests
     }
 
     [Fact]
+    public void SafeObjectDescription_WhenToStringThrows_UsesFallbackMarker()
+    {
+        var content = CrashFileLogger.SafeObjectDescription(new ThrowingObjectToStringValue("object formatting failure"));
+
+        Assert.Contains("failed to format object: System.InvalidOperationException: object formatting failure", content);
+    }
+
+    [Fact]
     public void WriteException_WhenExceptionDataFormattingThrows_WritesFallbackMarker()
     {
         var ex = new Exception("data formatting");
@@ -422,6 +430,11 @@ public class CrashFileLoggerTests
     }
 
     private sealed class ThrowingToStringValue(string message)
+    {
+        public override string ToString() => throw new InvalidOperationException(message);
+    }
+
+    private sealed class ThrowingObjectToStringValue(string message)
     {
         public override string ToString() => throw new InvalidOperationException(message);
     }

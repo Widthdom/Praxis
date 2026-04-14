@@ -73,7 +73,8 @@ public partial class App : MauiWinUIApplication
 			}
 			else
 			{
-				var payload = $"Non-Exception object thrown (IsTerminating={e.IsTerminating}): {e.ExceptionObject}";
+				var safePayload = CrashFileLogger.SafeObjectDescription(e.ExceptionObject);
+				var payload = $"Non-Exception object thrown (IsTerminating={e.IsTerminating}): {safePayload}";
 				CrashFileLogger.WriteWarning("Win.AppDomain.UnhandledException", payload);
 				WriteStartupLog("AppDomain.UnhandledException", payload);
 			}

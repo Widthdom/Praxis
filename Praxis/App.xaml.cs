@@ -79,7 +79,8 @@ public partial class App : Application
         }
         else
         {
-            var message = $"Non-Exception object thrown (IsTerminating={isTerminating}): {e.ExceptionObject}";
+            var safePayload = CrashFileLogger.SafeObjectDescription(e.ExceptionObject);
+            var message = $"Non-Exception object thrown (IsTerminating={isTerminating}): {safePayload}";
             CrashFileLogger.WriteWarning(
                 "AppDomain.UnhandledException",
                 message);

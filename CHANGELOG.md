@@ -24,6 +24,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - `MainPage` now uses the same safe exception-message helper for copy-notice, status-flash, Dock hover-exit, and Quick Look animation warning breadcrumbs, so those non-fatal UI recovery paths no longer rethrow on hostile exception `Message` getters
 - `MainPage` now also routes button-tap execution, secondary-tap create flow, modal primary-focus fallback, `UseSystemFocusVisuals`, and `IsTabStop` warning breadcrumbs through the same safe exception-message helper, so more Windows/UI fallback paths no longer rethrow on hostile exception `Message` getters
 - `MainPage` and `App` now route fallback initialization UI text through `CrashFileLogger.SafeExceptionMessage(...)`, so hostile exception `Message` getters cannot break the last-resort error page / alert surface itself
+- `CrashFileLogger.SafeObjectDescription(...)` now hardens non-`Exception` `AppDomain.UnhandledException` payloads, so hostile object `ToString()` implementations cannot break the last-resort global exception path in base `App`, Windows startup logging, or Mac `AppDelegate`
 
 ### Tests
 - Expanded `CommandWorkingDirectoryPolicyTests` to cover mixed-case shell executable names and uppercase env-expanded shell paths
