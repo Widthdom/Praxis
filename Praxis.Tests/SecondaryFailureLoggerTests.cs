@@ -100,6 +100,98 @@ public class SecondaryFailureLoggerTests
         }
     }
 
+    [Fact]
+    public void TryReportStartupLogFailure_NormalizesMultilineFailureMessages_InFallbackWarning()
+    {
+        var tempRootSentinel = Path.Combine(Path.GetTempPath(), $"secondary-multiline-sentinel-{Guid.NewGuid():N}.txt");
+        var currentDirectoryRoot = Path.Combine(Path.GetTempPath(), $"secondary-multiline-root-{Guid.NewGuid():N}");
+        var targetPath = Path.Combine("broken-root", "startup.log");
+        var markerA = $"secondary-a-{Guid.NewGuid():N}";
+        var markerB = $"secondary-b-{Guid.NewGuid():N}";
+
+        File.WriteAllText(tempRootSentinel, "occupied");
+        Directory.CreateDirectory(currentDirectoryRoot);
+
+        try
+        {
+            var success = SecondaryFailureLogger.TryReportStartupLogFailure(
+                nameof(SecondaryFailureLoggerTests),
+                targetPath,
+                "Failed to append startup log",
+                new MultilineMessageException($"{markerA}\r\n{markerB}"),
+                originalException: null,
+                originalMessage: null,
+                out var fallbackPath,
+                tryWriteException: static (_, _) => false,
+                tryWriteWarning: static (_, _) => false,
+                tempRootOverride: tempRootSentinel,
+                currentDirectoryOverride: currentDirectoryRoot);
+
+            Assert.True(success);
+            Assert.NotNull(fallbackPath);
+
+            var content = File.ReadAllText(fallbackPath!);
+            Assert.Contains($"Warning: Failed to append startup log '{targetPath}': {markerA} {markerB}", content);
+        }
+        finally
+        {
+            if (File.Exists(tempRootSentinel))
+            {
+                File.Delete(tempRootSentinel);
+            }
+
+            if (Directory.Exists(currentDirectoryRoot))
+            {
+                Directory.Delete(currentDirectoryRoot, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
+    public void TryReportStartupLogFailure_NormalizesWhitespaceFailureMessages_ToEmptyMarker()
+    {
+        var tempRootSentinel = Path.Combine(Path.GetTempPath(), $"secondary-empty-sentinel-{Guid.NewGuid():N}.txt");
+        var currentDirectoryRoot = Path.Combine(Path.GetTempPath(), $"secondary-empty-root-{Guid.NewGuid():N}");
+        var targetPath = Path.Combine("broken-root", "startup.log");
+
+        File.WriteAllText(tempRootSentinel, "occupied");
+        Directory.CreateDirectory(currentDirectoryRoot);
+
+        try
+        {
+            var success = SecondaryFailureLogger.TryReportStartupLogFailure(
+                nameof(SecondaryFailureLoggerTests),
+                targetPath,
+                "Failed to append startup log",
+                new WhitespaceMessageException(),
+                originalException: null,
+                originalMessage: null,
+                out var fallbackPath,
+                tryWriteException: static (_, _) => false,
+                tryWriteWarning: static (_, _) => false,
+                tempRootOverride: tempRootSentinel,
+                currentDirectoryOverride: currentDirectoryRoot);
+
+            Assert.True(success);
+            Assert.NotNull(fallbackPath);
+
+            var content = File.ReadAllText(fallbackPath!);
+            Assert.Contains($"Warning: Failed to append startup log '{targetPath}': (empty)", content);
+        }
+        finally
+        {
+            if (File.Exists(tempRootSentinel))
+            {
+                File.Delete(tempRootSentinel);
+            }
+
+            if (Directory.Exists(currentDirectoryRoot))
+            {
+                Directory.Delete(currentDirectoryRoot, recursive: true);
+            }
+        }
+    }
+
     private sealed class ThrowingMessageException : Exception
     {
         public override string Message => throw new InvalidOperationException("message getter failure");
@@ -108,5 +200,15 @@ public class SecondaryFailureLoggerTests
     private sealed class ThrowingStackTraceException : Exception
     {
         public override string? StackTrace => throw new InvalidOperationException("stack trace getter failure");
+    }
+
+    private sealed class MultilineMessageException(string value) : Exception
+    {
+        public override string Message => value;
+    }
+
+    private sealed class WhitespaceMessageException : Exception
+    {
+        public override string Message => " \r\n\t ";
     }
 }
