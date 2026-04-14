@@ -52,6 +52,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - Expanded `CrashFileLoggerTests` to cover multiline object-formatter failure markers inside `SafeObjectDescription(...)`
 - Expanded `CrashFileLoggerTests` to cover direct empty-stack `SafeExceptionStackTrace(...)` helper behavior
 - Expanded `CrashFileLoggerTests` to cover multiline stack-trace getter-failure markers inside `SafeExceptionStackTrace(...)`
+- Expanded `CrashFileLoggerTests` to cover whitespace-only stack-trace getter-failure markers inside `SafeExceptionStackTrace(...)`
 - Expanded `DbErrorLoggerTests` to cover normalized multiline contexts inside persist-failure breadcrumbs
 - Expanded `DbErrorLoggerTests` to cover normalized multiline contexts inside Warning persist-failure breadcrumbs
 - Expanded `DbErrorLoggerTests` to cover normalized multiline contexts inside Info persist-failure breadcrumbs

@@ -512,6 +512,14 @@ public class CrashFileLoggerTests
     }
 
     [Fact]
+    public void SafeExceptionStackTrace_WhenGetterFailureMessageIsWhitespace_UsesTypeNameOnly()
+    {
+        var content = CrashFileLogger.SafeExceptionStackTrace(new ThrowingStackTraceWithWhitespaceGetterException());
+
+        Assert.Equal("(failed to read stack trace: System.InvalidOperationException)", content);
+    }
+
+    [Fact]
     public void WriteException_WhenExceptionDataFormattingThrows_WritesFallbackMarker()
     {
         var ex = new Exception("data formatting");
@@ -662,6 +670,11 @@ public class CrashFileLoggerTests
     private sealed class ThrowingStackTraceWithMultilineGetterException(string message) : Exception
     {
         public override string? StackTrace => throw new InvalidOperationException(message);
+    }
+
+    private sealed class ThrowingStackTraceWithWhitespaceGetterException : Exception
+    {
+        public override string? StackTrace => throw new InvalidOperationException(" \r\n\t ");
     }
 
     private sealed class ThrowingToStringValue(string message)
