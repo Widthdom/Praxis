@@ -93,6 +93,14 @@ public class CrashFileLoggerTests
     }
 
     [Fact]
+    public void NormalizeSource_WhenValueIsNull_UsesPlaceholder()
+    {
+        var result = CrashFileLogger.NormalizeSource(null);
+
+        Assert.Equal(CrashFileLogger.MissingSourcePlaceholder, result);
+    }
+
+    [Fact]
     public void NormalizeContext_WhenValueIsMultiline_CollapsesToSingleLine()
     {
         var markerA = $"context-a-{Guid.NewGuid():N}";

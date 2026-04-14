@@ -40,6 +40,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - Expanded `LaunchTargetResolverTests` to cover quoted relative/`file://` path prefixes, quoted-boundary path names, and malformed quoted URL handling both before and after env expansion
 - Expanded `CrashFileLoggerTests`, `DbErrorLoggerTests`, `SecondaryFailureLoggerTests`, and `AppLayerSourceGuardTests` to cover multiline exception-message normalization, throwing custom exception getters / data formatters, and startup-log failure diagnostics that fall back to an independent file when the primary crash sink cannot be written
 - Expanded `CrashFileLoggerTests` to cover direct source/context normalization helpers alongside persisted crash-breadcrumb behavior
+- Expanded `CrashFileLoggerTests` to cover direct null `NormalizeSource(...)` helper behavior
 - Expanded `CrashFileLoggerTests` to cover direct `NormalizeMessagePayload(...)` helper behavior alongside persisted crash-breadcrumb behavior
 - Expanded `CrashFileLoggerTests` to cover multiline/whitespace-only getter-failure messages inside `SafeExceptionMessage(...)` fallback markers
 - Expanded `CrashFileLoggerTests` to cover direct multiline `NormalizeExceptionMessage(...)` helper behavior
