@@ -77,6 +77,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - Expanded `CommandExecutorTests` and `AppLayerSourceGuardTests` to cover tool / URL / path / argument normalization before launch-failure breadcrumbs are assembled
 - Expanded `CommandExecutorTests` to cover direct null target-fragment normalization inside `NormalizeTargetForLog(...)`
 - Expanded `CommandExecutorTests` to cover direct null `NormalizeToolPath(...)` helper behavior
+- Expanded `CommandExecutorTests` to cover direct null `HasUsableTool(...)` helper behavior
 - Expanded `AppLayerSourceGuardTests` to cover LaunchServices bundle-path normalization before Mac relay breadcrumbs are written
 - Added `FileStateSyncNotifierTests` and expanded `AppLayerSourceGuardTests` to cover hostile exception-message getters on sync warning construction
 - Expanded `FileStateSyncNotifierTests` and `AppLayerSourceGuardTests` to cover malformed/observed sync payload normalization before those fragments reach warning/info crash-log lines

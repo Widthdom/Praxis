@@ -101,6 +101,14 @@ public class CommandExecutorTests
     }
 
     [Fact]
+    public void HasUsableTool_WhenValueIsNull_ReturnsFalse()
+    {
+        var result = InvokeHasUsableTool(null);
+
+        Assert.False(result);
+    }
+
+    [Fact]
     public void ExpandHomePath_ExpandsBareTilde_ToUserProfile()
     {
         var result = InvokeExpandHomePath("~");
@@ -241,7 +249,7 @@ public class CommandExecutorTests
         return Assert.IsType<string>(result);
     }
 
-    private static bool InvokeHasUsableTool(string value)
+    private static bool InvokeHasUsableTool(string? value)
     {
         var method = typeof(CommandExecutor).GetMethod("HasUsableTool", BindingFlags.NonPublic | BindingFlags.Static);
         Assert.NotNull(method);
