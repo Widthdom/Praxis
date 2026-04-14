@@ -399,14 +399,16 @@ public class AppLayerSourceGuardTests
     {
         var source = ReadRepositoryFile("Praxis", "MainPage.xaml.cs");
         Assert.Contains("catch (OperationCanceledException) when (token.IsCancellationRequested)", source);
-        Assert.Contains("CrashFileLogger.WriteWarning(\"MainPage.CopyIconButton_Clicked\", $\"Copy notice animation failed: {ex.Message}\");", source);
+        Assert.Contains("var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);", source);
+        Assert.Contains("CrashFileLogger.WriteWarning(\"MainPage.CopyIconButton_Clicked\", $\"Copy notice animation failed: {safeMessage}\");", source);
     }
 
     [Fact]
     public void MainPage_StatusFlashAnimationFailures_AreWarningLogged()
     {
         var source = ReadRepositoryFile("Praxis", "MainPage.StatusAndTheme.cs");
-        Assert.Contains("CrashFileLogger.WriteWarning(nameof(TriggerStatusFlash), $\"Status flash animation failed: {ex.Message}\");", source);
+        Assert.Contains("var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);", source);
+        Assert.Contains("CrashFileLogger.WriteWarning(nameof(TriggerStatusFlash), $\"Status flash animation failed: {safeMessage}\");", source);
     }
 
     [Fact]
@@ -414,30 +416,31 @@ public class AppLayerSourceGuardTests
     {
         var source = ReadRepositoryFile("Praxis", "MainPage.DockAndQuickLook.cs");
         Assert.Contains("catch (OperationCanceledException) when (token.IsCancellationRequested)", source);
-        Assert.Contains("CrashFileLogger.WriteWarning(nameof(HideDockScrollBarAfterExitDelayAsync), $\"Dock hover-exit hide failed: {ex.Message}\");", source);
+        Assert.Equal(3, CountOccurrences(source, "var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);"));
+        Assert.Contains("CrashFileLogger.WriteWarning(nameof(HideDockScrollBarAfterExitDelayAsync), $\"Dock hover-exit hide failed: {safeMessage}\");", source);
         Assert.True(
             source.IndexOf("SetDockScrollBarVisibility(isPointerOverDockRegion: false);", StringComparison.Ordinal)
-            < source.IndexOf("CrashFileLogger.WriteWarning(nameof(HideDockScrollBarAfterExitDelayAsync), $\"Dock hover-exit hide failed: {ex.Message}\");", StringComparison.Ordinal));
+            < source.IndexOf("CrashFileLogger.WriteWarning(nameof(HideDockScrollBarAfterExitDelayAsync), $\"Dock hover-exit hide failed: {safeMessage}\");", StringComparison.Ordinal));
     }
 
     [Fact]
     public void MainPage_QuickLookShowFailures_AreWarningLogged()
     {
         var source = ReadRepositoryFile("Praxis", "MainPage.DockAndQuickLook.cs");
-        Assert.Contains("CrashFileLogger.WriteWarning(nameof(ShowQuickLookAfterDelayAsync), $\"Quick Look show failed: {ex.Message}\");", source);
+        Assert.Contains("CrashFileLogger.WriteWarning(nameof(ShowQuickLookAfterDelayAsync), $\"Quick Look show failed: {safeMessage}\");", source);
         Assert.True(
             source.IndexOf("QuickLookPopup.CancelAnimations();", StringComparison.Ordinal)
-            < source.IndexOf("CrashFileLogger.WriteWarning(nameof(ShowQuickLookAfterDelayAsync), $\"Quick Look show failed: {ex.Message}\");", StringComparison.Ordinal));
+            < source.IndexOf("CrashFileLogger.WriteWarning(nameof(ShowQuickLookAfterDelayAsync), $\"Quick Look show failed: {safeMessage}\");", StringComparison.Ordinal));
     }
 
     [Fact]
     public void MainPage_QuickLookHideFailures_AreWarningLogged()
     {
         var source = ReadRepositoryFile("Praxis", "MainPage.DockAndQuickLook.cs");
-        Assert.Contains("CrashFileLogger.WriteWarning(nameof(HideQuickLookAfterDelayAsync), $\"Quick Look hide failed: {ex.Message}\");", source);
+        Assert.Contains("CrashFileLogger.WriteWarning(nameof(HideQuickLookAfterDelayAsync), $\"Quick Look hide failed: {safeMessage}\");", source);
         Assert.True(
             source.IndexOf("QuickLookPopup.IsVisible = false;", StringComparison.Ordinal)
-            < source.IndexOf("CrashFileLogger.WriteWarning(nameof(HideQuickLookAfterDelayAsync), $\"Quick Look hide failed: {ex.Message}\");", StringComparison.Ordinal));
+            < source.IndexOf("CrashFileLogger.WriteWarning(nameof(HideQuickLookAfterDelayAsync), $\"Quick Look hide failed: {safeMessage}\");", StringComparison.Ordinal));
     }
 
     [Fact]

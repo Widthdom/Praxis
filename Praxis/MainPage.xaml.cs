@@ -474,7 +474,8 @@ public partial class MainPage : ContentPage
         }
         catch (Exception ex)
         {
-            CrashFileLogger.WriteWarning("MainPage.CopyIconButton_Clicked", $"Copy notice animation failed: {ex.Message}");
+            var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);
+            CrashFileLogger.WriteWarning("MainPage.CopyIconButton_Clicked", $"Copy notice animation failed: {safeMessage}");
         }
         finally
         {

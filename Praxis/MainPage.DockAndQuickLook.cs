@@ -82,7 +82,8 @@ public partial class MainPage
         }
         catch (Exception ex)
         {
-            CrashFileLogger.WriteWarning(nameof(HideDockScrollBarAfterExitDelayAsync), $"Dock hover-exit hide failed: {ex.Message}");
+            var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);
+            CrashFileLogger.WriteWarning(nameof(HideDockScrollBarAfterExitDelayAsync), $"Dock hover-exit hide failed: {safeMessage}");
             return;
         }
     }
@@ -235,7 +236,8 @@ public partial class MainPage
         }
         catch (Exception ex)
         {
-            CrashFileLogger.WriteWarning(nameof(ShowQuickLookAfterDelayAsync), $"Quick Look show failed: {ex.Message}");
+            var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);
+            CrashFileLogger.WriteWarning(nameof(ShowQuickLookAfterDelayAsync), $"Quick Look show failed: {safeMessage}");
             return;
         }
     }
@@ -279,7 +281,8 @@ public partial class MainPage
         }
         catch (Exception ex)
         {
-            CrashFileLogger.WriteWarning(nameof(HideQuickLookAfterDelayAsync), $"Quick Look hide failed: {ex.Message}");
+            var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);
+            CrashFileLogger.WriteWarning(nameof(HideQuickLookAfterDelayAsync), $"Quick Look hide failed: {safeMessage}");
             return;
         }
     }
