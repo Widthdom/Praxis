@@ -18,6 +18,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - `CommandExecutor` now uses the same safe exception-message helper for launch-target resolution and native process-start failure messages, so fallback warning/result construction no longer rethrows on hostile exception `Message` getters
 - `MauiThemeService` now uses the same safe exception-message helper for Mac dispatch-failure breadcrumbs, so theme-apply warning logging no longer rethrows on hostile exception `Message` getters
 - `FileStateSyncNotifier` now routes write/read/unexpected publish warning construction through the same safe exception-message helper, so sync breadcrumbs survive hostile exception `Message` getters
+- `FileStateSyncNotifier` now also normalizes malformed payload and observed-source fragments before interpolating them into crash-log warning/info lines, so sync breadcrumbs stay single-line even if the sync file contains embedded newlines or whitespace-only payload markers
 - `Windows CommandEntryHandler` now uses the same safe exception-message helper for compatibility-triggered and unexpected `InputScope` assignment warnings, so WinUI fallback logging no longer rethrows on hostile exception `Message` getters
 - Mac `AppDelegate` and the Mac entry/editor/command handlers now use the same safe exception-message helper for `MarshalManagedException` hook, key-command-priority, and `UIKeyCommand` input-resolution warning breadcrumbs, so those fallback paths no longer rethrow on hostile exception `Message` getters
 - Mac `Program` now uses the same safe exception-message helper for LaunchServices relay failure breadcrumbs, so open-relay warning logging no longer rethrows on hostile exception `Message` getters
@@ -36,6 +37,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - Expanded `FileAppConfigServiceTests` and `AppLayerSourceGuardTests` to cover hostile exception-message getters on skipped-config warning construction
 - Expanded `CommandExecutorTests` and `AppLayerSourceGuardTests` to cover hostile exception-message getters on launch failure message construction
 - Added `FileStateSyncNotifierTests` and expanded `AppLayerSourceGuardTests` to cover hostile exception-message getters on sync warning construction
+- Expanded `FileStateSyncNotifierTests` and `AppLayerSourceGuardTests` to cover malformed/observed sync payload normalization before those fragments reach warning/info crash-log lines
 ### [1.1.9] - 2026-04-14
 
 ### Fixed

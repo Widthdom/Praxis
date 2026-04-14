@@ -39,12 +39,40 @@ public class FileStateSyncNotifierTests
         Assert.Equal($"{prefix} (empty)", result);
     }
 
+    [Fact]
+    public void NormalizePayloadForLog_WhenPayloadIsMultiline_CollapsesToSingleLine()
+    {
+        var markerA = $"sync-payload-a-{Guid.NewGuid():N}";
+        var markerB = $"sync-payload-b-{Guid.NewGuid():N}";
+
+        var result = InvokeNormalizePayloadForLog($"{markerA}\r\n{markerB}");
+
+        Assert.Equal($"{markerA} {markerB}", result);
+    }
+
+    [Fact]
+    public void NormalizePayloadForLog_WhenPayloadIsWhitespace_UsesPlaceholder()
+    {
+        var result = InvokeNormalizePayloadForLog(" \r\n\t ");
+
+        Assert.Equal(CrashFileLogger.MissingMessagePayloadPlaceholder, result);
+    }
+
     private static string InvokeBuildSyncWarningMessage(string prefix, Exception ex)
     {
         var method = typeof(FileStateSyncNotifier).GetMethod("BuildSyncWarningMessage", BindingFlags.NonPublic | BindingFlags.Static);
         Assert.NotNull(method);
 
         var result = method.Invoke(null, [prefix, ex]);
+        return Assert.IsType<string>(result);
+    }
+
+    private static string InvokeNormalizePayloadForLog(string payload)
+    {
+        var method = typeof(FileStateSyncNotifier).GetMethod("NormalizePayloadForLog", BindingFlags.NonPublic | BindingFlags.Static);
+        Assert.NotNull(method);
+
+        var result = method.Invoke(null, [payload]);
         return Assert.IsType<string>(result);
     }
 

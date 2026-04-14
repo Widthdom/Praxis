@@ -133,8 +133,13 @@ public class AppLayerSourceGuardTests
 
         Assert.Contains("Exception? readFailure = null;", source);
         Assert.Contains("private static string BuildSyncWarningMessage(string prefix, Exception ex)", source);
+        Assert.Contains("private static string NormalizePayloadForLog(string payload)", source);
+        Assert.Contains("var normalizedPayload = NormalizePayloadForLog(payload);", source);
+        Assert.Contains("var normalizedSource = NormalizePayloadForLog(source);", source);
         Assert.Contains("CrashFileLogger.WriteWarning(nameof(FileStateSyncNotifier), BuildSyncWarningMessage(\"Failed to read sync payload after retries:\", readFailure));", source);
         Assert.Contains("CrashFileLogger.WriteWarning(nameof(FileStateSyncNotifier), BuildSyncWarningMessage(\"Unexpected sync publish failure:\", ex));", source);
+        Assert.Contains("CrashFileLogger.WriteWarning(nameof(FileStateSyncNotifier), $\"Ignored malformed sync payload: \\\"{normalizedPayload}\\\"\");", source);
+        Assert.Contains("CrashFileLogger.WriteInfo(nameof(FileStateSyncNotifier), $\"Signal observed. Source={normalizedSource} TimestampUtc={timestamp:O}\");", source);
     }
 
     [Fact]
