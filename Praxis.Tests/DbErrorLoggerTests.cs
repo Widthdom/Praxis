@@ -1271,6 +1271,22 @@ public class DbErrorLoggerTests
     }
 
     [Fact]
+    public async Task FlushAsync_NormalizesMultilineContext_InPurgeFailureBreadcrumb()
+    {
+        var repo = new PurgeFailingAppRepository();
+        var logger = new DbErrorLogger(repo);
+        var context = $"purge-context-{Guid.NewGuid():N}";
+
+        logger.Log(new InvalidOperationException("purge fail test"), $"  {context}\r\nchild  ");
+
+        var ex = await Record.ExceptionAsync(() => logger.FlushAsync(TimeSpan.FromSeconds(2)));
+        Assert.Null(ex);
+
+        var content = File.ReadAllText(CrashFileLogger.LogFilePath);
+        Assert.Contains($"Failed to purge old error logs after persisting '{context} child': Simulated purge failure", content);
+    }
+
+    [Fact]
     public async Task FlushAsync_WhenPurgeFailureMessageGetterThrows_LogsFallbackMarkerButDoesNotThrow()
     {
         var repo = new ThrowingMessagePurgeFailingAppRepository();
