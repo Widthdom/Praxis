@@ -58,6 +58,14 @@ public class FileStateSyncNotifierTests
         Assert.Equal(CrashFileLogger.MissingMessagePayloadPlaceholder, result);
     }
 
+    [Fact]
+    public void NormalizePayloadForLog_WhenPayloadIsNull_UsesPlaceholder()
+    {
+        var result = InvokeNormalizePayloadForLog(null);
+
+        Assert.Equal(CrashFileLogger.MissingMessagePayloadPlaceholder, result);
+    }
+
     private static string InvokeBuildSyncWarningMessage(string prefix, Exception ex)
     {
         var method = typeof(FileStateSyncNotifier).GetMethod("BuildSyncWarningMessage", BindingFlags.NonPublic | BindingFlags.Static);
@@ -67,7 +75,7 @@ public class FileStateSyncNotifierTests
         return Assert.IsType<string>(result);
     }
 
-    private static string InvokeNormalizePayloadForLog(string payload)
+    private static string InvokeNormalizePayloadForLog(string? payload)
     {
         var method = typeof(FileStateSyncNotifier).GetMethod("NormalizePayloadForLog", BindingFlags.NonPublic | BindingFlags.Static);
         Assert.NotNull(method);

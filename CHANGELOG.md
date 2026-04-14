@@ -75,6 +75,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - Expanded `AppLayerSourceGuardTests` to cover LaunchServices bundle-path normalization before Mac relay breadcrumbs are written
 - Added `FileStateSyncNotifierTests` and expanded `AppLayerSourceGuardTests` to cover hostile exception-message getters on sync warning construction
 - Expanded `FileStateSyncNotifierTests` and `AppLayerSourceGuardTests` to cover malformed/observed sync payload normalization before those fragments reach warning/info crash-log lines
+- Expanded `FileStateSyncNotifierTests` to cover direct null sync-payload normalization inside `NormalizePayloadForLog(...)`
 - Expanded `AppLayerSourceGuardTests` to cover sync-file path normalization before write-success/write-failure breadcrumbs are written
 ### [1.1.9] - 2026-04-14
 
