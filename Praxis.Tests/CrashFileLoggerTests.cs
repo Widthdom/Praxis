@@ -292,6 +292,25 @@ public class CrashFileLoggerTests
     }
 
     [Fact]
+    public void SafeObjectDescription_WhenToStringIsMultiline_CollapsesToSingleLine()
+    {
+        var markerA = $"object-a-{Guid.NewGuid():N}";
+        var markerB = $"object-b-{Guid.NewGuid():N}";
+
+        var content = CrashFileLogger.SafeObjectDescription(new MultilineObjectToStringValue($"{markerA}\r\n{markerB}"));
+
+        Assert.Equal($"{markerA} {markerB}", content);
+    }
+
+    [Fact]
+    public void SafeObjectDescription_WhenToStringIsWhitespace_ReturnsEmptyMarker()
+    {
+        var content = CrashFileLogger.SafeObjectDescription(new WhitespaceObjectToStringValue());
+
+        Assert.Equal("(empty)", content);
+    }
+
+    [Fact]
     public void WriteException_WhenExceptionDataFormattingThrows_WritesFallbackMarker()
     {
         var ex = new Exception("data formatting");
@@ -437,5 +456,15 @@ public class CrashFileLoggerTests
     private sealed class ThrowingObjectToStringValue(string message)
     {
         public override string ToString() => throw new InvalidOperationException(message);
+    }
+
+    private sealed class MultilineObjectToStringValue(string value)
+    {
+        public override string ToString() => value;
+    }
+
+    private sealed class WhitespaceObjectToStringValue
+    {
+        public override string ToString() => " \r\n\t ";
     }
 }
