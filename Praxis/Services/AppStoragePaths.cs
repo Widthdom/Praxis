@@ -70,11 +70,11 @@ public static class AppStoragePaths
             }
             catch (IOException ex)
             {
-                CrashFileLogger.WriteWarning(nameof(AppStoragePaths), $"Legacy database migration failed from '{sourcePath}': {ex.Message}");
+                CrashFileLogger.WriteWarning(nameof(AppStoragePaths), BuildSafeWarningMessage($"Legacy database migration failed from '{sourcePath}'", ex));
             }
             catch (UnauthorizedAccessException ex)
             {
-                CrashFileLogger.WriteWarning(nameof(AppStoragePaths), $"Legacy database migration failed from '{sourcePath}': {ex.Message}");
+                CrashFileLogger.WriteWarning(nameof(AppStoragePaths), BuildSafeWarningMessage($"Legacy database migration failed from '{sourcePath}'", ex));
             }
         }
     }
@@ -127,7 +127,7 @@ public static class AppStoragePaths
         }
         catch (Exception ex) when (ex is ArgumentException or NotSupportedException or PathTooLongException)
         {
-            CrashFileLogger.WriteWarning(nameof(AppStoragePaths), $"Ignoring invalid migration path comparison between '{left}' and '{right}': {ex.Message}");
+            CrashFileLogger.WriteWarning(nameof(AppStoragePaths), BuildSafeWarningMessage($"Ignoring invalid migration path comparison between '{left}' and '{right}'", ex));
             return false;
         }
     }
@@ -201,4 +201,7 @@ public static class AppStoragePaths
 
         return trimmed;
     }
+
+    private static string BuildSafeWarningMessage(string prefix, Exception ex)
+        => $"{prefix}: {CrashFileLogger.SafeExceptionMessage(ex)}";
 }
