@@ -161,8 +161,9 @@ public sealed class DbErrorLogger : IErrorLogger
         }
         catch (Exception ex)
         {
+            var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);
             CrashFileLogger.WriteException(nameof(DbErrorLogger), ex);
-            CrashFileLogger.WriteWarning(nameof(DbErrorLogger), $"Flush failed unexpectedly: {ex.Message}");
+            CrashFileLogger.WriteWarning(nameof(DbErrorLogger), $"Flush failed unexpectedly: {safeMessage}");
         }
     }
 
@@ -183,8 +184,9 @@ public sealed class DbErrorLogger : IErrorLogger
         }
         catch (Exception ex)
         {
+            var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);
             CrashFileLogger.WriteException(nameof(DbErrorLogger), ex);
-            CrashFileLogger.WriteWarning(nameof(DbErrorLogger), $"Drain loop failed unexpectedly: {ex.Message}");
+            CrashFileLogger.WriteWarning(nameof(DbErrorLogger), $"Drain loop failed unexpectedly: {safeMessage}");
         }
         finally
         {
@@ -221,8 +223,9 @@ public sealed class DbErrorLogger : IErrorLogger
                 }
                 catch (Exception ex)
                 {
+                    var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);
                     CrashFileLogger.WriteException(nameof(DbErrorLogger), ex);
-                    CrashFileLogger.WriteWarning(nameof(DbErrorLogger), $"Failed to purge old error logs after persisting '{entry.Context}': {ex.Message}");
+                    CrashFileLogger.WriteWarning(nameof(DbErrorLogger), $"Failed to purge old error logs after persisting '{entry.Context}': {safeMessage}");
                 }
             }
         }
@@ -235,8 +238,9 @@ public sealed class DbErrorLogger : IErrorLogger
         }
         catch (Exception ex)
         {
+            var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);
             CrashFileLogger.WriteException(nameof(DbErrorLogger), ex);
-            CrashFileLogger.WriteWarning(nameof(DbErrorLogger), $"Failed to persist {entry.Level} log for '{entry.Context}': {ex.Message}");
+            CrashFileLogger.WriteWarning(nameof(DbErrorLogger), $"Failed to persist {entry.Level} log for '{entry.Context}': {safeMessage}");
         }
         finally
         {
@@ -324,9 +328,10 @@ public sealed class DbErrorLogger : IErrorLogger
             }
 
             sb.AppendLine();
-            if (!string.IsNullOrEmpty(current.StackTrace))
+            var stackTrace = CrashFileLogger.SafeExceptionStackTrace(current);
+            if (!string.IsNullOrEmpty(stackTrace))
             {
-                sb.AppendLine(current.StackTrace);
+                sb.AppendLine(stackTrace);
             }
 
             if (current is AggregateException agg)
@@ -459,7 +464,7 @@ public sealed class DbErrorLogger : IErrorLogger
             return $"AggregateException ({agg.InnerExceptions.Count} inner exceptions; top-level summary omitted — wide/nested aggregate)";
         }
 
-        return ex.Message;
+        return CrashFileLogger.SafeExceptionMessage(ex);
     }
 
     private static void AppendExceptionTypes(List<string> parts, Exception ex, int depth, Budget budget)

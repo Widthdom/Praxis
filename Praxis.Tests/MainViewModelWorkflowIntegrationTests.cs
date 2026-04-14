@@ -388,6 +388,29 @@ public class MainViewModelWorkflowIntegrationTests
     }
 
     [Fact]
+    public async Task ExternalThemeSync_WhenThemeReadMessageGetterThrows_LogsFallbackMarker()
+    {
+        var repository = new InMemoryAppRepository();
+        var executor = new RecordingCommandExecutor((true, "ok"));
+        var clipboard = new RecordingClipboardService();
+        var theme = new RecordingThemeService();
+        var syncNotifier = new TestStateSyncNotifier();
+        var logger = new RecordingErrorLogger();
+        var viewModel = new MainViewModel(repository, executor, clipboard, theme, syncNotifier, logger);
+        await viewModel.InitializeAsync();
+
+        viewModel.CreateNewCommand.Execute(null);
+        Assert.True(viewModel.IsEditorOpen);
+        repository.ThrowOnGetTheme = new ThrowingMessageException();
+
+        syncNotifier.RaiseExternalChange();
+
+        await WaitUntilAsync(() => logger.Warnings.Any(x => x.Context == "SyncThemeFromExternalChangeAsync"));
+        Assert.Contains(logger.Warnings, x => x.Context == "SyncThemeFromExternalChangeAsync" && x.Message.Contains("failed to read exception message", StringComparison.Ordinal));
+        Assert.Contains(logger.Exceptions, x => x.Context == "SyncThemeFromExternalChangeAsync" && x.Exception is ThrowingMessageException);
+    }
+
+    [Fact]
     public async Task Initialize_WhenThemeReadFails_FallsBackToSystemAndLogsWarning()
     {
         var repository = new InMemoryAppRepository
@@ -709,6 +732,47 @@ public class MainViewModelWorkflowIntegrationTests
     }
 
     [Fact]
+    public async Task SaveEditor_WhenConflictDialogMessageGetterThrows_LogsFallbackMarkerAndCancels()
+    {
+        var repository = new InMemoryAppRepository();
+        var original = new LauncherButtonRecord
+        {
+            Id = Guid.NewGuid(),
+            Command = "build",
+            ButtonText = "Build",
+            Tool = "echo",
+            Arguments = "one",
+            Note = "original",
+        };
+        await repository.UpsertButtonAsync(original);
+
+        var executor = new RecordingCommandExecutor((true, "ok"));
+        var clipboard = new RecordingClipboardService();
+        var theme = new RecordingThemeService();
+        var syncNotifier = new TestStateSyncNotifier();
+        var logger = new RecordingErrorLogger();
+        var viewModel = new MainViewModel(repository, executor, clipboard, theme, syncNotifier, logger);
+        await viewModel.InitializeAsync();
+
+        viewModel.OpenEditorCommand.Execute(Assert.Single(viewModel.VisibleButtons));
+        viewModel.Editor.Note = "edited locally";
+
+        repository.UpsertForExternalChange(new LauncherButtonRecord(original)
+        {
+            Note = "changed elsewhere",
+        });
+
+        viewModel.ResolveEditorConflictAsync = _ => throw new ThrowingMessageException();
+
+        await viewModel.SaveEditorCommand.ExecuteAsync(null);
+
+        Assert.True(viewModel.IsEditorOpen);
+        Assert.Equal("Save canceled due to conflict.", viewModel.StatusText);
+        Assert.Contains(logger.Warnings, x => x.Context == "ResolveConflictAsync" && x.Message.Contains("failed to read exception message", StringComparison.Ordinal));
+        Assert.Contains(logger.Exceptions, x => x.Context == "ResolveConflictAsync" && x.Exception is ThrowingMessageException);
+    }
+
+    [Fact]
     public async Task OpenCreateEditorAtAsync_WhenClipboardReadFails_UsesEmptyArgsAndLogsWarning()
     {
         var repository = new InMemoryAppRepository();
@@ -729,6 +793,29 @@ public class MainViewModelWorkflowIntegrationTests
         Assert.Equal(string.Empty, viewModel.Editor.Arguments);
         Assert.Contains(logger.Warnings, x => x.Context == "OpenCreateEditorAtAsync" && x.Message.Contains("clipboard read boom", StringComparison.Ordinal));
         Assert.Contains(logger.Exceptions, x => x.Context == "OpenCreateEditorAtAsync" && x.Exception.Message.Contains("clipboard read boom", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task OpenCreateEditorAtAsync_WhenClipboardReadMessageGetterThrows_UsesFallbackWarningAndOpensEditor()
+    {
+        var repository = new InMemoryAppRepository();
+        var executor = new RecordingCommandExecutor((true, "ok"));
+        var clipboard = new RecordingClipboardService
+        {
+            ThrowOnGetText = new ThrowingMessageException(),
+        };
+        var theme = new RecordingThemeService();
+        var syncNotifier = new TestStateSyncNotifier();
+        var logger = new RecordingErrorLogger();
+        var viewModel = new MainViewModel(repository, executor, clipboard, theme, syncNotifier, logger);
+        await viewModel.InitializeAsync();
+
+        await viewModel.OpenCreateEditorAtAsync(20, 20, useClipboardForArguments: true);
+
+        Assert.True(viewModel.IsEditorOpen);
+        Assert.Equal(string.Empty, viewModel.Editor.Arguments);
+        Assert.Contains(logger.Warnings, x => x.Context == "OpenCreateEditorAtAsync" && x.Message.Contains("failed to read exception message", StringComparison.Ordinal));
+        Assert.Contains(logger.Exceptions, x => x.Context == "OpenCreateEditorAtAsync" && x.Exception is ThrowingMessageException);
     }
 
     [Fact]
@@ -789,6 +876,41 @@ public class MainViewModelWorkflowIntegrationTests
     }
 
     [Fact]
+    public async Task ExecuteButton_WhenClipboardWriteMessageGetterThrows_UsesFallbackWarningAndStillSucceeds()
+    {
+        var repository = new InMemoryAppRepository();
+        await repository.UpsertButtonAsync(new LauncherButtonRecord
+        {
+            Id = Guid.NewGuid(),
+            Command = "build",
+            ButtonText = "Build",
+            Tool = "echo",
+            Arguments = "one",
+            ClipText = "copied",
+        });
+
+        var executor = new RecordingCommandExecutor((true, "ok"));
+        var clipboard = new RecordingClipboardService
+        {
+            ThrowOnSetText = new ThrowingMessageException(),
+        };
+        var theme = new RecordingThemeService();
+        var syncNotifier = new TestStateSyncNotifier();
+        var logger = new RecordingErrorLogger();
+        var viewModel = new MainViewModel(repository, executor, clipboard, theme, syncNotifier, logger);
+        await viewModel.InitializeAsync();
+
+        await viewModel.ExecuteButtonCommand.ExecuteAsync(Assert.Single(viewModel.VisibleButtons));
+
+        Assert.Single(executor.Calls);
+        Assert.Single(repository.Logs);
+        Assert.Equal("Executed.", viewModel.StatusText);
+        Assert.Contains(logger.Warnings, x => x.Context == "ExecuteRecordAsync" && x.Message.Contains("failed to read exception message", StringComparison.Ordinal));
+        Assert.Contains(logger.Exceptions, x => x.Context == "ExecuteRecordAsync" && x.Exception is ThrowingMessageException);
+        Assert.Contains(logger.Infos, x => x.Context == "ExecuteRecordAsync" && x.Message.Contains("Executed (button)", StringComparison.Ordinal));
+    }
+
+    [Fact]
     public async Task SaveEditor_WhenSyncNotifyFails_StillPersistsAndLogsWarning()
     {
         var repository = new InMemoryAppRepository();
@@ -816,6 +938,36 @@ public class MainViewModelWorkflowIntegrationTests
         Assert.Equal("Saved.", viewModel.StatusText);
         Assert.Contains(logger.Warnings, x => x.Context == "SaveEditorAsync" && x.Message.Contains("sync boom", StringComparison.Ordinal));
         Assert.Contains(logger.Exceptions, x => x.Context == "SaveEditorAsync" && x.Exception.Message.Contains("sync boom", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task SaveEditor_WhenSyncNotifyMessageGetterThrows_UsesFallbackWarningAndStillPersists()
+    {
+        var repository = new InMemoryAppRepository();
+        var executor = new RecordingCommandExecutor((true, "ok"));
+        var clipboard = new RecordingClipboardService();
+        var theme = new RecordingThemeService();
+        var syncNotifier = new TestStateSyncNotifier
+        {
+            ThrowOnNotify = new ThrowingMessageException(),
+        };
+        var logger = new RecordingErrorLogger();
+        var viewModel = new MainViewModel(repository, executor, clipboard, theme, syncNotifier, logger);
+        await viewModel.InitializeAsync();
+
+        viewModel.CreateNewCommand.Execute(null);
+        viewModel.Editor.Command = "build";
+        viewModel.Editor.ButtonText = "Build";
+        viewModel.Editor.Tool = "echo";
+        viewModel.Editor.Arguments = "one";
+
+        await viewModel.SaveEditorCommand.ExecuteAsync(null);
+
+        Assert.Single(await repository.GetButtonsAsync());
+        Assert.False(viewModel.IsEditorOpen);
+        Assert.Equal("Saved.", viewModel.StatusText);
+        Assert.Contains(logger.Warnings, x => x.Context == "SaveEditorAsync" && x.Message.Contains("failed to read exception message", StringComparison.Ordinal));
+        Assert.Contains(logger.Exceptions, x => x.Context == "SaveEditorAsync" && x.Exception is ThrowingMessageException);
     }
 
     [Fact]
@@ -1026,6 +1178,29 @@ public class MainViewModelWorkflowIntegrationTests
     }
 
     [Fact]
+    public async Task SetTheme_WhenThemePersistMessageGetterThrows_UsesFallbackWarningAndStillAppliesLocally()
+    {
+        var repository = new InMemoryAppRepository
+        {
+            ThrowOnSetTheme = new ThrowingMessageException(),
+        };
+        var executor = new RecordingCommandExecutor((true, "ok"));
+        var clipboard = new RecordingClipboardService();
+        var theme = new RecordingThemeService();
+        var syncNotifier = new TestStateSyncNotifier();
+        var logger = new RecordingErrorLogger();
+        var viewModel = new MainViewModel(repository, executor, clipboard, theme, syncNotifier, logger);
+        await viewModel.InitializeAsync();
+
+        await viewModel.SetThemeCommand.ExecuteAsync("Dark");
+
+        Assert.Equal(ThemeMode.Dark, viewModel.SelectedTheme);
+        Assert.Equal(ThemeMode.Dark, theme.Current);
+        Assert.Contains(logger.Warnings, x => x.Context == "SetThemeAsync" && x.Message.Contains("failed to read exception message", StringComparison.Ordinal));
+        Assert.Contains(logger.Exceptions, x => x.Context == "SetThemeAsync" && x.Exception is ThrowingMessageException);
+    }
+
+    [Fact]
     public async Task ExecuteCommandInput_WhenRepositoryLookupThrows_LogsWarningAndShowsCommandNotFound()
     {
         var repository = new InMemoryAppRepository
@@ -1046,6 +1221,29 @@ public class MainViewModelWorkflowIntegrationTests
         Assert.Equal("Command not found: missing", viewModel.StatusText);
         Assert.Contains(logger.Warnings, x => x.Context == "ExecuteCommandMatchesAsync" && x.Message.Contains("lookup boom", StringComparison.Ordinal));
         Assert.Contains(logger.Exceptions, x => x.Context == "ExecuteCommandMatchesAsync" && x.Exception.Message.Contains("lookup boom", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task ExecuteCommandInput_WhenRepositoryLookupMessageGetterThrows_LogsFallbackMarkerAndShowsCommandNotFound()
+    {
+        var repository = new InMemoryAppRepository
+        {
+            ThrowOnGetByCommand = new ThrowingMessageException(),
+        };
+        var executor = new RecordingCommandExecutor((true, "ok"));
+        var clipboard = new RecordingClipboardService();
+        var theme = new RecordingThemeService();
+        var syncNotifier = new TestStateSyncNotifier();
+        var logger = new RecordingErrorLogger();
+        var viewModel = new MainViewModel(repository, executor, clipboard, theme, syncNotifier, logger);
+        await viewModel.InitializeAsync();
+        viewModel.CommandInput = "missing";
+
+        await viewModel.ExecuteCommandInputCommand.ExecuteAsync(null);
+
+        Assert.Equal("Command not found: missing", viewModel.StatusText);
+        Assert.Contains(logger.Warnings, x => x.Context == "ExecuteCommandMatchesAsync" && x.Message.Contains("failed to read exception message", StringComparison.Ordinal));
+        Assert.Contains(logger.Exceptions, x => x.Context == "ExecuteCommandMatchesAsync" && x.Exception is ThrowingMessageException);
     }
 
     private static async Task WaitUntilAsync(Func<bool> condition, int timeoutMs = 2000)
@@ -1443,5 +1641,10 @@ public class MainViewModelWorkflowIntegrationTests
         }
 
         public Task FlushAsync(TimeSpan timeout) => Task.CompletedTask;
+    }
+
+    private sealed class ThrowingMessageException : Exception
+    {
+        public override string Message => throw new InvalidOperationException("message getter failure");
     }
 }

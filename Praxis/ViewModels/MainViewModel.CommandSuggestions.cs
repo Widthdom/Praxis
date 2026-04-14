@@ -201,14 +201,14 @@ public partial class MainViewModel
         catch (Exception ex)
         {
             errorLogger.Log(ex, nameof(DebouncedRefreshCommandSuggestionsAsync));
-            errorLogger.LogWarning($"Debounced command suggestion refresh failed: {ex.Message}", nameof(DebouncedRefreshCommandSuggestionsAsync));
+            errorLogger.LogWarning(BuildSafeWarningMessage("Debounced command suggestion refresh failed", ex), nameof(DebouncedRefreshCommandSuggestionsAsync));
             try
             {
                 MainThread.BeginInvokeOnMainThread(CloseCommandSuggestions);
             }
             catch (Exception dispatchEx)
             {
-                errorLogger.LogWarning($"Command suggestion close dispatch failed: {dispatchEx.Message}", nameof(DebouncedRefreshCommandSuggestionsAsync));
+                errorLogger.LogWarning(BuildSafeWarningMessage("Command suggestion close dispatch failed", dispatchEx), nameof(DebouncedRefreshCommandSuggestionsAsync));
             }
         }
     }
@@ -228,7 +228,7 @@ public partial class MainViewModel
         catch (Exception ex)
         {
             errorLogger.Log(ex, nameof(RefreshCommandSuggestionsOnMainThread));
-            errorLogger.LogWarning($"Command suggestion refresh dispatch failed: {ex.Message}", nameof(RefreshCommandSuggestionsOnMainThread));
+            errorLogger.LogWarning(BuildSafeWarningMessage("Command suggestion refresh dispatch failed", ex), nameof(RefreshCommandSuggestionsOnMainThread));
         }
     }
 
@@ -273,7 +273,7 @@ public partial class MainViewModel
         }
         catch (Exception ex)
         {
-            errorLogger.LogWarning($"Command suggestion refresh failed: {ex.Message}", nameof(RefreshCommandSuggestions));
+            errorLogger.LogWarning(BuildSafeWarningMessage("Command suggestion refresh failed", ex), nameof(RefreshCommandSuggestions));
             CloseCommandSuggestions();
         }
     }
@@ -319,7 +319,7 @@ public partial class MainViewModel
             catch (Exception ex)
             {
                 errorLogger.Log(ex, nameof(ExecuteCommandMatchesAsync));
-                errorLogger.LogWarning($"Command lookup fallback failed: {ex.Message}", nameof(ExecuteCommandMatchesAsync));
+                errorLogger.LogWarning(BuildSafeWarningMessage("Command lookup fallback failed", ex), nameof(ExecuteCommandMatchesAsync));
             }
 
             if (singleTarget is not null)

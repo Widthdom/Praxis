@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Text;
 
 namespace Praxis.Services;
@@ -88,28 +89,7 @@ public static class CrashFileLogger
     /// </summary>
     public static void WriteException(string source, Exception? exception)
     {
-        try
-        {
-            var normalizedSource = NormalizeSource(source);
-            var sb = new StringBuilder();
-            sb.AppendLine($"[{DateTimeOffset.Now:yyyy-MM-dd HH:mm:ss.fff zzz}] {normalizedSource}");
-
-            if (exception is null)
-            {
-                sb.AppendLine("  (no exception payload)");
-            }
-            else
-            {
-                AppendExceptionChain(sb, exception, depth: 0, new TraversalBudget());
-            }
-
-            sb.AppendLine(new string('-', 80));
-            WriteToDisk(sb.ToString());
-        }
-        catch
-        {
-            // Must never throw — this is the last-resort logger.
-        }
+        _ = TryWriteException(source, exception);
     }
 
     /// <summary>
@@ -118,20 +98,7 @@ public static class CrashFileLogger
     /// </summary>
     public static void WriteInfo(string source, string message)
     {
-        try
-        {
-            var normalizedSource = NormalizeSource(source);
-            var normalizedMessage = NormalizeMessagePayload(message);
-            var sb = new StringBuilder();
-            sb.AppendLine($"[{DateTimeOffset.Now:yyyy-MM-dd HH:mm:ss.fff zzz}] INFO {normalizedSource}");
-            sb.AppendLine($"  {normalizedMessage}");
-            sb.AppendLine(new string('-', 80));
-            WriteToDisk(sb.ToString());
-        }
-        catch
-        {
-            // Must never throw.
-        }
+        _ = TryWriteInfo(source, message);
     }
 
     /// <summary>
@@ -140,20 +107,7 @@ public static class CrashFileLogger
     /// </summary>
     public static void WriteWarning(string source, string message)
     {
-        try
-        {
-            var normalizedSource = NormalizeSource(source);
-            var normalizedMessage = NormalizeMessagePayload(message);
-            var sb = new StringBuilder();
-            sb.AppendLine($"[{DateTimeOffset.Now:yyyy-MM-dd HH:mm:ss.fff zzz}] WARN {normalizedSource}");
-            sb.AppendLine($"  {normalizedMessage}");
-            sb.AppendLine(new string('-', 80));
-            WriteToDisk(sb.ToString());
-        }
-        catch
-        {
-            // Must never throw.
-        }
+        _ = TryWriteWarning(source, message);
     }
 
     internal static string NormalizeSource(string? source)
@@ -164,6 +118,113 @@ public static class CrashFileLogger
 
     internal static string NormalizeMessagePayload(string? message)
         => NormalizeInlineField(message, MissingMessagePayloadPlaceholder);
+
+    internal static string NormalizeExceptionMessage(string? message)
+        => string.IsNullOrWhiteSpace(message)
+            ? string.Empty
+            : message.ReplaceLineEndings(" ").Trim();
+
+    internal static bool TryWriteException(string source, Exception? exception)
+    {
+        try
+        {
+            var normalizedSource = NormalizeSource(source);
+            var sb = new StringBuilder();
+            sb.AppendLine($"[{DateTimeOffset.Now:yyyy-MM-dd HH:mm:ss.fff zzz}] {normalizedSource}");
+            sb.Append(FormatExceptionPayload(exception));
+            sb.AppendLine(new string('-', 80));
+            WriteToDisk(sb.ToString());
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    internal static bool TryWriteInfo(string source, string message)
+    {
+        try
+        {
+            var normalizedSource = NormalizeSource(source);
+            var normalizedMessage = NormalizeMessagePayload(message);
+            var sb = new StringBuilder();
+            sb.AppendLine($"[{DateTimeOffset.Now:yyyy-MM-dd HH:mm:ss.fff zzz}] INFO {normalizedSource}");
+            sb.AppendLine($"  {normalizedMessage}");
+            sb.AppendLine(new string('-', 80));
+            WriteToDisk(sb.ToString());
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    internal static bool TryWriteWarning(string source, string message)
+    {
+        try
+        {
+            var normalizedSource = NormalizeSource(source);
+            var normalizedMessage = NormalizeMessagePayload(message);
+            var sb = new StringBuilder();
+            sb.AppendLine($"[{DateTimeOffset.Now:yyyy-MM-dd HH:mm:ss.fff zzz}] WARN {normalizedSource}");
+            sb.AppendLine($"  {normalizedMessage}");
+            sb.AppendLine(new string('-', 80));
+            WriteToDisk(sb.ToString());
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    internal static string SafeExceptionMessage(Exception ex)
+    {
+        try
+        {
+            return NormalizeExceptionMessage(ex.Message);
+        }
+        catch (Exception getterEx)
+        {
+            return $"(failed to read exception message: {DescribeLoggingFailure(getterEx)})";
+        }
+    }
+
+    internal static string SafeExceptionStackTrace(Exception ex)
+    {
+        try
+        {
+            return ex.StackTrace ?? string.Empty;
+        }
+        catch (Exception getterEx)
+        {
+            return $"(failed to read stack trace: {DescribeLoggingFailure(getterEx)})";
+        }
+    }
+
+    internal static string FormatExceptionPayload(Exception? exception)
+    {
+        try
+        {
+            var sb = new StringBuilder();
+            if (exception is null)
+            {
+                sb.AppendLine("  (no exception payload)");
+            }
+            else
+            {
+                AppendExceptionChain(sb, exception, depth: 0, new TraversalBudget());
+            }
+
+            return sb.ToString();
+        }
+        catch (Exception formatterEx)
+        {
+            return $"  (failed to format exception payload: {DescribeLoggingFailure(formatterEx)}){Environment.NewLine}";
+        }
+    }
 
     private static string NormalizeInlineField(string? value, string placeholder)
     {
@@ -209,7 +270,7 @@ public static class CrashFileLogger
             return $"AggregateException ({agg.InnerExceptions.Count} inner exceptions; top-level summary omitted — wide/nested aggregate)";
         }
 
-        return ex.Message;
+        return SafeExceptionMessage(ex);
     }
 
     /// <summary>
@@ -257,7 +318,7 @@ public static class CrashFileLogger
         }
 
         // Safe: total tree size <= cap, so .Message expansion is bounded.
-        summary = agg.Message;
+        summary = SafeExceptionMessage(agg);
         return true;
     }
 
@@ -293,23 +354,17 @@ public static class CrashFileLogger
         sb.AppendLine($"{indent}Type: {ex.GetType().FullName ?? ex.GetType().Name}");
         sb.AppendLine($"{indent}Message: {SafeMessage(ex)}");
 
-        if (!string.IsNullOrWhiteSpace(ex.StackTrace))
+        var stackTrace = SafeExceptionStackTrace(ex);
+        if (!string.IsNullOrWhiteSpace(stackTrace))
         {
             sb.AppendLine($"{indent}StackTrace:");
-            foreach (var line in ex.StackTrace.Split('\n'))
+            foreach (var line in stackTrace.Split('\n'))
             {
                 sb.AppendLine($"{indent}  {line.TrimEnd()}");
             }
         }
 
-        if (ex.Data.Count > 0)
-        {
-            sb.AppendLine($"{indent}Data:");
-            foreach (var key in ex.Data.Keys)
-            {
-                sb.AppendLine($"{indent}  {key} = {ex.Data[key]}");
-            }
-        }
+        AppendExceptionData(sb, ex, indent);
 
         if (ex is AggregateException agg)
         {
@@ -520,5 +575,65 @@ public static class CrashFileLogger
         }
 
         return trimmed;
+    }
+
+    private static void AppendExceptionData(StringBuilder sb, Exception ex, string indent)
+    {
+        try
+        {
+            if (ex.Data.Count == 0)
+            {
+                return;
+            }
+
+            sb.AppendLine($"{indent}Data:");
+            foreach (DictionaryEntry entry in ex.Data)
+            {
+                var safeKey = FormatExceptionDataItem(entry.Key, "key");
+                var safeValue = FormatExceptionDataItem(entry.Value, "value");
+                sb.AppendLine($"{indent}  {safeKey} = {safeValue}");
+            }
+        }
+        catch (Exception dataEx)
+        {
+            sb.AppendLine($"{indent}Data: (failed to enumerate Exception.Data: {DescribeLoggingFailure(dataEx)})");
+        }
+    }
+
+    private static string FormatExceptionDataItem(object? value, string role)
+    {
+        if (value is null)
+        {
+            return "(null)";
+        }
+
+        try
+        {
+            var text = NormalizeExceptionMessage(value.ToString());
+            return string.IsNullOrEmpty(text) ? "(empty)" : text;
+        }
+        catch (Exception formatEx)
+        {
+            return $"(failed to format data {role}: {DescribeLoggingFailure(formatEx)})";
+        }
+    }
+
+    private static string DescribeLoggingFailure(Exception ex)
+    {
+        var typeName = ex.GetType().FullName ?? ex.GetType().Name;
+        string? message;
+        try
+        {
+            message = ex.Message;
+        }
+        catch
+        {
+            message = null;
+        }
+
+        var normalizedMessage = NormalizeExceptionMessage(message);
+        return string.IsNullOrEmpty(normalizedMessage)
+            ? typeName
+            : $"{typeName}: {normalizedMessage}";
     }
 }

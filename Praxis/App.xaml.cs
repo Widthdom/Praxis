@@ -162,7 +162,9 @@ public partial class App : Application
         }
         catch (Exception ex)
         {
-            CrashFileLogger.WriteWarning(context, $"Log flush failed: {ex.Message}");
+            var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);
+            CrashFileLogger.WriteException(context, ex);
+            CrashFileLogger.WriteWarning(context, $"Log flush failed: {safeMessage}");
         }
     }
 

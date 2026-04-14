@@ -189,6 +189,19 @@ public class CrashFileLoggerTests
     }
 
     [Fact]
+    public void WriteException_MultilineMessage_IsCollapsedToSingleLine()
+    {
+        var first = $"outer-a-{Guid.NewGuid():N}";
+        var second = $"outer-b-{Guid.NewGuid():N}";
+
+        CrashFileLogger.WriteException("test", new InvalidOperationException($"{first}\r\n{second}"));
+
+        var content = File.ReadAllText(CrashFileLogger.LogFilePath);
+        Assert.Contains($"Message: {first} {second}", content);
+        Assert.DoesNotContain($"Message: {first}\n{second}", content, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void WriteException_WideAggregate_UsesBoundedSummaryAndTailSampling()
     {
         var middleMarker = $"AggMiddle-{Guid.NewGuid()}";
@@ -224,6 +237,64 @@ public class CrashFileLoggerTests
         var content = File.ReadAllText(CrashFileLogger.LogFilePath);
         Assert.Contains(dataKey, content);
         Assert.Contains(dataValue, content);
+    }
+
+    [Fact]
+    public void WriteException_WhenMessageGetterThrows_WritesFallbackMarker()
+    {
+        var marker = $"message-getter-{Guid.NewGuid():N}";
+
+        var ex = Record.Exception(() => CrashFileLogger.WriteException(marker, new ThrowingMessageException()));
+        Assert.Null(ex);
+
+        var content = File.ReadAllText(CrashFileLogger.LogFilePath);
+        Assert.Contains(marker, content);
+        Assert.Contains("failed to read exception message: System.InvalidOperationException: message getter failure", content);
+    }
+
+    [Fact]
+    public void WriteException_WhenStackTraceGetterThrows_WritesFallbackMarker()
+    {
+        var marker = $"stacktrace-getter-{Guid.NewGuid():N}";
+
+        var ex = Record.Exception(() => CrashFileLogger.WriteException(marker, new ThrowingStackTraceException()));
+        Assert.Null(ex);
+
+        var content = File.ReadAllText(CrashFileLogger.LogFilePath);
+        Assert.Contains(marker, content);
+        Assert.Contains("failed to read stack trace: System.InvalidOperationException: stack trace getter failure", content);
+    }
+
+    [Fact]
+    public void FormatExceptionPayload_WhenMessageGetterThrows_PreservesOriginalExceptionType()
+    {
+        var content = CrashFileLogger.FormatExceptionPayload(new ThrowingMessageException());
+
+        Assert.Contains("Type: Praxis.Tests.CrashFileLoggerTests+ThrowingMessageException", content);
+        Assert.Contains("failed to read exception message: System.InvalidOperationException: message getter failure", content);
+    }
+
+    [Fact]
+    public void FormatExceptionPayload_WhenStackTraceGetterThrows_PreservesOriginalExceptionType()
+    {
+        var content = CrashFileLogger.FormatExceptionPayload(new ThrowingStackTraceException());
+
+        Assert.Contains("Type: Praxis.Tests.CrashFileLoggerTests+ThrowingStackTraceException", content);
+        Assert.Contains("failed to read stack trace: System.InvalidOperationException: stack trace getter failure", content);
+    }
+
+    [Fact]
+    public void WriteException_WhenExceptionDataFormattingThrows_WritesFallbackMarker()
+    {
+        var ex = new Exception("data formatting");
+        ex.Data[new ThrowingToStringValue("data key formatting failure")] = new ThrowingToStringValue("data value formatting failure");
+
+        var record = Record.Exception(() => CrashFileLogger.WriteException("data-formatting", ex));
+        Assert.Null(record);
+
+        var content = File.ReadAllText(CrashFileLogger.LogFilePath);
+        Assert.Contains("failed to format data key: System.InvalidOperationException: data key formatting failure", content);
+        Assert.Contains("failed to format data value: System.InvalidOperationException: data value formatting failure", content);
     }
 
     [Fact]
@@ -338,5 +409,20 @@ public class CrashFileLoggerTests
 
         var result = method.Invoke(null, [localAppDataOverride, userProfileOverride, localAppDataFolderOverride, currentDirectory, isWindows, isMacLike]);
         return Assert.IsType<string>(result);
+    }
+
+    private sealed class ThrowingMessageException : Exception
+    {
+        public override string Message => throw new InvalidOperationException("message getter failure");
+    }
+
+    private sealed class ThrowingStackTraceException : Exception
+    {
+        public override string? StackTrace => throw new InvalidOperationException("stack trace getter failure");
+    }
+
+    private sealed class ThrowingToStringValue(string message)
+    {
+        public override string ToString() => throw new InvalidOperationException(message);
     }
 }

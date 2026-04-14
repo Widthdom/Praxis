@@ -69,6 +69,15 @@ public class AppStoragePathsTests
         Assert.Contains("Ignoring invalid migration path comparison", content);
     }
 
+    [Fact]
+    public void BuildSafeWarningMessage_WhenMessageGetterThrows_UsesFallbackMarker()
+    {
+        var result = InvokeBuildSafeWarningMessage("Legacy database migration failed from '/tmp/legacy.db3'", new ThrowingMessageIOException());
+
+        Assert.Contains("Legacy database migration failed from '/tmp/legacy.db3'", result);
+        Assert.Contains("failed to read exception message", result);
+    }
+
     private static string? InvokeCombineAbsoluteFilePath(string? directoryPath, string fileName)
     {
         var method = typeof(AppStoragePaths).GetMethod("CombineAbsoluteFilePath", BindingFlags.NonPublic | BindingFlags.Static);
@@ -84,5 +93,19 @@ public class AppStoragePathsTests
 
         var result = method.Invoke(null, [left, right]);
         return Assert.IsType<bool>(result);
+    }
+
+    private static string InvokeBuildSafeWarningMessage(string prefix, Exception exception)
+    {
+        var method = typeof(AppStoragePaths).GetMethod("BuildSafeWarningMessage", BindingFlags.NonPublic | BindingFlags.Static);
+        Assert.NotNull(method);
+
+        var result = method.Invoke(null, [prefix, exception]);
+        return Assert.IsType<string>(result);
+    }
+
+    private sealed class ThrowingMessageIOException : IOException
+    {
+        public override string Message => throw new InvalidOperationException("message getter failure");
     }
 }

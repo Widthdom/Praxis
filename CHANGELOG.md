@@ -9,10 +9,17 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 ### Fixed
 - `CommandWorkingDirectoryPolicy` now treats Windows shell executable names case-insensitively, so uppercase or mixed-case `cmd.exe` / `powershell.exe` / `pwsh.exe` / `wt.exe` paths still switch `WorkingDirectory` to the user profile instead of inheriting the Praxis process directory
 - `LaunchTargetResolver` now preserves valid path targets whose first or last character is a quote, normalizes env-expanded quoted rooted/home/relative and `file://` path prefixes, and explicitly excludes quoted non-file URI-scheme prefixes so malformed quoted URLs still fail closed
+- `CrashFileLogger` now keeps crash-log records alive even when custom exception `Message` / `StackTrace` getters or `Exception.Data` key/value `ToString()` implementations throw, and exception messages are flattened to single-line output so malformed payloads do not corrupt inline log formatting
+- `DbErrorLogger` now persists the same single-line exception-message normalization and getter-failure fallback markers into `ErrorLogEntity`, and app/process-exit flush failures plus Windows startup-log write failures now record the full exception body before their warning breadcrumb, falling back to an independent temp/current-directory diagnostics file when the normal `%LOCALAPPDATA%\\Praxis` crash sink is unavailable
+- `MainViewModel` warning paths now use the same safe exception-message helper when external theme sync, command-suggestion refresh/lookup, conflict callbacks, clipboard helpers, sync notifications, or local persistence follow-up logging encounter hostile exception `Message` getters, so degraded warning logging no longer rethrows out of those recovery paths
+- `AppStoragePaths` now uses the same safe exception-message helper for legacy database migration and invalid-path-comparison warnings, so startup migration keeps skipping bad candidates even when an exception's `Message` getter is hostile
 
 ### Tests
 - Expanded `CommandWorkingDirectoryPolicyTests` to cover mixed-case shell executable names and uppercase env-expanded shell paths
 - Expanded `LaunchTargetResolverTests` to cover quoted relative/`file://` path prefixes, quoted-boundary path names, and malformed quoted URL handling both before and after env expansion
+- Expanded `CrashFileLoggerTests`, `DbErrorLoggerTests`, `SecondaryFailureLoggerTests`, and `AppLayerSourceGuardTests` to cover multiline exception-message normalization, throwing custom exception getters / data formatters, and startup-log failure diagnostics that fall back to an independent file when the primary crash sink cannot be written
+- Expanded `MainViewModelWorkflowIntegrationTests` and `AppLayerSourceGuardTests` to cover hostile exception-message getters on `MainViewModel` warning paths, including external theme sync, command lookup fallback, conflict callbacks, clipboard follow-up logging, sync notifications, and theme persistence
+- Expanded `AppStoragePathsTests` and `AppLayerSourceGuardTests` to cover hostile exception-message getters on legacy migration warning construction
 ### [1.1.9] - 2026-04-14
 
 ### Fixed

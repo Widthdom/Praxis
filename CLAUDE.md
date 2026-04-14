@@ -136,6 +136,7 @@ cdidx .                                    # full incremental refresh
 ```
 
 **Rule: after modifying source files, run one of the above before your next search.**
+If `cdidx status --json` shows `DEGRADED` after a scoped `--files` refresh, rerun `cdidx .` before trusting graph/validate commands.
 After `git reset`, `git rebase`, `git commit --amend`, `git switch`, or `git merge`, prefer `cdidx .` so purges work against the current worktree.
 
 #### Query strategy
@@ -160,7 +161,7 @@ After `git reset`, `git rebase`, `git commit --amend`, `git switch`, or `git mer
 - `--exclude-tests` unless you are explicitly investigating tests.
 - `--path <text>` and repeatable `--exclude-path <text>` to narrow noisy searches.
 - `search --snippet-lines <n>` for tighter JSON snippets for downstream tool/model use.
-- `index --dry-run` to preview indexing work.
+- `index . --dry-run` to preview indexing work.
 - `status --json` exposes `fold_ready`; if exact symbol matching behaves like legacy ASCII-only matching, rebuild with `cdidx . --rebuild` before trusting `--exact` results.
 
 `search --json` returns match-centered snippets with `chunk_start_line`, `chunk_end_line`, `snippet_start_line`, `snippet_end_line`, `match_lines`, and `highlights`; `files --json` includes per-file `checksum`, `modified`, and `indexed_at`; `inspect --json` mirrors whole-workspace freshness plus graph-support metadata. Graph queries for unsupported languages report that explicitly instead of silently implying "no hits."
@@ -190,7 +191,7 @@ cdidx unused --lang csharp --exclude-tests
 cdidx hotspots --path Praxis --exclude-tests
 cdidx validate
 cdidx status --json
-cdidx index --dry-run
+cdidx index . --dry-run
 git log --oneline -- path/to/file
 ```
 

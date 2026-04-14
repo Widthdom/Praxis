@@ -88,7 +88,9 @@ public class AppLayerSourceGuardTests
 
         Assert.Contains("TryFlushLogs(TimeSpan.FromSeconds(2), \"AppDomain.UnhandledException\");", source);
         Assert.Contains("TryFlushLogs(TimeSpan.FromSeconds(3), \"App.ProcessExit\");", source);
-        Assert.Contains("CrashFileLogger.WriteWarning(context, $\"Log flush failed: {ex.Message}\");", source);
+        Assert.Contains("var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);", source);
+        Assert.Contains("CrashFileLogger.WriteException(context, ex);", source);
+        Assert.Contains("CrashFileLogger.WriteWarning(context, $\"Log flush failed: {safeMessage}\");", source);
     }
 
     [Fact]
@@ -195,8 +197,12 @@ public class AppLayerSourceGuardTests
     {
         var source = ReadRepositoryFile("Praxis", "Services", "DbErrorLogger.cs");
 
+        Assert.Equal(4, CountOccurrences(source, "var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);"));
         Assert.Contains("CrashFileLogger.WriteException(nameof(DbErrorLogger), ex);", source);
-        Assert.Contains("CrashFileLogger.WriteWarning(nameof(DbErrorLogger), $\"Drain loop failed unexpectedly: {ex.Message}\");", source);
+        Assert.Contains("CrashFileLogger.WriteWarning(nameof(DbErrorLogger), $\"Drain loop failed unexpectedly: {safeMessage}\");", source);
+        Assert.Contains("CrashFileLogger.WriteWarning(nameof(DbErrorLogger), $\"Flush failed unexpectedly: {safeMessage}\");", source);
+        Assert.Contains("CrashFileLogger.WriteWarning(nameof(DbErrorLogger), $\"Failed to purge old error logs after persisting '{entry.Context}': {safeMessage}\");", source);
+        Assert.Contains("CrashFileLogger.WriteWarning(nameof(DbErrorLogger), $\"Failed to persist {entry.Level} log for '{entry.Context}': {safeMessage}\");", source);
     }
 
     [Fact]
@@ -233,8 +239,18 @@ public class AppLayerSourceGuardTests
         Assert.Contains("AppStoragePaths.WindowsLocalAppDataRoot", source);
         Assert.Contains("private static bool globalExceptionLoggingHooked;", source);
         Assert.Contains("if (globalExceptionLoggingHooked)", source);
-        Assert.Contains("CrashFileLogger.WriteWarning(nameof(App), $\"Failed to create startup log directory '{startupLogDirectory}': {ex.Message}\");", source);
-        Assert.Contains("CrashFileLogger.WriteWarning(nameof(App), $\"Failed to append startup log '{StartupLogPath}': {ex.Message}\");", source);
+        Assert.Contains("var content = BuildStartupExceptionLogContent(source, exception);", source);
+        Assert.Contains("var content = BuildStartupMessageLogContent(source, message);", source);
+        Assert.Contains("sb.Append(CrashFileLogger.FormatExceptionPayload(exception));", source);
+        Assert.Contains("private static string BuildStartupMessageLogContent(string source, string message)", source);
+        Assert.Contains("AppendStartupLogContent(content);", source);
+        Assert.DoesNotContain("exception.ToString()", source, StringComparison.Ordinal);
+        Assert.Equal(5, CountOccurrences(source, "SecondaryFailureLogger.ReportStartupLogFailure("));
+        Assert.Contains("SecondaryFailureLogger.ReportStartupLogFailure(", source);
+        Assert.Contains("\"Failed to create startup log directory\"", source);
+        Assert.Contains("\"Failed to append startup log\"", source);
+        Assert.Contains("\"Failed to build startup log payload for\"", source);
+        Assert.DoesNotContain("CrashFileLogger.WriteWarning(nameof(App), $\"Failed to append startup log", source, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -255,8 +271,12 @@ public class AppLayerSourceGuardTests
         var source = ReadRepositoryFile("Praxis", "ViewModels", "MainViewModel.cs");
 
         Assert.Contains("errorLogger.Log(ex, nameof(SyncThemeFromExternalChangeAsync));", source);
-        Assert.Contains("External theme sync dispatch failed:", source);
+        Assert.Contains("BuildSafeWarningMessage(\"External theme sync dispatch failed\", ex)", source);
+        Assert.Contains("BuildSafeWarningMessage(\"External theme sync failed\", ex)", source);
+        Assert.Contains("BuildSafeWarningMessage(\"External reload failed\", ex)", source);
         Assert.Contains("TaskCreationOptions.RunContinuationsAsynchronously", source);
+        Assert.Contains("private static string BuildSafeWarningMessage(string prefix, Exception ex)", source);
+        Assert.Contains("private static string BuildSafeWarningMessage(Func<Exception, string> warningFactory, Exception ex)", source);
     }
 
     [Fact]
@@ -266,9 +286,26 @@ public class AppLayerSourceGuardTests
 
         Assert.Contains("errorLogger.Log(ex, nameof(DebouncedRefreshCommandSuggestionsAsync));", source);
         Assert.Contains("errorLogger.Log(ex, nameof(RefreshCommandSuggestionsOnMainThread));", source);
-        Assert.Contains("Command suggestion close dispatch failed:", source);
-        Assert.Contains("Command suggestion refresh dispatch failed:", source);
+        Assert.Contains("BuildSafeWarningMessage(\"Debounced command suggestion refresh failed\", ex)", source);
+        Assert.Contains("BuildSafeWarningMessage(\"Command suggestion close dispatch failed\", dispatchEx)", source);
+        Assert.Contains("BuildSafeWarningMessage(\"Command suggestion refresh dispatch failed\", ex)", source);
+        Assert.Contains("BuildSafeWarningMessage(\"Command lookup fallback failed\", ex)", source);
         Assert.Contains("catch (OperationCanceledException) when (token.IsCancellationRequested)", source);
+    }
+
+    [Fact]
+    public void MainViewModel_ActionsWarningHelpers_UseSafeWarningMessageBuilder()
+    {
+        var source = ReadRepositoryFile("Praxis", "ViewModels", "MainViewModel.Actions.cs");
+
+        Assert.Contains("private async Task<string> TryGetClipboardTextAsync(string context, string operation)", source);
+        Assert.Contains("async () => await clipboardService.GetTextAsync() ?? string.Empty,", source);
+        Assert.Contains("BuildSafeWarningMessage(\"Conflict resolution callback failed\", ex)", source);
+        Assert.Contains("ex => BuildSafeWarningMessage($\"{operation} failed\", ex)", source);
+        Assert.Contains("ex => BuildSafeWarningMessage($\"{operation} completed locally, but window sync notification failed\", ex)", source);
+        Assert.Contains("ex => BuildSafeWarningMessage($\"{operation} applied locally, but theme persistence failed\", ex)", source);
+        Assert.Contains("ex => BuildSafeWarningMessage($\"{operation} completed locally, but dock persistence failed\", ex)", source);
+        Assert.Equal(2, CountOccurrences(source, "errorLogger.LogWarning(BuildSafeWarningMessage(warningFactory, ex), context);"));
     }
 
     [Fact]
@@ -276,7 +313,9 @@ public class AppLayerSourceGuardTests
     {
         var source = ReadRepositoryFile("Praxis", "Services", "AppStoragePaths.cs");
 
-        Assert.Equal(2, CountOccurrences(source, "CrashFileLogger.WriteWarning(nameof(AppStoragePaths), $\"Legacy database migration failed from '{sourcePath}': {ex.Message}\");"));
+        Assert.Contains("private static string BuildSafeWarningMessage(string prefix, Exception ex)", source);
+        Assert.Equal(2, CountOccurrences(source, "CrashFileLogger.WriteWarning(nameof(AppStoragePaths), BuildSafeWarningMessage($\"Legacy database migration failed from '{sourcePath}'\", ex));"));
+        Assert.Contains("CrashFileLogger.WriteWarning(nameof(AppStoragePaths), BuildSafeWarningMessage($\"Ignoring invalid migration path comparison between '{left}' and '{right}'\", ex));", source);
     }
 
     [Fact]
