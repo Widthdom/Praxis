@@ -501,6 +501,17 @@ public class CrashFileLoggerTests
     }
 
     [Fact]
+    public void SafeExceptionStackTrace_WhenGetterFailureMessageIsMultiline_CollapsesFallbackMarkerToSingleLine()
+    {
+        var markerA = $"stack-a-{Guid.NewGuid():N}";
+        var markerB = $"stack-b-{Guid.NewGuid():N}";
+
+        var content = CrashFileLogger.SafeExceptionStackTrace(new ThrowingStackTraceWithMultilineGetterException($"{markerA}\r\n{markerB}"));
+
+        Assert.Equal($"(failed to read stack trace: System.InvalidOperationException: {markerA} {markerB})", content);
+    }
+
+    [Fact]
     public void WriteException_WhenExceptionDataFormattingThrows_WritesFallbackMarker()
     {
         var ex = new Exception("data formatting");
@@ -646,6 +657,11 @@ public class CrashFileLoggerTests
     private sealed class ThrowingStackTraceException : Exception
     {
         public override string? StackTrace => throw new InvalidOperationException("stack trace getter failure");
+    }
+
+    private sealed class ThrowingStackTraceWithMultilineGetterException(string message) : Exception
+    {
+        public override string? StackTrace => throw new InvalidOperationException(message);
     }
 
     private sealed class ThrowingToStringValue(string message)
