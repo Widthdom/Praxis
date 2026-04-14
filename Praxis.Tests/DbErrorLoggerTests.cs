@@ -1043,6 +1043,26 @@ public class DbErrorLoggerTests
     }
 
     [Fact]
+    public async Task LogWarning_NormalizesMultilineRepositoryFailureMessage_InCrashBreadcrumb()
+    {
+        var repo = new MultilineMessageFailingAppRepository();
+        var logger = new DbErrorLogger(repo);
+        var context = $"warn-repo-fail-multiline-{Guid.NewGuid():N}";
+        var message = $"warn repo fail test {Guid.NewGuid():N}";
+        var markerA = $"warn-a-{Guid.NewGuid():N}";
+        var markerB = $"warn-b-{Guid.NewGuid():N}";
+
+        repo.ExceptionMessage = $"{markerA}\r\n{markerB}";
+        logger.LogWarning(message, context);
+
+        var ex = await Record.ExceptionAsync(() => logger.FlushAsync(TimeSpan.FromSeconds(2)));
+        Assert.Null(ex);
+
+        var content = File.ReadAllText(CrashFileLogger.LogFilePath);
+        Assert.Contains($"Failed to persist Warning log for '{context}': {markerA} {markerB}", content);
+    }
+
+    [Fact]
     public async Task LogInfo_DoesNotThrow_WhenRepositoryFails()
     {
         var repo = new FailingAppRepository();
@@ -1075,6 +1095,26 @@ public class DbErrorLoggerTests
 
         var content = File.ReadAllText(CrashFileLogger.LogFilePath);
         Assert.Contains($"Failed to persist Info log for '{context}': (empty)", content);
+    }
+
+    [Fact]
+    public async Task LogInfo_NormalizesMultilineRepositoryFailureMessage_InCrashBreadcrumb()
+    {
+        var repo = new MultilineMessageFailingAppRepository();
+        var logger = new DbErrorLogger(repo);
+        var context = $"info-repo-fail-multiline-{Guid.NewGuid():N}";
+        var message = $"info repo fail test {Guid.NewGuid():N}";
+        var markerA = $"info-a-{Guid.NewGuid():N}";
+        var markerB = $"info-b-{Guid.NewGuid():N}";
+
+        repo.ExceptionMessage = $"{markerA}\r\n{markerB}";
+        logger.LogInfo(message, context);
+
+        var ex = await Record.ExceptionAsync(() => logger.FlushAsync(TimeSpan.FromSeconds(2)));
+        Assert.Null(ex);
+
+        var content = File.ReadAllText(CrashFileLogger.LogFilePath);
+        Assert.Contains($"Failed to persist Info log for '{context}': {markerA} {markerB}", content);
     }
 
     [Fact]
