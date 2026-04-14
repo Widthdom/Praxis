@@ -150,6 +150,14 @@ public class CrashFileLoggerTests
     }
 
     [Fact]
+    public void NormalizeExceptionMessage_WhenValueIsWhitespace_ReturnsEmptyString()
+    {
+        var result = CrashFileLogger.NormalizeExceptionMessage(" \r\n\t ");
+
+        Assert.Equal(string.Empty, result);
+    }
+
+    [Fact]
     public void WriteException_WritesToFile()
     {
         var marker = $"CrashFileLoggerTests-{Guid.NewGuid()}";
