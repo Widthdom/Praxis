@@ -69,6 +69,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - Expanded `AppStoragePathsTests` to cover direct null logged-path normalization inside `NormalizePathForLog(...)`
 - Expanded `FileAppConfigServiceTests` and `AppLayerSourceGuardTests` to cover hostile exception-message getters on skipped-config warning construction
 - Expanded `FileAppConfigServiceTests` and `AppLayerSourceGuardTests` to cover config-path normalization before invalid-theme / skipped-config breadcrumbs are written
+- Expanded `FileAppConfigServiceTests` to cover direct null logged-config-path normalization inside `NormalizePathForLog(...)`
 - Expanded `CommandExecutorTests` and `AppLayerSourceGuardTests` to cover hostile exception-message getters on launch failure message construction
 - Expanded `CommandExecutorTests` and `AppLayerSourceGuardTests` to cover tool / URL / path / argument normalization before launch-failure breadcrumbs are assembled
 - Expanded `AppLayerSourceGuardTests` to cover LaunchServices bundle-path normalization before Mac relay breadcrumbs are written

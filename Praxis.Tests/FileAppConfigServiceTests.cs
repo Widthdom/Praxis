@@ -178,6 +178,14 @@ public class FileAppConfigServiceTests
     }
 
     [Fact]
+    public void NormalizePathForLog_WhenPathIsNull_UsesPlaceholder()
+    {
+        var result = InvokeNormalizePathForLog(null);
+
+        Assert.Equal(CrashFileLogger.MissingMessagePayloadPlaceholder, result);
+    }
+
+    [Fact]
     public void EnumerateCandidatePaths_DeduplicatesEquivalentDirectories()
     {
         var path = "/tmp/praxis-config";
@@ -215,7 +223,7 @@ public class FileAppConfigServiceTests
         Assert.Null(invocation);
     }
 
-    private static string InvokeNormalizePathForLog(string path)
+    private static string InvokeNormalizePathForLog(string? path)
     {
         var method = typeof(FileAppConfigService).GetMethod("NormalizePathForLog", BindingFlags.NonPublic | BindingFlags.Static);
         Assert.NotNull(method);
