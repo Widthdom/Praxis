@@ -41,6 +41,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - Expanded `CrashFileLoggerTests` to cover direct source/context normalization helpers alongside persisted crash-breadcrumb behavior
 - Expanded `CrashFileLoggerTests` to cover direct `NormalizeMessagePayload(...)` helper behavior alongside persisted crash-breadcrumb behavior
 - Expanded `CrashFileLoggerTests` to cover multiline/whitespace-only getter-failure messages inside `SafeExceptionMessage(...)` fallback markers
+- Expanded `CrashFileLoggerTests` to cover direct multiline `NormalizeExceptionMessage(...)` helper behavior
 - Expanded `DbErrorLoggerTests` to cover normalized multiline contexts inside persist-failure breadcrumbs
 - Expanded `DbErrorLoggerTests` to cover normalized multiline contexts inside Warning persist-failure breadcrumbs
 - Expanded `DbErrorLoggerTests` to cover normalized multiline contexts inside Info persist-failure breadcrumbs

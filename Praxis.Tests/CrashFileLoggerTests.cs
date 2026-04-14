@@ -139,6 +139,17 @@ public class CrashFileLoggerTests
     }
 
     [Fact]
+    public void NormalizeExceptionMessage_WhenValueIsMultiline_CollapsesToSingleLine()
+    {
+        var markerA = $"exception-message-a-{Guid.NewGuid():N}";
+        var markerB = $"exception-message-b-{Guid.NewGuid():N}";
+
+        var result = CrashFileLogger.NormalizeExceptionMessage($"{markerA}\r\n{markerB}");
+
+        Assert.Equal($"{markerA} {markerB}", result);
+    }
+
+    [Fact]
     public void WriteException_WritesToFile()
     {
         var marker = $"CrashFileLoggerTests-{Guid.NewGuid()}";
