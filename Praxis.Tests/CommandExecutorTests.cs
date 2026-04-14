@@ -79,6 +79,14 @@ public class CommandExecutorTests
         }
     }
 
+    [Fact]
+    public void NormalizeToolPath_WhenValueIsNull_ReturnsEmptyString()
+    {
+        var result = InvokeNormalizeToolPath(null);
+
+        Assert.Equal(string.Empty, result);
+    }
+
     [Theory]
     [InlineData("pwsh", true)]
     [InlineData("\"C:\\Program Files\\App\\app.exe\"", true)]
@@ -224,7 +232,7 @@ public class CommandExecutorTests
         method.Invoke(null, [startInfo, tool, isWindows]);
     }
 
-    private static string InvokeNormalizeToolPath(string value)
+    private static string InvokeNormalizeToolPath(string? value)
     {
         var method = typeof(CommandExecutor).GetMethod("NormalizeToolPath", BindingFlags.NonPublic | BindingFlags.Static);
         Assert.NotNull(method);
