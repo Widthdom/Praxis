@@ -1061,6 +1061,41 @@ public class DbErrorLoggerTests
     }
 
     [Fact]
+    public async Task Log_NormalizesRepositoryFailureMultilineMessage_InCrashBreadcrumb()
+    {
+        var repo = new MultilineMessageFailingAppRepository();
+        var logger = new DbErrorLogger(repo);
+        var context = $"repo-fail-multiline-{Guid.NewGuid():N}";
+        var markerA = $"db-a-{Guid.NewGuid():N}";
+        var markerB = $"db-b-{Guid.NewGuid():N}";
+
+        repo.ExceptionMessage = $"{markerA}\r\n{markerB}";
+        logger.Log(new Exception("repo fail test"), context);
+
+        var ex = await Record.ExceptionAsync(() => logger.FlushAsync(TimeSpan.FromSeconds(2)));
+        Assert.Null(ex);
+
+        var content = File.ReadAllText(CrashFileLogger.LogFilePath);
+        Assert.Contains($"Failed to persist Error log for '{context}': {markerA} {markerB}", content);
+    }
+
+    [Fact]
+    public async Task Log_NormalizesRepositoryFailureWhitespaceMessage_ToEmptyMarker()
+    {
+        var repo = new WhitespaceMessageFailingAppRepository();
+        var logger = new DbErrorLogger(repo);
+        var context = $"repo-fail-empty-{Guid.NewGuid():N}";
+
+        logger.Log(new Exception("repo fail test"), context);
+
+        var ex = await Record.ExceptionAsync(() => logger.FlushAsync(TimeSpan.FromSeconds(2)));
+        Assert.Null(ex);
+
+        var content = File.ReadAllText(CrashFileLogger.LogFilePath);
+        Assert.Contains($"Failed to persist Error log for '{context}': (empty)", content);
+    }
+
+    [Fact]
     public async Task Log_PreservesErrorContext_OnPersistedEntry()
     {
         var repo = new FakeAppRepository();
@@ -1114,6 +1149,41 @@ public class DbErrorLoggerTests
         var content = File.ReadAllText(CrashFileLogger.LogFilePath);
         Assert.Contains($"Failed to purge old error logs after persisting '{context}': (failed to read exception message: System.InvalidOperationException: message getter failure)", content);
         Assert.Contains("ThrowingMessageException", content);
+    }
+
+    [Fact]
+    public async Task FlushAsync_NormalizesPurgeFailureMultilineMessage_InCrashBreadcrumb()
+    {
+        var repo = new MultilineMessagePurgeFailingAppRepository();
+        var logger = new DbErrorLogger(repo);
+        var context = $"purge-fail-multiline-{Guid.NewGuid():N}";
+        var markerA = $"purge-a-{Guid.NewGuid():N}";
+        var markerB = $"purge-b-{Guid.NewGuid():N}";
+
+        repo.ExceptionMessage = $"{markerA}\r\n{markerB}";
+        logger.Log(new InvalidOperationException("purge fail test"), context);
+
+        var ex = await Record.ExceptionAsync(() => logger.FlushAsync(TimeSpan.FromSeconds(2)));
+        Assert.Null(ex);
+
+        var content = File.ReadAllText(CrashFileLogger.LogFilePath);
+        Assert.Contains($"Failed to purge old error logs after persisting '{context}': {markerA} {markerB}", content);
+    }
+
+    [Fact]
+    public async Task FlushAsync_NormalizesPurgeFailureWhitespaceMessage_ToEmptyMarker()
+    {
+        var repo = new WhitespaceMessagePurgeFailingAppRepository();
+        var logger = new DbErrorLogger(repo);
+        var context = $"purge-fail-empty-{Guid.NewGuid():N}";
+
+        logger.Log(new InvalidOperationException("purge fail test"), context);
+
+        var ex = await Record.ExceptionAsync(() => logger.FlushAsync(TimeSpan.FromSeconds(2)));
+        Assert.Null(ex);
+
+        var content = File.ReadAllText(CrashFileLogger.LogFilePath);
+        Assert.Contains($"Failed to purge old error logs after persisting '{context}': (empty)", content);
     }
 
     private sealed class FakeAppRepository : IAppRepository
@@ -1279,9 +1349,116 @@ public class DbErrorLoggerTests
         public Task SetDockButtonIdsAsync(IReadOnlyList<Guid> ids, CancellationToken cancellationToken = default) => Task.CompletedTask;
     }
 
+    private sealed class MultilineMessageFailingAppRepository : IAppRepository
+    {
+        public string ExceptionMessage { get; set; } = "multiline failure";
+
+        public Task InitializeAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
+        public Task<IReadOnlyList<LauncherButtonRecord>> GetButtonsAsync(CancellationToken cancellationToken = default) => Task.FromResult<IReadOnlyList<LauncherButtonRecord>>([]);
+        public Task<IReadOnlyList<LauncherButtonRecord>> ReloadButtonsAsync(CancellationToken cancellationToken = default) => Task.FromResult<IReadOnlyList<LauncherButtonRecord>>([]);
+        public Task<LauncherButtonRecord?> GetByIdAsync(Guid id, bool forceReload = false, CancellationToken cancellationToken = default) => Task.FromResult<LauncherButtonRecord?>(null);
+        public Task<LauncherButtonRecord?> GetByCommandAsync(string command, CancellationToken cancellationToken = default) => Task.FromResult<LauncherButtonRecord?>(null);
+        public Task UpsertButtonAsync(LauncherButtonRecord record, CancellationToken cancellationToken = default) => Task.CompletedTask;
+        public Task DeleteButtonAsync(Guid id, CancellationToken cancellationToken = default) => Task.CompletedTask;
+        public Task AddLogAsync(LaunchLogEntry entry, CancellationToken cancellationToken = default) => Task.CompletedTask;
+        public Task PurgeOldLogsAsync(int retentionDays, CancellationToken cancellationToken = default) => Task.CompletedTask;
+        public Task AddErrorLogAsync(ErrorLogEntry entry, CancellationToken cancellationToken = default) => throw new MultilineMessageException(ExceptionMessage);
+        public Task PurgeOldErrorLogsAsync(int retentionDays, CancellationToken cancellationToken = default) => Task.CompletedTask;
+        public Task SetThemeAsync(ThemeMode themeMode, CancellationToken cancellationToken = default) => Task.CompletedTask;
+        public Task<ThemeMode> GetThemeAsync(CancellationToken cancellationToken = default) => Task.FromResult(ThemeMode.System);
+        public Task<IReadOnlyList<Guid>> GetDockButtonIdsAsync(CancellationToken cancellationToken = default) => Task.FromResult<IReadOnlyList<Guid>>([]);
+        public Task SetDockButtonIdsAsync(IReadOnlyList<Guid> ids, CancellationToken cancellationToken = default) => Task.CompletedTask;
+    }
+
+    private sealed class WhitespaceMessageFailingAppRepository : IAppRepository
+    {
+        public Task InitializeAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
+        public Task<IReadOnlyList<LauncherButtonRecord>> GetButtonsAsync(CancellationToken cancellationToken = default) => Task.FromResult<IReadOnlyList<LauncherButtonRecord>>([]);
+        public Task<IReadOnlyList<LauncherButtonRecord>> ReloadButtonsAsync(CancellationToken cancellationToken = default) => Task.FromResult<IReadOnlyList<LauncherButtonRecord>>([]);
+        public Task<LauncherButtonRecord?> GetByIdAsync(Guid id, bool forceReload = false, CancellationToken cancellationToken = default) => Task.FromResult<LauncherButtonRecord?>(null);
+        public Task<LauncherButtonRecord?> GetByCommandAsync(string command, CancellationToken cancellationToken = default) => Task.FromResult<LauncherButtonRecord?>(null);
+        public Task UpsertButtonAsync(LauncherButtonRecord record, CancellationToken cancellationToken = default) => Task.CompletedTask;
+        public Task DeleteButtonAsync(Guid id, CancellationToken cancellationToken = default) => Task.CompletedTask;
+        public Task AddLogAsync(LaunchLogEntry entry, CancellationToken cancellationToken = default) => Task.CompletedTask;
+        public Task PurgeOldLogsAsync(int retentionDays, CancellationToken cancellationToken = default) => Task.CompletedTask;
+        public Task AddErrorLogAsync(ErrorLogEntry entry, CancellationToken cancellationToken = default) => throw new WhitespaceMessageException();
+        public Task PurgeOldErrorLogsAsync(int retentionDays, CancellationToken cancellationToken = default) => Task.CompletedTask;
+        public Task SetThemeAsync(ThemeMode themeMode, CancellationToken cancellationToken = default) => Task.CompletedTask;
+        public Task<ThemeMode> GetThemeAsync(CancellationToken cancellationToken = default) => Task.FromResult(ThemeMode.System);
+        public Task<IReadOnlyList<Guid>> GetDockButtonIdsAsync(CancellationToken cancellationToken = default) => Task.FromResult<IReadOnlyList<Guid>>([]);
+        public Task SetDockButtonIdsAsync(IReadOnlyList<Guid> ids, CancellationToken cancellationToken = default) => Task.CompletedTask;
+    }
+
+    private sealed class MultilineMessagePurgeFailingAppRepository : IAppRepository
+    {
+        public List<ErrorLogEntry> ErrorLogs { get; } = [];
+        public string ExceptionMessage { get; set; } = "multiline purge failure";
+
+        public Task InitializeAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
+        public Task<IReadOnlyList<LauncherButtonRecord>> GetButtonsAsync(CancellationToken cancellationToken = default) => Task.FromResult<IReadOnlyList<LauncherButtonRecord>>([]);
+        public Task<IReadOnlyList<LauncherButtonRecord>> ReloadButtonsAsync(CancellationToken cancellationToken = default) => Task.FromResult<IReadOnlyList<LauncherButtonRecord>>([]);
+        public Task<LauncherButtonRecord?> GetByIdAsync(Guid id, bool forceReload = false, CancellationToken cancellationToken = default) => Task.FromResult<LauncherButtonRecord?>(null);
+        public Task<LauncherButtonRecord?> GetByCommandAsync(string command, CancellationToken cancellationToken = default) => Task.FromResult<LauncherButtonRecord?>(null);
+        public Task UpsertButtonAsync(LauncherButtonRecord record, CancellationToken cancellationToken = default) => Task.CompletedTask;
+        public Task DeleteButtonAsync(Guid id, CancellationToken cancellationToken = default) => Task.CompletedTask;
+        public Task AddLogAsync(LaunchLogEntry entry, CancellationToken cancellationToken = default) => Task.CompletedTask;
+        public Task PurgeOldLogsAsync(int retentionDays, CancellationToken cancellationToken = default) => Task.CompletedTask;
+        public Task AddErrorLogAsync(ErrorLogEntry entry, CancellationToken cancellationToken = default)
+        {
+            ErrorLogs.Add(entry);
+            return Task.CompletedTask;
+        }
+
+        public Task PurgeOldErrorLogsAsync(int retentionDays, CancellationToken cancellationToken = default)
+            => throw new MultilineMessageException(ExceptionMessage);
+
+        public Task SetThemeAsync(ThemeMode themeMode, CancellationToken cancellationToken = default) => Task.CompletedTask;
+        public Task<ThemeMode> GetThemeAsync(CancellationToken cancellationToken = default) => Task.FromResult(ThemeMode.System);
+        public Task<IReadOnlyList<Guid>> GetDockButtonIdsAsync(CancellationToken cancellationToken = default) => Task.FromResult<IReadOnlyList<Guid>>([]);
+        public Task SetDockButtonIdsAsync(IReadOnlyList<Guid> ids, CancellationToken cancellationToken = default) => Task.CompletedTask;
+    }
+
+    private sealed class WhitespaceMessagePurgeFailingAppRepository : IAppRepository
+    {
+        public List<ErrorLogEntry> ErrorLogs { get; } = [];
+
+        public Task InitializeAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
+        public Task<IReadOnlyList<LauncherButtonRecord>> GetButtonsAsync(CancellationToken cancellationToken = default) => Task.FromResult<IReadOnlyList<LauncherButtonRecord>>([]);
+        public Task<IReadOnlyList<LauncherButtonRecord>> ReloadButtonsAsync(CancellationToken cancellationToken = default) => Task.FromResult<IReadOnlyList<LauncherButtonRecord>>([]);
+        public Task<LauncherButtonRecord?> GetByIdAsync(Guid id, bool forceReload = false, CancellationToken cancellationToken = default) => Task.FromResult<LauncherButtonRecord?>(null);
+        public Task<LauncherButtonRecord?> GetByCommandAsync(string command, CancellationToken cancellationToken = default) => Task.FromResult<LauncherButtonRecord?>(null);
+        public Task UpsertButtonAsync(LauncherButtonRecord record, CancellationToken cancellationToken = default) => Task.CompletedTask;
+        public Task DeleteButtonAsync(Guid id, CancellationToken cancellationToken = default) => Task.CompletedTask;
+        public Task AddLogAsync(LaunchLogEntry entry, CancellationToken cancellationToken = default) => Task.CompletedTask;
+        public Task PurgeOldLogsAsync(int retentionDays, CancellationToken cancellationToken = default) => Task.CompletedTask;
+        public Task AddErrorLogAsync(ErrorLogEntry entry, CancellationToken cancellationToken = default)
+        {
+            ErrorLogs.Add(entry);
+            return Task.CompletedTask;
+        }
+
+        public Task PurgeOldErrorLogsAsync(int retentionDays, CancellationToken cancellationToken = default)
+            => throw new WhitespaceMessageException();
+
+        public Task SetThemeAsync(ThemeMode themeMode, CancellationToken cancellationToken = default) => Task.CompletedTask;
+        public Task<ThemeMode> GetThemeAsync(CancellationToken cancellationToken = default) => Task.FromResult(ThemeMode.System);
+        public Task<IReadOnlyList<Guid>> GetDockButtonIdsAsync(CancellationToken cancellationToken = default) => Task.FromResult<IReadOnlyList<Guid>>([]);
+        public Task SetDockButtonIdsAsync(IReadOnlyList<Guid> ids, CancellationToken cancellationToken = default) => Task.CompletedTask;
+    }
+
     private sealed class ThrowingMessageException : Exception
     {
         public override string Message => throw new InvalidOperationException("message getter failure");
+    }
+
+    private sealed class MultilineMessageException(string value) : Exception
+    {
+        public override string Message => value;
+    }
+
+    private sealed class WhitespaceMessageException : Exception
+    {
+        public override string Message => " \r\n\t ";
     }
 
     private sealed class ThrowingStackTraceException : Exception
