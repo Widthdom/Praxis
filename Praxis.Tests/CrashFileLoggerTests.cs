@@ -74,6 +74,44 @@ public class CrashFileLoggerTests
     }
 
     [Fact]
+    public void NormalizeSource_WhenValueIsMultiline_CollapsesToSingleLine()
+    {
+        var markerA = $"source-a-{Guid.NewGuid():N}";
+        var markerB = $"source-b-{Guid.NewGuid():N}";
+
+        var result = CrashFileLogger.NormalizeSource($"{markerA}\r\n{markerB}");
+
+        Assert.Equal($"{markerA} {markerB}", result);
+    }
+
+    [Fact]
+    public void NormalizeSource_WhenValueIsWhitespace_UsesPlaceholder()
+    {
+        var result = CrashFileLogger.NormalizeSource(" \r\n\t ");
+
+        Assert.Equal(CrashFileLogger.MissingSourcePlaceholder, result);
+    }
+
+    [Fact]
+    public void NormalizeContext_WhenValueIsMultiline_CollapsesToSingleLine()
+    {
+        var markerA = $"context-a-{Guid.NewGuid():N}";
+        var markerB = $"context-b-{Guid.NewGuid():N}";
+
+        var result = CrashFileLogger.NormalizeContext($"{markerA}\r\n{markerB}");
+
+        Assert.Equal($"{markerA} {markerB}", result);
+    }
+
+    [Fact]
+    public void NormalizeContext_WhenValueIsWhitespace_UsesPlaceholder()
+    {
+        var result = CrashFileLogger.NormalizeContext(" \r\n\t ");
+
+        Assert.Equal(CrashFileLogger.MissingContextPlaceholder, result);
+    }
+
+    [Fact]
     public void WriteException_WritesToFile()
     {
         var marker = $"CrashFileLoggerTests-{Guid.NewGuid()}";
