@@ -192,6 +192,51 @@ public class SecondaryFailureLoggerTests
         }
     }
 
+    [Fact]
+    public void TryReportStartupLogFailure_NormalizesWhitespaceOriginalMessage_ToPlaceholder()
+    {
+        var tempRootSentinel = Path.Combine(Path.GetTempPath(), $"secondary-original-empty-sentinel-{Guid.NewGuid():N}.txt");
+        var currentDirectoryRoot = Path.Combine(Path.GetTempPath(), $"secondary-original-empty-root-{Guid.NewGuid():N}");
+        var targetPath = Path.Combine("broken-root", "startup.log");
+
+        File.WriteAllText(tempRootSentinel, "occupied");
+        Directory.CreateDirectory(currentDirectoryRoot);
+
+        try
+        {
+            var success = SecondaryFailureLogger.TryReportStartupLogFailure(
+                nameof(SecondaryFailureLoggerTests),
+                targetPath,
+                "Failed to append startup log",
+                new InvalidOperationException("append failed"),
+                originalException: null,
+                originalMessage: " \r\n\t ",
+                out var fallbackPath,
+                tryWriteException: static (_, _) => false,
+                tryWriteWarning: static (_, _) => false,
+                tempRootOverride: tempRootSentinel,
+                currentDirectoryOverride: currentDirectoryRoot);
+
+            Assert.True(success);
+            Assert.NotNull(fallbackPath);
+
+            var content = File.ReadAllText(fallbackPath!);
+            Assert.Contains($"Original startup message: {CrashFileLogger.MissingMessagePayloadPlaceholder}", content);
+        }
+        finally
+        {
+            if (File.Exists(tempRootSentinel))
+            {
+                File.Delete(tempRootSentinel);
+            }
+
+            if (Directory.Exists(currentDirectoryRoot))
+            {
+                Directory.Delete(currentDirectoryRoot, recursive: true);
+            }
+        }
+    }
+
     private sealed class ThrowingMessageException : Exception
     {
         public override string Message => throw new InvalidOperationException("message getter failure");

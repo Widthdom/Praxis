@@ -141,7 +141,7 @@ internal static class SecondaryFailureLogger
                 sb.AppendLine("  Original startup exception payload:");
                 sb.Append(CrashFileLogger.FormatExceptionPayload(originalException));
             }
-            else if (!string.IsNullOrWhiteSpace(originalMessage))
+            else if (originalMessage is not null)
             {
                 sb.AppendLine($"  Original startup message: {CrashFileLogger.NormalizeMessagePayload(originalMessage)}");
             }
