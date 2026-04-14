@@ -493,6 +493,14 @@ public class CrashFileLoggerTests
     }
 
     [Fact]
+    public void SafeExceptionStackTrace_WhenStackTraceIsUnavailable_ReturnsEmptyString()
+    {
+        var content = CrashFileLogger.SafeExceptionStackTrace(new InvalidOperationException("no stack"));
+
+        Assert.Equal(string.Empty, content);
+    }
+
+    [Fact]
     public void WriteException_WhenExceptionDataFormattingThrows_WritesFallbackMarker()
     {
         var ex = new Exception("data formatting");
