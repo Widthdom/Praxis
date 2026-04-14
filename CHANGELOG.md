@@ -20,6 +20,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - `Windows CommandEntryHandler` now uses the same safe exception-message helper for compatibility-triggered and unexpected `InputScope` assignment warnings, so WinUI fallback logging no longer rethrows on hostile exception `Message` getters
 - Mac `AppDelegate` and the Mac entry/editor/command handlers now use the same safe exception-message helper for `MarshalManagedException` hook, key-command-priority, and `UIKeyCommand` input-resolution warning breadcrumbs, so those fallback paths no longer rethrow on hostile exception `Message` getters
 - Mac `Program` now uses the same safe exception-message helper for LaunchServices relay failure breadcrumbs, so open-relay warning logging no longer rethrows on hostile exception `Message` getters
+- `MiddleClickBehavior` and `MainPage.MacCatalystBehavior` now use the same safe exception-message helper for `buttonMaskRequired`, deferred middle-click execution, Mac editor key-command creation, and CoreGraphics fallback warning breadcrumbs, so those degraded Mac input paths no longer rethrow on hostile exception `Message` getters
 
 ### Tests
 - Expanded `CommandWorkingDirectoryPolicyTests` to cover mixed-case shell executable names and uppercase env-expanded shell paths
