@@ -133,6 +133,32 @@ public class FileAppConfigServiceTests
     }
 
     [Fact]
+    public void WriteSkippedConfigWarning_WhenExceptionMessageIsMultiline_CollapsesToSingleLine()
+    {
+        var marker = $"config-warning-{Guid.NewGuid():N}";
+        var path = $"/tmp/{marker}/praxis.config.json";
+        var markerA = $"config-a-{Guid.NewGuid():N}";
+        var markerB = $"config-b-{Guid.NewGuid():N}";
+
+        InvokeWriteSkippedConfigWarning(path, new MultilineUnauthorizedAccessException($"{markerA}\r\n{markerB}"));
+
+        var content = File.ReadAllText(CrashFileLogger.LogFilePath);
+        Assert.Contains($"Skipping config '{path}': {markerA} {markerB}", content);
+    }
+
+    [Fact]
+    public void WriteSkippedConfigWarning_WhenExceptionMessageIsWhitespace_UsesEmptyMarker()
+    {
+        var marker = $"config-warning-{Guid.NewGuid():N}";
+        var path = $"/tmp/{marker}/praxis.config.json";
+
+        InvokeWriteSkippedConfigWarning(path, new WhitespaceUnauthorizedAccessException());
+
+        var content = File.ReadAllText(CrashFileLogger.LogFilePath);
+        Assert.Contains($"Skipping config '{path}': (empty)", content);
+    }
+
+    [Fact]
     public void EnumerateCandidatePaths_DeduplicatesEquivalentDirectories()
     {
         var path = "/tmp/praxis-config";
@@ -173,5 +199,15 @@ public class FileAppConfigServiceTests
     private sealed class ThrowingUnauthorizedAccessException : UnauthorizedAccessException
     {
         public override string Message => throw new InvalidOperationException("message getter failure");
+    }
+
+    private sealed class MultilineUnauthorizedAccessException(string value) : UnauthorizedAccessException
+    {
+        public override string Message => value;
+    }
+
+    private sealed class WhitespaceUnauthorizedAccessException : UnauthorizedAccessException
+    {
+        public override string Message => " \r\n\t ";
     }
 }
