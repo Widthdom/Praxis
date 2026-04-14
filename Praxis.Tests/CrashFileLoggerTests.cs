@@ -409,6 +409,14 @@ public class CrashFileLoggerTests
     }
 
     [Fact]
+    public void SafeObjectDescription_WhenFormatterFailureMessageIsWhitespace_UsesTypeNameOnly()
+    {
+        var content = CrashFileLogger.SafeObjectDescription(new ThrowingObjectToStringValue(" \r\n\t "));
+
+        Assert.Equal("(failed to format object: System.InvalidOperationException)", content);
+    }
+
+    [Fact]
     public void SafeObjectDescription_WhenValueIsNull_ReturnsNullMarker()
     {
         var content = CrashFileLogger.SafeObjectDescription(null);
