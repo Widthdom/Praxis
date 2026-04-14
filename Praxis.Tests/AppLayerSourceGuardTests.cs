@@ -147,8 +147,9 @@ public class AppLayerSourceGuardTests
     {
         var source = ReadRepositoryFile("Praxis", "Services", "FileStateSyncNotifier.cs");
 
-        Assert.Contains("var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);", source);
-        Assert.Contains("CrashFileLogger.WriteWarning(nameof(FileStateSyncNotifier), BuildSyncWarningMessage($\"Failed to write sync payload '{signalPath}':\", ex));", source);
+        Assert.Contains("var normalizedSignalPath = NormalizePayloadForLog(signalPath);", source);
+        Assert.Contains("CrashFileLogger.WriteInfo(nameof(FileStateSyncNotifier), $\"Signal written. Source={instanceId} Path={normalizedSignalPath}\");", source);
+        Assert.Contains("CrashFileLogger.WriteWarning(nameof(FileStateSyncNotifier), BuildSyncWarningMessage($\"Failed to write sync payload '{normalizedSignalPath}':\", ex));", source);
     }
 
     [Fact]

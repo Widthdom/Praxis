@@ -48,9 +48,10 @@ public sealed class FileStateSyncNotifier : IStateSyncNotifier
 
         try
         {
+            var normalizedSignalPath = NormalizePayloadForLog(signalPath);
             Directory.CreateDirectory(directoryPath);
             await File.WriteAllTextAsync(signalPath, payload, cancellationToken);
-            CrashFileLogger.WriteInfo(nameof(FileStateSyncNotifier), $"Signal written. Source={instanceId} Path={signalPath}");
+            CrashFileLogger.WriteInfo(nameof(FileStateSyncNotifier), $"Signal written. Source={instanceId} Path={normalizedSignalPath}");
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
@@ -58,7 +59,8 @@ public sealed class FileStateSyncNotifier : IStateSyncNotifier
         }
         catch (Exception ex)
         {
-            CrashFileLogger.WriteWarning(nameof(FileStateSyncNotifier), BuildSyncWarningMessage($"Failed to write sync payload '{signalPath}':", ex));
+            var normalizedSignalPath = NormalizePayloadForLog(signalPath);
+            CrashFileLogger.WriteWarning(nameof(FileStateSyncNotifier), BuildSyncWarningMessage($"Failed to write sync payload '{normalizedSignalPath}':", ex));
             throw;
         }
     }
