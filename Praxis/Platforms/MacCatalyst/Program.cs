@@ -71,7 +71,8 @@ public class Program
         }
         catch (Exception ex)
         {
-            CrashFileLogger.WriteWarning(nameof(Program), $"LaunchServices relay failed for bundle '{bundlePath}': {ex.Message}");
+            var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);
+            CrashFileLogger.WriteWarning(nameof(Program), $"LaunchServices relay failed for bundle '{bundlePath}': {safeMessage}");
             return false;
         }
     }
