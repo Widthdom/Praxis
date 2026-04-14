@@ -1026,6 +1026,23 @@ public class DbErrorLoggerTests
     }
 
     [Fact]
+    public async Task LogWarning_NormalizesWhitespaceRepositoryFailureMessage_ToEmptyMarker()
+    {
+        var repo = new WhitespaceMessageFailingAppRepository();
+        var logger = new DbErrorLogger(repo);
+        var context = $"warn-repo-fail-empty-{Guid.NewGuid():N}";
+        var message = $"warn repo fail test {Guid.NewGuid():N}";
+
+        logger.LogWarning(message, context);
+
+        var ex = await Record.ExceptionAsync(() => logger.FlushAsync(TimeSpan.FromSeconds(2)));
+        Assert.Null(ex);
+
+        var content = File.ReadAllText(CrashFileLogger.LogFilePath);
+        Assert.Contains($"Failed to persist Warning log for '{context}': (empty)", content);
+    }
+
+    [Fact]
     public async Task LogInfo_DoesNotThrow_WhenRepositoryFails()
     {
         var repo = new FailingAppRepository();
@@ -1041,6 +1058,23 @@ public class DbErrorLoggerTests
         var content = File.ReadAllText(CrashFileLogger.LogFilePath);
         Assert.Contains(message, content);
         AssertPersistFailureExceptionLogged(content, "Info", context);
+    }
+
+    [Fact]
+    public async Task LogInfo_NormalizesWhitespaceRepositoryFailureMessage_ToEmptyMarker()
+    {
+        var repo = new WhitespaceMessageFailingAppRepository();
+        var logger = new DbErrorLogger(repo);
+        var context = $"info-repo-fail-empty-{Guid.NewGuid():N}";
+        var message = $"info repo fail test {Guid.NewGuid():N}";
+
+        logger.LogInfo(message, context);
+
+        var ex = await Record.ExceptionAsync(() => logger.FlushAsync(TimeSpan.FromSeconds(2)));
+        Assert.Null(ex);
+
+        var content = File.ReadAllText(CrashFileLogger.LogFilePath);
+        Assert.Contains($"Failed to persist Info log for '{context}': (empty)", content);
     }
 
     [Fact]
