@@ -298,6 +298,17 @@ public class SecondaryFailureLoggerTests
     }
 
     [Fact]
+    public void NormalizeOperationForLog_WhenValueIsMultiline_CollapsesToSingleLine()
+    {
+        var markerA = $"secondary-operation-a-{Guid.NewGuid():N}";
+        var markerB = $"secondary-operation-b-{Guid.NewGuid():N}";
+
+        var result = InvokeNormalizeOperationForLog($"{markerA}\r\n{markerB}");
+
+        Assert.Equal($"{markerA} {markerB}", result);
+    }
+
+    [Fact]
     public void NormalizePathForLog_WhenValueIsMultiline_CollapsesToSingleLine()
     {
         var markerA = $"secondary-path-a-{Guid.NewGuid():N}";
