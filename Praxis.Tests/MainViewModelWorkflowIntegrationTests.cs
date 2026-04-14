@@ -1333,6 +1333,31 @@ public class MainViewModelWorkflowIntegrationTests
     }
 
     [Fact]
+    public async Task SetTheme_WhenThemePersistMessageIsMultiline_UsesSingleLineWarningAndStillAppliesLocally()
+    {
+        var markerA = $"theme-a-{Guid.NewGuid():N}";
+        var markerB = $"theme-b-{Guid.NewGuid():N}";
+        var repository = new InMemoryAppRepository
+        {
+            ThrowOnSetTheme = new MultilineMessageException($"{markerA}\r\n{markerB}"),
+        };
+        var executor = new RecordingCommandExecutor((true, "ok"));
+        var clipboard = new RecordingClipboardService();
+        var theme = new RecordingThemeService();
+        var syncNotifier = new TestStateSyncNotifier();
+        var logger = new RecordingErrorLogger();
+        var viewModel = new MainViewModel(repository, executor, clipboard, theme, syncNotifier, logger);
+        await viewModel.InitializeAsync();
+
+        await viewModel.SetThemeCommand.ExecuteAsync("Dark");
+
+        Assert.Equal(ThemeMode.Dark, viewModel.SelectedTheme);
+        Assert.Equal(ThemeMode.Dark, theme.Current);
+        Assert.Contains(logger.Warnings, x => x.Context == "SetThemeAsync" && x.Message.Contains($"{markerA} {markerB}", StringComparison.Ordinal));
+        Assert.Contains(logger.Exceptions, x => x.Context == "SetThemeAsync" && x.Exception is MultilineMessageException);
+    }
+
+    [Fact]
     public async Task ExecuteCommandInput_WhenRepositoryLookupThrows_LogsWarningAndShowsCommandNotFound()
     {
         var repository = new InMemoryAppRepository
@@ -1399,6 +1424,31 @@ public class MainViewModelWorkflowIntegrationTests
         Assert.Equal("Command not found: missing", viewModel.StatusText);
         Assert.Contains(logger.Warnings, x => x.Context == "ExecuteCommandMatchesAsync" && x.Message.Contains("(empty)", StringComparison.Ordinal));
         Assert.Contains(logger.Exceptions, x => x.Context == "ExecuteCommandMatchesAsync" && x.Exception is WhitespaceMessageException);
+    }
+
+    [Fact]
+    public async Task ExecuteCommandInput_WhenRepositoryLookupMessageIsMultiline_LogsSingleLineWarningAndShowsCommandNotFound()
+    {
+        var markerA = $"lookup-a-{Guid.NewGuid():N}";
+        var markerB = $"lookup-b-{Guid.NewGuid():N}";
+        var repository = new InMemoryAppRepository
+        {
+            ThrowOnGetByCommand = new MultilineMessageException($"{markerA}\r\n{markerB}"),
+        };
+        var executor = new RecordingCommandExecutor((true, "ok"));
+        var clipboard = new RecordingClipboardService();
+        var theme = new RecordingThemeService();
+        var syncNotifier = new TestStateSyncNotifier();
+        var logger = new RecordingErrorLogger();
+        var viewModel = new MainViewModel(repository, executor, clipboard, theme, syncNotifier, logger);
+        await viewModel.InitializeAsync();
+        viewModel.CommandInput = "missing";
+
+        await viewModel.ExecuteCommandInputCommand.ExecuteAsync(null);
+
+        Assert.Equal("Command not found: missing", viewModel.StatusText);
+        Assert.Contains(logger.Warnings, x => x.Context == "ExecuteCommandMatchesAsync" && x.Message.Contains($"{markerA} {markerB}", StringComparison.Ordinal));
+        Assert.Contains(logger.Exceptions, x => x.Context == "ExecuteCommandMatchesAsync" && x.Exception is MultilineMessageException);
     }
 
     private static async Task WaitUntilAsync(Func<bool> condition, int timeoutMs = 2000)
