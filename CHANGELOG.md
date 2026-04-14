@@ -43,6 +43,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - Expanded `CrashFileLoggerTests` to cover multiline/whitespace-only getter-failure messages inside `SafeExceptionMessage(...)` fallback markers
 - Expanded `DbErrorLoggerTests` to cover normalized multiline contexts inside persist-failure breadcrumbs
 - Expanded `DbErrorLoggerTests` to cover normalized multiline contexts inside Warning persist-failure breadcrumbs
+- Expanded `DbErrorLoggerTests` to cover normalized multiline contexts inside Info persist-failure breadcrumbs
 - Expanded `SecondaryFailureLoggerTests` and `AppLayerSourceGuardTests` to cover startup target-path/operation normalization before those fragments reach fallback diagnostics
 - Expanded `MainViewModelWorkflowIntegrationTests` and `AppLayerSourceGuardTests` to cover hostile exception-message getters on `MainViewModel` warning paths, including external theme sync, command lookup fallback, conflict callbacks, clipboard follow-up logging, sync notifications, and theme persistence
 - Expanded `AppStoragePathsTests` and `AppLayerSourceGuardTests` to cover hostile exception-message getters on legacy migration warning construction
