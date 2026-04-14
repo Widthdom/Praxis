@@ -158,6 +158,14 @@ public class CrashFileLoggerTests
     }
 
     [Fact]
+    public void NormalizeExceptionMessage_WhenValueIsNull_ReturnsEmptyString()
+    {
+        var result = CrashFileLogger.NormalizeExceptionMessage(null);
+
+        Assert.Equal(string.Empty, result);
+    }
+
+    [Fact]
     public void WriteException_WritesToFile()
     {
         var marker = $"CrashFileLoggerTests-{Guid.NewGuid()}";
