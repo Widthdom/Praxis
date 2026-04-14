@@ -359,10 +359,12 @@ public class AppLayerSourceGuardTests
     {
         var source = ReadRepositoryFile("Praxis", "Services", "FileAppConfigService.cs");
         Assert.Contains("catch (UnauthorizedAccessException ex)", source);
+        Assert.Contains("private static string NormalizePathForLog(string path)", source);
+        Assert.Contains("var normalizedPath = NormalizePathForLog(path);", source);
         Assert.Contains("private static void WriteSkippedConfigWarning(string path, Exception ex)", source);
         Assert.Contains("var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);", source);
-        Assert.Contains("CrashFileLogger.WriteWarning(nameof(FileAppConfigService), $\"Skipping config '{path}': {safeMessage}\");", source);
-        Assert.Contains("CrashFileLogger.WriteWarning(nameof(FileAppConfigService), $\"Skipping config '{path}' because it does not specify a valid theme.\");", source);
+        Assert.Contains("CrashFileLogger.WriteWarning(nameof(FileAppConfigService), $\"Skipping config '{normalizedPath}': {safeMessage}\");", source);
+        Assert.Contains("CrashFileLogger.WriteWarning(nameof(FileAppConfigService), $\"Skipping config '{normalizedPath}' because it does not specify a valid theme.\");", source);
     }
 
     [Fact]

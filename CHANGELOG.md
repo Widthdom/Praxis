@@ -15,6 +15,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - `MainViewModel` warning paths now use the same safe exception-message helper when external theme sync, command-suggestion refresh/lookup, conflict callbacks, clipboard helpers, sync notifications, or local persistence follow-up logging encounter hostile exception `Message` getters, so degraded warning logging no longer rethrows out of those recovery paths
 - `AppStoragePaths` now uses the same safe exception-message helper for legacy database migration and invalid-path-comparison warnings, so startup migration keeps skipping bad candidates even when an exception's `Message` getter is hostile
 - `FileAppConfigService` now uses the same safe exception-message helper when skipped config reads throw `IOException` / `UnauthorizedAccessException` / `JsonException`, so warning logging still persists a breadcrumb even if the exception's `Message` getter is hostile
+- `FileAppConfigService` now also normalizes logged config path fragments before interpolating them into invalid-theme / skipped-config breadcrumbs, so newline-bearing candidate paths cannot break crash-log line structure
 - `CommandExecutor` now uses the same safe exception-message helper for launch-target resolution and native process-start failure messages, so fallback warning/result construction no longer rethrows on hostile exception `Message` getters
 - `MauiThemeService` now uses the same safe exception-message helper for Mac dispatch-failure breadcrumbs, so theme-apply warning logging no longer rethrows on hostile exception `Message` getters
 - `FileStateSyncNotifier` now routes write/read/unexpected publish warning construction through the same safe exception-message helper, so sync breadcrumbs survive hostile exception `Message` getters
@@ -35,6 +36,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - Expanded `MainViewModelWorkflowIntegrationTests` and `AppLayerSourceGuardTests` to cover hostile exception-message getters on `MainViewModel` warning paths, including external theme sync, command lookup fallback, conflict callbacks, clipboard follow-up logging, sync notifications, and theme persistence
 - Expanded `AppStoragePathsTests` and `AppLayerSourceGuardTests` to cover hostile exception-message getters on legacy migration warning construction
 - Expanded `FileAppConfigServiceTests` and `AppLayerSourceGuardTests` to cover hostile exception-message getters on skipped-config warning construction
+- Expanded `FileAppConfigServiceTests` and `AppLayerSourceGuardTests` to cover config-path normalization before invalid-theme / skipped-config breadcrumbs are written
 - Expanded `CommandExecutorTests` and `AppLayerSourceGuardTests` to cover hostile exception-message getters on launch failure message construction
 - Added `FileStateSyncNotifierTests` and expanded `AppLayerSourceGuardTests` to cover hostile exception-message getters on sync warning construction
 - Expanded `FileStateSyncNotifierTests` and `AppLayerSourceGuardTests` to cover malformed/observed sync payload normalization before those fragments reach warning/info crash-log lines

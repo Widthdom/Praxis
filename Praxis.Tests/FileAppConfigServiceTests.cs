@@ -159,6 +159,25 @@ public class FileAppConfigServiceTests
     }
 
     [Fact]
+    public void NormalizePathForLog_WhenPathIsMultiline_CollapsesToSingleLine()
+    {
+        var markerA = $"config-path-a-{Guid.NewGuid():N}";
+        var markerB = $"config-path-b-{Guid.NewGuid():N}";
+
+        var result = InvokeNormalizePathForLog($"/tmp/{markerA}\r\n{markerB}/praxis.config.json");
+
+        Assert.Equal($"/tmp/{markerA} {markerB}/praxis.config.json", result);
+    }
+
+    [Fact]
+    public void NormalizePathForLog_WhenPathIsWhitespace_UsesPlaceholder()
+    {
+        var result = InvokeNormalizePathForLog(" \r\n\t ");
+
+        Assert.Equal(CrashFileLogger.MissingMessagePayloadPlaceholder, result);
+    }
+
+    [Fact]
     public void EnumerateCandidatePaths_DeduplicatesEquivalentDirectories()
     {
         var path = "/tmp/praxis-config";
@@ -194,6 +213,15 @@ public class FileAppConfigServiceTests
 
         var invocation = Record.Exception(() => method.Invoke(null, [path, ex]));
         Assert.Null(invocation);
+    }
+
+    private static string InvokeNormalizePathForLog(string path)
+    {
+        var method = typeof(FileAppConfigService).GetMethod("NormalizePathForLog", BindingFlags.NonPublic | BindingFlags.Static);
+        Assert.NotNull(method);
+
+        var result = method.Invoke(null, [path]);
+        return Assert.IsType<string>(result);
     }
 
     private sealed class ThrowingUnauthorizedAccessException : UnauthorizedAccessException
