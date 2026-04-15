@@ -6,6 +6,8 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 
 ## [Unreleased]
 
+### [1.1.10] - 2026-04-15
+
 ### Fixed
 - `CommandWorkingDirectoryPolicy` now treats Windows shell executable names case-insensitively, so uppercase or mixed-case `cmd.exe` / `powershell.exe` / `pwsh.exe` / `wt.exe` paths still switch `WorkingDirectory` to the user profile instead of inheriting the Praxis process directory
 - `LaunchTargetResolver` now preserves valid path targets whose first or last character is a quote, normalizes env-expanded quoted rooted/home/relative and `file://` path prefixes, and explicitly excludes quoted non-file URI-scheme prefixes so malformed quoted URLs still fail closed
@@ -345,6 +347,8 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 
 ## [Unreleased]
 
+### [1.1.10] - 2026-04-15
+
 ### 修正
 - `CommandWorkingDirectoryPolicy` は Windows のシェル実行ファイル名を大文字小文字を区別せず判定するようになり、大文字・混在表記の `cmd.exe` / `powershell.exe` / `pwsh.exe` / `wt.exe` パスでも Praxis プロセスディレクトリを継承せず `WorkingDirectory` をユーザープロファイルに切り替えるよう修正
 - `LaunchTargetResolver` は先頭/末尾が引用符の有効なパスターゲットを維持し、環境変数展開後の引用符付きルート/ホーム/相対パスおよび `file://` プレフィックスを正規化し、引用符付きの非 file URI スキームプレフィックスは明示的に除外することで、不正な引用符付き URL も確実に fail-closed するよう修正
@@ -630,7 +634,8 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - 重複 `using` ディレクティブの削除と `using` 順序の正規化
 - `MainViewModel` と各 partial クラスに主要ライフサイクルイベントの `LogInfo` 呼び出しを追加
 
-[Unreleased]: https://github.com/Widthdom/Praxis/compare/v1.1.9...HEAD
+[Unreleased]: https://github.com/Widthdom/Praxis/compare/v1.1.10...HEAD
+[1.1.10]: https://github.com/Widthdom/Praxis/compare/v1.1.9...v1.1.10
 [1.1.9]: https://github.com/Widthdom/Praxis/compare/v1.1.8...v1.1.9
 [1.1.8]: https://github.com/Widthdom/Praxis/compare/v1.1.7...v1.1.8
 [1.1.7]: https://github.com/Widthdom/Praxis/compare/v1.1.6...v1.1.7
