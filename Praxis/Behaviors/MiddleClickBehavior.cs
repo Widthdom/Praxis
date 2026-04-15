@@ -202,7 +202,8 @@ public sealed class MiddleClickBehavior : Behavior<View>
         }
         catch (Exception ex)
         {
-            CrashFileLogger.WriteWarning(nameof(MiddleClickBehavior), $"Failed to set buttonMaskRequired={mask}: {ex.Message}");
+            var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);
+            CrashFileLogger.WriteWarning(nameof(MiddleClickBehavior), $"Failed to set buttonMaskRequired={mask}: {safeMessage}");
         }
     }
 
@@ -234,7 +235,8 @@ public sealed class MiddleClickBehavior : Behavior<View>
             }
             catch (Exception ex)
             {
-                CrashFileLogger.WriteWarning(nameof(MiddleClickBehavior), $"Deferred middle-click execution failed: {ex.Message}");
+                var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);
+                CrashFileLogger.WriteWarning(nameof(MiddleClickBehavior), $"Deferred middle-click execution failed: {safeMessage}");
             }
         });
     }

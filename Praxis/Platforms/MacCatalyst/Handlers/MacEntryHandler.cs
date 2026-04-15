@@ -476,7 +476,9 @@ public class MacEntryHandler : EntryHandler
         }
         catch (Exception ex)
         {
-            CrashFileLogger.WriteWarning(nameof(MacEntryHandler), $"Failed to resolve UIKeyCommand input '{inputName}': {ex.Message}");
+            var normalizedInputName = CrashFileLogger.NormalizeMessagePayload(inputName);
+            var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);
+            CrashFileLogger.WriteWarning(nameof(MacEntryHandler), $"Failed to resolve UIKeyCommand input '{normalizedInputName}': {safeMessage}");
         }
 
         return null;

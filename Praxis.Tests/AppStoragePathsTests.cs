@@ -78,6 +78,56 @@ public class AppStoragePathsTests
         Assert.Contains("failed to read exception message", result);
     }
 
+    [Fact]
+    public void BuildSafeWarningMessage_WhenMessageIsMultiline_CollapsesToSingleLine()
+    {
+        var markerA = $"storage-a-{Guid.NewGuid():N}";
+        var markerB = $"storage-b-{Guid.NewGuid():N}";
+
+        var result = InvokeBuildSafeWarningMessage(
+            "Legacy database migration failed from '/tmp/legacy.db3'",
+            new MultilineIOException($"{markerA}\r\n{markerB}"));
+
+        Assert.Equal($"Legacy database migration failed from '/tmp/legacy.db3': {markerA} {markerB}", result);
+    }
+
+    [Fact]
+    public void BuildSafeWarningMessage_WhenMessageIsWhitespace_UsesEmptyMarker()
+    {
+        var result = InvokeBuildSafeWarningMessage(
+            "Legacy database migration failed from '/tmp/legacy.db3'",
+            new WhitespaceIOException());
+
+        Assert.Equal("Legacy database migration failed from '/tmp/legacy.db3': (empty)", result);
+    }
+
+    [Fact]
+    public void NormalizePathForLog_WhenPathIsMultiline_CollapsesToSingleLine()
+    {
+        var markerA = $"storage-path-a-{Guid.NewGuid():N}";
+        var markerB = $"storage-path-b-{Guid.NewGuid():N}";
+
+        var result = InvokeNormalizePathForLog($"/tmp/{markerA}\r\n{markerB}/praxis.db3");
+
+        Assert.Equal($"/tmp/{markerA} {markerB}/praxis.db3", result);
+    }
+
+    [Fact]
+    public void NormalizePathForLog_WhenPathIsWhitespace_UsesPlaceholder()
+    {
+        var result = InvokeNormalizePathForLog(" \r\n\t ");
+
+        Assert.Equal(CrashFileLogger.MissingMessagePayloadPlaceholder, result);
+    }
+
+    [Fact]
+    public void NormalizePathForLog_WhenPathIsNull_UsesPlaceholder()
+    {
+        var result = InvokeNormalizePathForLog(null);
+
+        Assert.Equal(CrashFileLogger.MissingMessagePayloadPlaceholder, result);
+    }
+
     private static string? InvokeCombineAbsoluteFilePath(string? directoryPath, string fileName)
     {
         var method = typeof(AppStoragePaths).GetMethod("CombineAbsoluteFilePath", BindingFlags.NonPublic | BindingFlags.Static);
@@ -104,8 +154,27 @@ public class AppStoragePathsTests
         return Assert.IsType<string>(result);
     }
 
+    private static string InvokeNormalizePathForLog(string? path)
+    {
+        var method = typeof(AppStoragePaths).GetMethod("NormalizePathForLog", BindingFlags.NonPublic | BindingFlags.Static);
+        Assert.NotNull(method);
+
+        var result = method.Invoke(null, [path]);
+        return Assert.IsType<string>(result);
+    }
+
     private sealed class ThrowingMessageIOException : IOException
     {
         public override string Message => throw new InvalidOperationException("message getter failure");
+    }
+
+    private sealed class MultilineIOException(string value) : IOException
+    {
+        public override string Message => value;
+    }
+
+    private sealed class WhitespaceIOException : IOException
+    {
+        public override string Message => " \r\n\t ";
     }
 }

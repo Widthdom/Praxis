@@ -121,6 +121,71 @@ public class FileAppConfigServiceTests
     }
 
     [Fact]
+    public void WriteSkippedConfigWarning_WhenExceptionMessageGetterThrows_UsesFallbackMarker()
+    {
+        var marker = $"config-warning-{Guid.NewGuid():N}";
+        var path = $"/tmp/{marker}/praxis.config.json";
+
+        InvokeWriteSkippedConfigWarning(path, new ThrowingUnauthorizedAccessException());
+
+        var content = File.ReadAllText(CrashFileLogger.LogFilePath);
+        Assert.Contains($"Skipping config '{path}': (failed to read exception message: System.InvalidOperationException: message getter failure)", content);
+    }
+
+    [Fact]
+    public void WriteSkippedConfigWarning_WhenExceptionMessageIsMultiline_CollapsesToSingleLine()
+    {
+        var marker = $"config-warning-{Guid.NewGuid():N}";
+        var path = $"/tmp/{marker}/praxis.config.json";
+        var markerA = $"config-a-{Guid.NewGuid():N}";
+        var markerB = $"config-b-{Guid.NewGuid():N}";
+
+        InvokeWriteSkippedConfigWarning(path, new MultilineUnauthorizedAccessException($"{markerA}\r\n{markerB}"));
+
+        var content = File.ReadAllText(CrashFileLogger.LogFilePath);
+        Assert.Contains($"Skipping config '{path}': {markerA} {markerB}", content);
+    }
+
+    [Fact]
+    public void WriteSkippedConfigWarning_WhenExceptionMessageIsWhitespace_UsesEmptyMarker()
+    {
+        var marker = $"config-warning-{Guid.NewGuid():N}";
+        var path = $"/tmp/{marker}/praxis.config.json";
+
+        InvokeWriteSkippedConfigWarning(path, new WhitespaceUnauthorizedAccessException());
+
+        var content = File.ReadAllText(CrashFileLogger.LogFilePath);
+        Assert.Contains($"Skipping config '{path}': (empty)", content);
+    }
+
+    [Fact]
+    public void NormalizePathForLog_WhenPathIsMultiline_CollapsesToSingleLine()
+    {
+        var markerA = $"config-path-a-{Guid.NewGuid():N}";
+        var markerB = $"config-path-b-{Guid.NewGuid():N}";
+
+        var result = InvokeNormalizePathForLog($"/tmp/{markerA}\r\n{markerB}/praxis.config.json");
+
+        Assert.Equal($"/tmp/{markerA} {markerB}/praxis.config.json", result);
+    }
+
+    [Fact]
+    public void NormalizePathForLog_WhenPathIsWhitespace_UsesPlaceholder()
+    {
+        var result = InvokeNormalizePathForLog(" \r\n\t ");
+
+        Assert.Equal(CrashFileLogger.MissingMessagePayloadPlaceholder, result);
+    }
+
+    [Fact]
+    public void NormalizePathForLog_WhenPathIsNull_UsesPlaceholder()
+    {
+        var result = InvokeNormalizePathForLog(null);
+
+        Assert.Equal(CrashFileLogger.MissingMessagePayloadPlaceholder, result);
+    }
+
+    [Fact]
     public void EnumerateCandidatePaths_DeduplicatesEquivalentDirectories()
     {
         var path = "/tmp/praxis-config";
@@ -129,6 +194,30 @@ public class FileAppConfigServiceTests
 
         Assert.Single(result);
         Assert.Equal("/tmp/praxis-config/praxis.config.json", result[0]);
+    }
+
+    [Fact]
+    public void EnumerateCandidatePaths_IgnoresBlankOrRelativeDirectories()
+    {
+        var result = InvokeEnumerateCandidatePaths("relative/config", " \r\n\t ");
+
+        Assert.Empty(result);
+    }
+
+    [Fact]
+    public void NormalizeAbsoluteDirectory_WhenValueIsNull_ReturnsNull()
+    {
+        var result = InvokeNormalizeAbsoluteDirectory(null);
+
+        Assert.Null(result);
+    }
+
+    [Fact]
+    public void NormalizeAbsoluteDirectory_WhenQuotedRelativeValue_ReturnsNull()
+    {
+        var result = InvokeNormalizeAbsoluteDirectory("  \"relative/config\"  ");
+
+        Assert.Null(result);
     }
 
     private static ThemeMode InvokeResolveThemeModeFromCandidates(IEnumerable<string> candidatePaths, JsonSerializerOptions options)
@@ -147,5 +236,46 @@ public class FileAppConfigServiceTests
 
         var result = method.Invoke(null, [baseDirectory, appDataDirectory]);
         return Assert.IsAssignableFrom<IReadOnlyList<string>>(result);
+    }
+
+    private static void InvokeWriteSkippedConfigWarning(string path, Exception ex)
+    {
+        var method = typeof(FileAppConfigService).GetMethod("WriteSkippedConfigWarning", BindingFlags.NonPublic | BindingFlags.Static);
+        Assert.NotNull(method);
+
+        var invocation = Record.Exception(() => method.Invoke(null, [path, ex]));
+        Assert.Null(invocation);
+    }
+
+    private static string InvokeNormalizePathForLog(string? path)
+    {
+        var method = typeof(FileAppConfigService).GetMethod("NormalizePathForLog", BindingFlags.NonPublic | BindingFlags.Static);
+        Assert.NotNull(method);
+
+        var result = method.Invoke(null, [path]);
+        return Assert.IsType<string>(result);
+    }
+
+    private static string? InvokeNormalizeAbsoluteDirectory(string? path)
+    {
+        var method = typeof(FileAppConfigService).GetMethod("NormalizeAbsoluteDirectory", BindingFlags.NonPublic | BindingFlags.Static);
+        Assert.NotNull(method);
+
+        return method.Invoke(null, [path]) as string;
+    }
+
+    private sealed class ThrowingUnauthorizedAccessException : UnauthorizedAccessException
+    {
+        public override string Message => throw new InvalidOperationException("message getter failure");
+    }
+
+    private sealed class MultilineUnauthorizedAccessException(string value) : UnauthorizedAccessException
+    {
+        public override string Message => value;
+    }
+
+    private sealed class WhitespaceUnauthorizedAccessException : UnauthorizedAccessException
+    {
+        public override string Message => " \r\n\t ";
     }
 }

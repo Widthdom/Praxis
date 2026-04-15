@@ -53,6 +53,7 @@ public class Program
 
         try
         {
+            var normalizedBundlePath = NormalizePathForLog(bundlePath);
             var startInfo = new ProcessStartInfo("/usr/bin/open")
             {
                 UseShellExecute = false,
@@ -63,7 +64,7 @@ public class Program
             var process = Process.Start(startInfo);
             if (process is null)
             {
-                CrashFileLogger.WriteWarning(nameof(Program), $"LaunchServices relay returned no process for bundle '{bundlePath}'.");
+                CrashFileLogger.WriteWarning(nameof(Program), $"LaunchServices relay returned no process for bundle '{normalizedBundlePath}'.");
                 return false;
             }
 
@@ -71,8 +72,13 @@ public class Program
         }
         catch (Exception ex)
         {
-            CrashFileLogger.WriteWarning(nameof(Program), $"LaunchServices relay failed for bundle '{bundlePath}': {ex.Message}");
+            var normalizedBundlePath = NormalizePathForLog(bundlePath);
+            var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);
+            CrashFileLogger.WriteWarning(nameof(Program), $"LaunchServices relay failed for bundle '{normalizedBundlePath}': {safeMessage}");
             return false;
         }
     }
+
+    private static string NormalizePathForLog(string path)
+        => CrashFileLogger.NormalizeMessagePayload(path);
 }

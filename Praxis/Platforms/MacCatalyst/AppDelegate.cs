@@ -44,9 +44,10 @@ public class AppDelegate : MauiUIApplicationDelegate
             }
             else
             {
+                var safePayload = CrashFileLogger.SafeObjectDescription(e.ExceptionObject);
                 CrashFileLogger.WriteWarning(
                     "Mac.AppDomain.UnhandledException",
-                    $"Non-Exception object thrown (IsTerminating={e.IsTerminating}): {e.ExceptionObject}");
+                    $"Non-Exception object thrown (IsTerminating={e.IsTerminating}): {safePayload}");
             }
         };
 
@@ -65,7 +66,8 @@ public class AppDelegate : MauiUIApplicationDelegate
         }
         catch (Exception ex)
         {
-            CrashFileLogger.WriteWarning(nameof(AppDelegate), $"Failed to hook MarshalManagedException: {ex.Message}");
+            var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);
+            CrashFileLogger.WriteWarning(nameof(AppDelegate), $"Failed to hook MarshalManagedException: {safeMessage}");
         }
     }
 
@@ -174,7 +176,8 @@ public class AppDelegate : MauiUIApplicationDelegate
         }
         catch (Exception ex)
         {
-            CrashFileLogger.WriteWarning(nameof(AppDelegate), $"Failed to prioritize key command '{selectorName}': {ex.Message}");
+            var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);
+            CrashFileLogger.WriteWarning(nameof(AppDelegate), $"Failed to prioritize key command '{selectorName}': {safeMessage}");
         }
     }
 

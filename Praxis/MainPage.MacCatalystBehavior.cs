@@ -892,7 +892,8 @@ public partial class MainPage
         }
         catch (Exception ex)
         {
-            CrashFileLogger.WriteWarning(nameof(TryCreateMacEditorKeyCommand), $"Failed to create Mac editor key command '{selectorName}' for input '{keyInput}': {ex.Message}");
+            var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);
+            CrashFileLogger.WriteWarning(nameof(TryCreateMacEditorKeyCommand), $"Failed to create Mac editor key command '{selectorName}' for input '{keyInput}': {safeMessage}");
             return null;
         }
     }
@@ -1080,7 +1081,8 @@ public partial class MainPage
             }
             catch (Exception ex)
             {
-                CrashFileLogger.WriteWarning(nameof(IsMacMiddleButtonCurrentlyDown), $"Failed to query middle button state from CoreGraphics: {ex.Message}");
+                var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);
+                CrashFileLogger.WriteWarning(nameof(IsMacMiddleButtonCurrentlyDown), $"Failed to query middle button state from CoreGraphics: {safeMessage}");
                 return false;
             }
         }

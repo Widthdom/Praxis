@@ -79,7 +79,8 @@ public partial class App : Application
         }
         else
         {
-            var message = $"Non-Exception object thrown (IsTerminating={isTerminating}): {e.ExceptionObject}";
+            var safePayload = CrashFileLogger.SafeObjectDescription(e.ExceptionObject);
+            var message = $"Non-Exception object thrown (IsTerminating={isTerminating}): {safePayload}";
             CrashFileLogger.WriteWarning(
                 "AppDomain.UnhandledException",
                 message);
@@ -179,6 +180,7 @@ public partial class App : Application
         catch (Exception ex)
         {
             errorLogger?.Log(ex, nameof(ResolveRootPage));
+            var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);
             return new ContentPage
             {
                 Title = "Praxis",
@@ -191,7 +193,7 @@ public partial class App : Application
                         Children =
                         {
                             new Label { Text = "Failed to initialize MainPage." },
-                            new Label { Text = ex.Message },
+                            new Label { Text = safeMessage },
                         },
                     },
                 },

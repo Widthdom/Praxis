@@ -85,7 +85,8 @@ public sealed class MauiThemeService : IThemeService
         }
         catch (Exception ex)
         {
-            CrashFileLogger.WriteWarning(nameof(MauiThemeService), $"ApplyMacWindowStyle dispatch failed: {ex.Message}");
+            var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);
+            CrashFileLogger.WriteWarning(nameof(MauiThemeService), $"ApplyMacWindowStyle dispatch failed: {safeMessage}");
         }
     }
 #endif

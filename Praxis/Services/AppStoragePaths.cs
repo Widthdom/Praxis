@@ -70,11 +70,13 @@ public static class AppStoragePaths
             }
             catch (IOException ex)
             {
-                CrashFileLogger.WriteWarning(nameof(AppStoragePaths), BuildSafeWarningMessage($"Legacy database migration failed from '{sourcePath}'", ex));
+                var normalizedSourcePath = NormalizePathForLog(sourcePath);
+                CrashFileLogger.WriteWarning(nameof(AppStoragePaths), BuildSafeWarningMessage($"Legacy database migration failed from '{normalizedSourcePath}'", ex));
             }
             catch (UnauthorizedAccessException ex)
             {
-                CrashFileLogger.WriteWarning(nameof(AppStoragePaths), BuildSafeWarningMessage($"Legacy database migration failed from '{sourcePath}'", ex));
+                var normalizedSourcePath = NormalizePathForLog(sourcePath);
+                CrashFileLogger.WriteWarning(nameof(AppStoragePaths), BuildSafeWarningMessage($"Legacy database migration failed from '{normalizedSourcePath}'", ex));
             }
         }
     }
@@ -127,7 +129,9 @@ public static class AppStoragePaths
         }
         catch (Exception ex) when (ex is ArgumentException or NotSupportedException or PathTooLongException)
         {
-            CrashFileLogger.WriteWarning(nameof(AppStoragePaths), BuildSafeWarningMessage($"Ignoring invalid migration path comparison between '{left}' and '{right}'", ex));
+            var normalizedLeft = NormalizePathForLog(left);
+            var normalizedRight = NormalizePathForLog(right);
+            CrashFileLogger.WriteWarning(nameof(AppStoragePaths), BuildSafeWarningMessage($"Ignoring invalid migration path comparison between '{normalizedLeft}' and '{normalizedRight}'", ex));
             return false;
         }
     }
@@ -204,4 +208,7 @@ public static class AppStoragePaths
 
     private static string BuildSafeWarningMessage(string prefix, Exception ex)
         => $"{prefix}: {CrashFileLogger.SafeExceptionMessage(ex)}";
+
+    private static string NormalizePathForLog(string path)
+        => CrashFileLogger.NormalizeMessagePayload(path);
 }

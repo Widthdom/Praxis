@@ -399,7 +399,8 @@ public partial class MainPage
         }
         catch (Exception ex)
         {
-            CrashFileLogger.WriteWarning(nameof(PlacementCanvas_SecondaryTapped), $"Secondary-tap create flow failed: {ex.Message}");
+            var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);
+            CrashFileLogger.WriteWarning(nameof(PlacementCanvas_SecondaryTapped), $"Secondary-tap create flow failed: {safeMessage}");
         }
     }
 
@@ -1087,7 +1088,8 @@ public partial class MainPage
         }
         catch (Exception ex)
         {
-            CrashFileLogger.WriteWarning(nameof(FocusModalPrimaryEditorField), $"Failed to focus modal ButtonText entry: {ex.Message}");
+            var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);
+            CrashFileLogger.WriteWarning(nameof(FocusModalPrimaryEditorField), $"Failed to focus modal ButtonText entry: {safeMessage}");
             return;
         }
 

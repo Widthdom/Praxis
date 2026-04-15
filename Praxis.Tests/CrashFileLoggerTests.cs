@@ -74,6 +74,114 @@ public class CrashFileLoggerTests
     }
 
     [Fact]
+    public void NormalizeSource_WhenValueIsMultiline_CollapsesToSingleLine()
+    {
+        var markerA = $"source-a-{Guid.NewGuid():N}";
+        var markerB = $"source-b-{Guid.NewGuid():N}";
+
+        var result = CrashFileLogger.NormalizeSource($"{markerA}\r\n{markerB}");
+
+        Assert.Equal($"{markerA} {markerB}", result);
+    }
+
+    [Fact]
+    public void NormalizeSource_WhenValueIsWhitespace_UsesPlaceholder()
+    {
+        var result = CrashFileLogger.NormalizeSource(" \r\n\t ");
+
+        Assert.Equal(CrashFileLogger.MissingSourcePlaceholder, result);
+    }
+
+    [Fact]
+    public void NormalizeSource_WhenValueIsNull_UsesPlaceholder()
+    {
+        var result = CrashFileLogger.NormalizeSource(null);
+
+        Assert.Equal(CrashFileLogger.MissingSourcePlaceholder, result);
+    }
+
+    [Fact]
+    public void NormalizeContext_WhenValueIsMultiline_CollapsesToSingleLine()
+    {
+        var markerA = $"context-a-{Guid.NewGuid():N}";
+        var markerB = $"context-b-{Guid.NewGuid():N}";
+
+        var result = CrashFileLogger.NormalizeContext($"{markerA}\r\n{markerB}");
+
+        Assert.Equal($"{markerA} {markerB}", result);
+    }
+
+    [Fact]
+    public void NormalizeContext_WhenValueIsWhitespace_UsesPlaceholder()
+    {
+        var result = CrashFileLogger.NormalizeContext(" \r\n\t ");
+
+        Assert.Equal(CrashFileLogger.MissingContextPlaceholder, result);
+    }
+
+    [Fact]
+    public void NormalizeContext_WhenValueIsNull_UsesPlaceholder()
+    {
+        var result = CrashFileLogger.NormalizeContext(null);
+
+        Assert.Equal(CrashFileLogger.MissingContextPlaceholder, result);
+    }
+
+    [Fact]
+    public void NormalizeMessagePayload_WhenValueIsNull_UsesPlaceholder()
+    {
+        var result = CrashFileLogger.NormalizeMessagePayload(null);
+
+        Assert.Equal(CrashFileLogger.MissingMessagePayloadPlaceholder, result);
+    }
+
+    [Fact]
+    public void NormalizeMessagePayload_WhenValueIsMultiline_CollapsesToSingleLine()
+    {
+        var markerA = $"payload-a-{Guid.NewGuid():N}";
+        var markerB = $"payload-b-{Guid.NewGuid():N}";
+
+        var result = CrashFileLogger.NormalizeMessagePayload($"{markerA}\r\n{markerB}");
+
+        Assert.Equal($"{markerA} {markerB}", result);
+    }
+
+    [Fact]
+    public void NormalizeMessagePayload_WhenValueIsWhitespace_UsesPlaceholder()
+    {
+        var result = CrashFileLogger.NormalizeMessagePayload(" \r\n\t ");
+
+        Assert.Equal(CrashFileLogger.MissingMessagePayloadPlaceholder, result);
+    }
+
+    [Fact]
+    public void NormalizeExceptionMessage_WhenValueIsMultiline_CollapsesToSingleLine()
+    {
+        var markerA = $"exception-message-a-{Guid.NewGuid():N}";
+        var markerB = $"exception-message-b-{Guid.NewGuid():N}";
+
+        var result = CrashFileLogger.NormalizeExceptionMessage($"{markerA}\r\n{markerB}");
+
+        Assert.Equal($"{markerA} {markerB}", result);
+    }
+
+    [Fact]
+    public void NormalizeExceptionMessage_WhenValueIsWhitespace_ReturnsEmptyString()
+    {
+        var result = CrashFileLogger.NormalizeExceptionMessage(" \r\n\t ");
+
+        Assert.Equal(string.Empty, result);
+    }
+
+    [Fact]
+    public void NormalizeExceptionMessage_WhenValueIsNull_ReturnsEmptyString()
+    {
+        var result = CrashFileLogger.NormalizeExceptionMessage(null);
+
+        Assert.Equal(string.Empty, result);
+    }
+
+    [Fact]
     public void WriteException_WritesToFile()
     {
         var marker = $"CrashFileLoggerTests-{Guid.NewGuid()}";
@@ -202,6 +310,15 @@ public class CrashFileLoggerTests
     }
 
     [Fact]
+    public void WriteException_WhitespaceOnlyMessage_UsesEmptyMarker()
+    {
+        CrashFileLogger.WriteException("test", new WhitespaceMessageException());
+
+        var content = File.ReadAllText(CrashFileLogger.LogFilePath);
+        Assert.Contains("Message: (empty)", content);
+    }
+
+    [Fact]
     public void WriteException_WideAggregate_UsesBoundedSummaryAndTailSampling()
     {
         var middleMarker = $"AggMiddle-{Guid.NewGuid()}";
@@ -281,6 +398,125 @@ public class CrashFileLoggerTests
 
         Assert.Contains("Type: Praxis.Tests.CrashFileLoggerTests+ThrowingStackTraceException", content);
         Assert.Contains("failed to read stack trace: System.InvalidOperationException: stack trace getter failure", content);
+    }
+
+    [Fact]
+    public void SafeObjectDescription_WhenToStringThrows_UsesFallbackMarker()
+    {
+        var content = CrashFileLogger.SafeObjectDescription(new ThrowingObjectToStringValue("object formatting failure"));
+
+        Assert.Contains("failed to format object: System.InvalidOperationException: object formatting failure", content);
+    }
+
+    [Fact]
+    public void SafeObjectDescription_WhenFormatterFailureMessageIsWhitespace_UsesTypeNameOnly()
+    {
+        var content = CrashFileLogger.SafeObjectDescription(new ThrowingObjectToStringValue(" \r\n\t "));
+
+        Assert.Equal("(failed to format object: System.InvalidOperationException)", content);
+    }
+
+    [Fact]
+    public void SafeObjectDescription_WhenFormatterFailureMessageIsMultiline_CollapsesToSingleLine()
+    {
+        var markerA = $"object-format-a-{Guid.NewGuid():N}";
+        var markerB = $"object-format-b-{Guid.NewGuid():N}";
+
+        var content = CrashFileLogger.SafeObjectDescription(new ThrowingObjectToStringValue($"{markerA}\r\n{markerB}"));
+
+        Assert.Equal($"(failed to format object: System.InvalidOperationException: {markerA} {markerB})", content);
+    }
+
+    [Fact]
+    public void SafeObjectDescription_WhenValueIsNull_ReturnsNullMarker()
+    {
+        var content = CrashFileLogger.SafeObjectDescription(null);
+
+        Assert.Equal("(null)", content);
+    }
+
+    [Fact]
+    public void SafeObjectDescription_WhenToStringIsMultiline_CollapsesToSingleLine()
+    {
+        var markerA = $"object-a-{Guid.NewGuid():N}";
+        var markerB = $"object-b-{Guid.NewGuid():N}";
+
+        var content = CrashFileLogger.SafeObjectDescription(new MultilineObjectToStringValue($"{markerA}\r\n{markerB}"));
+
+        Assert.Equal($"{markerA} {markerB}", content);
+    }
+
+    [Fact]
+    public void SafeObjectDescription_WhenToStringIsWhitespace_ReturnsEmptyMarker()
+    {
+        var content = CrashFileLogger.SafeObjectDescription(new WhitespaceObjectToStringValue());
+
+        Assert.Equal("(empty)", content);
+    }
+
+    [Fact]
+    public void SafeExceptionMessage_WhenMessageIsMultiline_CollapsesToSingleLine()
+    {
+        var markerA = $"exception-a-{Guid.NewGuid():N}";
+        var markerB = $"exception-b-{Guid.NewGuid():N}";
+
+        var content = CrashFileLogger.SafeExceptionMessage(new MultilineMessageException($"{markerA}\r\n{markerB}"));
+
+        Assert.Equal($"{markerA} {markerB}", content);
+    }
+
+    [Fact]
+    public void SafeExceptionMessage_WhenMessageIsWhitespace_ReturnsEmptyMarker()
+    {
+        var content = CrashFileLogger.SafeExceptionMessage(new WhitespaceMessageException());
+
+        Assert.Equal("(empty)", content);
+    }
+
+    [Fact]
+    public void SafeExceptionMessage_WhenGetterFailureMessageIsMultiline_CollapsesFallbackMarkerToSingleLine()
+    {
+        var markerA = $"getter-a-{Guid.NewGuid():N}";
+        var markerB = $"getter-b-{Guid.NewGuid():N}";
+
+        var content = CrashFileLogger.SafeExceptionMessage(new ThrowingMessageWithMultilineGetterException($"{markerA}\r\n{markerB}"));
+
+        Assert.Equal($"(failed to read exception message: System.InvalidOperationException: {markerA} {markerB})", content);
+    }
+
+    [Fact]
+    public void SafeExceptionMessage_WhenGetterFailureMessageIsWhitespace_UsesTypeNameOnly()
+    {
+        var content = CrashFileLogger.SafeExceptionMessage(new ThrowingMessageWithWhitespaceGetterException());
+
+        Assert.Equal("(failed to read exception message: System.InvalidOperationException)", content);
+    }
+
+    [Fact]
+    public void SafeExceptionStackTrace_WhenStackTraceIsUnavailable_ReturnsEmptyString()
+    {
+        var content = CrashFileLogger.SafeExceptionStackTrace(new InvalidOperationException("no stack"));
+
+        Assert.Equal(string.Empty, content);
+    }
+
+    [Fact]
+    public void SafeExceptionStackTrace_WhenGetterFailureMessageIsMultiline_CollapsesFallbackMarkerToSingleLine()
+    {
+        var markerA = $"stack-a-{Guid.NewGuid():N}";
+        var markerB = $"stack-b-{Guid.NewGuid():N}";
+
+        var content = CrashFileLogger.SafeExceptionStackTrace(new ThrowingStackTraceWithMultilineGetterException($"{markerA}\r\n{markerB}"));
+
+        Assert.Equal($"(failed to read stack trace: System.InvalidOperationException: {markerA} {markerB})", content);
+    }
+
+    [Fact]
+    public void SafeExceptionStackTrace_WhenGetterFailureMessageIsWhitespace_UsesTypeNameOnly()
+    {
+        var content = CrashFileLogger.SafeExceptionStackTrace(new ThrowingStackTraceWithWhitespaceGetterException());
+
+        Assert.Equal("(failed to read stack trace: System.InvalidOperationException)", content);
     }
 
     [Fact]
@@ -416,13 +652,58 @@ public class CrashFileLoggerTests
         public override string Message => throw new InvalidOperationException("message getter failure");
     }
 
+    private sealed class ThrowingMessageWithMultilineGetterException(string getterMessage) : Exception
+    {
+        public override string Message => throw new InvalidOperationException(getterMessage);
+    }
+
+    private sealed class ThrowingMessageWithWhitespaceGetterException : Exception
+    {
+        public override string Message => throw new InvalidOperationException(" \r\n\t ");
+    }
+
     private sealed class ThrowingStackTraceException : Exception
     {
         public override string? StackTrace => throw new InvalidOperationException("stack trace getter failure");
     }
 
+    private sealed class ThrowingStackTraceWithMultilineGetterException(string message) : Exception
+    {
+        public override string? StackTrace => throw new InvalidOperationException(message);
+    }
+
+    private sealed class ThrowingStackTraceWithWhitespaceGetterException : Exception
+    {
+        public override string? StackTrace => throw new InvalidOperationException(" \r\n\t ");
+    }
+
     private sealed class ThrowingToStringValue(string message)
     {
         public override string ToString() => throw new InvalidOperationException(message);
+    }
+
+    private sealed class ThrowingObjectToStringValue(string message)
+    {
+        public override string ToString() => throw new InvalidOperationException(message);
+    }
+
+    private sealed class MultilineObjectToStringValue(string value)
+    {
+        public override string ToString() => value;
+    }
+
+    private sealed class MultilineMessageException(string value) : Exception
+    {
+        public override string Message => value;
+    }
+
+    private sealed class WhitespaceObjectToStringValue
+    {
+        public override string ToString() => " \r\n\t ";
+    }
+
+    private sealed class WhitespaceMessageException : Exception
+    {
+        public override string Message => " \r\n\t ";
     }
 }

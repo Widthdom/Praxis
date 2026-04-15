@@ -10,16 +10,80 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - `CommandWorkingDirectoryPolicy` now treats Windows shell executable names case-insensitively, so uppercase or mixed-case `cmd.exe` / `powershell.exe` / `pwsh.exe` / `wt.exe` paths still switch `WorkingDirectory` to the user profile instead of inheriting the Praxis process directory
 - `LaunchTargetResolver` now preserves valid path targets whose first or last character is a quote, normalizes env-expanded quoted rooted/home/relative and `file://` path prefixes, and explicitly excludes quoted non-file URI-scheme prefixes so malformed quoted URLs still fail closed
 - `CrashFileLogger` now keeps crash-log records alive even when custom exception `Message` / `StackTrace` getters or `Exception.Data` key/value `ToString()` implementations throw, and exception messages are flattened to single-line output so malformed payloads do not corrupt inline log formatting
+- `CrashFileLogger.SafeExceptionMessage(...)` now normalizes whitespace-only exception messages to `(empty)`, so warning breadcrumbs no longer degrade into blank trailing separators when the underlying exception body is present but empty
 - `DbErrorLogger` now persists the same single-line exception-message normalization and getter-failure fallback markers into `ErrorLogEntity`, and app/process-exit flush failures plus Windows startup-log write failures now record the full exception body before their warning breadcrumb, falling back to an independent temp/current-directory diagnostics file when the normal `%LOCALAPPDATA%\\Praxis` crash sink is unavailable
+- `SecondaryFailureLogger` now also normalizes logged startup target-path and operation fragments before interpolating them into fallback warning/body lines, so malformed startup-log metadata cannot break the secondary diagnostics file
 - `MainViewModel` warning paths now use the same safe exception-message helper when external theme sync, command-suggestion refresh/lookup, conflict callbacks, clipboard helpers, sync notifications, or local persistence follow-up logging encounter hostile exception `Message` getters, so degraded warning logging no longer rethrows out of those recovery paths
 - `AppStoragePaths` now uses the same safe exception-message helper for legacy database migration and invalid-path-comparison warnings, so startup migration keeps skipping bad candidates even when an exception's `Message` getter is hostile
+- `AppStoragePaths` now also normalizes logged migration source/comparison path fragments before interpolating them into warning prefixes, so malformed path text cannot break crash-log line structure during legacy migration
+- `FileAppConfigService` now uses the same safe exception-message helper when skipped config reads throw `IOException` / `UnauthorizedAccessException` / `JsonException`, so warning logging still persists a breadcrumb even if the exception's `Message` getter is hostile
+- `FileAppConfigService` now also normalizes logged config path fragments before interpolating them into invalid-theme / skipped-config breadcrumbs, so newline-bearing candidate paths cannot break crash-log line structure
+- `CommandExecutor` now uses the same safe exception-message helper for launch-target resolution and native process-start failure messages, so fallback warning/result construction no longer rethrows on hostile exception `Message` getters
+- `CommandExecutor` now also normalizes logged tool / URL / path / argument fragments before interpolating them into failure prefixes, so newline-bearing launch targets cannot break crash-log breadcrumb formatting
+- `MauiThemeService` now uses the same safe exception-message helper for Mac dispatch-failure breadcrumbs, so theme-apply warning logging no longer rethrows on hostile exception `Message` getters
+- `FileStateSyncNotifier` now routes write/read/unexpected publish warning construction through the same safe exception-message helper, so sync breadcrumbs survive hostile exception `Message` getters
+- `FileStateSyncNotifier` now also normalizes malformed payload and observed-source fragments before interpolating them into crash-log warning/info lines, so sync breadcrumbs stay single-line even if the sync file contains embedded newlines or whitespace-only payload markers
+- `FileStateSyncNotifier` now also normalizes sync-file path fragments before interpolating them into write-success/write-failure breadcrumbs, so malformed storage paths cannot break crash-log line structure
+- `Windows CommandEntryHandler` now uses the same safe exception-message helper for compatibility-triggered and unexpected `InputScope` assignment warnings, so WinUI fallback logging no longer rethrows on hostile exception `Message` getters
+- Mac `AppDelegate` and the Mac entry/editor/command handlers now use the same safe exception-message helper for `MarshalManagedException` hook, key-command-priority, and `UIKeyCommand` input-resolution warning breadcrumbs, so those fallback paths no longer rethrow on hostile exception `Message` getters
+- Mac entry/editor/command handlers now also normalize reflected `UIKeyCommand` input names before interpolating them into warning breadcrumbs, so malformed reflection metadata cannot break crash-log line structure
+- Mac `Program` now uses the same safe exception-message helper for LaunchServices relay failure breadcrumbs, so open-relay warning logging no longer rethrows on hostile exception `Message` getters
+- Mac `Program` now also normalizes logged LaunchServices bundle-path fragments before interpolating them into relay breadcrumbs, so malformed bundle paths cannot break crash-log line structure
+- `MiddleClickBehavior` and `MainPage.MacCatalystBehavior` now use the same safe exception-message helper for `buttonMaskRequired`, deferred middle-click execution, Mac editor key-command creation, and CoreGraphics fallback warning breadcrumbs, so those degraded Mac input paths no longer rethrow on hostile exception `Message` getters
+- `MainPage` now uses the same safe exception-message helper for copy-notice, status-flash, Dock hover-exit, and Quick Look animation warning breadcrumbs, so those non-fatal UI recovery paths no longer rethrow on hostile exception `Message` getters
+- `MainPage` now also routes button-tap execution, secondary-tap create flow, modal primary-focus fallback, `UseSystemFocusVisuals`, and `IsTabStop` warning breadcrumbs through the same safe exception-message helper, so more Windows/UI fallback paths no longer rethrow on hostile exception `Message` getters
+- `MainPage` and `App` now route fallback initialization UI text through `CrashFileLogger.SafeExceptionMessage(...)`, so hostile exception `Message` getters cannot break the last-resort error page / alert surface itself
+- `CrashFileLogger.SafeObjectDescription(...)` now hardens non-`Exception` `AppDomain.UnhandledException` payloads, so hostile object `ToString()` implementations cannot break the last-resort global exception path in base `App`, Windows startup logging, or Mac `AppDelegate`
 
 ### Tests
 - Expanded `CommandWorkingDirectoryPolicyTests` to cover mixed-case shell executable names and uppercase env-expanded shell paths
 - Expanded `LaunchTargetResolverTests` to cover quoted relative/`file://` path prefixes, quoted-boundary path names, and malformed quoted URL handling both before and after env expansion
 - Expanded `CrashFileLoggerTests`, `DbErrorLoggerTests`, `SecondaryFailureLoggerTests`, and `AppLayerSourceGuardTests` to cover multiline exception-message normalization, throwing custom exception getters / data formatters, and startup-log failure diagnostics that fall back to an independent file when the primary crash sink cannot be written
+- Expanded `CrashFileLoggerTests` to cover direct source/context normalization helpers alongside persisted crash-breadcrumb behavior
+- Expanded `CrashFileLoggerTests` to cover direct null `NormalizeSource(...)` helper behavior
+- Expanded `CrashFileLoggerTests` to cover direct null `NormalizeContext(...)` helper behavior
+- Expanded `CrashFileLoggerTests` to cover direct `NormalizeMessagePayload(...)` helper behavior alongside persisted crash-breadcrumb behavior
+- Expanded `CrashFileLoggerTests` to cover multiline/whitespace-only getter-failure messages inside `SafeExceptionMessage(...)` fallback markers
+- Expanded `CrashFileLoggerTests` to cover direct multiline `NormalizeExceptionMessage(...)` helper behavior
+- Expanded `CrashFileLoggerTests` to cover whitespace-only `NormalizeExceptionMessage(...)` helper behavior
+- Expanded `CrashFileLoggerTests` to cover null `NormalizeExceptionMessage(...)` helper behavior
+- Expanded `CrashFileLoggerTests` to cover direct null `SafeObjectDescription(...)` helper behavior
+- Expanded `CrashFileLoggerTests` to cover whitespace-only object-formatter failure markers inside `SafeObjectDescription(...)`
+- Expanded `CrashFileLoggerTests` to cover multiline object-formatter failure markers inside `SafeObjectDescription(...)`
+- Expanded `CrashFileLoggerTests` to cover direct empty-stack `SafeExceptionStackTrace(...)` helper behavior
+- Expanded `CrashFileLoggerTests` to cover multiline stack-trace getter-failure markers inside `SafeExceptionStackTrace(...)`
+- Expanded `CrashFileLoggerTests` to cover whitespace-only stack-trace getter-failure markers inside `SafeExceptionStackTrace(...)`
+- Expanded `SecondaryFailureLoggerTests` to cover direct null target-path/operation normalization helper behavior
+- Expanded `SecondaryFailureLoggerTests` to cover the `false` / null-path result when both fallback sink roots are blocked
+- Expanded `DbErrorLoggerTests` to cover normalized multiline contexts inside persist-failure breadcrumbs
+- Expanded `DbErrorLoggerTests` to cover normalized multiline contexts inside Warning persist-failure breadcrumbs
+- Expanded `DbErrorLoggerTests` to cover normalized multiline contexts inside Info persist-failure breadcrumbs
+- Expanded `DbErrorLoggerTests` to cover normalized multiline contexts inside purge-failure breadcrumbs
+- Expanded `SecondaryFailureLoggerTests` and `AppLayerSourceGuardTests` to cover startup target-path/operation normalization before those fragments reach fallback diagnostics
+- Expanded `SecondaryFailureLoggerTests` to cover direct target-path normalization helper behavior
+- Expanded `SecondaryFailureLoggerTests` to cover whitespace-only target-path normalization helper behavior
+- Expanded `SecondaryFailureLoggerTests` to cover multiline operation normalization helper behavior
 - Expanded `MainViewModelWorkflowIntegrationTests` and `AppLayerSourceGuardTests` to cover hostile exception-message getters on `MainViewModel` warning paths, including external theme sync, command lookup fallback, conflict callbacks, clipboard follow-up logging, sync notifications, and theme persistence
+- Expanded `AppLayerSourceGuardTests` to cover normalized reflected `UIKeyCommand` input names before Mac key-input warning breadcrumbs are assembled
 - Expanded `AppStoragePathsTests` and `AppLayerSourceGuardTests` to cover hostile exception-message getters on legacy migration warning construction
+- Expanded `AppStoragePathsTests` and `AppLayerSourceGuardTests` to cover migration source/comparison path normalization before legacy-migration breadcrumbs are written
+- Expanded `AppStoragePathsTests` to cover direct null logged-path normalization inside `NormalizePathForLog(...)`
+- Expanded `FileAppConfigServiceTests` and `AppLayerSourceGuardTests` to cover hostile exception-message getters on skipped-config warning construction
+- Expanded `FileAppConfigServiceTests` and `AppLayerSourceGuardTests` to cover config-path normalization before invalid-theme / skipped-config breadcrumbs are written
+- Expanded `FileAppConfigServiceTests` to cover direct null logged-config-path normalization inside `NormalizePathForLog(...)`
+- Expanded `FileAppConfigServiceTests` to cover candidate enumeration rejecting blank/relative config roots
+- Expanded `FileAppConfigServiceTests` to cover direct null `NormalizeAbsoluteDirectory(...)` helper behavior
+- Expanded `FileAppConfigServiceTests` to cover quoted-relative rejection inside `NormalizeAbsoluteDirectory(...)`
+- Expanded `CommandExecutorTests` and `AppLayerSourceGuardTests` to cover hostile exception-message getters on launch failure message construction
+- Expanded `CommandExecutorTests` and `AppLayerSourceGuardTests` to cover tool / URL / path / argument normalization before launch-failure breadcrumbs are assembled
+- Expanded `CommandExecutorTests` to cover direct null target-fragment normalization inside `NormalizeTargetForLog(...)`
+- Expanded `CommandExecutorTests` to cover direct null `NormalizeToolPath(...)` helper behavior
+- Expanded `CommandExecutorTests` to cover direct null `HasUsableTool(...)` helper behavior
+- Expanded `AppLayerSourceGuardTests` to cover LaunchServices bundle-path normalization before Mac relay breadcrumbs are written
+- Added `FileStateSyncNotifierTests` and expanded `AppLayerSourceGuardTests` to cover hostile exception-message getters on sync warning construction
+- Expanded `FileStateSyncNotifierTests` and `AppLayerSourceGuardTests` to cover malformed/observed sync payload normalization before those fragments reach warning/info crash-log lines
+- Expanded `FileStateSyncNotifierTests` to cover direct null sync-payload normalization inside `NormalizePayloadForLog(...)`
+- Expanded `AppLayerSourceGuardTests` to cover sync-file path normalization before write-success/write-failure breadcrumbs are written
 ### [1.1.9] - 2026-04-14
 
 ### Fixed

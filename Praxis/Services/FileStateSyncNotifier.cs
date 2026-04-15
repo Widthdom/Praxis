@@ -48,9 +48,10 @@ public sealed class FileStateSyncNotifier : IStateSyncNotifier
 
         try
         {
+            var normalizedSignalPath = NormalizePayloadForLog(signalPath);
             Directory.CreateDirectory(directoryPath);
             await File.WriteAllTextAsync(signalPath, payload, cancellationToken);
-            CrashFileLogger.WriteInfo(nameof(FileStateSyncNotifier), $"Signal written. Source={instanceId} Path={signalPath}");
+            CrashFileLogger.WriteInfo(nameof(FileStateSyncNotifier), $"Signal written. Source={instanceId} Path={normalizedSignalPath}");
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
@@ -58,7 +59,8 @@ public sealed class FileStateSyncNotifier : IStateSyncNotifier
         }
         catch (Exception ex)
         {
-            CrashFileLogger.WriteWarning(nameof(FileStateSyncNotifier), $"Failed to write sync payload '{signalPath}': {ex.Message}");
+            var normalizedSignalPath = NormalizePayloadForLog(signalPath);
+            CrashFileLogger.WriteWarning(nameof(FileStateSyncNotifier), BuildSyncWarningMessage($"Failed to write sync payload '{normalizedSignalPath}':", ex));
             throw;
         }
     }
@@ -108,7 +110,7 @@ public sealed class FileStateSyncNotifier : IStateSyncNotifier
             {
                 if (readFailure is not null)
                 {
-                    CrashFileLogger.WriteWarning(nameof(FileStateSyncNotifier), $"Failed to read sync payload after retries: {readFailure.Message}");
+                    CrashFileLogger.WriteWarning(nameof(FileStateSyncNotifier), BuildSyncWarningMessage("Failed to read sync payload after retries:", readFailure));
                 }
 
                 return;
@@ -126,7 +128,8 @@ public sealed class FileStateSyncNotifier : IStateSyncNotifier
 
             if (!StateSyncPayloadParser.TryParse(payload, out var source, out var timestamp))
             {
-                CrashFileLogger.WriteWarning(nameof(FileStateSyncNotifier), $"Ignored malformed sync payload: \"{payload}\"");
+                var normalizedPayload = NormalizePayloadForLog(payload);
+                CrashFileLogger.WriteWarning(nameof(FileStateSyncNotifier), $"Ignored malformed sync payload: \"{normalizedPayload}\"");
                 return;
             }
 
@@ -135,7 +138,8 @@ public sealed class FileStateSyncNotifier : IStateSyncNotifier
                 return;
             }
 
-            CrashFileLogger.WriteInfo(nameof(FileStateSyncNotifier), $"Signal observed. Source={source} TimestampUtc={timestamp:O}");
+            var normalizedSource = NormalizePayloadForLog(source);
+            CrashFileLogger.WriteInfo(nameof(FileStateSyncNotifier), $"Signal observed. Source={normalizedSource} TimestampUtc={timestamp:O}");
 
             try
             {
@@ -153,9 +157,18 @@ public sealed class FileStateSyncNotifier : IStateSyncNotifier
         catch (Exception ex)
         {
             CrashFileLogger.WriteException(nameof(FileStateSyncNotifier), ex);
-            CrashFileLogger.WriteWarning(nameof(FileStateSyncNotifier), $"Unexpected sync publish failure: {ex.Message}");
+            CrashFileLogger.WriteWarning(nameof(FileStateSyncNotifier), BuildSyncWarningMessage("Unexpected sync publish failure:", ex));
         }
     }
+
+    private static string BuildSyncWarningMessage(string prefix, Exception ex)
+    {
+        var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);
+        return $"{prefix} {safeMessage}";
+    }
+
+    private static string NormalizePayloadForLog(string payload)
+        => CrashFileLogger.NormalizeMessagePayload(payload);
 
     public void Dispose()
     {

@@ -184,11 +184,30 @@ public static class CrashFileLogger
     {
         try
         {
-            return NormalizeExceptionMessage(ex.Message);
+            var text = NormalizeExceptionMessage(ex.Message);
+            return string.IsNullOrEmpty(text) ? "(empty)" : text;
         }
         catch (Exception getterEx)
         {
             return $"(failed to read exception message: {DescribeLoggingFailure(getterEx)})";
+        }
+    }
+
+    internal static string SafeObjectDescription(object? value)
+    {
+        if (value is null)
+        {
+            return "(null)";
+        }
+
+        try
+        {
+            var text = NormalizeExceptionMessage(value.ToString());
+            return string.IsNullOrEmpty(text) ? "(empty)" : text;
+        }
+        catch (Exception formatEx)
+        {
+            return $"(failed to format object: {DescribeLoggingFailure(formatEx)})";
         }
     }
 

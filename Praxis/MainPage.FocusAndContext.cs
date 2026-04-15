@@ -297,7 +297,8 @@ public partial class MainPage
             }
             catch (Exception ex)
             {
-                CrashFileLogger.WriteWarning(nameof(DisableWindowsSystemFocusVisual), $"Failed to disable UseSystemFocusVisuals: {ex.Message}");
+                var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);
+                CrashFileLogger.WriteWarning(nameof(DisableWindowsSystemFocusVisual), $"Failed to disable UseSystemFocusVisuals: {safeMessage}");
             }
         }
     }

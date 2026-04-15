@@ -80,7 +80,8 @@ public partial class MainPage
             }
             catch (Exception ex)
             {
-                CrashFileLogger.WriteWarning(nameof(Draggable_Tapped), $"Button tap execution failed for '{item.ButtonText}': {ex.Message}");
+                var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);
+                CrashFileLogger.WriteWarning(nameof(Draggable_Tapped), $"Button tap execution failed for '{item.ButtonText}': {safeMessage}");
             }
         }
     }

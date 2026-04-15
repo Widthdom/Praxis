@@ -23,6 +23,7 @@ public sealed class CommandExecutor : ICommandExecutor
 
     private static Task<(bool Success, string Message)> RunProcess(string tool, string arguments)
     {
+        var normalizedToolForLog = NormalizeTargetForLog(tool);
         var psi = new ProcessStartInfo
         {
             FileName = tool,
@@ -31,11 +32,12 @@ public sealed class CommandExecutor : ICommandExecutor
         };
 
         ApplyWorkingDirectoryOverride(psi, tool);
-        return Task.FromResult(StartProcess(psi, "Executed.", $"Process launch failed for tool '{tool}'."));
+        return Task.FromResult(StartProcess(psi, "Executed.", $"Process launch failed for tool '{normalizedToolForLog}'."));
     }
 
     private static Task<(bool Success, string Message)> OpenHttpUrl(string url)
     {
+        var normalizedUrlForLog = NormalizeTargetForLog(url);
         return Task.FromResult(StartProcess(
             new ProcessStartInfo
             {
@@ -43,11 +45,12 @@ public sealed class CommandExecutor : ICommandExecutor
                 UseShellExecute = true,
             },
             "Opened in browser.",
-            $"Failed to open URL '{url}'."));
+            $"Failed to open URL '{normalizedUrlForLog}'."));
     }
 
     private static Task<(bool Success, string Message)> OpenWithDefaultHandler(string arguments)
     {
+        var normalizedArgumentsForLog = NormalizeTargetForLog(arguments);
         try
         {
             var resolved = LaunchTargetResolver.Resolve(arguments);
@@ -62,11 +65,13 @@ public sealed class CommandExecutor : ICommandExecutor
             }
 
             var expanded = ExpandHomePath(resolved.Target);
+            var normalizedExpandedForLog = NormalizeTargetForLog(expanded);
 
             // Absolute file URI is also supported.
             if (Uri.TryCreate(expanded, UriKind.Absolute, out var uri) && uri.IsFile)
             {
                 expanded = uri.LocalPath;
+                normalizedExpandedForLog = NormalizeTargetForLog(expanded);
             }
 
             if (File.Exists(expanded))
@@ -78,7 +83,7 @@ public sealed class CommandExecutor : ICommandExecutor
                         UseShellExecute = true,
                     },
                     "Opened with default app.",
-                    $"Failed to open file '{expanded}'."));
+                    $"Failed to open file '{normalizedExpandedForLog}'."));
             }
 
             // UNC shares can require auth before Directory.Exists/File.Exists become true.
@@ -95,7 +100,7 @@ public sealed class CommandExecutor : ICommandExecutor
                 return Task.FromResult(StartProcess(
                     psi,
                     "Opening UNC path with Explorer.",
-                    $"Failed to open UNC path '{expanded}'."));
+                    $"Failed to open UNC path '{normalizedExpandedForLog}'."));
             }
 
             if (Directory.Exists(expanded))
@@ -131,15 +136,17 @@ public sealed class CommandExecutor : ICommandExecutor
                 return Task.FromResult(StartProcess(
                     psi,
                     "Opened folder.",
-                    $"Failed to open folder '{expanded}'."));
+                    $"Failed to open folder '{normalizedExpandedForLog}'."));
             }
 
             return Task.FromResult((false, $"Path not found: {expanded}"));
         }
         catch (Exception ex)
         {
-            CrashFileLogger.WriteWarning(nameof(CommandExecutor), $"Launch target resolution failed for '{arguments}': {ex.Message}");
-            return Task.FromResult((false, $"Launch target resolution failed: {ex.Message}"));
+            var warningMessage = BuildFailureMessage($"Launch target resolution failed for '{normalizedArgumentsForLog}':", ex);
+            var resultMessage = BuildFailureMessage("Launch target resolution failed:", ex);
+            CrashFileLogger.WriteWarning(nameof(CommandExecutor), warningMessage);
+            return Task.FromResult((false, resultMessage));
         }
     }
 
@@ -158,10 +165,20 @@ public sealed class CommandExecutor : ICommandExecutor
         }
         catch (Exception ex)
         {
-            CrashFileLogger.WriteWarning(nameof(CommandExecutor), $"{failurePrefix} {ex.Message}");
-            return (false, $"{failurePrefix} {ex.Message}");
+            var failureMessage = BuildFailureMessage(failurePrefix, ex);
+            CrashFileLogger.WriteWarning(nameof(CommandExecutor), failureMessage);
+            return (false, failureMessage);
         }
     }
+
+    private static string BuildFailureMessage(string prefix, Exception ex)
+    {
+        var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);
+        return $"{prefix} {safeMessage}";
+    }
+
+    private static string NormalizeTargetForLog(string value)
+        => CrashFileLogger.NormalizeMessagePayload(value);
 
     private static string ExpandHomePath(string value)
     {
