@@ -345,6 +345,85 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 
 ## [Unreleased]
 
+### 修正
+- `CommandWorkingDirectoryPolicy` は Windows のシェル実行ファイル名を大文字小文字を区別せず判定するようになり、大文字・混在表記の `cmd.exe` / `powershell.exe` / `pwsh.exe` / `wt.exe` パスでも Praxis プロセスディレクトリを継承せず `WorkingDirectory` をユーザープロファイルに切り替えるよう修正
+- `LaunchTargetResolver` は先頭/末尾が引用符の有効なパスターゲットを維持し、環境変数展開後の引用符付きルート/ホーム/相対パスおよび `file://` プレフィックスを正規化し、引用符付きの非 file URI スキームプレフィックスは明示的に除外することで、不正な引用符付き URL も確実に fail-closed するよう修正
+- `CrashFileLogger` は、カスタム例外の `Message` / `StackTrace` ゲッターや `Exception.Data` のキー/値の `ToString()` が例外を投げた場合でも crash-log レコードを残すよう維持し、例外メッセージを単一行に整形することで、不正なペイロードでインラインログ書式が壊れないよう修正
+- `CrashFileLogger.SafeExceptionMessage(...)` は空白のみの例外メッセージを `(empty)` に正規化するようになり、例外本体が存在するが空の場合でも、警告 breadcrumb が末尾区切り子だけの空行にならないよう修正
+- `DbErrorLogger` は同じ単一行例外メッセージ正規化とゲッター失敗フォールバックマーカーを `ErrorLogEntity` に永続化するようになり、アプリ/プロセス終了時の flush 失敗や Windows 起動ログ書き込み失敗時にも警告 breadcrumb より先に例外本体を記録し、通常の `%LOCALAPPDATA%\\Praxis` crash sink が使えない場合は独立した temp/カレントディレクトリの診断ファイルへフォールバックするよう修正
+- `SecondaryFailureLogger` は、起動時のターゲットパスや操作名の断片もフォールバック警告/本文行に埋め込む前に正規化するようになり、不正な起動ログメタデータが二次診断ファイルを壊さないよう修正
+- `MainViewModel` の警告経路は、外部テーマ同期、コマンド候補の更新/参照、競合コールバック、クリップボードヘルパー、同期通知、ローカル永続化のフォローアップログで敵対的な例外 `Message` ゲッターに遭遇した場合に共通の安全な例外メッセージヘルパーを使うよう修正し、劣化時の警告ログがリカバリ経路から再スローしないよう修正
+- `AppStoragePaths` はレガシー DB マイグレーションおよび無効パス比較の警告に同じ安全な例外メッセージヘルパーを使うようになり、敵対的な例外 `Message` ゲッターの場合でも起動時マイグレーションが不正な候補を確実にスキップし続けるよう修正
+- `AppStoragePaths` はマイグレーションのソース/比較パス断片も警告プレフィックスに埋め込む前に正規化するようになり、不正なパステキストがレガシーマイグレーション中に crash-log の行構造を壊さないよう修正
+- `FileAppConfigService` は、スキップされた設定読み込みが `IOException` / `UnauthorizedAccessException` / `JsonException` を投げた際にも同じ安全な例外メッセージヘルパーを使うようになり、敵対的な例外 `Message` ゲッターでも警告ログの breadcrumb が確実に残るよう修正
+- `FileAppConfigService` は設定パス断片も invalid-theme / skipped-config の breadcrumb に埋め込む前に正規化するようになり、改行を含む候補パスが crash-log の行構造を壊さないよう修正
+- `CommandExecutor` は、launch-target 解決およびネイティブプロセス起動失敗メッセージで同じ安全な例外メッセージヘルパーを使うようになり、敵対的な例外 `Message` ゲッターでフォールバック警告/結果構築が再スローしないよう修正
+- `CommandExecutor` はツール / URL / パス / 引数の断片も失敗プレフィックスに埋め込む前に正規化するようになり、改行を含む launch target が crash-log の breadcrumb 書式を壊さないよう修正
+- `MauiThemeService` は Mac ディスパッチ失敗の breadcrumb に同じ安全な例外メッセージヘルパーを使うようになり、敵対的な例外 `Message` ゲッターでテーマ適用警告ログが再スローしないよう修正
+- `FileStateSyncNotifier` は書き込み/読み取り/予期しない publish の警告構築を共通の安全な例外メッセージヘルパーへ通すようになり、敵対的な例外 `Message` ゲッターでも同期 breadcrumb が残るよう修正
+- `FileStateSyncNotifier` は不正ペイロードや observed-source の断片も crash-log の警告/情報行に埋め込む前に正規化するようになり、同期ファイルに改行や空白のみのペイロードマーカーが含まれていても同期 breadcrumb が単一行を保つよう修正
+- `FileStateSyncNotifier` は同期ファイルのパス断片も write-success/write-failure の breadcrumb に埋め込む前に正規化するようになり、不正なストレージパスが crash-log の行構造を壊さないよう修正
+- `Windows CommandEntryHandler` は互換性起因および予期しない `InputScope` 割り当て警告で同じ安全な例外メッセージヘルパーを使うようになり、敵対的な例外 `Message` ゲッターで WinUI フォールバックログが再スローしないよう修正
+- Mac の `AppDelegate` および Mac entry/editor/command ハンドラは `MarshalManagedException` フック、key-command 優先度、`UIKeyCommand` 入力解決の警告 breadcrumb で同じ安全な例外メッセージヘルパーを使うようになり、敵対的な例外 `Message` ゲッターでそれらのフォールバック経路が再スローしないよう修正
+- Mac entry/editor/command ハンドラはリフレクションで取得した `UIKeyCommand` 入力名も警告 breadcrumb に埋め込む前に正規化するようになり、不正なリフレクションメタデータが crash-log の行構造を壊さないよう修正
+- Mac `Program` は LaunchServices リレー失敗の breadcrumb で同じ安全な例外メッセージヘルパーを使うようになり、敵対的な例外 `Message` ゲッターで open-relay 警告ログが再スローしないよう修正
+- Mac `Program` は LaunchServices バンドルパス断片もリレー breadcrumb に埋め込む前に正規化するようになり、不正なバンドルパスが crash-log の行構造を壊さないよう修正
+- `MiddleClickBehavior` と `MainPage.MacCatalystBehavior` は `buttonMaskRequired`、遅延 middle-click 実行、Mac エディタの key-command 作成、CoreGraphics フォールバックの警告 breadcrumb で同じ安全な例外メッセージヘルパーを使うようになり、敵対的な例外 `Message` ゲッターでそれらの劣化 Mac 入力経路が再スローしないよう修正
+- `MainPage` はコピー通知、ステータスフラッシュ、Dock hover-exit、Quick Look アニメーションの警告 breadcrumb で同じ安全な例外メッセージヘルパーを使うようになり、敵対的な例外 `Message` ゲッターで非致命的な UI リカバリ経路が再スローしないよう修正
+- `MainPage` はボタンタップ実行、セカンダリタップの新規作成フロー、モーダル primary フォーカスのフォールバック、`UseSystemFocusVisuals`、`IsTabStop` の警告 breadcrumb も同じ安全な例外メッセージヘルパー経由にするようになり、より多くの Windows/UI フォールバック経路が敵対的な例外 `Message` ゲッターで再スローしないよう修正
+- `MainPage` と `App` はフォールバック初期化 UI テキストも `CrashFileLogger.SafeExceptionMessage(...)` 経由で取得するようになり、敵対的な例外 `Message` ゲッターが最終手段のエラーページ / アラート面自体を壊せないよう修正
+- `CrashFileLogger.SafeObjectDescription(...)` は `Exception` 以外の `AppDomain.UnhandledException` ペイロードを強化し、敵対的なオブジェクトの `ToString()` 実装が base `App`、Windows 起動ログ、Mac `AppDelegate` の最終手段グローバル例外経路を壊せないよう修正
+
+### テスト
+- `CommandWorkingDirectoryPolicyTests` を拡張し、混在表記のシェル実行ファイル名や大文字の環境変数展開シェルパスをカバー
+- `LaunchTargetResolverTests` を拡張し、引用符付き相対/`file://` パスプレフィックス、引用符境界のパス名、環境変数展開前後における不正な引用符付き URL の扱いをカバー
+- `CrashFileLoggerTests`、`DbErrorLoggerTests`、`SecondaryFailureLoggerTests`、`AppLayerSourceGuardTests` を拡張し、複数行例外メッセージの正規化、カスタム例外のゲッター/data フォーマッタが投げるケース、主要 crash sink が書けないときに独立ファイルへフォールバックする起動ログ失敗診断をカバー
+- `CrashFileLoggerTests` を拡張し、source/context 正規化ヘルパーの直接呼び出しと、永続化された crash breadcrumb 挙動を同時にカバー
+- `CrashFileLoggerTests` を拡張し、null に対する `NormalizeSource(...)` ヘルパーの直接挙動をカバー
+- `CrashFileLoggerTests` を拡張し、null に対する `NormalizeContext(...)` ヘルパーの直接挙動をカバー
+- `CrashFileLoggerTests` を拡張し、`NormalizeMessagePayload(...)` ヘルパーの直接挙動と永続化された crash breadcrumb 挙動を同時にカバー
+- `CrashFileLoggerTests` を拡張し、`SafeExceptionMessage(...)` フォールバックマーカー内の複数行/空白のみのゲッター失敗メッセージをカバー
+- `CrashFileLoggerTests` を拡張し、複数行に対する `NormalizeExceptionMessage(...)` ヘルパーの直接挙動をカバー
+- `CrashFileLoggerTests` を拡張し、空白のみに対する `NormalizeExceptionMessage(...)` ヘルパー挙動をカバー
+- `CrashFileLoggerTests` を拡張し、null に対する `NormalizeExceptionMessage(...)` ヘルパー挙動をカバー
+- `CrashFileLoggerTests` を拡張し、null に対する `SafeObjectDescription(...)` ヘルパーの直接挙動をカバー
+- `CrashFileLoggerTests` を拡張し、`SafeObjectDescription(...)` 内の空白のみのオブジェクトフォーマッタ失敗マーカーをカバー
+- `CrashFileLoggerTests` を拡張し、`SafeObjectDescription(...)` 内の複数行オブジェクトフォーマッタ失敗マーカーをカバー
+- `CrashFileLoggerTests` を拡張し、空スタックに対する `SafeExceptionStackTrace(...)` ヘルパーの直接挙動をカバー
+- `CrashFileLoggerTests` を拡張し、`SafeExceptionStackTrace(...)` 内の複数行スタックトレースゲッター失敗マーカーをカバー
+- `CrashFileLoggerTests` を拡張し、`SafeExceptionStackTrace(...)` 内の空白のみのスタックトレースゲッター失敗マーカーをカバー
+- `SecondaryFailureLoggerTests` を拡張し、null に対するターゲットパス/操作名正規化ヘルパーの直接挙動をカバー
+- `SecondaryFailureLoggerTests` を拡張し、両方のフォールバック sink ルートが阻害された場合の `false` / null-path 結果をカバー
+- `DbErrorLoggerTests` を拡張し、persist 失敗 breadcrumb 内で正規化された複数行 context をカバー
+- `DbErrorLoggerTests` を拡張し、Warning persist 失敗 breadcrumb 内で正規化された複数行 context をカバー
+- `DbErrorLoggerTests` を拡張し、Info persist 失敗 breadcrumb 内で正規化された複数行 context をカバー
+- `DbErrorLoggerTests` を拡張し、purge 失敗 breadcrumb 内で正規化された複数行 context をカバー
+- `SecondaryFailureLoggerTests` と `AppLayerSourceGuardTests` を拡張し、それらの断片がフォールバック診断に到達する前段での起動ターゲットパス/操作名正規化をカバー
+- `SecondaryFailureLoggerTests` を拡張し、ターゲットパス正規化ヘルパーの直接挙動をカバー
+- `SecondaryFailureLoggerTests` を拡張し、空白のみのターゲットパス正規化ヘルパー挙動をカバー
+- `SecondaryFailureLoggerTests` を拡張し、複数行の操作名正規化ヘルパー挙動をカバー
+- `MainViewModelWorkflowIntegrationTests` と `AppLayerSourceGuardTests` を拡張し、`MainViewModel` の警告経路（外部テーマ同期、コマンド参照フォールバック、競合コールバック、クリップボードフォローアップログ、同期通知、テーマ永続化）における敵対的な例外メッセージゲッターをカバー
+- `AppLayerSourceGuardTests` を拡張し、Mac キー入力警告 breadcrumb 構築前のリフレクション `UIKeyCommand` 入力名正規化をカバー
+- `AppStoragePathsTests` と `AppLayerSourceGuardTests` を拡張し、レガシーマイグレーション警告構築における敵対的な例外メッセージゲッターをカバー
+- `AppStoragePathsTests` と `AppLayerSourceGuardTests` を拡張し、レガシーマイグレーション breadcrumb 書き込み前のマイグレーションソース/比較パス正規化をカバー
+- `AppStoragePathsTests` を拡張し、`NormalizePathForLog(...)` 内の null ログ対象パス正規化の直接挙動をカバー
+- `FileAppConfigServiceTests` と `AppLayerSourceGuardTests` を拡張し、skipped-config 警告構築における敵対的な例外メッセージゲッターをカバー
+- `FileAppConfigServiceTests` と `AppLayerSourceGuardTests` を拡張し、invalid-theme / skipped-config の breadcrumb 書き込み前の設定パス正規化をカバー
+- `FileAppConfigServiceTests` を拡張し、`NormalizePathForLog(...)` 内の null ログ対象設定パス正規化の直接挙動をカバー
+- `FileAppConfigServiceTests` を拡張し、空白/相対の設定ルートを候補列挙で拒否する挙動をカバー
+- `FileAppConfigServiceTests` を拡張し、null に対する `NormalizeAbsoluteDirectory(...)` ヘルパーの直接挙動をカバー
+- `FileAppConfigServiceTests` を拡張し、`NormalizeAbsoluteDirectory(...)` 内の引用符付き相対パス拒否挙動をカバー
+- `CommandExecutorTests` と `AppLayerSourceGuardTests` を拡張し、launch 失敗メッセージ構築における敵対的な例外メッセージゲッターをカバー
+- `CommandExecutorTests` と `AppLayerSourceGuardTests` を拡張し、launch-failure breadcrumb 構築前のツール / URL / パス / 引数の正規化をカバー
+- `CommandExecutorTests` を拡張し、`NormalizeTargetForLog(...)` 内の null ターゲット断片正規化の直接挙動をカバー
+- `CommandExecutorTests` を拡張し、null に対する `NormalizeToolPath(...)` ヘルパーの直接挙動をカバー
+- `CommandExecutorTests` を拡張し、null に対する `HasUsableTool(...)` ヘルパーの直接挙動をカバー
+- `AppLayerSourceGuardTests` を拡張し、Mac リレー breadcrumb 書き込み前の LaunchServices バンドルパス正規化をカバー
+- `FileStateSyncNotifierTests` を追加し、`AppLayerSourceGuardTests` を拡張して、sync 警告構築における敵対的な例外メッセージゲッターをカバー
+- `FileStateSyncNotifierTests` と `AppLayerSourceGuardTests` を拡張し、それらの断片が警告/情報の crash-log 行に到達する前段での malformed / observed sync ペイロード正規化をカバー
+- `FileStateSyncNotifierTests` を拡張し、`NormalizePayloadForLog(...)` 内の null 同期ペイロード正規化の直接挙動をカバー
+- `AppLayerSourceGuardTests` を拡張し、write-success/write-failure breadcrumb 書き込み前の sync ファイルパス正規化をカバー
+
 ### [1.1.9] - 2026-04-14
 
 ### 修正
