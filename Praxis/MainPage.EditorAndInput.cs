@@ -221,6 +221,9 @@ public partial class MainPage
         var retryDelays = ClearButtonRefocusPolicy.ResolveRetryDelays(
             isWindows: OperatingSystem.IsWindows(),
             isMacCatalyst: OperatingSystem.IsMacCatalyst());
+        CrashFileLogger.WriteInfo(
+            nameof(FocusEntryAfterClearButtonTap),
+            $"target={DescribeClearTargetEntry(entry)} retryCount={retryDelays.Count}");
 #if WINDOWS
         EnsureWindowsTextBoxHooks();
         windowsSelectAllOnTabNavigationPending = false;
@@ -237,9 +240,24 @@ public partial class MainPage
         }
     }
 
+    private string DescribeClearTargetEntry(Entry entry)
+    {
+        if (ReferenceEquals(entry, MainCommandEntry)) return "Command";
+        if (ReferenceEquals(entry, MainSearchEntry)) return "Search";
+        return "Unknown";
+    }
+
     private void ApplyEntryFocusAfterClearButtonTap(Entry entry)
     {
-        entry.Focus();
+        var target = DescribeClearTargetEntry(entry);
+        try
+        {
+            entry.Focus();
+        }
+        catch (Exception ex)
+        {
+            CrashFileLogger.WriteException($"{nameof(ApplyEntryFocusAfterClearButtonTap)}.EntryFocus[{target}]", ex);
+        }
 #if MACCATALYST
         PlaceMacEntryCaretAtEnd(entry);
 #endif
@@ -249,6 +267,9 @@ public partial class MainPage
         var textBox = ResolveWindowsTextBoxForEntry(entry);
         if (!ShouldApplyWindowsNativeTextBoxFocus(textBox))
         {
+            CrashFileLogger.WriteInfo(
+                nameof(ApplyEntryFocusAfterClearButtonTap),
+                $"target={target} nativeFocus=skipped");
             return;
         }
 
@@ -262,6 +283,9 @@ public partial class MainPage
             CrashFileLogger.WriteException(nameof(ApplyEntryFocusAfterClearButtonTap), ex);
         }
 #endif
+        CrashFileLogger.WriteInfo(
+            nameof(ApplyEntryFocusAfterClearButtonTap),
+            $"target={target} completed");
     }
 
 #if WINDOWS

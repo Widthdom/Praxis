@@ -6,6 +6,10 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 
 ## [Unreleased]
 
+### Changed
+- `MainViewModel` now records an explicit `ClearCommandInput` breadcrumb (cleared-length or no-op) and an `ExecuteCommandInputAsync` breadcrumb (command length plus whether a suggestion was selected), so diagnosing a crash that follows the command-input path no longer requires reconstructing intent from the surrounding handler-side tap log
+- `MainPage.FocusEntryAfterClearButtonTap` / `ApplyEntryFocusAfterClearButtonTap` now emit entry/retry and target/outcome markers to `crash.log`, and `Entry.Focus()` itself is wrapped in try/catch so a failure inside the MAUI handler surfaces as a crash-file exception instead of a silent process termination
+
 ### [1.1.10] - 2026-04-15
 
 ### Fixed
@@ -346,6 +350,10 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 形式は Keep a Changelog に準拠し、バージョン管理は Semantic Versioning に従います。
 
 ## [Unreleased]
+
+### 変更
+- `MainViewModel` は `ClearCommandInput` でクリア文字数／no-op を、`ExecuteCommandInputAsync` で実行コマンド長と候補選択フラグを明示的に `LogInfo` するようになった。コマンド入力経路の直後にクラッシュした際に、ハンドラ側のタップログだけから意図を逆算する必要がなくなり、ViewModel 側でも breadcrumb が確実に残る
+- `MainPage.FocusEntryAfterClearButtonTap` / `ApplyEntryFocusAfterClearButtonTap` は対象 Entry と retry 件数、および完了マーカーを `crash.log` に出力し、`Entry.Focus()` 自体も try/catch で包んで MAUI ハンドラ内の失敗を crash-file 例外として顕在化するようになり、クリア直後のフォーカス復帰経路で落ちても無言のプロセス終了にならないようにした
 
 ### [1.1.10] - 2026-04-15
 

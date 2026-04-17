@@ -1451,6 +1451,69 @@ public class MainViewModelWorkflowIntegrationTests
         Assert.Contains(logger.Exceptions, x => x.Context == "ExecuteCommandMatchesAsync" && x.Exception is MultilineMessageException);
     }
 
+    [Fact]
+    public async Task ExecuteCommandInput_LogsInputBreadcrumb()
+    {
+        var repository = new InMemoryAppRepository();
+        var executor = new RecordingCommandExecutor((true, "ok"));
+        var clipboard = new RecordingClipboardService();
+        var theme = new RecordingThemeService();
+        var syncNotifier = new TestStateSyncNotifier();
+        var logger = new RecordingErrorLogger();
+        var viewModel = new MainViewModel(repository, executor, clipboard, theme, syncNotifier, logger);
+        await viewModel.InitializeAsync();
+        viewModel.CommandInput = "build";
+
+        await viewModel.ExecuteCommandInputCommand.ExecuteAsync(null);
+
+        Assert.Contains(
+            logger.Infos,
+            x => x.Context == "ExecuteCommandInputAsync"
+                && x.Message.Contains("commandLength=5", StringComparison.Ordinal)
+                && x.Message.Contains("suggestionSelected=False", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task ClearCommandInput_WhenAlreadyEmpty_LogsNoOpBreadcrumb()
+    {
+        var repository = new InMemoryAppRepository();
+        var executor = new RecordingCommandExecutor((true, "ok"));
+        var clipboard = new RecordingClipboardService();
+        var theme = new RecordingThemeService();
+        var syncNotifier = new TestStateSyncNotifier();
+        var logger = new RecordingErrorLogger();
+        var viewModel = new MainViewModel(repository, executor, clipboard, theme, syncNotifier, logger);
+        await viewModel.InitializeAsync();
+        viewModel.CommandInput = string.Empty;
+
+        viewModel.ClearCommandInputCommand.Execute(null);
+
+        Assert.Contains(
+            logger.Infos,
+            x => x.Context == "ClearCommandInput" && x.Message.Contains("no-op", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task ClearCommandInput_WhenNonEmpty_LogsClearedLengthBreadcrumb()
+    {
+        var repository = new InMemoryAppRepository();
+        var executor = new RecordingCommandExecutor((true, "ok"));
+        var clipboard = new RecordingClipboardService();
+        var theme = new RecordingThemeService();
+        var syncNotifier = new TestStateSyncNotifier();
+        var logger = new RecordingErrorLogger();
+        var viewModel = new MainViewModel(repository, executor, clipboard, theme, syncNotifier, logger);
+        await viewModel.InitializeAsync();
+        viewModel.CommandInput = "hello";
+
+        viewModel.ClearCommandInputCommand.Execute(null);
+
+        Assert.Equal(string.Empty, viewModel.CommandInput);
+        Assert.Contains(
+            logger.Infos,
+            x => x.Context == "ClearCommandInput" && x.Message.Contains("cleared 5 char", StringComparison.Ordinal));
+    }
+
     private static async Task WaitUntilAsync(Func<bool> condition, int timeoutMs = 2000)
     {
         var started = DateTime.UtcNow;
