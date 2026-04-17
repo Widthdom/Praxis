@@ -51,10 +51,13 @@ public partial class MainViewModel
     {
         if (string.IsNullOrEmpty(SearchText))
         {
+            errorLogger.LogInfo("Clear search text: no-op (already empty).", nameof(ClearSearchText));
             return;
         }
 
+        var previousLength = SearchText.Length;
         SearchText = string.Empty;
+        errorLogger.LogInfo($"Clear search text: cleared {previousLength} char(s).", nameof(ClearSearchText));
     }
 
     [RelayCommand]
