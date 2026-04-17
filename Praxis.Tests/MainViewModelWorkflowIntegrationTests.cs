@@ -1514,6 +1514,47 @@ public class MainViewModelWorkflowIntegrationTests
             x => x.Context == "ClearCommandInput" && x.Message.Contains("cleared 5 char", StringComparison.Ordinal));
     }
 
+    [Fact]
+    public async Task ClearSearchText_WhenAlreadyEmpty_LogsNoOpBreadcrumb()
+    {
+        var repository = new InMemoryAppRepository();
+        var executor = new RecordingCommandExecutor((true, "ok"));
+        var clipboard = new RecordingClipboardService();
+        var theme = new RecordingThemeService();
+        var syncNotifier = new TestStateSyncNotifier();
+        var logger = new RecordingErrorLogger();
+        var viewModel = new MainViewModel(repository, executor, clipboard, theme, syncNotifier, logger);
+        await viewModel.InitializeAsync();
+        viewModel.SearchText = string.Empty;
+
+        viewModel.ClearSearchTextCommand.Execute(null);
+
+        Assert.Contains(
+            logger.Infos,
+            x => x.Context == "ClearSearchText" && x.Message.Contains("no-op", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task ClearSearchText_WhenNonEmpty_LogsClearedLengthBreadcrumb()
+    {
+        var repository = new InMemoryAppRepository();
+        var executor = new RecordingCommandExecutor((true, "ok"));
+        var clipboard = new RecordingClipboardService();
+        var theme = new RecordingThemeService();
+        var syncNotifier = new TestStateSyncNotifier();
+        var logger = new RecordingErrorLogger();
+        var viewModel = new MainViewModel(repository, executor, clipboard, theme, syncNotifier, logger);
+        await viewModel.InitializeAsync();
+        viewModel.SearchText = "hello";
+
+        viewModel.ClearSearchTextCommand.Execute(null);
+
+        Assert.Equal(string.Empty, viewModel.SearchText);
+        Assert.Contains(
+            logger.Infos,
+            x => x.Context == "ClearSearchText" && x.Message.Contains("cleared 5 char", StringComparison.Ordinal));
+    }
+
     private static async Task WaitUntilAsync(Func<bool> condition, int timeoutMs = 2000)
     {
         var started = DateTime.UtcNow;
