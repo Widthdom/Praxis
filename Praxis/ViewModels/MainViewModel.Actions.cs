@@ -11,13 +11,18 @@ public partial class MainViewModel
     private async Task ExecuteCommandInputAsync()
     {
         var cmd = CommandInput.Trim();
-        if (IsCommandSuggestionOpen && SelectedCommandSuggestion is not null)
+        var selected = IsCommandSuggestionOpen ? SelectedCommandSuggestion : null;
+        if (selected is not null)
         {
-            cmd = SelectedCommandSuggestion.Command;
+            cmd = selected.Command;
             suppressCommandSuggestionRefresh = true;
             CommandInput = cmd;
             suppressCommandSuggestionRefresh = false;
         }
+
+        errorLogger.LogInfo(
+            $"Execute command input. commandLength={cmd.Length} suggestionSelected={selected is not null}",
+            nameof(ExecuteCommandInputAsync));
 
         CloseCommandSuggestions();
 
@@ -29,13 +34,16 @@ public partial class MainViewModel
     {
         if (string.IsNullOrEmpty(CommandInput))
         {
+            errorLogger.LogInfo("Clear command input: no-op (already empty).", nameof(ClearCommandInput));
             return;
         }
 
+        var previousLength = CommandInput.Length;
         suppressCommandSuggestionRefresh = true;
         CommandInput = string.Empty;
         suppressCommandSuggestionRefresh = false;
         CloseCommandSuggestions();
+        errorLogger.LogInfo($"Clear command input: cleared {previousLength} char(s).", nameof(ClearCommandInput));
     }
 
     [RelayCommand]
