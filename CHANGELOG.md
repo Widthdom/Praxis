@@ -6,6 +6,8 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 
 ## [Unreleased]
 
+### [1.1.11] - 2026-04-17
+
 ### Changed
 - `MainViewModel` now records an explicit `ClearCommandInput` breadcrumb (cleared-length or no-op) and an `ExecuteCommandInputAsync` breadcrumb (command length plus whether a suggestion was selected), so diagnosing a crash that follows the command-input path no longer requires reconstructing intent from the surrounding handler-side tap log
 - `MainPage.FocusEntryAfterClearButtonTap` / `ApplyEntryFocusAfterClearButtonTap` now emit entry/retry and target/outcome markers to `crash.log`, and `Entry.Focus()` itself is wrapped in try/catch so a failure inside the MAUI handler surfaces as a crash-file exception instead of a silent process termination
@@ -352,6 +354,8 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 
 ## [Unreleased]
 
+### [1.1.11] - 2026-04-17
+
 ### 変更
 - `MainViewModel` は `ClearCommandInput` でクリア文字数／no-op を、`ExecuteCommandInputAsync` で実行コマンド長と候補選択フラグを明示的に `LogInfo` するようになった。コマンド入力経路の直後にクラッシュした際に、ハンドラ側のタップログだけから意図を逆算する必要がなくなり、ViewModel 側でも breadcrumb が確実に残る
 - `MainViewModel.ClearSearchText` も `ClearCommandInput` と同形の breadcrumb（クリア文字数／no-op）を記録するようになり、検索欄 X ボタンのタップ経路でクラッシュが続いた場合も、コマンド側と同等の ViewModel 側 evidence が残るようになった
@@ -644,7 +648,8 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - 重複 `using` ディレクティブの削除と `using` 順序の正規化
 - `MainViewModel` と各 partial クラスに主要ライフサイクルイベントの `LogInfo` 呼び出しを追加
 
-[Unreleased]: https://github.com/Widthdom/Praxis/compare/v1.1.10...HEAD
+[Unreleased]: https://github.com/Widthdom/Praxis/compare/v1.1.11...HEAD
+[1.1.11]: https://github.com/Widthdom/Praxis/compare/v1.1.10...v1.1.11
 [1.1.10]: https://github.com/Widthdom/Praxis/compare/v1.1.9...v1.1.10
 [1.1.9]: https://github.com/Widthdom/Praxis/compare/v1.1.8...v1.1.9
 [1.1.8]: https://github.com/Widthdom/Praxis/compare/v1.1.7...v1.1.8
