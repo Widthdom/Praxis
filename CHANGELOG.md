@@ -9,10 +9,12 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 ### Fixed
 - `SecondaryFailureLogger` now normalizes secondary fallback sink roots to absolute directories before combining the `Praxis/secondary-failures.log` path, so quoted absolute overrides still work while blank or relative roots are ignored instead of creating accidental relative diagnostics paths
 - `FileStateSyncNotifier` now includes the normalized sync-file path in the read-after-retries warning breadcrumb, so exhausted watcher read retries identify which `buttons.sync` target failed instead of logging only the exception summary
+- `MauiThemeService` now includes the target `AppTheme` in the Mac dispatch-failure warning breadcrumb, so a failed Light/Dark/System transition leaves more specific diagnostics than a generic window-style warning
 
 ### Tests
 - Expanded `SecondaryFailureLoggerTests` to cover quoted absolute fallback roots and rejection of relative fallback roots before the startup-diagnostics file path is built
 - Expanded `FileStateSyncNotifierTests` and `AppLayerSourceGuardTests` to cover the normalized sync-file path prefix in read-retry exhaustion warnings
+- Expanded `AppLayerSourceGuardTests` to lock the `MauiThemeService` Mac dispatch-failure breadcrumb to the requested `AppTheme`
 
 ### [1.1.11] - 2026-04-17
 
@@ -365,10 +367,12 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 ### 修正
 - `SecondaryFailureLogger` は二次 fallback sink root を `Praxis/secondary-failures.log` の組み立て前に絶対パスへ正規化するようになり、quote 付き絶対パス override は引き続き使える一方、空や相対 root は誤って相対診断パスを作らないよう無視するよう修正
 - `FileStateSyncNotifier` は読込リトライ枯渇 warning breadcrumb にも正規化済み sync-file path を含めるようになり、`buttons.sync` の読込失敗時に例外要約だけでなく対象ファイルも特定できるよう修正
+- `MauiThemeService` は Mac の dispatch-failure warning breadcrumb に対象 `AppTheme` も含めるようになり、Light/Dark/System のどのテーマ遷移で失敗したかを generic な window-style warning より具体的に追えるよう修正
 
 ### テスト
 - `SecondaryFailureLoggerTests` を拡張し、quote 付き絶対パスの fallback root と、相対 fallback root を拒否する挙動を startup diagnostics file パス組み立て前に固定
 - `FileStateSyncNotifierTests` と `AppLayerSourceGuardTests` を拡張し、読込リトライ枯渇 warning に入る正規化済み sync-file path prefix を固定
+- `AppLayerSourceGuardTests` を拡張し、`MauiThemeService` の Mac dispatch-failure breadcrumb が要求された `AppTheme` を含むことを固定
 ### [1.1.11] - 2026-04-17
 
 ### 変更
