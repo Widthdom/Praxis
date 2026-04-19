@@ -294,6 +294,8 @@ public class AppLayerSourceGuardTests
         Assert.Contains("private static bool globalExceptionLoggingHooked;", source);
         Assert.Contains("if (globalExceptionLoggingHooked)", source);
         Assert.Contains("var safePayload = CrashFileLogger.SafeObjectDescription(e.ExceptionObject);", source);
+        Assert.Contains("var payloadType = e.ExceptionObject?.GetType().FullName ?? \"null\";", source);
+        Assert.Contains("var payload = $\"Non-Exception object thrown (IsTerminating={e.IsTerminating}, Type={payloadType}): {safePayload}\";", source);
         Assert.Contains("var content = BuildStartupExceptionLogContent(source, exception);", source);
         Assert.Contains("var content = BuildStartupMessageLogContent(source, message);", source);
         Assert.Contains("sb.Append(CrashFileLogger.FormatExceptionPayload(exception));", source);
