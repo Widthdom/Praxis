@@ -62,13 +62,15 @@ public class CommandEntryHandler : EntryHandler
             // Mark as unsupported so later focuses skip InputScope writes and rely only on imm32 IME fallback.
             inputScopeUnsupported = true;
             var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);
-            CrashFileLogger.WriteWarning(nameof(CommandEntryHandler), $"InputScope assignment disabled after compatibility failure: {safeMessage}");
+            var enforceAsciiInput = (VirtualView as CommandEntry)?.EnforceAsciiInput ?? false;
+            CrashFileLogger.WriteWarning(nameof(CommandEntryHandler), $"InputScope assignment disabled after compatibility failure while enforceAsciiInput={enforceAsciiInput}: {safeMessage}");
             return false;
         }
         catch (Exception ex)
         {
             var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);
-            CrashFileLogger.WriteWarning(nameof(CommandEntryHandler), $"InputScope assignment failed unexpectedly: {safeMessage}");
+            var enforceAsciiInput = (VirtualView as CommandEntry)?.EnforceAsciiInput ?? false;
+            CrashFileLogger.WriteWarning(nameof(CommandEntryHandler), $"InputScope assignment failed unexpectedly while enforceAsciiInput={enforceAsciiInput}: {safeMessage}");
             return false;
         }
     }
