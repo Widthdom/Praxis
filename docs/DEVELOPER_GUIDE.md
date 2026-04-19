@@ -275,7 +275,7 @@ sequenceDiagram
 - Placement-area/Dock button label text uses a dedicated style (`PlacementButtonTextLabelStyle`) and is set to `12` across all platforms.
 - Dock horizontal scrollbar defaults to hidden and is shown only while the pointer is hovering the Dock region and horizontal overflow exists.
   - For macOS stability, Dock applies a bottom mask (`DockScrollBarMask`) while not hovered so the indicator stays visually hidden even when native indicator timing is inconsistent.
-  - Hover-exit delay cancellation is limited to the active token; unexpected hide failures are warning-logged instead of faulting the delayed task
+  - Hover-exit delay cancellation is limited to the active token; unexpected hide failures are warning-logged with the current Dock hover flag instead of faulting the delayed task
   - Quick Look delayed-show failures are warning-logged with the hovered `item.Id`, so label/animation issues do not escape as unobserved background task faults and still identify which preview failed
   - Quick Look delayed-hide failures are warning-logged with the current pending `item.Id`, especially around popup animation/teardown timing where the show path may already have queued a different preview
 - Middle click edit is implemented via [`Behaviors/MiddleClickBehavior.cs`](../Praxis/Behaviors/MiddleClickBehavior.cs) plus macOS fallbacks in [`MainPage.PointerAndSelection.cs`](../Praxis/MainPage.PointerAndSelection.cs) (pointer detection) and [`MainPage.MacCatalystBehavior.cs`](../Praxis/MainPage.MacCatalystBehavior.cs) (polling).

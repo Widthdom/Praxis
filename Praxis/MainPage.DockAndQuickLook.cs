@@ -83,7 +83,7 @@ public partial class MainPage
         catch (Exception ex)
         {
             var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);
-            CrashFileLogger.WriteWarning(nameof(HideDockScrollBarAfterExitDelayAsync), $"Dock hover-exit hide failed: {safeMessage}");
+            CrashFileLogger.WriteWarning(nameof(HideDockScrollBarAfterExitDelayAsync), $"Dock hover-exit hide failed while pointerHover={isDockPointerHovering}: {safeMessage}");
             return;
         }
     }
