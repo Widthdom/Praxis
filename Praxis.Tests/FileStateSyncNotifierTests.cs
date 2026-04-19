@@ -66,6 +66,23 @@ public class FileStateSyncNotifierTests
         Assert.Equal(CrashFileLogger.MissingMessagePayloadPlaceholder, result);
     }
 
+    [Fact]
+    public void BuildSyncWarningMessage_CanIncludeNormalizedSignalPathPrefix()
+    {
+        var pathMarkerA = $"sync-path-a-{Guid.NewGuid():N}";
+        var pathMarkerB = $"sync-path-b-{Guid.NewGuid():N}";
+        var normalizedPath = InvokeNormalizePayloadForLog($"/tmp/{pathMarkerA}\r\n{pathMarkerB}/buttons.sync");
+        var prefix = $"Failed to read sync payload '{normalizedPath}' after retries:";
+        var markerA = $"sync-read-a-{Guid.NewGuid():N}";
+        var markerB = $"sync-read-b-{Guid.NewGuid():N}";
+
+        var result = InvokeBuildSyncWarningMessage(prefix, new MultilineMessageException($"{markerA}\r\n{markerB}"));
+
+        Assert.Equal(
+            $"Failed to read sync payload '/tmp/{pathMarkerA} {pathMarkerB}/buttons.sync' after retries: {markerA} {markerB}",
+            result);
+    }
+
     private static string InvokeBuildSyncWarningMessage(string prefix, Exception ex)
     {
         var method = typeof(FileStateSyncNotifier).GetMethod("BuildSyncWarningMessage", BindingFlags.NonPublic | BindingFlags.Static);

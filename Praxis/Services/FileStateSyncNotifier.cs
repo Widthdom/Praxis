@@ -110,7 +110,10 @@ public sealed class FileStateSyncNotifier : IStateSyncNotifier
             {
                 if (readFailure is not null)
                 {
-                    CrashFileLogger.WriteWarning(nameof(FileStateSyncNotifier), BuildSyncWarningMessage("Failed to read sync payload after retries:", readFailure));
+                    var normalizedSignalPath = NormalizePayloadForLog(signalPath);
+                    CrashFileLogger.WriteWarning(
+                        nameof(FileStateSyncNotifier),
+                        BuildSyncWarningMessage($"Failed to read sync payload '{normalizedSignalPath}' after retries:", readFailure));
                 }
 
                 return;
