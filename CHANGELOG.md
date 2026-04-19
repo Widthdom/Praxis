@@ -7,6 +7,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 ## [Unreleased]
 
 ### Fixed
+- `Mac.AppDomain.UnhandledException` warnings now include the runtime type name for non-`Exception` payloads, so bridge-originated throw objects leave a more actionable breadcrumb than the safe payload text alone
 - Mac key-input reflection warnings now render fallback keys as symbolic names like `Tab`, `Escape`, `Return`, and arrow names, so cross-platform/plain-text crash-log readers do not lose that breadcrumb to control or private-use characters
 - `Program.TryRelaunchViaOpen` now includes the normalized relay executable path in LaunchServices warning breadcrumbs, so Mac startup relay failures distinguish bundle-path problems from `open` relay failures
 - `MainPage.DisableWindowsSystemFocusVisual` now includes the native control type in `UseSystemFocusVisuals` warning breadcrumbs, so Windows reflection failures identify which control rejected the write
@@ -41,6 +42,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - `MainPage.PlacementCanvas_SecondaryTapped` now includes the canvas point in secondary-tap create warning breadcrumbs, so failed create-editor flows can be correlated with placement hit-testing and coordinate conversion issues
 
 ### Tests
+- Expanded `AppLayerSourceGuardTests` to lock Mac AppDomain non-`Exception` warning breadcrumbs to the runtime payload type
 - Expanded `AppLayerSourceGuardTests` to lock Mac key-input reflection breadcrumbs to symbolic fallback key names instead of raw control/private-use literals
 - Expanded `AppLayerSourceGuardTests` to lock LaunchServices relay warning breadcrumbs to the normalized relay executable path
 - Expanded `AppLayerSourceGuardTests` to lock `DisableWindowsSystemFocusVisual` warning breadcrumbs to the native control type
