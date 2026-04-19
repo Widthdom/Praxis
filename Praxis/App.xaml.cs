@@ -148,6 +148,10 @@ public partial class App : Application
             catch (Exception ex)
             {
                 errorLogger?.Log(ex, "Window.HandlerChanged");
+                var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);
+                errorLogger?.LogWarning(
+                    $"Window handler activation failed for root page '{page.GetType().Name}': {safeMessage}",
+                    "Window.HandlerChanged");
             }
         };
 #endif

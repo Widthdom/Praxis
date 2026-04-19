@@ -88,6 +88,18 @@ public class AppLayerSourceGuardTests
     }
 
     [Fact]
+    public void App_CreateWindow_HandlerChangeFailures_WarningLogRootPageType()
+    {
+        var source = ReadRepositoryFile("Praxis", "App.xaml.cs");
+
+        Assert.Contains("errorLogger?.Log(ex, \"Window.HandlerChanged\");", source);
+        Assert.Contains("var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);", source);
+        Assert.Contains("errorLogger?.LogWarning(", source);
+        Assert.Contains("\"Window handler activation failed for root page '{page.GetType().Name}': {safeMessage}\"", source);
+        Assert.Contains("\"Window.HandlerChanged\");", source);
+    }
+
+    [Fact]
     public void App_FlushFailures_AreWarningLogged_DuringUnhandledExceptionAndProcessExit()
     {
         var source = ReadRepositoryFile("Praxis", "App.xaml.cs");
