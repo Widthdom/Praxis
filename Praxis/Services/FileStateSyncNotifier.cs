@@ -131,8 +131,8 @@ public sealed class FileStateSyncNotifier : IStateSyncNotifier
 
             if (!StateSyncPayloadParser.TryParse(payload, out var source, out var timestamp))
             {
-                var normalizedPayload = NormalizePayloadForLog(payload);
-                CrashFileLogger.WriteWarning(nameof(FileStateSyncNotifier), $"Ignored malformed sync payload: \"{normalizedPayload}\"");
+                var warningMessage = BuildMalformedPayloadWarning(signalPath, payload);
+                CrashFileLogger.WriteWarning(nameof(FileStateSyncNotifier), warningMessage);
                 return;
             }
 
@@ -168,6 +168,13 @@ public sealed class FileStateSyncNotifier : IStateSyncNotifier
     {
         var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);
         return $"{prefix} {safeMessage}";
+    }
+
+    private static string BuildMalformedPayloadWarning(string signalPath, string payload)
+    {
+        var normalizedSignalPath = NormalizePayloadForLog(signalPath);
+        var normalizedPayload = NormalizePayloadForLog(payload);
+        return $"Ignored malformed sync payload from '{normalizedSignalPath}': \"{normalizedPayload}\"";
     }
 
     private static string NormalizePayloadForLog(string payload)

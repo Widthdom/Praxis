@@ -83,6 +83,33 @@ public class FileStateSyncNotifierTests
             result);
     }
 
+    [Fact]
+    public void BuildMalformedPayloadWarning_NormalizesPathAndPayload()
+    {
+        var pathMarkerA = $"sync-path-a-{Guid.NewGuid():N}";
+        var pathMarkerB = $"sync-path-b-{Guid.NewGuid():N}";
+        var payloadMarkerA = $"sync-payload-a-{Guid.NewGuid():N}";
+        var payloadMarkerB = $"sync-payload-b-{Guid.NewGuid():N}";
+
+        var result = InvokeBuildMalformedPayloadWarning(
+            $"/tmp/{pathMarkerA}\r\n{pathMarkerB}/buttons.sync",
+            $"{payloadMarkerA}\r\n{payloadMarkerB}");
+
+        Assert.Equal(
+            $"Ignored malformed sync payload from '/tmp/{pathMarkerA} {pathMarkerB}/buttons.sync': \"{payloadMarkerA} {payloadMarkerB}\"",
+            result);
+    }
+
+    [Fact]
+    public void BuildMalformedPayloadWarning_UsesPlaceholderForWhitespaceInputs()
+    {
+        var result = InvokeBuildMalformedPayloadWarning(" \r\n\t ", " \r\n\t ");
+
+        Assert.Equal(
+            $"Ignored malformed sync payload from '{CrashFileLogger.MissingMessagePayloadPlaceholder}': \"{CrashFileLogger.MissingMessagePayloadPlaceholder}\"",
+            result);
+    }
+
     private static string InvokeBuildSyncWarningMessage(string prefix, Exception ex)
     {
         var method = typeof(FileStateSyncNotifier).GetMethod("BuildSyncWarningMessage", BindingFlags.NonPublic | BindingFlags.Static);
@@ -98,6 +125,15 @@ public class FileStateSyncNotifierTests
         Assert.NotNull(method);
 
         var result = method.Invoke(null, [payload]);
+        return Assert.IsType<string>(result);
+    }
+
+    private static string InvokeBuildMalformedPayloadWarning(string signalPath, string payload)
+    {
+        var method = typeof(FileStateSyncNotifier).GetMethod("BuildMalformedPayloadWarning", BindingFlags.NonPublic | BindingFlags.Static);
+        Assert.NotNull(method);
+
+        var result = method.Invoke(null, [signalPath, payload]);
         return Assert.IsType<string>(result);
     }
 

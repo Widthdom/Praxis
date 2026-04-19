@@ -133,7 +133,7 @@ Test-specific operation and coverage inventory are documented in [`docs/TESTING_
   - Uses a local signal file (`buttons.sync`) and `FileSystemWatcher` for multi-window notifications
   - Payload includes instance id and timestamp; self-origin events are ignored
   - Hooks watcher events before enabling raising to avoid a construction-time notification gap
-  - Tolerates malformed payloads and out-of-range timestamps without faulting the background notifier task, crash-logs subscriber exceptions, warning-logs sync-file read retry exhaustion plus unexpected publish failures, includes the normalized sync-file path in both write and read warning breadcrumbs, ignores notify requests after disposal, disables watcher event raising before teardown, and writes crash-file Info/Warning breadcrumbs for written, observed, and malformed payloads
+  - Tolerates malformed payloads and out-of-range timestamps without faulting the background notifier task, crash-logs subscriber exceptions, warning-logs sync-file read retry exhaustion plus unexpected publish failures, includes the normalized sync-file path in write, read, and malformed-payload warning breadcrumbs, ignores notify requests after disposal, disables watcher event raising before teardown, and writes crash-file Info/Warning breadcrumbs for written, observed, and malformed payloads
 - [`Services/AppStoragePaths.cs`](../Praxis/Services/AppStoragePaths.cs)
   - Centralizes shared local-storage constants/paths (DB, sync signal)
   - DB path policy:
