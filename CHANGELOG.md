@@ -22,6 +22,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - `MainPage.TriggerStatusFlash` now includes the status-text length and error classification in animation warning breadcrumbs, so degraded flash paths keep lightweight context without logging the full message
 - `MainViewModel` now includes the target theme in external theme-sync warning breadcrumbs, so dispatch or apply failures keep the intended `ThemeMode`
 - `MainViewModel.CommandSuggestions` now includes input length in refresh-dispatch warning breadcrumbs too, so all dispatch-side suggestion warnings use the same lightweight context pattern
+- `MainViewModel.CommandSuggestions` now includes input length in command-lookup fallback warnings, so repository lookup failures keep the same lightweight context pattern as other suggestion warnings
 
 ### Tests
 - Expanded `SecondaryFailureLoggerTests` to cover quoted absolute fallback roots and rejection of relative fallback roots before the startup-diagnostics file path is built
@@ -39,6 +40,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - Expanded `AppLayerSourceGuardTests` to lock status-flash animation warnings to message-length and error-classification context
 - Expanded `AppLayerSourceGuardTests` to lock external theme-sync warnings to the target theme
 - Expanded `AppLayerSourceGuardTests` to lock command-suggestion refresh-dispatch warnings to the input length
+- Expanded `AppLayerSourceGuardTests` to lock command-lookup fallback warnings to the input length
 
 ### [1.1.11] - 2026-04-17
 
