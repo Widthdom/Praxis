@@ -717,10 +717,10 @@ public class CommandEntryHandler : MacEntryHandler
 
     private static string ResolveKeyInput(string inputName, string fallback)
     {
-        return TryResolveKeyInput(inputName) ?? fallback;
+        return TryResolveKeyInput(inputName, fallback) ?? fallback;
     }
 
-    private static string? TryResolveKeyInput(string inputName)
+    private static string? TryResolveKeyInput(string inputName, string? fallbackForLog = null)
     {
         try
         {
@@ -749,8 +749,9 @@ public class CommandEntryHandler : MacEntryHandler
         catch (Exception ex)
         {
             var normalizedInputName = CrashFileLogger.NormalizeMessagePayload(inputName);
+            var normalizedFallback = CrashFileLogger.NormalizeMessagePayload(fallbackForLog);
             var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);
-            CrashFileLogger.WriteWarning(nameof(CommandEntryHandler), $"Failed to resolve UIKeyCommand input '{normalizedInputName}': {safeMessage}");
+            CrashFileLogger.WriteWarning(nameof(CommandEntryHandler), $"Failed to resolve UIKeyCommand input '{normalizedInputName}' with fallback '{normalizedFallback}': {safeMessage}");
         }
 
         return null;
