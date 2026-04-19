@@ -502,10 +502,10 @@ public class AppLayerSourceGuardTests
     public void MainPage_QuickLookHideFailures_AreWarningLogged()
     {
         var source = ReadRepositoryFile("Praxis", "MainPage.DockAndQuickLook.cs");
-        Assert.Contains("CrashFileLogger.WriteWarning(nameof(HideQuickLookAfterDelayAsync), $\"Quick Look hide failed: {safeMessage}\");", source);
+        Assert.Contains("CrashFileLogger.WriteWarning(nameof(HideQuickLookAfterDelayAsync), $\"Quick Look hide failed for pending item '{quickLookPendingItemId}': {safeMessage}\");", source);
         Assert.True(
             source.IndexOf("QuickLookPopup.IsVisible = false;", StringComparison.Ordinal)
-            < source.IndexOf("CrashFileLogger.WriteWarning(nameof(HideQuickLookAfterDelayAsync), $\"Quick Look hide failed: {safeMessage}\");", StringComparison.Ordinal));
+            < source.IndexOf("CrashFileLogger.WriteWarning(nameof(HideQuickLookAfterDelayAsync), $\"Quick Look hide failed for pending item '{quickLookPendingItemId}': {safeMessage}\");", StringComparison.Ordinal));
     }
 
     [Fact]

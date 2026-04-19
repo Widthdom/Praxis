@@ -282,7 +282,7 @@ public partial class MainPage
         catch (Exception ex)
         {
             var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);
-            CrashFileLogger.WriteWarning(nameof(HideQuickLookAfterDelayAsync), $"Quick Look hide failed: {safeMessage}");
+            CrashFileLogger.WriteWarning(nameof(HideQuickLookAfterDelayAsync), $"Quick Look hide failed for pending item '{quickLookPendingItemId}': {safeMessage}");
             return;
         }
     }

@@ -16,6 +16,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - `MainPage` now includes the hovered button `item.Id` in Quick Look delayed-show warning breadcrumbs, so failed preview popups identify which button context faulted instead of logging only the exception summary
 - `CommandExecutor` now warning-logs normalized missing filesystem targets before returning `Path not found: ...`, so empty-tool fallback misses still leave a crash-log breadcrumb
 - `MainViewModel.CommandSuggestions` now includes the current command-input length in debounce/close-dispatch warning breadcrumbs, so degraded suggestion refreshes leave context without persisting the full input text
+- `MainPage` now includes the pending button `item.Id` in Quick Look delayed-hide warning breadcrumbs, so popup teardown failures keep the same button-level context as delayed-show failures
 
 ### Tests
 - Expanded `SecondaryFailureLoggerTests` to cover quoted absolute fallback roots and rejection of relative fallback roots before the startup-diagnostics file path is built
@@ -27,6 +28,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - Expanded `AppLayerSourceGuardTests` to lock Quick Look delayed-show warnings to the hovered `item.Id`
 - Expanded `CommandExecutorTests` and `AppLayerSourceGuardTests` to cover missing-path warning breadcrumbs in the empty-tool fallback path
 - Expanded `AppLayerSourceGuardTests` to lock command-suggestion debounce/close-dispatch warnings to the current input length
+- Expanded `AppLayerSourceGuardTests` to lock Quick Look delayed-hide warnings to the pending `item.Id`
 
 ### [1.1.11] - 2026-04-17
 
