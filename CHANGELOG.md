@@ -7,6 +7,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 ## [Unreleased]
 
 ### Fixed
+- `MainPage.DisableWindowsSystemFocusVisual` now includes the native control type in `UseSystemFocusVisuals` warning breadcrumbs, so Windows reflection failures identify which control rejected the write
 - Mac key-input reflection warnings now include the fallback literal for `CommandEntryHandler`, `MacEntryHandler`, and `MacEditorHandler`, making `UIKeyCommand` resolution failures easier to correlate with the control key that would have been used
 - `SecondaryFailureLogger` now normalizes secondary fallback sink roots to absolute directories before combining the `Praxis/secondary-failures.log` path, so quoted absolute overrides still work while blank or relative roots are ignored instead of creating accidental relative diagnostics paths
 - `FileStateSyncNotifier` now includes the normalized sync-file path in the read-after-retries warning breadcrumb, so exhausted watcher read retries identify which `buttons.sync` target failed instead of logging only the exception summary
@@ -38,6 +39,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - `MainPage.PlacementCanvas_SecondaryTapped` now includes the canvas point in secondary-tap create warning breadcrumbs, so failed create-editor flows can be correlated with placement hit-testing and coordinate conversion issues
 
 ### Tests
+- Expanded `AppLayerSourceGuardTests` to lock `DisableWindowsSystemFocusVisual` warning breadcrumbs to the native control type
 - Expanded `AppLayerSourceGuardTests` to lock Mac key-input reflection warnings to the fallback literal
 - Expanded `SecondaryFailureLoggerTests` to cover quoted absolute fallback roots and rejection of relative fallback roots before the startup-diagnostics file path is built
 - Expanded `FileStateSyncNotifierTests` and `AppLayerSourceGuardTests` to cover the normalized sync-file path prefix in read-retry exhaustion warnings

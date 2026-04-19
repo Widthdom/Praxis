@@ -291,6 +291,7 @@ sequenceDiagram
 - Tab focus policy is applied in [`MainPage.FocusAndContext.cs`](../Praxis/MainPage.FocusAndContext.cs) (`ApplyTabPolicy`) by toggling native `IsTabStop`.
 - Modal `ButtonText` focus fallback warnings now include the current `shouldSelectAll` state, so create-flow focus failures can be separated from normal re-entry focus retries.
 - `SetTabStop` fallback warnings now include the native target control type, so `IsTabStop` reflection failures point at the specific Windows view that rejected the write.
+- `DisableWindowsSystemFocusVisual` warnings now include the native control type too, so `UseSystemFocusVisuals` reflection failures identify which Windows control rejected the write.
 - Selection rectangle is rendered as `SelectionRect` in [`MainPage.xaml`](../Praxis/MainPage.xaml) with gray stroke/fill.
 - Selection toggle modifier handling is centralized in [`MainPage.PointerAndSelection.cs`](../Praxis/MainPage.PointerAndSelection.cs):
   - Windows: `Ctrl+Click`

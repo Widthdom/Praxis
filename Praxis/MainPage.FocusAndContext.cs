@@ -291,6 +291,7 @@ public partial class MainPage
         var prop = control.GetType().GetProperty("UseSystemFocusVisuals", BindingFlags.Public | BindingFlags.Instance);
         if (prop?.CanWrite == true)
         {
+            var controlType = control.GetType().Name;
             try
             {
                 prop.SetValue(control, false);
@@ -298,7 +299,7 @@ public partial class MainPage
             catch (Exception ex)
             {
                 var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);
-                CrashFileLogger.WriteWarning(nameof(DisableWindowsSystemFocusVisual), $"Failed to disable UseSystemFocusVisuals: {safeMessage}");
+                CrashFileLogger.WriteWarning(nameof(DisableWindowsSystemFocusVisual), $"Failed to disable UseSystemFocusVisuals on {controlType}: {safeMessage}");
             }
         }
     }

@@ -274,8 +274,9 @@ public class AppLayerSourceGuardTests
         var pointerSource = ReadRepositoryFile("Praxis", "MainPage.PointerAndSelection.cs");
         var layoutSource = ReadRepositoryFile("Praxis", "MainPage.LayoutUtilities.cs");
 
+        Assert.Contains("var controlType = control.GetType().Name;", focusSource);
         Assert.Contains("var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);", focusSource);
-        Assert.Contains("CrashFileLogger.WriteWarning(nameof(DisableWindowsSystemFocusVisual), $\"Failed to disable UseSystemFocusVisuals: {safeMessage}\");", focusSource);
+        Assert.Contains("CrashFileLogger.WriteWarning(nameof(DisableWindowsSystemFocusVisual), $\"Failed to disable UseSystemFocusVisuals on {controlType}: {safeMessage}\");", focusSource);
         Assert.Contains("var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);", pointerSource);
         Assert.Contains("var shouldSelectAll = modalPrimaryFieldSelectAllPending;", pointerSource);
         Assert.Contains("CrashFileLogger.WriteWarning(nameof(FocusModalPrimaryEditorField), $\"Failed to focus modal ButtonText entry while shouldSelectAll={shouldSelectAll}: {safeMessage}\");", pointerSource);
@@ -552,8 +553,9 @@ public class AppLayerSourceGuardTests
         var focusSource = ReadRepositoryFile("Praxis", "MainPage.FocusAndContext.cs");
         var layoutSource = ReadRepositoryFile("Praxis", "MainPage.LayoutUtilities.cs");
 
+        Assert.Contains("var controlType = control.GetType().Name;", focusSource);
         Assert.Contains("var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);", focusSource);
-        Assert.Contains("CrashFileLogger.WriteWarning(nameof(DisableWindowsSystemFocusVisual), $\"Failed to disable UseSystemFocusVisuals: {safeMessage}\");", focusSource);
+        Assert.Contains("CrashFileLogger.WriteWarning(nameof(DisableWindowsSystemFocusVisual), $\"Failed to disable UseSystemFocusVisuals on {controlType}: {safeMessage}\");", focusSource);
         Assert.Contains("var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);", layoutSource);
         Assert.Contains("var targetType = platformView.GetType().Name;", layoutSource);
         Assert.Contains("CrashFileLogger.WriteWarning(nameof(SetTabStop), $\"Failed to set IsTabStop={isTabStop} on {targetType}: {safeMessage}\");", layoutSource);
