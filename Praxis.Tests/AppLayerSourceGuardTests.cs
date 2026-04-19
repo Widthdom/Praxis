@@ -188,6 +188,7 @@ public class AppLayerSourceGuardTests
         Assert.Contains("var normalizedUrlForLog = NormalizeTargetForLog(url);", source);
         Assert.Contains("var normalizedArgumentsForLog = NormalizeTargetForLog(arguments);", source);
         Assert.Contains("var normalizedExpandedForLog = NormalizeTargetForLog(expanded);", source);
+        Assert.Contains("CrashFileLogger.WriteWarning(nameof(CommandExecutor), $\"Path not found for '{normalizedExpandedForLog}'.\");", source);
         Assert.Contains("private static string BuildFailureMessage(string prefix, Exception ex)", source);
         Assert.Contains("var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);", source);
     }

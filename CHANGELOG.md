@@ -14,6 +14,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - `FileAppConfigService` now canonicalizes absolute config candidate roots before deduplicating them, so equivalent paths with `.` or `..` segments do not probe the same `praxis.config.json` twice
 - `App.xaml.cs` now warning-logs `Window.HandlerChanged` failures with the root page type, so Windows activation-hook failures identify which shell failed instead of leaving only an exception row
 - `MainPage` now includes the hovered button `item.Id` in Quick Look delayed-show warning breadcrumbs, so failed preview popups identify which button context faulted instead of logging only the exception summary
+- `CommandExecutor` now warning-logs normalized missing filesystem targets before returning `Path not found: ...`, so empty-tool fallback misses still leave a crash-log breadcrumb
 
 ### Tests
 - Expanded `SecondaryFailureLoggerTests` to cover quoted absolute fallback roots and rejection of relative fallback roots before the startup-diagnostics file path is built
@@ -23,6 +24,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - Expanded `FileAppConfigServiceTests` to cover canonical deduplication of equivalent absolute config roots and dot-segment normalization in `NormalizeAbsoluteDirectory(...)`
 - Expanded `AppLayerSourceGuardTests` to lock `App.xaml.cs` `Window.HandlerChanged` warnings to the root page type
 - Expanded `AppLayerSourceGuardTests` to lock Quick Look delayed-show warnings to the hovered `item.Id`
+- Expanded `CommandExecutorTests` and `AppLayerSourceGuardTests` to cover missing-path warning breadcrumbs in the empty-tool fallback path
 
 ### [1.1.11] - 2026-04-17
 

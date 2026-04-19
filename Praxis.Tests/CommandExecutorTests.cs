@@ -218,6 +218,21 @@ public class CommandExecutorTests
         Assert.Equal(CrashFileLogger.MissingMessagePayloadPlaceholder, result);
     }
 
+    [Fact]
+    public async Task ExecuteAsync_WhenResolvedPathDoesNotExist_WarningLogsMissingTarget()
+    {
+        var missingPath = Path.Combine(Path.GetTempPath(), $"praxis-command-missing-{Guid.NewGuid():N}");
+        var executor = new CommandExecutor();
+
+        var result = await executor.ExecuteAsync(string.Empty, missingPath);
+
+        Assert.False(result.Success);
+        Assert.Equal($"Path not found: {missingPath}", result.Message);
+
+        var content = File.ReadAllText(CrashFileLogger.LogFilePath);
+        Assert.Contains($"Path not found for '{missingPath}'.", content);
+    }
+
     private static string InvokeExpandHomePath(string value)
     {
         var method = typeof(CommandExecutor).GetMethod("ExpandHomePath", BindingFlags.NonPublic | BindingFlags.Static);
