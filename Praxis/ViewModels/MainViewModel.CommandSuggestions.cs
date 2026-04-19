@@ -228,8 +228,9 @@ public partial class MainViewModel
         }
         catch (Exception ex)
         {
+            var valueLength = value?.Length ?? 0;
             errorLogger.Log(ex, nameof(RefreshCommandSuggestionsOnMainThread));
-            errorLogger.LogWarning(BuildSafeWarningMessage("Command suggestion refresh dispatch failed", ex), nameof(RefreshCommandSuggestionsOnMainThread));
+            errorLogger.LogWarning(BuildSafeWarningMessage($"Command suggestion refresh dispatch failed for input length {valueLength}", ex), nameof(RefreshCommandSuggestionsOnMainThread));
         }
     }
 

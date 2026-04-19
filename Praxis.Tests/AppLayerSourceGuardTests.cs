@@ -351,7 +351,8 @@ public class AppLayerSourceGuardTests
         Assert.Contains("var commandInputLength = CommandInput?.Length ?? 0;", source);
         Assert.Contains("BuildSafeWarningMessage($\"Debounced command suggestion refresh failed for input length {commandInputLength}\", ex)", source);
         Assert.Contains("BuildSafeWarningMessage($\"Command suggestion close dispatch failed for input length {commandInputLength}\", dispatchEx)", source);
-        Assert.Contains("BuildSafeWarningMessage(\"Command suggestion refresh dispatch failed\", ex)", source);
+        Assert.Contains("var valueLength = value?.Length ?? 0;", source);
+        Assert.Contains("BuildSafeWarningMessage($\"Command suggestion refresh dispatch failed for input length {valueLength}\", ex)", source);
         Assert.Contains("BuildSafeWarningMessage(\"Command lookup fallback failed\", ex)", source);
         Assert.Contains("catch (OperationCanceledException) when (token.IsCancellationRequested)", source);
     }
