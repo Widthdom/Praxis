@@ -539,7 +539,7 @@ public class AppLayerSourceGuardTests
     {
         var source = ReadRepositoryFile("Praxis", "MainPage.PointerAndSelection.cs");
         Assert.Equal(2, CountOccurrences(source, "var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);"));
-        Assert.Contains("CrashFileLogger.WriteWarning(nameof(PlacementCanvas_SecondaryTapped), $\"Secondary-tap create flow failed: {safeMessage}\");", source);
+        Assert.Contains("CrashFileLogger.WriteWarning(nameof(PlacementCanvas_SecondaryTapped), $\"Secondary-tap create flow failed at ({canvasPoint.X:0.##}, {canvasPoint.Y:0.##}): {safeMessage}\");", source);
         Assert.Contains("CrashFileLogger.WriteWarning(nameof(FocusModalPrimaryEditorField), $\"Failed to focus modal ButtonText entry while shouldSelectAll={shouldSelectAll}: {safeMessage}\");", source);
     }
 
