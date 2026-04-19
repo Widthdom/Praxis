@@ -11,12 +11,14 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - `FileStateSyncNotifier` now includes the normalized sync-file path in the read-after-retries warning breadcrumb, so exhausted watcher read retries identify which `buttons.sync` target failed instead of logging only the exception summary
 - `MauiThemeService` now includes the target `AppTheme` in the Mac dispatch-failure warning breadcrumb, so a failed Light/Dark/System transition leaves more specific diagnostics than a generic window-style warning
 - `FileAppConfigService` now includes the normalized raw `theme` value in invalid-theme warning breadcrumbs, so broken `praxis.config.json` files leave evidence of the actual bad value instead of only saying the theme was invalid
+- `FileAppConfigService` now canonicalizes absolute config candidate roots before deduplicating them, so equivalent paths with `.` or `..` segments do not probe the same `praxis.config.json` twice
 
 ### Tests
 - Expanded `SecondaryFailureLoggerTests` to cover quoted absolute fallback roots and rejection of relative fallback roots before the startup-diagnostics file path is built
 - Expanded `FileStateSyncNotifierTests` and `AppLayerSourceGuardTests` to cover the normalized sync-file path prefix in read-retry exhaustion warnings
 - Expanded `AppLayerSourceGuardTests` to lock the `MauiThemeService` Mac dispatch-failure breadcrumb to the requested `AppTheme`
 - Expanded `FileAppConfigServiceTests` and `AppLayerSourceGuardTests` to cover normalized invalid-theme values in skipped-config warnings
+- Expanded `FileAppConfigServiceTests` to cover canonical deduplication of equivalent absolute config roots and dot-segment normalization in `NormalizeAbsoluteDirectory(...)`
 
 ### [1.1.11] - 2026-04-17
 

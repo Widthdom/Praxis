@@ -237,6 +237,27 @@ public class FileAppConfigServiceTests
     }
 
     [Fact]
+    public void EnumerateCandidatePaths_DeduplicatesCanonicalizedAbsoluteDirectories()
+    {
+        var root = Path.Combine(Path.GetTempPath(), $"praxis-config-{Guid.NewGuid():N}");
+        var canonical = Path.Combine(root, "actual");
+        var equivalent = Path.Combine(root, "nested", "..", "actual");
+
+        Directory.CreateDirectory(canonical);
+        try
+        {
+            var result = InvokeEnumerateCandidatePaths(canonical, equivalent);
+
+            Assert.Single(result);
+            Assert.Equal(Path.Combine(canonical, "praxis.config.json"), result[0]);
+        }
+        finally
+        {
+            Directory.Delete(root, recursive: true);
+        }
+    }
+
+    [Fact]
     public void EnumerateCandidatePaths_IgnoresBlankOrRelativeDirectories()
     {
         var result = InvokeEnumerateCandidatePaths("relative/config", " \r\n\t ");
@@ -258,6 +279,26 @@ public class FileAppConfigServiceTests
         var result = InvokeNormalizeAbsoluteDirectory("  \"relative/config\"  ");
 
         Assert.Null(result);
+    }
+
+    [Fact]
+    public void NormalizeAbsoluteDirectory_WhenValueContainsDotSegments_ReturnsCanonicalPath()
+    {
+        var root = Path.Combine(Path.GetTempPath(), $"praxis-config-{Guid.NewGuid():N}");
+        var canonical = Path.Combine(root, "actual");
+        var equivalent = Path.Combine(root, "nested", "..", "actual");
+
+        Directory.CreateDirectory(canonical);
+        try
+        {
+            var result = InvokeNormalizeAbsoluteDirectory(equivalent);
+
+            Assert.Equal(Path.GetFullPath(canonical), result);
+        }
+        finally
+        {
+            Directory.Delete(root, recursive: true);
+        }
     }
 
     private static ThemeMode InvokeResolveThemeModeFromCandidates(IEnumerable<string> candidatePaths, JsonSerializerOptions options)

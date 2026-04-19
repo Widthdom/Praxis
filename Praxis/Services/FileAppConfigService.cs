@@ -104,7 +104,14 @@ public sealed class FileAppConfigService : IAppConfigService
             return null;
         }
 
-        return trimmed;
+        try
+        {
+            return Path.GetFullPath(trimmed);
+        }
+        catch
+        {
+            return null;
+        }
     }
 
     private sealed class AppConfigFile
