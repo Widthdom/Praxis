@@ -275,7 +275,7 @@ public partial class MainViewModel
         }
         catch (Exception ex)
         {
-            errorLogger.LogWarning(BuildSafeWarningMessage("Command suggestion refresh failed", ex), nameof(RefreshCommandSuggestions));
+            errorLogger.LogWarning(BuildSafeWarningMessage($"Command suggestion refresh failed for input length {value?.Length ?? 0}", ex), nameof(RefreshCommandSuggestions));
             CloseCommandSuggestions();
         }
     }
