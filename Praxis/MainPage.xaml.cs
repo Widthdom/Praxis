@@ -477,7 +477,7 @@ public partial class MainPage : ContentPage
         catch (Exception ex)
         {
             var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);
-            CrashFileLogger.WriteWarning("MainPage.CopyIconButton_Clicked", $"Copy notice animation failed: {safeMessage}");
+            CrashFileLogger.WriteWarning("MainPage.CopyIconButton_Clicked", $"Copy notice animation failed while overlayVisible={CopyNoticeOverlay.IsVisible}: {safeMessage}");
         }
         finally
         {
