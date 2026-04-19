@@ -236,7 +236,9 @@ public sealed class MiddleClickBehavior : Behavior<View>
             catch (Exception ex)
             {
                 var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);
-                CrashFileLogger.WriteWarning(nameof(MiddleClickBehavior), $"Deferred middle-click execution failed: {safeMessage}");
+                var isContextMenuOpen = IsContextMenuCurrentlyOpen();
+                var hasCommand = Command is not null;
+                CrashFileLogger.WriteWarning(nameof(MiddleClickBehavior), $"Deferred middle-click execution failed while contextMenuOpen={isContextMenuOpen} hasCommand={hasCommand}: {safeMessage}");
             }
         });
     }

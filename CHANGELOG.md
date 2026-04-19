@@ -27,6 +27,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - `CommandExecutor` now includes the normalized target filename in the `Process.Start(...) == null` warning/result breadcrumb, so null-handle launch failures identify which tool or fallback target produced no process handle
 - `FileStateSyncNotifier` now includes the normalized sync-file path in malformed-payload warning breadcrumbs too, so broken `buttons.sync` contents still identify which watched file produced the bad payload
 - `Windows CommandEntryHandler` now includes the current `EnforceAsciiInput` flag in `InputScope` assignment warning breadcrumbs, so WinUI compatibility failures show whether ASCII enforcement was actually enabled for that entry
+- `MiddleClickBehavior` now includes current `contextMenuOpen` / `hasCommand` state in deferred middle-click warning breadcrumbs, so delayed command-path failures show whether the fallback ran against an open menu or a detached command binding
 
 ### Tests
 - Expanded `SecondaryFailureLoggerTests` to cover quoted absolute fallback roots and rejection of relative fallback roots before the startup-diagnostics file path is built
@@ -40,6 +41,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - Expanded `CommandExecutorTests` and `AppLayerSourceGuardTests` to cover the normalized filename breadcrumb used when `Process.Start(...)` returns `null`
 - Expanded `FileStateSyncNotifierTests` and `AppLayerSourceGuardTests` to cover malformed-payload warning breadcrumbs that include the normalized sync-file path
 - Expanded `AppLayerSourceGuardTests` to lock `CommandEntryHandler` `InputScope` warning breadcrumbs to the current `EnforceAsciiInput` flag
+- Expanded `AppLayerSourceGuardTests` to lock deferred `MiddleClickBehavior` warning breadcrumbs to current `contextMenuOpen` / `hasCommand` state
 - Expanded `AppLayerSourceGuardTests` to lock command-suggestion debounce/close-dispatch warnings to the current input length
 - Expanded `AppLayerSourceGuardTests` to lock Quick Look delayed-hide warnings to the pending `item.Id`
 - Expanded `AppLayerSourceGuardTests` to lock Dock hover-exit warnings to the current Dock hover flag
