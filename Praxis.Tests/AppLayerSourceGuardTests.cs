@@ -471,7 +471,9 @@ public class AppLayerSourceGuardTests
         Assert.Contains("CrashFileLogger.WriteWarning(nameof(MiddleClickBehavior), $\"Deferred middle-click execution failed while contextMenuOpen={isContextMenuOpen} hasCommand={hasCommand}: {safeMessage}\");", behaviorSource);
         Assert.Equal(2, CountOccurrences(macSource, "var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);"));
         Assert.Contains("CrashFileLogger.WriteWarning(nameof(TryCreateMacEditorKeyCommand), $\"Failed to create Mac editor key command '{selectorName}' for input '{keyInput}': {safeMessage}\");", macSource);
-        Assert.Contains("CrashFileLogger.WriteWarning(nameof(IsMacMiddleButtonCurrentlyDown), $\"Failed to query middle button state from CoreGraphics: {safeMessage}\");", macSource);
+        Assert.Contains("var isActive = App.IsMacApplicationActive();", macSource);
+        Assert.Contains("var activationSuppressed = App.IsActivationSuppressionActive();", macSource);
+        Assert.Contains("CrashFileLogger.WriteWarning(nameof(IsMacMiddleButtonCurrentlyDown), $\"Failed to query middle button state from CoreGraphics while isActive={isActive} activationSuppressed={activationSuppressed}: {safeMessage}\");", macSource);
     }
 
     [Fact]

@@ -1082,7 +1082,9 @@ public partial class MainPage
             catch (Exception ex)
             {
                 var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);
-                CrashFileLogger.WriteWarning(nameof(IsMacMiddleButtonCurrentlyDown), $"Failed to query middle button state from CoreGraphics: {safeMessage}");
+                var isActive = App.IsMacApplicationActive();
+                var activationSuppressed = App.IsActivationSuppressionActive();
+                CrashFileLogger.WriteWarning(nameof(IsMacMiddleButtonCurrentlyDown), $"Failed to query middle button state from CoreGraphics while isActive={isActive} activationSuppressed={activationSuppressed}: {safeMessage}");
                 return false;
             }
         }

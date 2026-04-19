@@ -30,6 +30,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - `MiddleClickBehavior` now includes current `contextMenuOpen` / `hasCommand` state in deferred middle-click warning breadcrumbs, so delayed command-path failures show whether the fallback ran against an open menu or a detached command binding
 - `MainPage.FocusModalPrimaryEditorField` now includes current `shouldSelectAll` state in modal `ButtonText` focus warning breadcrumbs, so editor-open focus failures distinguish create-flow select-all from normal focus retry paths
 - `MainPage.SetTabStop` now includes the native target control type in `IsTabStop` warning breadcrumbs, so Windows reflection failures identify which view rejected the write
+- `MainPage.IsMacMiddleButtonCurrentlyDown` now includes current `isActive` / `activationSuppressed` state in CoreGraphics warning breadcrumbs, so degraded middle-click polling shows whether the app was eligible to react
 
 ### Tests
 - Expanded `SecondaryFailureLoggerTests` to cover quoted absolute fallback roots and rejection of relative fallback roots before the startup-diagnostics file path is built
@@ -46,6 +47,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - Expanded `AppLayerSourceGuardTests` to lock deferred `MiddleClickBehavior` warning breadcrumbs to current `contextMenuOpen` / `hasCommand` state
 - Expanded `AppLayerSourceGuardTests` to lock modal `ButtonText` focus warning breadcrumbs to current `shouldSelectAll` state
 - Expanded `AppLayerSourceGuardTests` to lock `SetTabStop` warning breadcrumbs to the native target control type
+- Expanded `AppLayerSourceGuardTests` to lock CoreGraphics middle-button warning breadcrumbs to current `isActive` / `activationSuppressed` state
 - Expanded `AppLayerSourceGuardTests` to lock command-suggestion debounce/close-dispatch warnings to the current input length
 - Expanded `AppLayerSourceGuardTests` to lock Quick Look delayed-hide warnings to the pending `item.Id`
 - Expanded `AppLayerSourceGuardTests` to lock Dock hover-exit warnings to the current Dock hover flag
