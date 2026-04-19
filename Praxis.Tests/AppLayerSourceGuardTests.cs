@@ -473,7 +473,8 @@ public class AppLayerSourceGuardTests
     {
         var source = ReadRepositoryFile("Praxis", "MainPage.StatusAndTheme.cs");
         Assert.Contains("var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);", source);
-        Assert.Contains("CrashFileLogger.WriteWarning(nameof(TriggerStatusFlash), $\"Status flash animation failed: {safeMessage}\");", source);
+        Assert.Contains("var messageLength = message?.Length ?? 0;", source);
+        Assert.Contains("CrashFileLogger.WriteWarning(nameof(TriggerStatusFlash), $\"Status flash animation failed for message length {messageLength} (isError={StatusFlashErrorPolicy.IsErrorStatus(message)}): {safeMessage}\");", source);
     }
 
     [Fact]

@@ -19,6 +19,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - `MainPage` now includes the pending button `item.Id` in Quick Look delayed-hide warning breadcrumbs, so popup teardown failures keep the same button-level context as delayed-show failures
 - `MainPage` now includes the current Dock hover flag in hover-exit hide warning breadcrumbs, so delayed scrollbar teardown failures show whether the pointer had already re-entered
 - `MainPage.CopyIconButton_Clicked` now includes the copy-notice overlay visibility in animation warning breadcrumbs, so failed notification teardown leaves a quick state hint instead of only the exception summary
+- `MainPage.TriggerStatusFlash` now includes the status-text length and error classification in animation warning breadcrumbs, so degraded flash paths keep lightweight context without logging the full message
 
 ### Tests
 - Expanded `SecondaryFailureLoggerTests` to cover quoted absolute fallback roots and rejection of relative fallback roots before the startup-diagnostics file path is built
@@ -33,6 +34,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - Expanded `AppLayerSourceGuardTests` to lock Quick Look delayed-hide warnings to the pending `item.Id`
 - Expanded `AppLayerSourceGuardTests` to lock Dock hover-exit warnings to the current Dock hover flag
 - Expanded `AppLayerSourceGuardTests` to lock copy-notice animation warnings to the overlay visibility state
+- Expanded `AppLayerSourceGuardTests` to lock status-flash animation warnings to message-length and error-classification context
 
 ### [1.1.11] - 2026-04-17
 
