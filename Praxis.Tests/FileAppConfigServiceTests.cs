@@ -112,7 +112,39 @@ public class FileAppConfigServiceTests
             Assert.Equal(ThemeMode.Dark, result);
 
             var content = File.ReadAllText(CrashFileLogger.LogFilePath);
-            Assert.Contains($"Skipping config '{invalidPath}' because it does not specify a valid theme.", content);
+            Assert.Contains($"Skipping config '{invalidPath}' because it does not specify a valid theme. Value='Bogus'.", content);
+        }
+        finally
+        {
+            Directory.Delete(root, recursive: true);
+        }
+    }
+
+    [Fact]
+    public void ResolveThemeModeFromCandidates_NormalizesInvalidThemeValue_InWarningBreadcrumb()
+    {
+        var root = Path.Combine(Path.GetTempPath(), $"praxis-config-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(root);
+        try
+        {
+            var invalidPath = Path.Combine(root, "invalid", "praxis.config.json");
+            Directory.CreateDirectory(Path.GetDirectoryName(invalidPath)!);
+
+            var markerA = $"bogus-a-{Guid.NewGuid():N}";
+            var markerB = $"bogus-b-{Guid.NewGuid():N}";
+            File.WriteAllText(invalidPath, $$"""
+                {"theme":"{{markerA}}\n{{markerB}}"}
+                """);
+
+            var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+            var result = InvokeResolveThemeModeFromCandidates([invalidPath], options);
+
+            Assert.Equal(ThemeMode.System, result);
+
+            var content = File.ReadAllText(CrashFileLogger.LogFilePath);
+            Assert.Contains(
+                $"Skipping config '{invalidPath}' because it does not specify a valid theme. Value='{markerA} {markerB}'.",
+                content);
         }
         finally
         {
@@ -181,6 +213,14 @@ public class FileAppConfigServiceTests
     public void NormalizePathForLog_WhenPathIsNull_UsesPlaceholder()
     {
         var result = InvokeNormalizePathForLog(null);
+
+        Assert.Equal(CrashFileLogger.MissingMessagePayloadPlaceholder, result);
+    }
+
+    [Fact]
+    public void NormalizeThemeForLog_WhenThemeIsWhitespace_UsesPlaceholder()
+    {
+        var result = InvokeNormalizeThemeForLog(" \r\n\t ");
 
         Assert.Equal(CrashFileLogger.MissingMessagePayloadPlaceholder, result);
     }
@@ -262,6 +302,15 @@ public class FileAppConfigServiceTests
         Assert.NotNull(method);
 
         return method.Invoke(null, [path]) as string;
+    }
+
+    private static string InvokeNormalizeThemeForLog(string? theme)
+    {
+        var method = typeof(FileAppConfigService).GetMethod("NormalizeThemeForLog", BindingFlags.NonPublic | BindingFlags.Static);
+        Assert.NotNull(method);
+
+        var result = method.Invoke(null, [theme]);
+        return Assert.IsType<string>(result);
     }
 
     private sealed class ThrowingUnauthorizedAccessException : UnauthorizedAccessException

@@ -380,7 +380,8 @@ public class AppLayerSourceGuardTests
         Assert.Contains("private static void WriteSkippedConfigWarning(string path, Exception ex)", source);
         Assert.Contains("var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);", source);
         Assert.Contains("CrashFileLogger.WriteWarning(nameof(FileAppConfigService), $\"Skipping config '{normalizedPath}': {safeMessage}\");", source);
-        Assert.Contains("CrashFileLogger.WriteWarning(nameof(FileAppConfigService), $\"Skipping config '{normalizedPath}' because it does not specify a valid theme.\");", source);
+        Assert.Contains("var normalizedTheme = NormalizeThemeForLog(config?.Theme);", source);
+        Assert.Contains("$\"Skipping config '{normalizedPath}' because it does not specify a valid theme. Value='{normalizedTheme}'.\"", source);
     }
 
     [Fact]

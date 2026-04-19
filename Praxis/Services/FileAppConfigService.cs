@@ -43,7 +43,10 @@ public sealed class FileAppConfigService : IAppConfigService
                 }
 
                 var normalizedPath = NormalizePathForLog(path);
-                CrashFileLogger.WriteWarning(nameof(FileAppConfigService), $"Skipping config '{normalizedPath}' because it does not specify a valid theme.");
+                var normalizedTheme = NormalizeThemeForLog(config?.Theme);
+                CrashFileLogger.WriteWarning(
+                    nameof(FileAppConfigService),
+                    $"Skipping config '{normalizedPath}' because it does not specify a valid theme. Value='{normalizedTheme}'.");
             }
             catch (IOException ex)
             {
@@ -74,6 +77,9 @@ public sealed class FileAppConfigService : IAppConfigService
 
     private static string NormalizePathForLog(string path)
         => CrashFileLogger.NormalizeMessagePayload(path);
+
+    private static string NormalizeThemeForLog(string? theme)
+        => CrashFileLogger.NormalizeMessagePayload(theme);
 
     private static void AppendCandidatePath(List<string> candidates, string? directory)
     {
