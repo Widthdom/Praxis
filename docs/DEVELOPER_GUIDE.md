@@ -34,6 +34,8 @@ Test-specific operation and coverage inventory are documented in [`docs/TESTING_
   - `UnhandledException` handler captures `IsTerminating` state and attempts synchronous `FlushAsync` before process death; non-`Exception` thrown objects are logged as warnings instead of degrading to empty exception payloads, and flush failures now persist the full exception body to `crash.log` before the warning breadcrumb
   - `ProcessExit` handler flushes pending DB log writes with a 3-second timeout and crash-logs full flush-failure exceptions plus the warning summary so shutdown diagnostics are not lost
   - `CreateWindow()` caches the resolved `MainPage`, but does not cache the fallback error page from `ResolveRootPage()`; later windows can retry normal page resolution after a transient startup failure
+- [`MainPage.xaml.cs`](../Praxis/MainPage.xaml.cs)
+  - Copy-notice animation warnings now include both overlay visibility and token-cancellation state, so normal teardown cancellation is easier to distinguish from unexpected animation faults
   - All static event-dispatch helpers (`RaiseThemeShortcut`, `RaiseEditorShortcut`, `RaiseCommandInputShortcut`, `RaiseHistoryShortcut`, `RaiseMiddleMouseClick`, `RaiseMacApplicationDeactivating`, `RaiseMacApplicationActivated`) log caught exceptions via `IErrorLogger` instead of silently discarding them
 - Platform startup entrypoints ([`Platforms/Windows/App.xaml.cs`](../Praxis/Platforms/Windows/App.xaml.cs), [`Platforms/MacCatalyst/AppDelegate.cs`](../Praxis/Platforms/MacCatalyst/AppDelegate.cs))
   - Guard global exception-hook registration so repeated initialization does not stack duplicate unhandled-exception handlers

@@ -482,7 +482,7 @@ public class AppLayerSourceGuardTests
         var source = ReadRepositoryFile("Praxis", "MainPage.xaml.cs");
         Assert.Contains("catch (OperationCanceledException) when (token.IsCancellationRequested)", source);
         Assert.Contains("var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);", source);
-        Assert.Contains("CrashFileLogger.WriteWarning(\"MainPage.CopyIconButton_Clicked\", $\"Copy notice animation failed while overlayVisible={CopyNoticeOverlay.IsVisible}: {safeMessage}\");", source);
+        Assert.Contains("CrashFileLogger.WriteWarning(\"MainPage.CopyIconButton_Clicked\", $\"Copy notice animation failed while overlayVisible={CopyNoticeOverlay.IsVisible} tokenCanceled={token.IsCancellationRequested}: {safeMessage}\");", source);
     }
 
     [Fact]
