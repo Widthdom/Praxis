@@ -6,6 +6,12 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 
 ## [Unreleased]
 
+### Fixed
+- `SecondaryFailureLogger` now normalizes secondary fallback sink roots to absolute directories before combining the `Praxis/secondary-failures.log` path, so quoted absolute overrides still work while blank or relative roots are ignored instead of creating accidental relative diagnostics paths
+
+### Tests
+- Expanded `SecondaryFailureLoggerTests` to cover quoted absolute fallback roots and rejection of relative fallback roots before the startup-diagnostics file path is built
+
 ### [1.1.11] - 2026-04-17
 
 ### Changed
@@ -354,6 +360,11 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 
 ## [Unreleased]
 
+### 修正
+- `SecondaryFailureLogger` は二次 fallback sink root を `Praxis/secondary-failures.log` の組み立て前に絶対パスへ正規化するようになり、quote 付き絶対パス override は引き続き使える一方、空や相対 root は誤って相対診断パスを作らないよう無視するよう修正
+
+### テスト
+- `SecondaryFailureLoggerTests` を拡張し、quote 付き絶対パスの fallback root と、相対 fallback root を拒否する挙動を startup diagnostics file パス組み立て前に固定
 ### [1.1.11] - 2026-04-17
 
 ### 変更

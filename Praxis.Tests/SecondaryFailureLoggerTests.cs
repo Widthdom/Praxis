@@ -81,6 +81,61 @@ public class SecondaryFailureLoggerTests
     }
 
     [Fact]
+    public void TryAppendFallbackContent_AcceptsQuotedAbsoluteFallbackRoot()
+    {
+        var tempRootSentinel = Path.Combine(Path.GetTempPath(), $"secondary-quoted-temp-{Guid.NewGuid():N}.txt");
+        var currentDirectoryRoot = Path.Combine(Path.GetTempPath(), $"secondary-quoted-root-{Guid.NewGuid():N}");
+        var marker = $"secondary-quoted-{Guid.NewGuid():N}";
+
+        File.WriteAllText(tempRootSentinel, "occupied");
+        Directory.CreateDirectory(currentDirectoryRoot);
+
+        try
+        {
+            var success = SecondaryFailureLogger.TryAppendFallbackContent(
+                marker,
+                out var writtenPath,
+                tempRootSentinel,
+                $"  \"{currentDirectoryRoot}\"  ");
+
+            Assert.True(success);
+
+            var expectedPath = Path.Combine(
+                currentDirectoryRoot,
+                "Praxis",
+                SecondaryFailureLogger.FallbackLogFileName);
+
+            Assert.Equal(expectedPath, writtenPath);
+            Assert.Contains(marker, File.ReadAllText(expectedPath));
+        }
+        finally
+        {
+            if (File.Exists(tempRootSentinel))
+            {
+                File.Delete(tempRootSentinel);
+            }
+
+            if (Directory.Exists(currentDirectoryRoot))
+            {
+                Directory.Delete(currentDirectoryRoot, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
+    public void TryAppendFallbackContent_IgnoresRelativeFallbackRoots()
+    {
+        var success = SecondaryFailureLogger.TryAppendFallbackContent(
+            "relative-root",
+            out var writtenPath,
+            "relative-temp-root",
+            "relative-current-root");
+
+        Assert.False(success);
+        Assert.Null(writtenPath);
+    }
+
+    [Fact]
     public void TryReportStartupLogFailure_WritesFallbackFile_WhenPrimaryCrashSinkFails()
     {
         var tempRootSentinel = Path.Combine(Path.GetTempPath(), $"secondary-report-sentinel-{Guid.NewGuid():N}.txt");
