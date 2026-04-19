@@ -184,6 +184,7 @@ public partial class MainViewModel : ObservableObject
 
     private async Task SyncThemeFromExternalChangeAsync()
     {
+        var currentThemeForLog = SelectedTheme;
         try
         {
             errorLogger.LogInfo("External theme sync started.", nameof(SyncThemeFromExternalChangeAsync));
@@ -217,14 +218,14 @@ public partial class MainViewModel : ObservableObject
                 catch (Exception ex)
                 {
                     errorLogger.Log(ex, nameof(SyncThemeFromExternalChangeAsync));
-                    errorLogger.LogWarning(BuildSafeWarningMessage("External theme sync dispatch failed", ex), nameof(SyncThemeFromExternalChangeAsync));
+                    errorLogger.LogWarning(BuildSafeWarningMessage($"External theme sync dispatch failed for theme {latestTheme}", ex), nameof(SyncThemeFromExternalChangeAsync));
                 }
             });
         }
         catch (Exception ex)
         {
             errorLogger.Log(ex, nameof(SyncThemeFromExternalChangeAsync));
-            errorLogger.LogWarning(BuildSafeWarningMessage("External theme sync failed", ex), nameof(SyncThemeFromExternalChangeAsync));
+            errorLogger.LogWarning(BuildSafeWarningMessage($"External theme sync failed for theme {currentThemeForLog}", ex), nameof(SyncThemeFromExternalChangeAsync));
         }
     }
 

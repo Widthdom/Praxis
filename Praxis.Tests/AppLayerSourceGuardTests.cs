@@ -331,9 +331,10 @@ public class AppLayerSourceGuardTests
     {
         var source = ReadRepositoryFile("Praxis", "ViewModels", "MainViewModel.cs");
 
+        Assert.Contains("var currentThemeForLog = SelectedTheme;", source);
         Assert.Contains("errorLogger.Log(ex, nameof(SyncThemeFromExternalChangeAsync));", source);
-        Assert.Contains("BuildSafeWarningMessage(\"External theme sync dispatch failed\", ex)", source);
-        Assert.Contains("BuildSafeWarningMessage(\"External theme sync failed\", ex)", source);
+        Assert.Contains("BuildSafeWarningMessage($\"External theme sync dispatch failed for theme {latestTheme}\", ex)", source);
+        Assert.Contains("BuildSafeWarningMessage($\"External theme sync failed for theme {currentThemeForLog}\", ex)", source);
         Assert.Contains("BuildSafeWarningMessage(\"External reload failed\", ex)", source);
         Assert.Contains("TaskCreationOptions.RunContinuationsAsynchronously", source);
         Assert.Contains("private static string BuildSafeWarningMessage(string prefix, Exception ex)", source);
