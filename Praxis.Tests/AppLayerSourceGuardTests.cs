@@ -490,10 +490,10 @@ public class AppLayerSourceGuardTests
     public void MainPage_QuickLookShowFailures_AreWarningLogged()
     {
         var source = ReadRepositoryFile("Praxis", "MainPage.DockAndQuickLook.cs");
-        Assert.Contains("CrashFileLogger.WriteWarning(nameof(ShowQuickLookAfterDelayAsync), $\"Quick Look show failed: {safeMessage}\");", source);
+        Assert.Contains("CrashFileLogger.WriteWarning(nameof(ShowQuickLookAfterDelayAsync), $\"Quick Look show failed for item '{item.Id}': {safeMessage}\");", source);
         Assert.True(
             source.IndexOf("QuickLookPopup.CancelAnimations();", StringComparison.Ordinal)
-            < source.IndexOf("CrashFileLogger.WriteWarning(nameof(ShowQuickLookAfterDelayAsync), $\"Quick Look show failed: {safeMessage}\");", StringComparison.Ordinal));
+            < source.IndexOf("CrashFileLogger.WriteWarning(nameof(ShowQuickLookAfterDelayAsync), $\"Quick Look show failed for item '{item.Id}': {safeMessage}\");", StringComparison.Ordinal));
     }
 
     [Fact]

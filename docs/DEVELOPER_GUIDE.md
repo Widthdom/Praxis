@@ -275,7 +275,7 @@ sequenceDiagram
 - Dock horizontal scrollbar defaults to hidden and is shown only while the pointer is hovering the Dock region and horizontal overflow exists.
   - For macOS stability, Dock applies a bottom mask (`DockScrollBarMask`) while not hovered so the indicator stays visually hidden even when native indicator timing is inconsistent.
   - Hover-exit delay cancellation is limited to the active token; unexpected hide failures are warning-logged instead of faulting the delayed task
-  - Quick Look delayed-show failures are warning-logged so label/animation issues do not escape as unobserved background task faults
+  - Quick Look delayed-show failures are warning-logged with the hovered `item.Id`, so label/animation issues do not escape as unobserved background task faults and still identify which preview failed
   - Quick Look delayed-hide failures are warning-logged for the same reason, especially around popup animation/teardown timing
 - Middle click edit is implemented via [`Behaviors/MiddleClickBehavior.cs`](../Praxis/Behaviors/MiddleClickBehavior.cs) plus macOS fallbacks in [`MainPage.PointerAndSelection.cs`](../Praxis/MainPage.PointerAndSelection.cs) (pointer detection) and [`MainPage.MacCatalystBehavior.cs`](../Praxis/MainPage.MacCatalystBehavior.cs) (polling).
   - **Mac click-through quirk**: macOS delivers non-primary mouse clicks to whichever window is under the cursor regardless of focus. The polling timer uses `CGEventSource.GetButtonState` (global HID state), so it can fire for middle-clicks in other apps. `lastPointerOnRoot` is cleared to `null` in `OnMacApplicationDeactivating` (triggered by `OnResignActivation`) so stale cursor positions from a previous focus session cannot trigger the editor when the app is inactive. Additional guards: `IsMacApplicationActive()` (explicit volatile bool set by `OnResignActivation`/`OnActivated`), `IsActivationSuppressionActive()` (500 ms after re-activation), and a ViewModel-level `IsMacApplicationActive()` check in `OpenEditor`.
@@ -747,7 +747,7 @@ sequenceDiagram
   - macOS の `ModalCommandEntry` は候補ナビゲーションとアクティブ化時再フォーカスを無効化し、モーダル外の command 欄フォーカス挙動に干渉しない
 - Windows の command 入力欄では、ASCII 強制は `ModalCommandEntry` にだけ適用する。フォーカス時にネイティブ `InputScopeNameValue.AlphanumericHalfWidth` を適用し、`imm32` で IME の Open/Conversion 状態を英字入力寄りへ「即時 + 短遅延の 1 回再試行」で戻す。通常はフォーカス中のタイマー再強制や `TextChanging` での文字列書き換えを無効化して Undo/Redo 粒度への副作用を避けるが、モーダル `ModalCommandEntry` はフォーカス中の英字再強制を有効化して、フォーカス後の手動IME切替を抑止している。`InputScope` 設定が `ArgumentException (E_RUNTIME_SETVALUE)` で失敗した環境では、再設定を無効化してフォールバック動作を維持する。
   - `Command`/`Search` は、文字列が空でないときのみ欄内右端に丸形クリアボタン（`x`）を表示し、文字重なり防止のため右側テキスト余白を拡張する
-  - 配置領域/Dock のボタンをホバーすると、ミニマルな Quick Look オーバーレイで `Command` / `Tool` / `Arguments` / `Clip Word` / `Note` の概要を表示する
+  - 配置領域/Dock のボタンをホバーすると、ミニマルな Quick Look オーバーレイで `Command` / `Tool` / `Arguments` / `Clip Word` / `Note` の概要を表示する。遅延表示失敗は hover 対象の `item.Id` つき warning として残す
   - クリアボタン押下時は対象入力欄をクリアし、同じ入力欄へ再フォーカスしてキャレット表示を維持する
   - クリアボタン押下は `Command` / `Search` 別と直前テキスト長を `CrashFileLogger.WriteInfo` で残し、clear-button 起点のフリーズ/abort の直前操作を追いやすくする
   - macOS では、クリアボタン非表示切替中の responder 再入を避けるため、再フォーカスを次フレームへ遅延し、必要なら短い追試行を行う
