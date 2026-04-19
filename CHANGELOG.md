@@ -7,6 +7,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 ## [Unreleased]
 
 ### Fixed
+- `FileAppConfigService` now includes the exception type in skipped-config warning breadcrumbs, so invalid JSON, permission failures, and transient I/O can be distinguished without expanding the safe exception message
 - `Win.AppDomain.UnhandledException` warnings now include the runtime type name for non-`Exception` payloads before mirroring to `startup.log`, so COM or platform-originated throw objects leave a stronger startup breadcrumb
 - `Mac.AppDomain.UnhandledException` warnings now include the runtime type name for non-`Exception` payloads, so bridge-originated throw objects leave a more actionable breadcrumb than the safe payload text alone
 - Mac key-input reflection warnings now render fallback keys as symbolic names like `Tab`, `Escape`, `Return`, and arrow names, so cross-platform/plain-text crash-log readers do not lose that breadcrumb to control or private-use characters
@@ -43,6 +44,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - `MainPage.PlacementCanvas_SecondaryTapped` now includes the canvas point in secondary-tap create warning breadcrumbs, so failed create-editor flows can be correlated with placement hit-testing and coordinate conversion issues
 
 ### Tests
+- Expanded `FileAppConfigServiceTests` and `AppLayerSourceGuardTests` to lock skipped-config warning breadcrumbs to the exception type
 - Expanded `AppLayerSourceGuardTests` to lock Windows AppDomain non-`Exception` warning breadcrumbs to the runtime payload type
 - Expanded `AppLayerSourceGuardTests` to lock Mac AppDomain non-`Exception` warning breadcrumbs to the runtime payload type
 - Expanded `AppLayerSourceGuardTests` to lock Mac key-input reflection breadcrumbs to symbolic fallback key names instead of raw control/private-use literals

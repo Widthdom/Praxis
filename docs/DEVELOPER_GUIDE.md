@@ -154,6 +154,7 @@ Test-specific operation and coverage inventory are documented in [`docs/TESTING_
   - On startup, prepares target directories and migrates DB only from safe legacy locations (skips `Documents` paths on macOS to avoid permission prompts); unreadable or copy-failed legacy DB candidates are warning-logged and skipped so later candidates can still be tried
 - [`Services/FileAppConfigService.cs`](../Praxis/Services/FileAppConfigService.cs)
   - Loads optional `praxis.config.json` theme override from app base directory first, then app-data directory
+  - Skipped-config warnings include the exception type as well as the safe message, so permission failures, malformed JSON, and transient I/O remain distinguishable in crash breadcrumbs
   - Canonicalizes quoted absolute candidate roots with `Path.GetFullPath(...)` before deduplicating them, so equivalent absolute directories with `.` / `..` segments do not probe the same `praxis.config.json` twice
   - If an earlier config file is unreadable, unauthorized, malformed JSON, missing `theme`, or contains an invalid theme value, it warning-logs the skipped candidate and falls back to the next candidate instead of forcing `System`
   - Invalid-theme warnings include the normalized raw `theme` value so a broken `praxis.config.json` leaves evidence of what was actually read without letting multiline/blank payloads break the breadcrumb

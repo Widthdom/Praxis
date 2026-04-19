@@ -71,8 +71,9 @@ public sealed class FileAppConfigService : IAppConfigService
     private static void WriteSkippedConfigWarning(string path, Exception ex)
     {
         var normalizedPath = NormalizePathForLog(path);
+        var exceptionType = ex.GetType().Name;
         var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);
-        CrashFileLogger.WriteWarning(nameof(FileAppConfigService), $"Skipping config '{normalizedPath}': {safeMessage}");
+        CrashFileLogger.WriteWarning(nameof(FileAppConfigService), $"Skipping config '{normalizedPath}' after {exceptionType}: {safeMessage}");
     }
 
     private static string NormalizePathForLog(string path)

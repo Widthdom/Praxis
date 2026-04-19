@@ -161,7 +161,7 @@ public class FileAppConfigServiceTests
         InvokeWriteSkippedConfigWarning(path, new ThrowingUnauthorizedAccessException());
 
         var content = File.ReadAllText(CrashFileLogger.LogFilePath);
-        Assert.Contains($"Skipping config '{path}': (failed to read exception message: System.InvalidOperationException: message getter failure)", content);
+        Assert.Contains($"Skipping config '{path}' after ThrowingUnauthorizedAccessException: (failed to read exception message: System.InvalidOperationException: message getter failure)", content);
     }
 
     [Fact]
@@ -175,7 +175,7 @@ public class FileAppConfigServiceTests
         InvokeWriteSkippedConfigWarning(path, new MultilineUnauthorizedAccessException($"{markerA}\r\n{markerB}"));
 
         var content = File.ReadAllText(CrashFileLogger.LogFilePath);
-        Assert.Contains($"Skipping config '{path}': {markerA} {markerB}", content);
+        Assert.Contains($"Skipping config '{path}' after MultilineUnauthorizedAccessException: {markerA} {markerB}", content);
     }
 
     [Fact]
@@ -187,7 +187,7 @@ public class FileAppConfigServiceTests
         InvokeWriteSkippedConfigWarning(path, new WhitespaceUnauthorizedAccessException());
 
         var content = File.ReadAllText(CrashFileLogger.LogFilePath);
-        Assert.Contains($"Skipping config '{path}': (empty)", content);
+        Assert.Contains($"Skipping config '{path}' after WhitespaceUnauthorizedAccessException: (empty)", content);
     }
 
     [Fact]
