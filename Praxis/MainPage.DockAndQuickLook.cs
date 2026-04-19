@@ -237,7 +237,7 @@ public partial class MainPage
         catch (Exception ex)
         {
             var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);
-            CrashFileLogger.WriteWarning(nameof(ShowQuickLookAfterDelayAsync), $"Quick Look show failed for item '{item.Id}': {safeMessage}");
+            CrashFileLogger.WriteWarning(nameof(ShowQuickLookAfterDelayAsync), $"Quick Look show failed for item '{item.Id}' while popupVisible={QuickLookPopup.IsVisible}: {safeMessage}");
             return;
         }
     }
