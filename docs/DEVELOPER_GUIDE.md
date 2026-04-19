@@ -295,6 +295,7 @@ sequenceDiagram
   - Windows: `Ctrl+Click`
   - macOS (Mac Catalyst): `Command+Click`
   - Implemented via reflection-based modifier detection (`IsSelectionModifierPressed`) to avoid Windows regressions.
+- Button-tap execution warnings now include both `ButtonText` and `item.Id`, so failed launches can be mapped back to a concrete launcher record even if labels are duplicated.
 - Theme switching buttons are intentionally removed from the UI.
 - Theme mode is persisted via repository settings and restored on startup.
 - Global shortcuts in [`MainPage.ShortcutsAndConflict.cs`](../Praxis/MainPage.ShortcutsAndConflict.cs):
