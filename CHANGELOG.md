@@ -7,6 +7,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 ## [Unreleased]
 
 ### Fixed
+- `Program.TryRelaunchViaOpen` now includes the normalized relay executable path in LaunchServices warning breadcrumbs, so Mac startup relay failures distinguish bundle-path problems from `open` relay failures
 - `MainPage.DisableWindowsSystemFocusVisual` now includes the native control type in `UseSystemFocusVisuals` warning breadcrumbs, so Windows reflection failures identify which control rejected the write
 - Mac key-input reflection warnings now include the fallback literal for `CommandEntryHandler`, `MacEntryHandler`, and `MacEditorHandler`, making `UIKeyCommand` resolution failures easier to correlate with the control key that would have been used
 - `SecondaryFailureLogger` now normalizes secondary fallback sink roots to absolute directories before combining the `Praxis/secondary-failures.log` path, so quoted absolute overrides still work while blank or relative roots are ignored instead of creating accidental relative diagnostics paths
@@ -39,6 +40,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - `MainPage.PlacementCanvas_SecondaryTapped` now includes the canvas point in secondary-tap create warning breadcrumbs, so failed create-editor flows can be correlated with placement hit-testing and coordinate conversion issues
 
 ### Tests
+- Expanded `AppLayerSourceGuardTests` to lock LaunchServices relay warning breadcrumbs to the normalized relay executable path
 - Expanded `AppLayerSourceGuardTests` to lock `DisableWindowsSystemFocusVisual` warning breadcrumbs to the native control type
 - Expanded `AppLayerSourceGuardTests` to lock Mac key-input reflection warnings to the fallback literal
 - Expanded `SecondaryFailureLoggerTests` to cover quoted absolute fallback roots and rejection of relative fallback roots before the startup-diagnostics file path is built

@@ -45,6 +45,7 @@ public class Program
     private static bool TryRelaunchViaOpen()
     {
         var bundlePath = NSBundle.MainBundle.BundlePath;
+        const string relayExecutable = "/usr/bin/open";
         if (string.IsNullOrWhiteSpace(bundlePath) ||
             !bundlePath.EndsWith(".app", StringComparison.OrdinalIgnoreCase))
         {
@@ -54,7 +55,8 @@ public class Program
         try
         {
             var normalizedBundlePath = NormalizePathForLog(bundlePath);
-            var startInfo = new ProcessStartInfo("/usr/bin/open")
+            var normalizedRelayExecutable = NormalizePathForLog(relayExecutable);
+            var startInfo = new ProcessStartInfo(relayExecutable)
             {
                 UseShellExecute = false,
             };
@@ -64,7 +66,7 @@ public class Program
             var process = Process.Start(startInfo);
             if (process is null)
             {
-                CrashFileLogger.WriteWarning(nameof(Program), $"LaunchServices relay returned no process for bundle '{normalizedBundlePath}'.");
+                CrashFileLogger.WriteWarning(nameof(Program), $"LaunchServices relay returned no process for bundle '{normalizedBundlePath}' via '{normalizedRelayExecutable}'.");
                 return false;
             }
 
@@ -73,8 +75,9 @@ public class Program
         catch (Exception ex)
         {
             var normalizedBundlePath = NormalizePathForLog(bundlePath);
+            var normalizedRelayExecutable = NormalizePathForLog(relayExecutable);
             var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);
-            CrashFileLogger.WriteWarning(nameof(Program), $"LaunchServices relay failed for bundle '{normalizedBundlePath}': {safeMessage}");
+            CrashFileLogger.WriteWarning(nameof(Program), $"LaunchServices relay failed for bundle '{normalizedBundlePath}' via '{normalizedRelayExecutable}': {safeMessage}");
             return false;
         }
     }

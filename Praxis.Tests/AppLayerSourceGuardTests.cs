@@ -429,11 +429,12 @@ public class AppLayerSourceGuardTests
 
         Assert.Contains("private static string NormalizePathForLog(string path)", source);
         Assert.Equal(2, CountOccurrences(source, "var normalizedBundlePath = NormalizePathForLog(bundlePath);"));
+        Assert.Equal(2, CountOccurrences(source, "var normalizedRelayExecutable = NormalizePathForLog(relayExecutable);"));
         Assert.Contains("var process = Process.Start(startInfo);", source);
         Assert.Contains("if (process is null)", source);
         Assert.Contains("var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);", source);
-        Assert.Contains("CrashFileLogger.WriteWarning(nameof(Program), $\"LaunchServices relay returned no process for bundle '{normalizedBundlePath}'.\");", source);
-        Assert.Contains("CrashFileLogger.WriteWarning(nameof(Program), $\"LaunchServices relay failed for bundle '{normalizedBundlePath}': {safeMessage}\");", source);
+        Assert.Contains("CrashFileLogger.WriteWarning(nameof(Program), $\"LaunchServices relay returned no process for bundle '{normalizedBundlePath}' via '{normalizedRelayExecutable}'.\");", source);
+        Assert.Contains("CrashFileLogger.WriteWarning(nameof(Program), $\"LaunchServices relay failed for bundle '{normalizedBundlePath}' via '{normalizedRelayExecutable}': {safeMessage}\");", source);
     }
 
     [Fact]
