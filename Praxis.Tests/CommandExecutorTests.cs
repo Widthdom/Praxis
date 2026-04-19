@@ -225,9 +225,9 @@ public class CommandExecutorTests
         var markerA = $"tool-a-{Guid.NewGuid():N}";
         var markerB = $"tool-b-{Guid.NewGuid():N}";
 
-        var result = InvokeBuildNoProcessHandleMessage(prefix, $"{markerA}\r\n{markerB}");
+        var result = InvokeBuildNoProcessHandleMessage(prefix, $"{markerA}\r\n{markerB}", useShellExecute: true);
 
-        Assert.Equal($"{prefix} No process handle was returned for '{markerA} {markerB}'.", result);
+        Assert.Equal($"{prefix} No process handle was returned for '{markerA} {markerB}' while useShellExecute=True.", result);
     }
 
     [Fact]
@@ -235,10 +235,10 @@ public class CommandExecutorTests
     {
         var prefix = $"CommandExecutor failure {Guid.NewGuid():N}";
 
-        var result = InvokeBuildNoProcessHandleMessage(prefix, " \r\n\t ");
+        var result = InvokeBuildNoProcessHandleMessage(prefix, " \r\n\t ", useShellExecute: false);
 
         Assert.Equal(
-            $"{prefix} No process handle was returned for '{CrashFileLogger.MissingMessagePayloadPlaceholder}'.",
+            $"{prefix} No process handle was returned for '{CrashFileLogger.MissingMessagePayloadPlaceholder}' while useShellExecute=False.",
             result);
     }
 
@@ -329,12 +329,17 @@ public class CommandExecutorTests
         return Assert.IsType<string>(result);
     }
 
-    private static string InvokeBuildNoProcessHandleMessage(string prefix, string fileName)
+    private static string InvokeBuildNoProcessHandleMessage(string prefix, string fileName, bool useShellExecute)
     {
-        var method = typeof(CommandExecutor).GetMethod("BuildNoProcessHandleMessage", BindingFlags.NonPublic | BindingFlags.Static);
+        var method = typeof(CommandExecutor).GetMethod(
+            "BuildNoProcessHandleMessage",
+            BindingFlags.NonPublic | BindingFlags.Static,
+            binder: null,
+            [typeof(string), typeof(string), typeof(bool)],
+            modifiers: null);
         Assert.NotNull(method);
 
-        var result = method.Invoke(null, [prefix, fileName]);
+        var result = method.Invoke(null, [prefix, fileName, useShellExecute]);
         return Assert.IsType<string>(result);
     }
 

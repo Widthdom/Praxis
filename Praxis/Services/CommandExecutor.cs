@@ -159,7 +159,7 @@ public sealed class CommandExecutor : ICommandExecutor
             var process = Process.Start(startInfo);
             if (process is null)
             {
-                var failureMessage = BuildNoProcessHandleMessage(failurePrefix, startInfo.FileName);
+                var failureMessage = BuildNoProcessHandleMessage(failurePrefix, startInfo.FileName, startInfo.UseShellExecute);
                 CrashFileLogger.WriteWarning(nameof(CommandExecutor), failureMessage);
                 return (false, failureMessage);
             }
@@ -180,10 +180,10 @@ public sealed class CommandExecutor : ICommandExecutor
         return $"{prefix} {safeMessage}";
     }
 
-    private static string BuildNoProcessHandleMessage(string failurePrefix, string fileName)
+    private static string BuildNoProcessHandleMessage(string failurePrefix, string fileName, bool useShellExecute)
     {
         var normalizedFileName = NormalizeTargetForLog(fileName);
-        return $"{failurePrefix} No process handle was returned for '{normalizedFileName}'.";
+        return $"{failurePrefix} No process handle was returned for '{normalizedFileName}' while useShellExecute={useShellExecute}.";
     }
 
     private static string NormalizeTargetForLog(string value)

@@ -207,12 +207,12 @@ public class AppLayerSourceGuardTests
         Assert.Contains("var resultMessage = BuildFailureMessage(\"Launch target resolution failed:\", ex);", source);
         Assert.Contains("var failureMessage = BuildFailureMessage(failurePrefix, ex);", source);
         Assert.Contains("return Task.FromResult(StartProcess(psi, \"Executed.\", $\"Process launch failed for tool '{normalizedToolForLog}'.\"));", source);
-        Assert.Contains("var failureMessage = BuildNoProcessHandleMessage(failurePrefix, startInfo.FileName);", source);
-        Assert.Contains("private static string BuildNoProcessHandleMessage(string failurePrefix, string fileName)", source);
+        Assert.Contains("var failureMessage = BuildNoProcessHandleMessage(failurePrefix, startInfo.FileName, startInfo.UseShellExecute);", source);
+        Assert.Contains("private static string BuildNoProcessHandleMessage(string failurePrefix, string fileName, bool useShellExecute)", source);
         Assert.Contains("var normalizedFileName = NormalizeTargetForLog(fileName);", source);
         Assert.Contains("CrashFileLogger.WriteWarning(nameof(CommandExecutor), warningMessage);", source);
         Assert.Contains("CrashFileLogger.WriteWarning(nameof(CommandExecutor), failureMessage);", source);
-        Assert.Contains("return $\"{failurePrefix} No process handle was returned for '{normalizedFileName}'.\";", source);
+        Assert.Contains("return $\"{failurePrefix} No process handle was returned for '{normalizedFileName}' while useShellExecute={useShellExecute}.\";", source);
     }
 
     [Fact]

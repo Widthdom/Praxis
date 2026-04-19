@@ -115,7 +115,7 @@ Test-specific operation and coverage inventory are documented in [`docs/TESTING_
   - `App` stores a static reference to `IErrorLogger` set from the constructor so static `Raise*` event helpers can log exceptions
 - [`Services/CommandExecutor.cs`](../Praxis/Services/CommandExecutor.cs)
   - Launches tool + arguments with shell execution
-  - Validates process-start results (`Process.Start` null case) and returns contextual failure messages while warning-breadcrumbing start failures to `crash.log`, including the normalized target filename when no process handle comes back
+  - Validates process-start results (`Process.Start` null case) and returns contextual failure messages while warning-breadcrumbing start failures to `crash.log`, including the normalized target filename and `UseShellExecute` mode when no process handle comes back
   - Missing-path warnings also record whether the resolved target was rooted, so relative-path misses can be separated from broken absolute targets in cross-platform diagnostics
   - When fallback path resolution succeeds but the target does not exist, keeps the user-facing `Path not found: ...` result while also writing the normalized missing target to `crash.log`
   - Treats normalized empty tool values (for example `""` or `'   '`) as “no tool”, so execution falls back to URL/path handling instead of attempting to launch an empty filename
