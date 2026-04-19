@@ -280,7 +280,8 @@ public class AppLayerSourceGuardTests
         Assert.Contains("var shouldSelectAll = modalPrimaryFieldSelectAllPending;", pointerSource);
         Assert.Contains("CrashFileLogger.WriteWarning(nameof(FocusModalPrimaryEditorField), $\"Failed to focus modal ButtonText entry while shouldSelectAll={shouldSelectAll}: {safeMessage}\");", pointerSource);
         Assert.Contains("var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);", layoutSource);
-        Assert.Contains("CrashFileLogger.WriteWarning(nameof(SetTabStop), $\"Failed to set IsTabStop={isTabStop}: {safeMessage}\");", layoutSource);
+        Assert.Contains("var targetType = platformView.GetType().Name;", layoutSource);
+        Assert.Contains("CrashFileLogger.WriteWarning(nameof(SetTabStop), $\"Failed to set IsTabStop={isTabStop} on {targetType}: {safeMessage}\");", layoutSource);
     }
 
     [Fact]
@@ -549,7 +550,8 @@ public class AppLayerSourceGuardTests
         Assert.Contains("var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);", focusSource);
         Assert.Contains("CrashFileLogger.WriteWarning(nameof(DisableWindowsSystemFocusVisual), $\"Failed to disable UseSystemFocusVisuals: {safeMessage}\");", focusSource);
         Assert.Contains("var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);", layoutSource);
-        Assert.Contains("CrashFileLogger.WriteWarning(nameof(SetTabStop), $\"Failed to set IsTabStop={isTabStop}: {safeMessage}\");", layoutSource);
+        Assert.Contains("var targetType = platformView.GetType().Name;", layoutSource);
+        Assert.Contains("CrashFileLogger.WriteWarning(nameof(SetTabStop), $\"Failed to set IsTabStop={isTabStop} on {targetType}: {safeMessage}\");", layoutSource);
     }
 
     private static string ReadRepositoryFile(params string[] segments)

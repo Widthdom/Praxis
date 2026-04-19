@@ -286,6 +286,7 @@ sequenceDiagram
   - Deferred secondary-button execution treats token cancellation as expected, but warning-logs unexpected command-path exceptions with current context-menu-open / command-bound state instead of letting the UI callback fail silently
 - Tab focus policy is applied in [`MainPage.FocusAndContext.cs`](../Praxis/MainPage.FocusAndContext.cs) (`ApplyTabPolicy`) by toggling native `IsTabStop`.
 - Modal `ButtonText` focus fallback warnings now include the current `shouldSelectAll` state, so create-flow focus failures can be separated from normal re-entry focus retries.
+- `SetTabStop` fallback warnings now include the native target control type, so `IsTabStop` reflection failures point at the specific Windows view that rejected the write.
 - Selection rectangle is rendered as `SelectionRect` in [`MainPage.xaml`](../Praxis/MainPage.xaml) with gray stroke/fill.
 - Selection toggle modifier handling is centralized in [`MainPage.PointerAndSelection.cs`](../Praxis/MainPage.PointerAndSelection.cs):
   - Windows: `Ctrl+Click`
