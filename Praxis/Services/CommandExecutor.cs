@@ -139,7 +139,8 @@ public sealed class CommandExecutor : ICommandExecutor
                     $"Failed to open folder '{normalizedExpandedForLog}'."));
             }
 
-            CrashFileLogger.WriteWarning(nameof(CommandExecutor), $"Path not found for '{normalizedExpandedForLog}'.");
+            var pathRooted = Path.IsPathRooted(expanded);
+            CrashFileLogger.WriteWarning(nameof(CommandExecutor), $"Path not found for '{normalizedExpandedForLog}' while rooted={pathRooted}.");
             return Task.FromResult((false, $"Path not found: {expanded}"));
         }
         catch (Exception ex)

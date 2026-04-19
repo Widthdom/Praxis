@@ -254,7 +254,7 @@ public class CommandExecutorTests
         Assert.Equal($"Path not found: {missingPath}", result.Message);
 
         var content = File.ReadAllText(CrashFileLogger.LogFilePath);
-        Assert.Contains($"Path not found for '{missingPath}'.", content);
+        Assert.Contains($"Path not found for '{missingPath}' while rooted={Path.IsPathRooted(missingPath)}.", content);
     }
 
     private static string InvokeExpandHomePath(string value)

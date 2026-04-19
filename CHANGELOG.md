@@ -7,6 +7,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 ## [Unreleased]
 
 ### Fixed
+- `CommandExecutor` now includes whether a missing resolved path was rooted in the warning breadcrumb, so relative-path misses can be separated from broken absolute targets without reproducing the exact launch context
 - `FileAppConfigService` now includes the exception type in skipped-config warning breadcrumbs, so invalid JSON, permission failures, and transient I/O can be distinguished without expanding the safe exception message
 - `Win.AppDomain.UnhandledException` warnings now include the runtime type name for non-`Exception` payloads before mirroring to `startup.log`, so COM or platform-originated throw objects leave a stronger startup breadcrumb
 - `Mac.AppDomain.UnhandledException` warnings now include the runtime type name for non-`Exception` payloads, so bridge-originated throw objects leave a more actionable breadcrumb than the safe payload text alone
@@ -44,6 +45,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - `MainPage.PlacementCanvas_SecondaryTapped` now includes the canvas point in secondary-tap create warning breadcrumbs, so failed create-editor flows can be correlated with placement hit-testing and coordinate conversion issues
 
 ### Tests
+- Expanded `CommandExecutorTests` and `AppLayerSourceGuardTests` to lock missing-path warning breadcrumbs to the rooted flag
 - Expanded `FileAppConfigServiceTests` and `AppLayerSourceGuardTests` to lock skipped-config warning breadcrumbs to the exception type
 - Expanded `AppLayerSourceGuardTests` to lock Windows AppDomain non-`Exception` warning breadcrumbs to the runtime payload type
 - Expanded `AppLayerSourceGuardTests` to lock Mac AppDomain non-`Exception` warning breadcrumbs to the runtime payload type
