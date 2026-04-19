@@ -446,19 +446,30 @@ public class AppLayerSourceGuardTests
 
         Assert.Contains("return TryResolveKeyInput(inputName, fallback) ?? fallback;", macEntrySource);
         Assert.Contains("var normalizedInputName = CrashFileLogger.NormalizeMessagePayload(inputName);", macEntrySource);
-        Assert.Contains("var normalizedFallback = CrashFileLogger.NormalizeMessagePayload(fallbackForLog);", macEntrySource);
+        Assert.Contains("var normalizedFallback = DescribeKeyInputFallbackForLog(fallbackForLog);", macEntrySource);
         Assert.Contains("var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);", macEntrySource);
         Assert.Contains("CrashFileLogger.WriteWarning(nameof(MacEntryHandler), $\"Failed to resolve UIKeyCommand input '{normalizedInputName}' with fallback '{normalizedFallback}': {safeMessage}\");", macEntrySource);
+        Assert.Contains("\"\\t\" => \"Tab\",", macEntrySource);
+        Assert.Contains("\"\\u001B\" => \"Escape\",", macEntrySource);
+        Assert.Contains("\"\\r\" => \"Return\",", macEntrySource);
+        Assert.Contains("\"\\uF700\" => \"UpArrow\",", macEntrySource);
+        Assert.Contains("\"\\uF701\" => \"DownArrow\",", macEntrySource);
+        Assert.Contains("\"\\uF702\" => \"LeftArrow\",", macEntrySource);
+        Assert.Contains("\"\\uF703\" => \"RightArrow\",", macEntrySource);
 
         Assert.Contains("return TryResolveKeyInput(inputName, fallback) ?? fallback;", macEditorSource);
         Assert.Contains("var normalizedInputName = CrashFileLogger.NormalizeMessagePayload(inputName);", macEditorSource);
-        Assert.Contains("var normalizedFallback = CrashFileLogger.NormalizeMessagePayload(fallbackForLog);", macEditorSource);
+        Assert.Contains("var normalizedFallback = DescribeKeyInputFallbackForLog(fallbackForLog);", macEditorSource);
         Assert.Contains("var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);", macEditorSource);
         Assert.Contains("CrashFileLogger.WriteWarning(nameof(MacEditorHandler), $\"Failed to resolve UIKeyCommand input '{normalizedInputName}' with fallback '{normalizedFallback}': {safeMessage}\");", macEditorSource);
+        Assert.Contains("\"\\t\" => \"Tab\",", macEditorSource);
+        Assert.Contains("\"\\u001B\" => \"Escape\",", macEditorSource);
+        Assert.Contains("\"\\uF702\" => \"LeftArrow\",", macEditorSource);
+        Assert.Contains("\"\\uF703\" => \"RightArrow\",", macEditorSource);
 
         Assert.Contains("return TryResolveKeyInput(inputName, fallback) ?? fallback;", commandEntrySource);
         Assert.Contains("var normalizedInputName = CrashFileLogger.NormalizeMessagePayload(inputName);", commandEntrySource);
-        Assert.Contains("var normalizedFallback = CrashFileLogger.NormalizeMessagePayload(fallbackForLog);", commandEntrySource);
+        Assert.Contains("var normalizedFallback = DescribeKeyInputFallbackForLog(fallbackForLog);", commandEntrySource);
         Assert.Contains("var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);", commandEntrySource);
         Assert.Contains("CrashFileLogger.WriteWarning(nameof(CommandEntryHandler), $\"Failed to resolve UIKeyCommand input '{normalizedInputName}' with fallback '{normalizedFallback}': {safeMessage}\");", commandEntrySource);
     }

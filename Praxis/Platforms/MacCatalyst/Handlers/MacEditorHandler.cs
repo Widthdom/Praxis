@@ -349,12 +349,22 @@ public class MacEditorHandler : EditorHandler
         catch (Exception ex)
         {
             var normalizedInputName = CrashFileLogger.NormalizeMessagePayload(inputName);
-            var normalizedFallback = CrashFileLogger.NormalizeMessagePayload(fallbackForLog);
+            var normalizedFallback = DescribeKeyInputFallbackForLog(fallbackForLog);
             var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);
             CrashFileLogger.WriteWarning(nameof(MacEditorHandler), $"Failed to resolve UIKeyCommand input '{normalizedInputName}' with fallback '{normalizedFallback}': {safeMessage}");
         }
 
         return null;
     }
+
+    private static string DescribeKeyInputFallbackForLog(string? fallback)
+        => fallback switch
+        {
+            "\t" => "Tab",
+            "\u001B" => "Escape",
+            "\uF702" => "LeftArrow",
+            "\uF703" => "RightArrow",
+            _ => CrashFileLogger.NormalizeMessagePayload(fallback),
+        };
 }
 #endif
