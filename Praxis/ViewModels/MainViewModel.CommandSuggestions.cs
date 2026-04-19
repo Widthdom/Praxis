@@ -200,15 +200,16 @@ public partial class MainViewModel
         }
         catch (Exception ex)
         {
+            var commandInputLength = CommandInput?.Length ?? 0;
             errorLogger.Log(ex, nameof(DebouncedRefreshCommandSuggestionsAsync));
-            errorLogger.LogWarning(BuildSafeWarningMessage("Debounced command suggestion refresh failed", ex), nameof(DebouncedRefreshCommandSuggestionsAsync));
+            errorLogger.LogWarning(BuildSafeWarningMessage($"Debounced command suggestion refresh failed for input length {commandInputLength}", ex), nameof(DebouncedRefreshCommandSuggestionsAsync));
             try
             {
                 MainThread.BeginInvokeOnMainThread(CloseCommandSuggestions);
             }
             catch (Exception dispatchEx)
             {
-                errorLogger.LogWarning(BuildSafeWarningMessage("Command suggestion close dispatch failed", dispatchEx), nameof(DebouncedRefreshCommandSuggestionsAsync));
+                errorLogger.LogWarning(BuildSafeWarningMessage($"Command suggestion close dispatch failed for input length {commandInputLength}", dispatchEx), nameof(DebouncedRefreshCommandSuggestionsAsync));
             }
         }
     }
