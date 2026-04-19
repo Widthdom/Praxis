@@ -219,6 +219,30 @@ public class CommandExecutorTests
     }
 
     [Fact]
+    public void BuildNoProcessHandleMessage_NormalizesFileNameForBreadcrumb()
+    {
+        var prefix = $"CommandExecutor failure {Guid.NewGuid():N}";
+        var markerA = $"tool-a-{Guid.NewGuid():N}";
+        var markerB = $"tool-b-{Guid.NewGuid():N}";
+
+        var result = InvokeBuildNoProcessHandleMessage(prefix, $"{markerA}\r\n{markerB}");
+
+        Assert.Equal($"{prefix} No process handle was returned for '{markerA} {markerB}'.", result);
+    }
+
+    [Fact]
+    public void BuildNoProcessHandleMessage_UsesPlaceholderForWhitespaceFileName()
+    {
+        var prefix = $"CommandExecutor failure {Guid.NewGuid():N}";
+
+        var result = InvokeBuildNoProcessHandleMessage(prefix, " \r\n\t ");
+
+        Assert.Equal(
+            $"{prefix} No process handle was returned for '{CrashFileLogger.MissingMessagePayloadPlaceholder}'.",
+            result);
+    }
+
+    [Fact]
     public async Task ExecuteAsync_WhenResolvedPathDoesNotExist_WarningLogsMissingTarget()
     {
         var missingPath = Path.Combine(Path.GetTempPath(), $"praxis-command-missing-{Guid.NewGuid():N}");
@@ -302,6 +326,15 @@ public class CommandExecutorTests
         Assert.NotNull(method);
 
         var result = method.Invoke(null, [value]);
+        return Assert.IsType<string>(result);
+    }
+
+    private static string InvokeBuildNoProcessHandleMessage(string prefix, string fileName)
+    {
+        var method = typeof(CommandExecutor).GetMethod("BuildNoProcessHandleMessage", BindingFlags.NonPublic | BindingFlags.Static);
+        Assert.NotNull(method);
+
+        var result = method.Invoke(null, [prefix, fileName]);
         return Assert.IsType<string>(result);
     }
 

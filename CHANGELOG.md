@@ -24,6 +24,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - `MainViewModel.CommandSuggestions` now includes input length in refresh-dispatch warning breadcrumbs too, so all dispatch-side suggestion warnings use the same lightweight context pattern
 - `MainViewModel.CommandSuggestions` now includes input length in command-lookup fallback warnings, so repository lookup failures keep the same lightweight context pattern as other suggestion warnings
 - `MainViewModel.CommandSuggestions` now includes input length in in-thread refresh warnings too, so the whole suggestion-refresh path uses one lightweight warning pattern
+- `CommandExecutor` now includes the normalized target filename in the `Process.Start(...) == null` warning/result breadcrumb, so null-handle launch failures identify which tool or fallback target produced no process handle
 
 ### Tests
 - Expanded `SecondaryFailureLoggerTests` to cover quoted absolute fallback roots and rejection of relative fallback roots before the startup-diagnostics file path is built
@@ -34,6 +35,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - Expanded `AppLayerSourceGuardTests` to lock `App.xaml.cs` `Window.HandlerChanged` warnings to the root page type
 - Expanded `AppLayerSourceGuardTests` to lock Quick Look delayed-show warnings to the hovered `item.Id`
 - Expanded `CommandExecutorTests` and `AppLayerSourceGuardTests` to cover missing-path warning breadcrumbs in the empty-tool fallback path
+- Expanded `CommandExecutorTests` and `AppLayerSourceGuardTests` to cover the normalized filename breadcrumb used when `Process.Start(...)` returns `null`
 - Expanded `AppLayerSourceGuardTests` to lock command-suggestion debounce/close-dispatch warnings to the current input length
 - Expanded `AppLayerSourceGuardTests` to lock Quick Look delayed-hide warnings to the pending `item.Id`
 - Expanded `AppLayerSourceGuardTests` to lock Dock hover-exit warnings to the current Dock hover flag
