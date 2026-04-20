@@ -47,6 +47,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - `MainPage.ShowQuickLookAfterDelayAsync` now includes current popup visibility in Quick Look show warning breadcrumbs, so delayed preview failures show whether the popup had already become visible
 - `MainPage.Draggable_Tapped` now includes `item.Id` in button-tap execution warning breadcrumbs, so failed launch commands can be mapped back to a concrete launcher record even when labels are duplicated
 - `MainPage.PlacementCanvas_SecondaryTapped` now includes the canvas point in secondary-tap create warning breadcrumbs, so failed create-editor flows can be correlated with placement hit-testing and coordinate conversion issues
+- `MainPage.FocusModalPrimaryEditorField` now includes current modal visibility in `ButtonText` focus warning breadcrumbs, so modal-open races can be separated from hidden-modal retries
 
 ### Tests
 - Expanded `DbErrorLoggerTests` and `AppLayerSourceGuardTests` to lock unexpected flush/drain/purge warning breadcrumbs to the exception type
@@ -80,6 +81,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - Expanded `AppLayerSourceGuardTests` to lock Quick Look show warning breadcrumbs to current popup visibility
 - Expanded `AppLayerSourceGuardTests` to lock button-tap execution warning breadcrumbs to `item.Id`
 - Expanded `AppLayerSourceGuardTests` to lock secondary-tap create warning breadcrumbs to the canvas point
+- Expanded `AppLayerSourceGuardTests` to lock modal `ButtonText` focus warning breadcrumbs to current modal visibility
 - Expanded `AppLayerSourceGuardTests` to lock command-suggestion debounce/close-dispatch warnings to the current input length
 - Expanded `AppLayerSourceGuardTests` to lock Quick Look delayed-hide warnings to the pending `item.Id`
 - Expanded `AppLayerSourceGuardTests` to lock Dock hover-exit warnings to the current Dock hover flag
