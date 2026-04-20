@@ -131,7 +131,7 @@ Test-specific operation and coverage inventory are documented in [`docs/TESTING_
   - When `tool` is a Windows shell-like executable (`cmd.exe`, `powershell`, `pwsh`, `wt`), overrides `WorkingDirectory` to the user profile so shells do not inherit the Praxis process directory; executable-name matching is case-insensitive even when the tool path comes from `%ComSpec%` / other expanded environment variables
 - [`Platforms/Windows/Handlers/CommandEntryHandler.cs`](../Praxis/Platforms/Windows/Handlers/CommandEntryHandler.cs)
   - Applies `InputScopeNameValue.AlphanumericHalfWidth` only for command entries that opt into ASCII enforcement
-  - If WinUI rejects the `InputScope` write, warning breadcrumbs now include the current `EnforceAsciiInput` flag before falling back to the `imm32`-based IME path
+  - If WinUI rejects the `InputScope` write, warning breadcrumbs now include both the current `EnforceAsciiInput` flag and native `TextBox` type before falling back to the `imm32`-based IME path
 - [`Services/MauiClipboardService.cs`](../Praxis/Services/MauiClipboardService.cs)
   - Wraps MAUI clipboard reads/writes and now honors `CancellationToken` for both operations, including cancellation while awaiting the underlying MAUI task
 - [`Services/MauiThemeService.cs`](../Praxis/Services/MauiThemeService.cs)

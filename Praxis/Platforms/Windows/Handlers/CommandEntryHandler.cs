@@ -63,14 +63,16 @@ public class CommandEntryHandler : EntryHandler
             inputScopeUnsupported = true;
             var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);
             var enforceAsciiInput = (VirtualView as CommandEntry)?.EnforceAsciiInput ?? false;
-            CrashFileLogger.WriteWarning(nameof(CommandEntryHandler), $"InputScope assignment disabled after compatibility failure while enforceAsciiInput={enforceAsciiInput}: {safeMessage}");
+            var textBoxType = textBox.GetType().Name;
+            CrashFileLogger.WriteWarning(nameof(CommandEntryHandler), $"InputScope assignment disabled after compatibility failure while enforceAsciiInput={enforceAsciiInput} textBoxType={textBoxType}: {safeMessage}");
             return false;
         }
         catch (Exception ex)
         {
             var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);
             var enforceAsciiInput = (VirtualView as CommandEntry)?.EnforceAsciiInput ?? false;
-            CrashFileLogger.WriteWarning(nameof(CommandEntryHandler), $"InputScope assignment failed unexpectedly while enforceAsciiInput={enforceAsciiInput}: {safeMessage}");
+            var textBoxType = textBox.GetType().Name;
+            CrashFileLogger.WriteWarning(nameof(CommandEntryHandler), $"InputScope assignment failed unexpectedly while enforceAsciiInput={enforceAsciiInput} textBoxType={textBoxType}: {safeMessage}");
             return false;
         }
     }

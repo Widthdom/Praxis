@@ -38,7 +38,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - `MainViewModel.CommandSuggestions` now includes input length in in-thread refresh warnings too, so the whole suggestion-refresh path uses one lightweight warning pattern
 - `CommandExecutor` now includes the normalized target filename in the `Process.Start(...) == null` warning/result breadcrumb, so null-handle launch failures identify which tool or fallback target produced no process handle
 - `FileStateSyncNotifier` now includes the normalized sync-file path in malformed-payload warning breadcrumbs too, so broken `buttons.sync` contents still identify which watched file produced the bad payload
-- `Windows CommandEntryHandler` now includes the current `EnforceAsciiInput` flag in `InputScope` assignment warning breadcrumbs, so WinUI compatibility failures show whether ASCII enforcement was actually enabled for that entry
+- `Windows CommandEntryHandler` now includes both the current `EnforceAsciiInput` flag and native `TextBox` type in `InputScope` assignment warning breadcrumbs, so WinUI compatibility failures show both whether ASCII enforcement was active and which control rejected the write
 - `MiddleClickBehavior` now includes current `contextMenuOpen` / `hasCommand` state in deferred middle-click warning breadcrumbs, so delayed command-path failures show whether the fallback ran against an open menu or a detached command binding
 - `MainPage.FocusModalPrimaryEditorField` now includes current `shouldSelectAll` state in modal `ButtonText` focus warning breadcrumbs, so editor-open focus failures distinguish create-flow select-all from normal focus retry paths
 - `MainPage.SetTabStop` now includes the native target control type in `IsTabStop` warning breadcrumbs, so Windows reflection failures identify which view rejected the write
@@ -71,7 +71,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - Expanded `CommandExecutorTests` and `AppLayerSourceGuardTests` to cover missing-path warning breadcrumbs in the empty-tool fallback path
 - Expanded `CommandExecutorTests` and `AppLayerSourceGuardTests` to cover the normalized filename breadcrumb used when `Process.Start(...)` returns `null`
 - Expanded `FileStateSyncNotifierTests` and `AppLayerSourceGuardTests` to cover malformed-payload warning breadcrumbs that include the normalized sync-file path
-- Expanded `AppLayerSourceGuardTests` to lock `CommandEntryHandler` `InputScope` warning breadcrumbs to the current `EnforceAsciiInput` flag
+- Expanded `AppLayerSourceGuardTests` to lock `CommandEntryHandler` `InputScope` warning breadcrumbs to the current `EnforceAsciiInput` flag and native `TextBox` type
 - Expanded `AppLayerSourceGuardTests` to lock deferred `MiddleClickBehavior` warning breadcrumbs to current `contextMenuOpen` / `hasCommand` state
 - Expanded `AppLayerSourceGuardTests` to lock modal `ButtonText` focus warning breadcrumbs to current `shouldSelectAll` state
 - Expanded `AppLayerSourceGuardTests` to lock `SetTabStop` warning breadcrumbs to the native target control type
