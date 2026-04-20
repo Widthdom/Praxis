@@ -318,7 +318,7 @@ public class AppLayerSourceGuardTests
         Assert.Contains("CrashFileLogger.WriteWarning(nameof(DisableWindowsSystemFocusVisual), $\"Failed to disable UseSystemFocusVisuals on {controlType}: {safeMessage}\");", focusSource);
         Assert.Contains("var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);", pointerSource);
         Assert.Contains("var shouldSelectAll = modalPrimaryFieldSelectAllPending;", pointerSource);
-        Assert.Contains("var modalVisible = EditorModal.IsVisible;", pointerSource);
+        Assert.Contains("var modalVisible = EditorOverlay.IsVisible;", pointerSource);
         Assert.Contains("CrashFileLogger.WriteWarning(nameof(FocusModalPrimaryEditorField), $\"Failed to focus modal ButtonText entry while shouldSelectAll={shouldSelectAll} modalVisible={modalVisible}: {safeMessage}\");", pointerSource);
         Assert.Contains("var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);", layoutSource);
         Assert.Contains("var targetType = platformView.GetType().Name;", layoutSource);
@@ -607,7 +607,7 @@ public class AppLayerSourceGuardTests
         var source = ReadRepositoryFile("Praxis", "MainPage.PointerAndSelection.cs");
         Assert.Equal(2, CountOccurrences(source, "var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);"));
         Assert.Contains("CrashFileLogger.WriteWarning(nameof(PlacementCanvas_SecondaryTapped), $\"Secondary-tap create flow failed at ({canvasPoint.X:0.##}, {canvasPoint.Y:0.##}): {safeMessage}\");", source);
-        Assert.Contains("var modalVisible = EditorModal.IsVisible;", source);
+        Assert.Contains("var modalVisible = EditorOverlay.IsVisible;", source);
         Assert.Contains("CrashFileLogger.WriteWarning(nameof(FocusModalPrimaryEditorField), $\"Failed to focus modal ButtonText entry while shouldSelectAll={shouldSelectAll} modalVisible={modalVisible}: {safeMessage}\");", source);
     }
 

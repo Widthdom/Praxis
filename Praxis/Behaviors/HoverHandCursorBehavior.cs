@@ -2,6 +2,7 @@ using System.Runtime.InteropServices;
 
 using Microsoft.Maui.Controls;
 
+using Praxis.Core.Logic;
 using Praxis.Services;
 
 namespace Praxis.Behaviors;

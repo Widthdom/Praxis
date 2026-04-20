@@ -1089,7 +1089,7 @@ public partial class MainPage
         catch (Exception ex)
         {
             var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);
-            var modalVisible = EditorModal.IsVisible;
+            var modalVisible = EditorOverlay.IsVisible;
             CrashFileLogger.WriteWarning(nameof(FocusModalPrimaryEditorField), $"Failed to focus modal ButtonText entry while shouldSelectAll={shouldSelectAll} modalVisible={modalVisible}: {safeMessage}");
             return;
         }
