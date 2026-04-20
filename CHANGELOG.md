@@ -21,7 +21,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - Mac key-input reflection warnings now include the fallback literal for `CommandEntryHandler`, `MacEntryHandler`, and `MacEditorHandler`, making `UIKeyCommand` resolution failures easier to correlate with the control key that would have been used
 - `SecondaryFailureLogger` now normalizes secondary fallback sink roots to absolute directories before combining the `Praxis/secondary-failures.log` path, so quoted absolute overrides still work while blank or relative roots are ignored instead of creating accidental relative diagnostics paths
 - `FileStateSyncNotifier` now includes the normalized sync-file path in the read-after-retries warning breadcrumb, so exhausted watcher read retries identify which `buttons.sync` target failed instead of logging only the exception summary
-- `MauiThemeService` now includes the target `AppTheme` in the Mac dispatch-failure warning breadcrumb, so a failed Light/Dark/System transition leaves more specific diagnostics than a generic window-style warning
+- `MauiThemeService` now includes both the target `AppTheme` and current `UserAppTheme` in the Mac dispatch-failure warning breadcrumb, so a failed Light/Dark/System transition leaves clearer pre-dispatch state than a generic window-style warning
 - `FileAppConfigService` now includes the normalized raw `theme` value in invalid-theme warning breadcrumbs, so broken `praxis.config.json` files leave evidence of the actual bad value instead of only saying the theme was invalid
 - `FileAppConfigService` now canonicalizes absolute config candidate roots before deduplicating them, so equivalent paths with `.` or `..` segments do not probe the same `praxis.config.json` twice
 - `App.xaml.cs` now warning-logs `Window.HandlerChanged` failures with both the root page type and current `PlatformView` type, so Windows activation-hook failures show whether the shell had already reached a native window before failing
@@ -63,7 +63,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - Expanded `AppLayerSourceGuardTests` to lock Mac key-input reflection warnings to the fallback literal
 - Expanded `SecondaryFailureLoggerTests` to cover quoted absolute fallback roots and rejection of relative fallback roots before the startup-diagnostics file path is built
 - Expanded `FileStateSyncNotifierTests` and `AppLayerSourceGuardTests` to cover the normalized sync-file path prefix in read-retry exhaustion warnings
-- Expanded `AppLayerSourceGuardTests` to lock the `MauiThemeService` Mac dispatch-failure breadcrumb to the requested `AppTheme`
+- Expanded `AppLayerSourceGuardTests` to lock the `MauiThemeService` Mac dispatch-failure breadcrumb to both the requested `AppTheme` and current `UserAppTheme`
 - Expanded `FileAppConfigServiceTests` and `AppLayerSourceGuardTests` to cover normalized invalid-theme values in skipped-config warnings
 - Expanded `FileAppConfigServiceTests` to cover canonical deduplication of equivalent absolute config roots and dot-segment normalization in `NormalizeAbsoluteDirectory(...)`
 - Expanded `AppLayerSourceGuardTests` to lock `App.xaml.cs` `Window.HandlerChanged` warnings to both the root page type and current `PlatformView` type

@@ -136,7 +136,7 @@ Test-specific operation and coverage inventory are documented in [`docs/TESTING_
   - Wraps MAUI clipboard reads/writes and now honors `CancellationToken` for both operations, including cancellation while awaiting the underlying MAUI task
 - [`Services/MauiThemeService.cs`](../Praxis/Services/MauiThemeService.cs)
   - Skips no-op theme reapplication when the requested theme already matches `Application.Current.UserAppTheme`
-  - On Mac Catalyst, crash-logs `BeginInvokeOnMainThread` failures while applying window style overrides and includes the target `AppTheme` in the warning breadcrumb so the failed theme transition is visible
+  - On Mac Catalyst, crash-logs `BeginInvokeOnMainThread` failures while applying window style overrides and includes both the target `AppTheme` and current `UserAppTheme` in the warning breadcrumb so the failed theme transition is visible without reproducing the exact pre-dispatch state
 - [`Services/FileStateSyncNotifier.cs`](../Praxis/Services/FileStateSyncNotifier.cs)
   - Uses a local signal file (`buttons.sync`) and `FileSystemWatcher` for multi-window notifications
   - Payload includes instance id and timestamp; self-origin events are ignored
