@@ -399,6 +399,7 @@ public class AppLayerSourceGuardTests
         Assert.Contains("var normalizedLeft = NormalizePathForLog(left);", source);
         Assert.Contains("var normalizedRight = NormalizePathForLog(right);", source);
         Assert.Contains("private static string BuildSafeWarningMessage(string prefix, Exception ex)", source);
+        Assert.Contains("=> $\"{prefix} ({ex.GetType().Name}): {CrashFileLogger.SafeExceptionMessage(ex)}\";", source);
         Assert.Equal(2, CountOccurrences(source, "CrashFileLogger.WriteWarning(nameof(AppStoragePaths), BuildSafeWarningMessage($\"Legacy database migration failed from '{normalizedSourcePath}'\", ex));"));
         Assert.Contains("CrashFileLogger.WriteWarning(nameof(AppStoragePaths), BuildSafeWarningMessage($\"Ignoring invalid migration path comparison between '{normalizedLeft}' and '{normalizedRight}'\", ex));", source);
     }

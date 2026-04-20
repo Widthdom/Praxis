@@ -150,6 +150,7 @@ Test-specific operation and coverage inventory are documented in [`docs/TESTING_
   - Sync signal path policy:
     - Windows: `%USERPROFILE%/AppData/Local/Praxis/buttons.sync`
     - macOS (Mac Catalyst): `~/Library/Application Support/Praxis/buttons.sync`
+  - Legacy migration warnings now include the exception type before the safe message, so copy failures from I/O and permission boundaries can be distinguished without expanding the payload
   - Normalizes quoted `%LOCALAPPDATA%` values and avoids treating blank/relative legacy roots as migration candidates, so startup migration does not accidentally pull `./praxis.db3` from the process working directory
   - Invalid legacy path comparisons are warning-logged and ignored instead of letting `Path.GetFullPath(...)` abort migration candidate scanning
   - On startup, prepares target directories and migrates DB only from safe legacy locations (skips `Documents` paths on macOS to avoid permission prompts); unreadable or copy-failed legacy DB candidates are warning-logged and skipped so later candidates can still be tried

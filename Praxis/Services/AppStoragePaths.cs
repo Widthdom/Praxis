@@ -207,7 +207,7 @@ public static class AppStoragePaths
     }
 
     private static string BuildSafeWarningMessage(string prefix, Exception ex)
-        => $"{prefix}: {CrashFileLogger.SafeExceptionMessage(ex)}";
+        => $"{prefix} ({ex.GetType().Name}): {CrashFileLogger.SafeExceptionMessage(ex)}";
 
     private static string NormalizePathForLog(string path)
         => CrashFileLogger.NormalizeMessagePayload(path);
