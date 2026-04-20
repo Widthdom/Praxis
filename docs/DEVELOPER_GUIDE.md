@@ -29,7 +29,7 @@ Test-specific operation and coverage inventory are documented in [`docs/TESTING_
 - [`App.xaml.cs`](../Praxis/App.xaml.cs)
   - Resolves `IErrorLogger` from DI on construction and stores it as a static field for use in static `Raise*` helpers
   - Emits Info-level lifecycle breadcrumbs for constructor entry, `CreateWindow`, and root-page resolution so startup/initialization hangs leave a clearer last-known-good stage
-  - Windows `Window.HandlerChanged` fallback paths now warning-log the root page type together with the safe exception summary, so activation-hook failures identify which window shell failed before input wiring completes
+  - Windows `Window.HandlerChanged` fallback paths now warning-log both the root page type and the current `PlatformView` type together with the safe exception summary, so activation-hook failures identify whether the broken shell had already reached a native window before input wiring completes
   - Registers `AppDomain.CurrentDomain.UnhandledException`, `TaskScheduler.UnobservedTaskException`, and `AppDomain.CurrentDomain.ProcessExit` global handlers once per process; crash-level handlers write to both `CrashFileLogger` (synchronous file) and `IErrorLogger` (async DB)
   - `UnhandledException` handler captures `IsTerminating` state and attempts synchronous `FlushAsync` before process death; non-`Exception` thrown objects are logged as warnings instead of degrading to empty exception payloads, and flush failures now persist the full exception body to `crash.log` before the warning breadcrumb
   - `ProcessExit` handler flushes pending DB log writes with a 3-second timeout and crash-logs full flush-failure exceptions plus the warning summary so shutdown diagnostics are not lost

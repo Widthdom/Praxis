@@ -24,7 +24,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - `MauiThemeService` now includes the target `AppTheme` in the Mac dispatch-failure warning breadcrumb, so a failed Light/Dark/System transition leaves more specific diagnostics than a generic window-style warning
 - `FileAppConfigService` now includes the normalized raw `theme` value in invalid-theme warning breadcrumbs, so broken `praxis.config.json` files leave evidence of the actual bad value instead of only saying the theme was invalid
 - `FileAppConfigService` now canonicalizes absolute config candidate roots before deduplicating them, so equivalent paths with `.` or `..` segments do not probe the same `praxis.config.json` twice
-- `App.xaml.cs` now warning-logs `Window.HandlerChanged` failures with the root page type, so Windows activation-hook failures identify which shell failed instead of leaving only an exception row
+- `App.xaml.cs` now warning-logs `Window.HandlerChanged` failures with both the root page type and current `PlatformView` type, so Windows activation-hook failures show whether the shell had already reached a native window before failing
 - `MainPage` now includes the hovered button `item.Id` in Quick Look delayed-show warning breadcrumbs, so failed preview popups identify which button context faulted instead of logging only the exception summary
 - `CommandExecutor` now warning-logs normalized missing filesystem targets before returning `Path not found: ...`, so empty-tool fallback misses still leave a crash-log breadcrumb
 - `MainViewModel.CommandSuggestions` now includes the current command-input length in debounce/close-dispatch warning breadcrumbs, so degraded suggestion refreshes leave context without persisting the full input text
@@ -66,7 +66,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - Expanded `AppLayerSourceGuardTests` to lock the `MauiThemeService` Mac dispatch-failure breadcrumb to the requested `AppTheme`
 - Expanded `FileAppConfigServiceTests` and `AppLayerSourceGuardTests` to cover normalized invalid-theme values in skipped-config warnings
 - Expanded `FileAppConfigServiceTests` to cover canonical deduplication of equivalent absolute config roots and dot-segment normalization in `NormalizeAbsoluteDirectory(...)`
-- Expanded `AppLayerSourceGuardTests` to lock `App.xaml.cs` `Window.HandlerChanged` warnings to the root page type
+- Expanded `AppLayerSourceGuardTests` to lock `App.xaml.cs` `Window.HandlerChanged` warnings to both the root page type and current `PlatformView` type
 - Expanded `AppLayerSourceGuardTests` to lock Quick Look delayed-show warnings to the hovered `item.Id`
 - Expanded `CommandExecutorTests` and `AppLayerSourceGuardTests` to cover missing-path warning breadcrumbs in the empty-tool fallback path
 - Expanded `CommandExecutorTests` and `AppLayerSourceGuardTests` to cover the normalized filename breadcrumb used when `Process.Start(...)` returns `null`

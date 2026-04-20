@@ -94,8 +94,9 @@ public class AppLayerSourceGuardTests
 
         Assert.Contains("errorLogger?.Log(ex, \"Window.HandlerChanged\");", source);
         Assert.Contains("var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);", source);
+        Assert.Contains("var platformViewType = window.Handler?.PlatformView?.GetType().Name ?? \"(null)\";", source);
         Assert.Contains("errorLogger?.LogWarning(", source);
-        Assert.Contains("\"Window handler activation failed for root page '{page.GetType().Name}': {safeMessage}\"", source);
+        Assert.Contains("\"Window handler activation failed for root page '{page.GetType().Name}' with platformView='{platformViewType}': {safeMessage}\"", source);
         Assert.Contains("\"Window.HandlerChanged\");", source);
     }
 
