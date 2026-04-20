@@ -6,6 +6,8 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 
 ## [Unreleased]
 
+### [1.1.12] - 2026-04-21
+
 ### Fixed
 - Windows and Mac Catalyst now switch the top-bar create action, modal copy/action buttons, and placement/Dock launcher buttons to a pointing-hand cursor on hover instead of leaving those clickable targets on the arrow cursor
 - `DbErrorLogger` now includes the exception type in unexpected flush/drain/purge warning breadcrumbs, so shutdown-time log persistence failures can be grouped by failure class without expanding the safe exception payload
@@ -442,6 +444,8 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 
 ## [Unreleased]
 
+### [1.1.12] - 2026-04-21
+
 ### 修正
 - `SecondaryFailureLogger` は二次 fallback sink root を `Praxis/secondary-failures.log` の組み立て前に絶対パスへ正規化するようになり、quote 付き絶対パス override は引き続き使える一方、空や相対 root は誤って相対診断パスを作らないよう無視するよう修正
 - `FileStateSyncNotifier` は読込リトライ枯渇 warning breadcrumb にも正規化済み sync-file path を含めるようになり、`buttons.sync` の読込失敗時に例外要約だけでなく対象ファイルも特定できるよう修正
@@ -747,7 +751,8 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - 重複 `using` ディレクティブの削除と `using` 順序の正規化
 - `MainViewModel` と各 partial クラスに主要ライフサイクルイベントの `LogInfo` 呼び出しを追加
 
-[Unreleased]: https://github.com/Widthdom/Praxis/compare/v1.1.11...HEAD
+[Unreleased]: https://github.com/Widthdom/Praxis/compare/v1.1.12...HEAD
+[1.1.12]: https://github.com/Widthdom/Praxis/compare/v1.1.11...v1.1.12
 [1.1.11]: https://github.com/Widthdom/Praxis/compare/v1.1.10...v1.1.11
 [1.1.10]: https://github.com/Widthdom/Praxis/compare/v1.1.9...v1.1.10
 [1.1.9]: https://github.com/Widthdom/Praxis/compare/v1.1.8...v1.1.9
