@@ -1084,7 +1084,8 @@ public partial class MainPage
                 var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);
                 var isActive = App.IsMacApplicationActive();
                 var activationSuppressed = App.IsActivationSuppressionActive();
-                CrashFileLogger.WriteWarning(nameof(IsMacMiddleButtonCurrentlyDown), $"Failed to query middle button state from CoreGraphics while isActive={isActive} activationSuppressed={activationSuppressed}: {safeMessage}");
+                var pointerKnown = lastPointerOnRoot is not null;
+                CrashFileLogger.WriteWarning(nameof(IsMacMiddleButtonCurrentlyDown), $"Failed to query middle button state from CoreGraphics while isActive={isActive} activationSuppressed={activationSuppressed} pointerKnown={pointerKnown}: {safeMessage}");
                 return false;
             }
         }

@@ -42,7 +42,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - `MiddleClickBehavior` now includes current `contextMenuOpen` / `hasCommand` state plus the attached view type in deferred middle-click warning breadcrumbs, so delayed command-path failures show whether the fallback ran against an open menu, detached command binding, or unexpected host view
 - `MainPage.FocusModalPrimaryEditorField` now includes current `shouldSelectAll` state in modal `ButtonText` focus warning breadcrumbs, so editor-open focus failures distinguish create-flow select-all from normal focus retry paths
 - `MainPage.SetTabStop` now includes the native target control type in `IsTabStop` warning breadcrumbs, so Windows reflection failures identify which view rejected the write
-- `MainPage.IsMacMiddleButtonCurrentlyDown` now includes current `isActive` / `activationSuppressed` state in CoreGraphics warning breadcrumbs, so degraded middle-click polling shows whether the app was eligible to react
+- `MainPage.IsMacMiddleButtonCurrentlyDown` now includes current `isActive` / `activationSuppressed` state plus whether a root-pointer position was known in CoreGraphics warning breadcrumbs, so degraded middle-click polling shows both app eligibility and stale-pointer risk
 - `MainPage.CopyIconButton_Clicked` now includes current token-cancellation state in copy-notice animation warning breadcrumbs, so expected teardown cancellation is easier to distinguish from unexpected animation faults
 - `MainPage.ShowQuickLookAfterDelayAsync` now includes current popup visibility in Quick Look show warning breadcrumbs, so delayed preview failures show whether the popup had already become visible
 - `MainPage.Draggable_Tapped` now includes `item.Id` in button-tap execution warning breadcrumbs, so failed launch commands can be mapped back to a concrete launcher record even when labels are duplicated
@@ -75,7 +75,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - Expanded `AppLayerSourceGuardTests` to lock deferred `MiddleClickBehavior` warning breadcrumbs to current `contextMenuOpen` / `hasCommand` state plus the attached view type
 - Expanded `AppLayerSourceGuardTests` to lock modal `ButtonText` focus warning breadcrumbs to current `shouldSelectAll` state
 - Expanded `AppLayerSourceGuardTests` to lock `SetTabStop` warning breadcrumbs to the native target control type
-- Expanded `AppLayerSourceGuardTests` to lock CoreGraphics middle-button warning breadcrumbs to current `isActive` / `activationSuppressed` state
+- Expanded `AppLayerSourceGuardTests` to lock CoreGraphics middle-button warning breadcrumbs to current `isActive` / `activationSuppressed` state plus `pointerKnown`
 - Expanded `AppLayerSourceGuardTests` to lock copy-notice animation warning breadcrumbs to current token-cancellation state
 - Expanded `AppLayerSourceGuardTests` to lock Quick Look show warning breadcrumbs to current popup visibility
 - Expanded `AppLayerSourceGuardTests` to lock button-tap execution warning breadcrumbs to `item.Id`
