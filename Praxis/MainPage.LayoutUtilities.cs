@@ -57,7 +57,8 @@ public partial class MainPage
         catch (Exception ex)
         {
             var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);
-            CrashFileLogger.WriteWarning(nameof(SetTabStop), $"Failed to set IsTabStop={isTabStop}: {safeMessage}");
+            var targetType = platformView.GetType().Name;
+            CrashFileLogger.WriteWarning(nameof(SetTabStop), $"Failed to set IsTabStop={isTabStop} on {targetType}: {safeMessage}");
         }
     }
 #endif

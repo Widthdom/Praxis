@@ -218,6 +218,45 @@ public class CommandExecutorTests
         Assert.Equal(CrashFileLogger.MissingMessagePayloadPlaceholder, result);
     }
 
+    [Fact]
+    public void BuildNoProcessHandleMessage_NormalizesFileNameForBreadcrumb()
+    {
+        var prefix = $"CommandExecutor failure {Guid.NewGuid():N}";
+        var markerA = $"tool-a-{Guid.NewGuid():N}";
+        var markerB = $"tool-b-{Guid.NewGuid():N}";
+
+        var result = InvokeBuildNoProcessHandleMessage(prefix, $"{markerA}\r\n{markerB}", useShellExecute: true);
+
+        Assert.Equal($"{prefix} No process handle was returned for '{markerA} {markerB}' while useShellExecute=True.", result);
+    }
+
+    [Fact]
+    public void BuildNoProcessHandleMessage_UsesPlaceholderForWhitespaceFileName()
+    {
+        var prefix = $"CommandExecutor failure {Guid.NewGuid():N}";
+
+        var result = InvokeBuildNoProcessHandleMessage(prefix, " \r\n\t ", useShellExecute: false);
+
+        Assert.Equal(
+            $"{prefix} No process handle was returned for '{CrashFileLogger.MissingMessagePayloadPlaceholder}' while useShellExecute=False.",
+            result);
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_WhenResolvedPathDoesNotExist_WarningLogsMissingTarget()
+    {
+        var missingPath = Path.Combine(Path.GetTempPath(), $"praxis-command-missing-{Guid.NewGuid():N}");
+        var executor = new CommandExecutor();
+
+        var result = await executor.ExecuteAsync(string.Empty, missingPath);
+
+        Assert.False(result.Success);
+        Assert.Equal($"Path not found: {missingPath}", result.Message);
+
+        var content = File.ReadAllText(CrashFileLogger.LogFilePath);
+        Assert.Contains($"Path not found for '{missingPath}' while rooted={Path.IsPathRooted(missingPath)}.", content);
+    }
+
     private static string InvokeExpandHomePath(string value)
     {
         var method = typeof(CommandExecutor).GetMethod("ExpandHomePath", BindingFlags.NonPublic | BindingFlags.Static);
@@ -287,6 +326,20 @@ public class CommandExecutorTests
         Assert.NotNull(method);
 
         var result = method.Invoke(null, [value]);
+        return Assert.IsType<string>(result);
+    }
+
+    private static string InvokeBuildNoProcessHandleMessage(string prefix, string fileName, bool useShellExecute)
+    {
+        var method = typeof(CommandExecutor).GetMethod(
+            "BuildNoProcessHandleMessage",
+            BindingFlags.NonPublic | BindingFlags.Static,
+            binder: null,
+            [typeof(string), typeof(string), typeof(bool)],
+            modifiers: null);
+        Assert.NotNull(method);
+
+        var result = method.Invoke(null, [prefix, fileName, useShellExecute]);
         return Assert.IsType<string>(result);
     }
 

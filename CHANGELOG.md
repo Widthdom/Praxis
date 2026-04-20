@@ -6,6 +6,94 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 
 ## [Unreleased]
 
+### Fixed
+- Windows and Mac Catalyst now switch the top-bar create action, modal copy/action buttons, and placement/Dock launcher buttons to a pointing-hand cursor on hover instead of leaving those clickable targets on the arrow cursor
+- `DbErrorLogger` now includes the exception type in unexpected flush/drain/purge warning breadcrumbs, so shutdown-time log persistence failures can be grouped by failure class without expanding the safe exception payload
+- `FileStateSyncNotifier` now includes the exception type in retry-exhaustion and unexpected-publish warning breadcrumbs, so watcher failures can be grouped by failure class without expanding the safe exception payload
+- `AppStoragePaths` now includes the exception type in legacy migration warning breadcrumbs, so I/O and permission failures can be distinguished without expanding the safe exception payload
+- `CommandExecutor` now includes `UseShellExecute` in the null-process-handle breadcrumb, so shell launches and direct launches can be distinguished when `Process.Start(...)` returns no handle
+- `CommandExecutor` now includes whether a missing resolved path was rooted in the warning breadcrumb, so relative-path misses can be separated from broken absolute targets without reproducing the exact launch context
+- `FileAppConfigService` now includes the exception type in skipped-config warning breadcrumbs, so invalid JSON, permission failures, and transient I/O can be distinguished without expanding the safe exception message
+- `Win.AppDomain.UnhandledException` warnings now include the runtime type name for non-`Exception` payloads before mirroring to `startup.log`, so COM or platform-originated throw objects leave a stronger startup breadcrumb
+- `Mac.AppDomain.UnhandledException` warnings now include the runtime type name for non-`Exception` payloads, so bridge-originated throw objects leave a more actionable breadcrumb than the safe payload text alone
+- Mac key-input reflection warnings now render fallback keys as symbolic names like `Tab`, `Escape`, `Return`, and arrow names, so cross-platform/plain-text crash-log readers do not lose that breadcrumb to control or private-use characters
+- `Program.TryRelaunchViaOpen` now includes both the normalized relay executable path and relay argument in LaunchServices warning breadcrumbs, so Mac startup relay failures distinguish bundle-path problems, `open` relay failures, and relay-contract mismatches
+- `MainPage.DisableWindowsSystemFocusVisual` now includes the native control type in `UseSystemFocusVisuals` warning breadcrumbs, so Windows reflection failures identify which control rejected the write
+- Mac key-input reflection warnings now include the fallback literal for `CommandEntryHandler`, `MacEntryHandler`, and `MacEditorHandler`, making `UIKeyCommand` resolution failures easier to correlate with the control key that would have been used
+- `SecondaryFailureLogger` now normalizes secondary fallback sink roots to absolute directories before combining the `Praxis/secondary-failures.log` path, so quoted absolute overrides still work while blank or relative roots are ignored instead of creating accidental relative diagnostics paths
+- `FileStateSyncNotifier` now includes the normalized sync-file path in the read-after-retries warning breadcrumb, so exhausted watcher read retries identify which `buttons.sync` target failed instead of logging only the exception summary
+- `MauiThemeService` now includes both the target `AppTheme` and current `UserAppTheme` in the Mac dispatch-failure warning breadcrumb, so a failed Light/Dark/System transition leaves clearer pre-dispatch state than a generic window-style warning
+- `FileAppConfigService` now includes the normalized raw `theme` value in invalid-theme warning breadcrumbs, so broken `praxis.config.json` files leave evidence of the actual bad value instead of only saying the theme was invalid
+- `FileAppConfigService` now canonicalizes absolute config candidate roots before deduplicating them, so equivalent paths with `.` or `..` segments do not probe the same `praxis.config.json` twice
+- `App.xaml.cs` now warning-logs `Window.HandlerChanged` failures with both the root page type and current `PlatformView` type, so Windows activation-hook failures show whether the shell had already reached a native window before failing
+- `MainPage` now includes the hovered button `item.Id` in Quick Look delayed-show warning breadcrumbs, so failed preview popups identify which button context faulted instead of logging only the exception summary
+- `CommandExecutor` now warning-logs normalized missing filesystem targets before returning `Path not found: ...`, so empty-tool fallback misses still leave a crash-log breadcrumb
+- `MainViewModel.CommandSuggestions` now includes the current command-input length in debounce/close-dispatch warning breadcrumbs, so degraded suggestion refreshes leave context without persisting the full input text
+- `MainPage` now includes the pending button `item.Id` in Quick Look delayed-hide warning breadcrumbs, so popup teardown failures keep the same button-level context as delayed-show failures
+- `MainPage` now includes the current Dock hover flag in hover-exit hide warning breadcrumbs, so delayed scrollbar teardown failures show whether the pointer had already re-entered
+- `MainPage.CopyIconButton_Clicked` now includes the copy-notice overlay visibility in animation warning breadcrumbs, so failed notification teardown leaves a quick state hint instead of only the exception summary
+- `MainPage.TriggerStatusFlash` now includes the status-text length and error classification in animation warning breadcrumbs, so degraded flash paths keep lightweight context without logging the full message
+- `MainViewModel` now includes the target theme in external theme-sync warning breadcrumbs, so dispatch or apply failures keep the intended `ThemeMode`
+- `MainViewModel.CommandSuggestions` now includes input length in refresh-dispatch warning breadcrumbs too, so all dispatch-side suggestion warnings use the same lightweight context pattern
+- `MainViewModel.CommandSuggestions` now includes input length in command-lookup fallback warnings, so repository lookup failures keep the same lightweight context pattern as other suggestion warnings
+- `MainViewModel.CommandSuggestions` now includes input length in in-thread refresh warnings too, so the whole suggestion-refresh path uses one lightweight warning pattern
+- `CommandExecutor` now includes the normalized target filename in the `Process.Start(...) == null` warning/result breadcrumb, so null-handle launch failures identify which tool or fallback target produced no process handle
+- `FileStateSyncNotifier` now includes the normalized sync-file path in malformed-payload warning breadcrumbs too, so broken `buttons.sync` contents still identify which watched file produced the bad payload
+- `Windows CommandEntryHandler` now includes both the current `EnforceAsciiInput` flag and native `TextBox` type in `InputScope` assignment warning breadcrumbs, so WinUI compatibility failures show both whether ASCII enforcement was active and which control rejected the write
+- `MiddleClickBehavior` now includes current `contextMenuOpen` / `hasCommand` state plus the attached view type in deferred middle-click warning breadcrumbs, so delayed command-path failures show whether the fallback ran against an open menu, detached command binding, or unexpected host view
+- `MainPage.FocusModalPrimaryEditorField` now includes current `shouldSelectAll` state in modal `ButtonText` focus warning breadcrumbs, so editor-open focus failures distinguish create-flow select-all from normal focus retry paths
+- `MainPage.SetTabStop` now includes the native target control type in `IsTabStop` warning breadcrumbs, so Windows reflection failures identify which view rejected the write
+- `MainPage.IsMacMiddleButtonCurrentlyDown` now includes current `isActive` / `activationSuppressed` state plus whether a root-pointer position was known in CoreGraphics warning breadcrumbs, so degraded middle-click polling shows both app eligibility and stale-pointer risk
+- `MainPage.CopyIconButton_Clicked` now includes current token-cancellation state in copy-notice animation warning breadcrumbs, so expected teardown cancellation is easier to distinguish from unexpected animation faults
+- `MainPage.ShowQuickLookAfterDelayAsync` now includes current popup visibility in Quick Look show warning breadcrumbs, so delayed preview failures show whether the popup had already become visible
+- `MainPage.Draggable_Tapped` now includes `item.Id` in button-tap execution warning breadcrumbs, so failed launch commands can be mapped back to a concrete launcher record even when labels are duplicated
+- `MainPage.PlacementCanvas_SecondaryTapped` now includes the canvas point in secondary-tap create warning breadcrumbs, so failed create-editor flows can be correlated with placement hit-testing and coordinate conversion issues
+- `MainPage.FocusModalPrimaryEditorField` now includes current modal visibility in `ButtonText` focus warning breadcrumbs, so modal-open races can be separated from hidden-modal retries
+
+### Tests
+- Expanded `AppLayerSourceGuardTests` to lock hover-hand cursor behavior wiring for the top-bar create action, modal copy/action buttons, and placement/Dock launcher buttons
+- Expanded `DbErrorLoggerTests` and `AppLayerSourceGuardTests` to lock unexpected flush/drain/purge warning breadcrumbs to the exception type
+- Expanded `FileStateSyncNotifierTests` and `AppLayerSourceGuardTests` to lock sync warning breadcrumbs to the exception type
+- Expanded `AppStoragePathsTests` and `AppLayerSourceGuardTests` to lock legacy migration warning breadcrumbs to the exception type
+- Expanded `CommandExecutorTests` and `AppLayerSourceGuardTests` to lock null-process-handle breadcrumbs to the `UseShellExecute` mode
+- Expanded `CommandExecutorTests` and `AppLayerSourceGuardTests` to lock missing-path warning breadcrumbs to the rooted flag
+- Expanded `FileAppConfigServiceTests` and `AppLayerSourceGuardTests` to lock skipped-config warning breadcrumbs to the exception type
+- Expanded `AppLayerSourceGuardTests` to lock Windows AppDomain non-`Exception` warning breadcrumbs to the runtime payload type
+- Expanded `AppLayerSourceGuardTests` to lock Mac AppDomain non-`Exception` warning breadcrumbs to the runtime payload type
+- Expanded `AppLayerSourceGuardTests` to lock Mac key-input reflection breadcrumbs to symbolic fallback key names instead of raw control/private-use literals
+- Expanded `AppLayerSourceGuardTests` to lock LaunchServices relay warning breadcrumbs to the normalized relay executable path and relay argument
+- Expanded `AppLayerSourceGuardTests` to lock `DisableWindowsSystemFocusVisual` warning breadcrumbs to the native control type
+- Expanded `AppLayerSourceGuardTests` to lock Mac key-input reflection warnings to the fallback literal
+- Expanded `SecondaryFailureLoggerTests` to cover quoted absolute fallback roots and rejection of relative fallback roots before the startup-diagnostics file path is built
+- Expanded `FileStateSyncNotifierTests` and `AppLayerSourceGuardTests` to cover the normalized sync-file path prefix in read-retry exhaustion warnings
+- Expanded `AppLayerSourceGuardTests` to lock the `MauiThemeService` Mac dispatch-failure breadcrumb to both the requested `AppTheme` and current `UserAppTheme`
+- Expanded `FileAppConfigServiceTests` and `AppLayerSourceGuardTests` to cover normalized invalid-theme values in skipped-config warnings
+- Expanded `FileAppConfigServiceTests` to cover canonical deduplication of equivalent absolute config roots and dot-segment normalization in `NormalizeAbsoluteDirectory(...)`
+- Expanded `AppLayerSourceGuardTests` to lock `App.xaml.cs` `Window.HandlerChanged` warnings to both the root page type and current `PlatformView` type
+- Expanded `AppLayerSourceGuardTests` to lock Quick Look delayed-show warnings to the hovered `item.Id`
+- Expanded `CommandExecutorTests` and `AppLayerSourceGuardTests` to cover missing-path warning breadcrumbs in the empty-tool fallback path
+- Expanded `CommandExecutorTests` and `AppLayerSourceGuardTests` to cover the normalized filename breadcrumb used when `Process.Start(...)` returns `null`
+- Expanded `FileStateSyncNotifierTests` and `AppLayerSourceGuardTests` to cover malformed-payload warning breadcrumbs that include the normalized sync-file path
+- Expanded `AppLayerSourceGuardTests` to lock `CommandEntryHandler` `InputScope` warning breadcrumbs to the current `EnforceAsciiInput` flag and native `TextBox` type
+- Expanded `AppLayerSourceGuardTests` to lock deferred `MiddleClickBehavior` warning breadcrumbs to current `contextMenuOpen` / `hasCommand` state plus the attached view type
+- Expanded `AppLayerSourceGuardTests` to lock modal `ButtonText` focus warning breadcrumbs to current `shouldSelectAll` state
+- Expanded `AppLayerSourceGuardTests` to lock `SetTabStop` warning breadcrumbs to the native target control type
+- Expanded `AppLayerSourceGuardTests` to lock CoreGraphics middle-button warning breadcrumbs to current `isActive` / `activationSuppressed` state plus `pointerKnown`
+- Expanded `AppLayerSourceGuardTests` to lock copy-notice animation warning breadcrumbs to current token-cancellation state
+- Expanded `AppLayerSourceGuardTests` to lock Quick Look show warning breadcrumbs to current popup visibility
+- Expanded `AppLayerSourceGuardTests` to lock button-tap execution warning breadcrumbs to `item.Id`
+- Expanded `AppLayerSourceGuardTests` to lock secondary-tap create warning breadcrumbs to the canvas point
+- Expanded `AppLayerSourceGuardTests` to lock modal `ButtonText` focus warning breadcrumbs to current modal visibility
+- Expanded `AppLayerSourceGuardTests` to lock command-suggestion debounce/close-dispatch warnings to the current input length
+- Expanded `AppLayerSourceGuardTests` to lock Quick Look delayed-hide warnings to the pending `item.Id`
+- Expanded `AppLayerSourceGuardTests` to lock Dock hover-exit warnings to the current Dock hover flag
+- Expanded `AppLayerSourceGuardTests` to lock copy-notice animation warnings to the overlay visibility state
+- Expanded `AppLayerSourceGuardTests` to lock status-flash animation warnings to message-length and error-classification context
+- Expanded `AppLayerSourceGuardTests` to lock external theme-sync warnings to the target theme
+- Expanded `AppLayerSourceGuardTests` to lock command-suggestion refresh-dispatch warnings to the input length
+- Expanded `AppLayerSourceGuardTests` to lock command-lookup fallback warnings to the input length
+- Expanded `AppLayerSourceGuardTests` to lock in-thread command-suggestion refresh warnings to the input length
+
 ### [1.1.11] - 2026-04-17
 
 ### Changed
@@ -354,6 +442,17 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 
 ## [Unreleased]
 
+### 修正
+- `SecondaryFailureLogger` は二次 fallback sink root を `Praxis/secondary-failures.log` の組み立て前に絶対パスへ正規化するようになり、quote 付き絶対パス override は引き続き使える一方、空や相対 root は誤って相対診断パスを作らないよう無視するよう修正
+- `FileStateSyncNotifier` は読込リトライ枯渇 warning breadcrumb にも正規化済み sync-file path を含めるようになり、`buttons.sync` の読込失敗時に例外要約だけでなく対象ファイルも特定できるよう修正
+- `MauiThemeService` は Mac の dispatch-failure warning breadcrumb に対象 `AppTheme` も含めるようになり、Light/Dark/System のどのテーマ遷移で失敗したかを generic な window-style warning より具体的に追えるよう修正
+- `FileAppConfigService` は invalid theme の skipped-config warning breadcrumb に正規化済みの生 `theme` 値も含めるようになり、壊れた `praxis.config.json` が返した実値を「無効だった」という事実だけでなく具体的に残せるよう修正
+
+### テスト
+- `SecondaryFailureLoggerTests` を拡張し、quote 付き絶対パスの fallback root と、相対 fallback root を拒否する挙動を startup diagnostics file パス組み立て前に固定
+- `FileStateSyncNotifierTests` と `AppLayerSourceGuardTests` を拡張し、読込リトライ枯渇 warning に入る正規化済み sync-file path prefix を固定
+- `AppLayerSourceGuardTests` を拡張し、`MauiThemeService` の Mac dispatch-failure breadcrumb が要求された `AppTheme` を含むことを固定
+- `FileAppConfigServiceTests` と `AppLayerSourceGuardTests` を拡張し、invalid theme の skipped-config warning に入る正規化済み `theme` 値を固定
 ### [1.1.11] - 2026-04-17
 
 ### 変更

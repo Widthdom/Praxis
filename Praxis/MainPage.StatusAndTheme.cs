@@ -38,7 +38,8 @@ public partial class MainPage
         catch (Exception ex)
         {
             var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);
-            CrashFileLogger.WriteWarning(nameof(TriggerStatusFlash), $"Status flash animation failed: {safeMessage}");
+            var messageLength = message?.Length ?? 0;
+            CrashFileLogger.WriteWarning(nameof(TriggerStatusFlash), $"Status flash animation failed for message length {messageLength} (isError={StatusFlashErrorPolicy.IsErrorStatus(message)}): {safeMessage}");
         }
         finally
         {

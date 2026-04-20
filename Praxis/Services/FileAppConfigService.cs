@@ -43,7 +43,10 @@ public sealed class FileAppConfigService : IAppConfigService
                 }
 
                 var normalizedPath = NormalizePathForLog(path);
-                CrashFileLogger.WriteWarning(nameof(FileAppConfigService), $"Skipping config '{normalizedPath}' because it does not specify a valid theme.");
+                var normalizedTheme = NormalizeThemeForLog(config?.Theme);
+                CrashFileLogger.WriteWarning(
+                    nameof(FileAppConfigService),
+                    $"Skipping config '{normalizedPath}' because it does not specify a valid theme. Value='{normalizedTheme}'.");
             }
             catch (IOException ex)
             {
@@ -68,12 +71,16 @@ public sealed class FileAppConfigService : IAppConfigService
     private static void WriteSkippedConfigWarning(string path, Exception ex)
     {
         var normalizedPath = NormalizePathForLog(path);
+        var exceptionType = ex.GetType().Name;
         var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);
-        CrashFileLogger.WriteWarning(nameof(FileAppConfigService), $"Skipping config '{normalizedPath}': {safeMessage}");
+        CrashFileLogger.WriteWarning(nameof(FileAppConfigService), $"Skipping config '{normalizedPath}' after {exceptionType}: {safeMessage}");
     }
 
     private static string NormalizePathForLog(string path)
         => CrashFileLogger.NormalizeMessagePayload(path);
+
+    private static string NormalizeThemeForLog(string? theme)
+        => CrashFileLogger.NormalizeMessagePayload(theme);
 
     private static void AppendCandidatePath(List<string> candidates, string? directory)
     {
@@ -98,7 +105,14 @@ public sealed class FileAppConfigService : IAppConfigService
             return null;
         }
 
-        return trimmed;
+        try
+        {
+            return Path.GetFullPath(trimmed);
+        }
+        catch
+        {
+            return null;
+        }
     }
 
     private sealed class AppConfigFile

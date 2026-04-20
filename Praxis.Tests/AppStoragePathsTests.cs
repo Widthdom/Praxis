@@ -74,7 +74,7 @@ public class AppStoragePathsTests
     {
         var result = InvokeBuildSafeWarningMessage("Legacy database migration failed from '/tmp/legacy.db3'", new ThrowingMessageIOException());
 
-        Assert.Contains("Legacy database migration failed from '/tmp/legacy.db3'", result);
+        Assert.Contains("Legacy database migration failed from '/tmp/legacy.db3' (ThrowingMessageIOException)", result);
         Assert.Contains("failed to read exception message", result);
     }
 
@@ -88,7 +88,7 @@ public class AppStoragePathsTests
             "Legacy database migration failed from '/tmp/legacy.db3'",
             new MultilineIOException($"{markerA}\r\n{markerB}"));
 
-        Assert.Equal($"Legacy database migration failed from '/tmp/legacy.db3': {markerA} {markerB}", result);
+        Assert.Equal($"Legacy database migration failed from '/tmp/legacy.db3' (MultilineIOException): {markerA} {markerB}", result);
     }
 
     [Fact]
@@ -98,7 +98,7 @@ public class AppStoragePathsTests
             "Legacy database migration failed from '/tmp/legacy.db3'",
             new WhitespaceIOException());
 
-        Assert.Equal("Legacy database migration failed from '/tmp/legacy.db3': (empty)", result);
+        Assert.Equal("Legacy database migration failed from '/tmp/legacy.db3' (WhitespaceIOException): (empty)", result);
     }
 
     [Fact]

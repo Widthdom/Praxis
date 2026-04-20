@@ -45,9 +45,10 @@ public class AppDelegate : MauiUIApplicationDelegate
             else
             {
                 var safePayload = CrashFileLogger.SafeObjectDescription(e.ExceptionObject);
+                var payloadType = e.ExceptionObject?.GetType().FullName ?? "null";
                 CrashFileLogger.WriteWarning(
                     "Mac.AppDomain.UnhandledException",
-                    $"Non-Exception object thrown (IsTerminating={e.IsTerminating}): {safePayload}");
+                    $"Non-Exception object thrown (IsTerminating={e.IsTerminating}, Type={payloadType}): {safePayload}");
             }
         };
 

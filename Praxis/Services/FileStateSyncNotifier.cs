@@ -110,7 +110,10 @@ public sealed class FileStateSyncNotifier : IStateSyncNotifier
             {
                 if (readFailure is not null)
                 {
-                    CrashFileLogger.WriteWarning(nameof(FileStateSyncNotifier), BuildSyncWarningMessage("Failed to read sync payload after retries:", readFailure));
+                    var normalizedSignalPath = NormalizePayloadForLog(signalPath);
+                    CrashFileLogger.WriteWarning(
+                        nameof(FileStateSyncNotifier),
+                        BuildSyncWarningMessage($"Failed to read sync payload '{normalizedSignalPath}' after retries:", readFailure));
                 }
 
                 return;
@@ -128,8 +131,8 @@ public sealed class FileStateSyncNotifier : IStateSyncNotifier
 
             if (!StateSyncPayloadParser.TryParse(payload, out var source, out var timestamp))
             {
-                var normalizedPayload = NormalizePayloadForLog(payload);
-                CrashFileLogger.WriteWarning(nameof(FileStateSyncNotifier), $"Ignored malformed sync payload: \"{normalizedPayload}\"");
+                var warningMessage = BuildMalformedPayloadWarning(signalPath, payload);
+                CrashFileLogger.WriteWarning(nameof(FileStateSyncNotifier), warningMessage);
                 return;
             }
 
@@ -164,7 +167,14 @@ public sealed class FileStateSyncNotifier : IStateSyncNotifier
     private static string BuildSyncWarningMessage(string prefix, Exception ex)
     {
         var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);
-        return $"{prefix} {safeMessage}";
+        return $"{prefix} ({ex.GetType().Name}) {safeMessage}";
+    }
+
+    private static string BuildMalformedPayloadWarning(string signalPath, string payload)
+    {
+        var normalizedSignalPath = NormalizePayloadForLog(signalPath);
+        var normalizedPayload = NormalizePayloadForLog(payload);
+        return $"Ignored malformed sync payload from '{normalizedSignalPath}': \"{normalizedPayload}\"";
     }
 
     private static string NormalizePayloadForLog(string payload)

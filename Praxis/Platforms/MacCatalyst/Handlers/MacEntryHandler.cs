@@ -445,10 +445,10 @@ public class MacEntryHandler : EntryHandler
 
     private static string ResolveKeyInput(string inputName, string fallback)
     {
-        return TryResolveKeyInput(inputName) ?? fallback;
+        return TryResolveKeyInput(inputName, fallback) ?? fallback;
     }
 
-    private static string? TryResolveKeyInput(string inputName)
+    private static string? TryResolveKeyInput(string inputName, string? fallbackForLog = null)
     {
         try
         {
@@ -477,11 +477,25 @@ public class MacEntryHandler : EntryHandler
         catch (Exception ex)
         {
             var normalizedInputName = CrashFileLogger.NormalizeMessagePayload(inputName);
+            var normalizedFallback = DescribeKeyInputFallbackForLog(fallbackForLog);
             var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);
-            CrashFileLogger.WriteWarning(nameof(MacEntryHandler), $"Failed to resolve UIKeyCommand input '{normalizedInputName}': {safeMessage}");
+            CrashFileLogger.WriteWarning(nameof(MacEntryHandler), $"Failed to resolve UIKeyCommand input '{normalizedInputName}' with fallback '{normalizedFallback}': {safeMessage}");
         }
 
         return null;
     }
+
+    protected static string DescribeKeyInputFallbackForLog(string? fallback)
+        => fallback switch
+        {
+            "\t" => "Tab",
+            "\u001B" => "Escape",
+            "\r" => "Return",
+            "\uF700" => "UpArrow",
+            "\uF701" => "DownArrow",
+            "\uF702" => "LeftArrow",
+            "\uF703" => "RightArrow",
+            _ => CrashFileLogger.NormalizeMessagePayload(fallback),
+        };
 }
 #endif

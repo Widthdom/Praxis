@@ -112,7 +112,39 @@ public class FileAppConfigServiceTests
             Assert.Equal(ThemeMode.Dark, result);
 
             var content = File.ReadAllText(CrashFileLogger.LogFilePath);
-            Assert.Contains($"Skipping config '{invalidPath}' because it does not specify a valid theme.", content);
+            Assert.Contains($"Skipping config '{invalidPath}' because it does not specify a valid theme. Value='Bogus'.", content);
+        }
+        finally
+        {
+            Directory.Delete(root, recursive: true);
+        }
+    }
+
+    [Fact]
+    public void ResolveThemeModeFromCandidates_NormalizesInvalidThemeValue_InWarningBreadcrumb()
+    {
+        var root = Path.Combine(Path.GetTempPath(), $"praxis-config-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(root);
+        try
+        {
+            var invalidPath = Path.Combine(root, "invalid", "praxis.config.json");
+            Directory.CreateDirectory(Path.GetDirectoryName(invalidPath)!);
+
+            var markerA = $"bogus-a-{Guid.NewGuid():N}";
+            var markerB = $"bogus-b-{Guid.NewGuid():N}";
+            File.WriteAllText(invalidPath, $$"""
+                {"theme":"{{markerA}}\n{{markerB}}"}
+                """);
+
+            var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+            var result = InvokeResolveThemeModeFromCandidates([invalidPath], options);
+
+            Assert.Equal(ThemeMode.System, result);
+
+            var content = File.ReadAllText(CrashFileLogger.LogFilePath);
+            Assert.Contains(
+                $"Skipping config '{invalidPath}' because it does not specify a valid theme. Value='{markerA} {markerB}'.",
+                content);
         }
         finally
         {
@@ -129,7 +161,7 @@ public class FileAppConfigServiceTests
         InvokeWriteSkippedConfigWarning(path, new ThrowingUnauthorizedAccessException());
 
         var content = File.ReadAllText(CrashFileLogger.LogFilePath);
-        Assert.Contains($"Skipping config '{path}': (failed to read exception message: System.InvalidOperationException: message getter failure)", content);
+        Assert.Contains($"Skipping config '{path}' after ThrowingUnauthorizedAccessException: (failed to read exception message: System.InvalidOperationException: message getter failure)", content);
     }
 
     [Fact]
@@ -143,7 +175,7 @@ public class FileAppConfigServiceTests
         InvokeWriteSkippedConfigWarning(path, new MultilineUnauthorizedAccessException($"{markerA}\r\n{markerB}"));
 
         var content = File.ReadAllText(CrashFileLogger.LogFilePath);
-        Assert.Contains($"Skipping config '{path}': {markerA} {markerB}", content);
+        Assert.Contains($"Skipping config '{path}' after MultilineUnauthorizedAccessException: {markerA} {markerB}", content);
     }
 
     [Fact]
@@ -155,7 +187,7 @@ public class FileAppConfigServiceTests
         InvokeWriteSkippedConfigWarning(path, new WhitespaceUnauthorizedAccessException());
 
         var content = File.ReadAllText(CrashFileLogger.LogFilePath);
-        Assert.Contains($"Skipping config '{path}': (empty)", content);
+        Assert.Contains($"Skipping config '{path}' after WhitespaceUnauthorizedAccessException: (empty)", content);
     }
 
     [Fact]
@@ -186,6 +218,14 @@ public class FileAppConfigServiceTests
     }
 
     [Fact]
+    public void NormalizeThemeForLog_WhenThemeIsWhitespace_UsesPlaceholder()
+    {
+        var result = InvokeNormalizeThemeForLog(" \r\n\t ");
+
+        Assert.Equal(CrashFileLogger.MissingMessagePayloadPlaceholder, result);
+    }
+
+    [Fact]
     public void EnumerateCandidatePaths_DeduplicatesEquivalentDirectories()
     {
         var path = "/tmp/praxis-config";
@@ -194,6 +234,27 @@ public class FileAppConfigServiceTests
 
         Assert.Single(result);
         Assert.Equal("/tmp/praxis-config/praxis.config.json", result[0]);
+    }
+
+    [Fact]
+    public void EnumerateCandidatePaths_DeduplicatesCanonicalizedAbsoluteDirectories()
+    {
+        var root = Path.Combine(Path.GetTempPath(), $"praxis-config-{Guid.NewGuid():N}");
+        var canonical = Path.Combine(root, "actual");
+        var equivalent = Path.Combine(root, "nested", "..", "actual");
+
+        Directory.CreateDirectory(canonical);
+        try
+        {
+            var result = InvokeEnumerateCandidatePaths(canonical, equivalent);
+
+            Assert.Single(result);
+            Assert.Equal(Path.Combine(canonical, "praxis.config.json"), result[0]);
+        }
+        finally
+        {
+            Directory.Delete(root, recursive: true);
+        }
     }
 
     [Fact]
@@ -218,6 +279,26 @@ public class FileAppConfigServiceTests
         var result = InvokeNormalizeAbsoluteDirectory("  \"relative/config\"  ");
 
         Assert.Null(result);
+    }
+
+    [Fact]
+    public void NormalizeAbsoluteDirectory_WhenValueContainsDotSegments_ReturnsCanonicalPath()
+    {
+        var root = Path.Combine(Path.GetTempPath(), $"praxis-config-{Guid.NewGuid():N}");
+        var canonical = Path.Combine(root, "actual");
+        var equivalent = Path.Combine(root, "nested", "..", "actual");
+
+        Directory.CreateDirectory(canonical);
+        try
+        {
+            var result = InvokeNormalizeAbsoluteDirectory(equivalent);
+
+            Assert.Equal(Path.GetFullPath(canonical), result);
+        }
+        finally
+        {
+            Directory.Delete(root, recursive: true);
+        }
     }
 
     private static ThemeMode InvokeResolveThemeModeFromCandidates(IEnumerable<string> candidatePaths, JsonSerializerOptions options)
@@ -262,6 +343,15 @@ public class FileAppConfigServiceTests
         Assert.NotNull(method);
 
         return method.Invoke(null, [path]) as string;
+    }
+
+    private static string InvokeNormalizeThemeForLog(string? theme)
+    {
+        var method = typeof(FileAppConfigService).GetMethod("NormalizeThemeForLog", BindingFlags.NonPublic | BindingFlags.Static);
+        Assert.NotNull(method);
+
+        var result = method.Invoke(null, [theme]);
+        return Assert.IsType<string>(result);
     }
 
     private sealed class ThrowingUnauthorizedAccessException : UnauthorizedAccessException

@@ -90,6 +90,9 @@
                     BackgroundColor="{AppThemeBinding Light=#E6E6E6, Dark=#3A3A3A}"
                     StrokeShape="RoundRectangle 10"
                     Padding="0">
+                <Border.Behaviors>
+                    <behaviors:HoverHandCursorBehavior />
+                </Border.Behaviors>
                 <Border.GestureRecognizers>
                     <TapGestureRecognizer Command="{Binding CreateNewCommand}" />
                 </Border.GestureRecognizers>
@@ -282,6 +285,7 @@
                                         BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#363636}"
                                         Padding="0">
                                     <Border.Behaviors>
+                                        <behaviors:HoverHandCursorBehavior />
                                         <behaviors:MiddleClickBehavior Command="{Binding Source={x:Reference RootPage}, Path=BindingContext.OpenEditorCommand}" />
                                     </Border.Behaviors>
                                     <Border.Triggers>
@@ -389,6 +393,7 @@
                                         </DataTrigger>
                                     </Border.Triggers>
                                     <Border.Behaviors>
+                                        <behaviors:HoverHandCursorBehavior />
                                         <behaviors:MiddleClickBehavior Command="{Binding Source={x:Reference RootPage}, Path=BindingContext.OpenEditorCommand}" />
                                     </Border.Behaviors>
                                     <Grid Padding="10,6">
@@ -504,13 +509,21 @@
                             HandlerChanged="ContextActionButton_HandlerChanged"
                             Focused="ContextActionButton_Focused"
                             Unfocused="ContextActionButton_Unfocused"
-                            Command="{Binding ContextEditCommand}" />
+                            Command="{Binding ContextEditCommand}">
+                        <Button.Behaviors>
+                            <behaviors:HoverHandCursorBehavior />
+                        </Button.Behaviors>
+                    </Button>
                     <Button x:Name="ContextDeleteButton"
                             Text="Delete"
                             HandlerChanged="ContextActionButton_HandlerChanged"
                             Focused="ContextActionButton_Focused"
                             Unfocused="ContextActionButton_Unfocused"
-                            Command="{Binding ContextDeleteCommand}" />
+                            Command="{Binding ContextDeleteCommand}">
+                        <Button.Behaviors>
+                            <behaviors:HoverHandCursorBehavior />
+                        </Button.Behaviors>
+                    </Button>
                 </VerticalStackLayout>
             </Border>
         </Grid>
@@ -542,7 +555,11 @@
                                     Command="{Binding CopyFieldCommand}"
                                     CommandParameter="{Binding Editor.GuidText}" HeightRequest="40" WidthRequest="40" Padding="0"
                                     VerticalOptions="Center"
-                                    Clicked="CopyIconButton_Clicked" />
+                                    Clicked="CopyIconButton_Clicked">
+                                <Button.Behaviors>
+                                    <behaviors:HoverHandCursorBehavior />
+                                </Button.Behaviors>
+                            </Button>
 
                             <Label Grid.Row="1" Grid.Column="0" Text="Button Text" VerticalTextAlignment="Center" HeightRequest="40" />
                             <Entry x:Name="ModalButtonTextEntry" Grid.Row="1" Grid.Column="1" Text="{Binding Editor.ButtonText}" HeightRequest="40" HandlerChanged="ModalTextInput_HandlerChanged" />
@@ -550,7 +567,11 @@
                                     Command="{Binding CopyFieldCommand}"
                                     CommandParameter="{Binding Editor.ButtonText}" HeightRequest="40" WidthRequest="40" Padding="0"
                                     VerticalOptions="Center"
-                                    Clicked="CopyIconButton_Clicked" />
+                                    Clicked="CopyIconButton_Clicked">
+                                <Button.Behaviors>
+                                    <behaviors:HoverHandCursorBehavior />
+                                </Button.Behaviors>
+                            </Button>
 
                             <Label Grid.Row="2" Grid.Column="0" Text="Command" VerticalTextAlignment="Center" HeightRequest="40" />
                             <controls:CommandEntry x:Name="ModalCommandEntry" Grid.Row="2" Grid.Column="1" Text="{Binding Editor.Command}" HeightRequest="40"
@@ -563,7 +584,11 @@
                                     Command="{Binding CopyFieldCommand}"
                                     CommandParameter="{Binding Editor.Command}" HeightRequest="40" WidthRequest="40" Padding="0"
                                     VerticalOptions="Center"
-                                    Clicked="CopyIconButton_Clicked" />
+                                    Clicked="CopyIconButton_Clicked">
+                                <Button.Behaviors>
+                                    <behaviors:HoverHandCursorBehavior />
+                                </Button.Behaviors>
+                            </Button>
 
                             <Label Grid.Row="3" Grid.Column="0" Text="Tool" VerticalTextAlignment="Center" HeightRequest="40" />
                             <Entry x:Name="ModalToolEntry" Grid.Row="3" Grid.Column="1" Text="{Binding Editor.Tool}" HeightRequest="40" HandlerChanged="ModalTextInput_HandlerChanged" />
@@ -571,7 +596,11 @@
                                     Command="{Binding CopyFieldCommand}"
                                     CommandParameter="{Binding Editor.Tool}" HeightRequest="40" WidthRequest="40" Padding="0"
                                     VerticalOptions="Center"
-                                    Clicked="CopyIconButton_Clicked" />
+                                    Clicked="CopyIconButton_Clicked">
+                                <Button.Behaviors>
+                                    <behaviors:HoverHandCursorBehavior />
+                                </Button.Behaviors>
+                            </Button>
 
                             <Label Grid.Row="4" Grid.Column="0" Text="Arguments" VerticalTextAlignment="Center" HeightRequest="40" />
                             <Entry x:Name="ModalArgumentsEntry" Grid.Row="4" Grid.Column="1" Text="{Binding Editor.Arguments}" HeightRequest="40" HandlerChanged="ModalTextInput_HandlerChanged" />
@@ -579,7 +608,11 @@
                                     Command="{Binding CopyFieldCommand}"
                                     CommandParameter="{Binding Editor.Arguments}" HeightRequest="40" WidthRequest="40" Padding="0"
                                     VerticalOptions="Center"
-                                    Clicked="CopyIconButton_Clicked" />
+                                    Clicked="CopyIconButton_Clicked">
+                                <Button.Behaviors>
+                                    <behaviors:HoverHandCursorBehavior />
+                                </Button.Behaviors>
+                            </Button>
 
                             <Label Grid.Row="5" Grid.Column="0" Text="Clip Word" VerticalTextAlignment="Center" HeightRequest="40" />
                             <Border x:Name="ModalClipWordContainer"
@@ -618,7 +651,11 @@
                             <Button x:Name="CopyClipWordButton" Grid.Row="5" Grid.Column="2" Text="{OnPlatform WinUI='&#xE8C8;', MacCatalyst='⧉'}" FontFamily="{OnPlatform WinUI='Segoe MDL2 Assets', MacCatalyst=''}"
                                     Command="{Binding CopyFieldCommand}"
                                     CommandParameter="{Binding Editor.ClipText}" HeightRequest="40" WidthRequest="40" Padding="0" VerticalOptions="Center"
-                                    Clicked="CopyIconButton_Clicked" />
+                                    Clicked="CopyIconButton_Clicked">
+                                <Button.Behaviors>
+                                    <behaviors:HoverHandCursorBehavior />
+                                </Button.Behaviors>
+                            </Button>
 
                             <Label Grid.Row="6" Grid.Column="0" Text="Note" VerticalTextAlignment="Center" HeightRequest="40" />
                             <Border x:Name="ModalNoteContainer"
@@ -657,7 +694,11 @@
                             <Button x:Name="CopyNoteButton" Grid.Row="6" Grid.Column="2" Text="{OnPlatform WinUI='&#xE8C8;', MacCatalyst='⧉'}" FontFamily="{OnPlatform WinUI='Segoe MDL2 Assets', MacCatalyst=''}"
                                     Command="{Binding CopyFieldCommand}"
                                     CommandParameter="{Binding Editor.Note}" HeightRequest="40" WidthRequest="40" Padding="0" VerticalOptions="Center"
-                                    Clicked="CopyIconButton_Clicked" />
+                                    Clicked="CopyIconButton_Clicked">
+                                <Button.Behaviors>
+                                    <behaviors:HoverHandCursorBehavior />
+                                </Button.Behaviors>
+                            </Button>
 
                             <Label Grid.Row="7" Grid.Column="0" Text="Invert Theme" VerticalTextAlignment="Center" HeightRequest="40" />
                             <HorizontalStackLayout Grid.Row="7" Grid.Column="1" Spacing="8" VerticalOptions="Center">
@@ -719,8 +760,16 @@
                     <HorizontalStackLayout Grid.Row="1"
                                            HorizontalOptions="Center"
                                            Spacing="10">
-                        <Button x:Name="ModalCancelButton" Text="Cancel" WidthRequest="96" Unfocused="ModalActionButton_Unfocused" Command="{Binding CancelEditorCommand}" />
-                        <Button x:Name="ModalSaveButton" Text="Save" WidthRequest="96" Unfocused="ModalActionButton_Unfocused" Command="{Binding SaveEditorCommand}" />
+                        <Button x:Name="ModalCancelButton" Text="Cancel" WidthRequest="96" Unfocused="ModalActionButton_Unfocused" Command="{Binding CancelEditorCommand}">
+                            <Button.Behaviors>
+                                <behaviors:HoverHandCursorBehavior />
+                            </Button.Behaviors>
+                        </Button>
+                        <Button x:Name="ModalSaveButton" Text="Save" WidthRequest="96" Unfocused="ModalActionButton_Unfocused" Command="{Binding SaveEditorCommand}">
+                            <Button.Behaviors>
+                                <behaviors:HoverHandCursorBehavior />
+                            </Button.Behaviors>
+                        </Button>
                     </HorizontalStackLayout>
                 </Grid>
             </Border>
@@ -756,21 +805,33 @@
                                 HandlerChanged="ConflictActionButton_HandlerChanged"
                                 Focused="ConflictActionButton_Focused"
                                 Unfocused="ConflictActionButton_Unfocused"
-                                Clicked="ConflictReloadButton_Clicked" />
+                                Clicked="ConflictReloadButton_Clicked">
+                            <Button.Behaviors>
+                                <behaviors:HoverHandCursorBehavior />
+                            </Button.Behaviors>
+                        </Button>
                         <Button x:Name="ConflictOverwriteButton"
                                 Text="Overwrite mine"
                                 WidthRequest="132"
                                 HandlerChanged="ConflictActionButton_HandlerChanged"
                                 Focused="ConflictActionButton_Focused"
                                 Unfocused="ConflictActionButton_Unfocused"
-                                Clicked="ConflictOverwriteButton_Clicked" />
+                                Clicked="ConflictOverwriteButton_Clicked">
+                            <Button.Behaviors>
+                                <behaviors:HoverHandCursorBehavior />
+                            </Button.Behaviors>
+                        </Button>
                         <Button x:Name="ConflictCancelButton"
                                 Text="Cancel"
                                 WidthRequest="132"
                                 HandlerChanged="ConflictActionButton_HandlerChanged"
                                 Focused="ConflictActionButton_Focused"
                                 Unfocused="ConflictActionButton_Unfocused"
-                                Clicked="ConflictCancelButton_Clicked" />
+                                Clicked="ConflictCancelButton_Clicked">
+                            <Button.Behaviors>
+                                <behaviors:HoverHandCursorBehavior />
+                            </Button.Behaviors>
+                        </Button>
                     </HorizontalStackLayout>
                 </VerticalStackLayout>
             </Border>

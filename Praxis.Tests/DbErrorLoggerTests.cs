@@ -1266,7 +1266,7 @@ public class DbErrorLoggerTests
         Assert.Contains("purge fail test", entry.Message);
 
         var content = File.ReadAllText(CrashFileLogger.LogFilePath);
-        Assert.Contains($"Failed to purge old error logs after persisting '{context}': Simulated purge failure", content);
+        Assert.Contains($"Failed to purge old error logs after persisting '{context}' (Exception): Simulated purge failure", content);
         Assert.Contains("Type: System.Exception", content);
     }
 
@@ -1283,7 +1283,7 @@ public class DbErrorLoggerTests
         Assert.Null(ex);
 
         var content = File.ReadAllText(CrashFileLogger.LogFilePath);
-        Assert.Contains($"Failed to purge old error logs after persisting '{context} child': Simulated purge failure", content);
+        Assert.Contains($"Failed to purge old error logs after persisting '{context} child' (Exception): Simulated purge failure", content);
     }
 
     [Fact]
@@ -1303,7 +1303,7 @@ public class DbErrorLoggerTests
         Assert.Contains("purge fail test", entry.Message);
 
         var content = File.ReadAllText(CrashFileLogger.LogFilePath);
-        Assert.Contains($"Failed to purge old error logs after persisting '{context}': (failed to read exception message: System.InvalidOperationException: message getter failure)", content);
+        Assert.Contains($"Failed to purge old error logs after persisting '{context}' (ThrowingMessageException): (failed to read exception message: System.InvalidOperationException: message getter failure)", content);
         Assert.Contains("ThrowingMessageException", content);
     }
 
@@ -1323,7 +1323,7 @@ public class DbErrorLoggerTests
         Assert.Null(ex);
 
         var content = File.ReadAllText(CrashFileLogger.LogFilePath);
-        Assert.Contains($"Failed to purge old error logs after persisting '{context}': {markerA} {markerB}", content);
+        Assert.Contains($"Failed to purge old error logs after persisting '{context}' (MultilineMessageException): {markerA} {markerB}", content);
     }
 
     [Fact]
@@ -1339,7 +1339,7 @@ public class DbErrorLoggerTests
         Assert.Null(ex);
 
         var content = File.ReadAllText(CrashFileLogger.LogFilePath);
-        Assert.Contains($"Failed to purge old error logs after persisting '{context}': (empty)", content);
+        Assert.Contains($"Failed to purge old error logs after persisting '{context}' (WhitespaceMessageException): (empty)", content);
     }
 
     private sealed class FakeAppRepository : IAppRepository

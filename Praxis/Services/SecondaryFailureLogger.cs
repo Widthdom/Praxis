@@ -194,20 +194,39 @@ internal static class SecondaryFailureLogger
     private static bool TryBuildFallbackPath(string? root, out string? candidatePath)
     {
         candidatePath = null;
-        if (string.IsNullOrWhiteSpace(root))
+        var normalizedRoot = NormalizeAbsoluteDirectory(root);
+        if (normalizedRoot is null)
         {
             return false;
         }
 
         try
         {
-            candidatePath = Path.Combine(root, "Praxis", FallbackLogFileName);
+            candidatePath = Path.Combine(normalizedRoot, "Praxis", FallbackLogFileName);
             return true;
         }
         catch
         {
             candidatePath = null;
             return false;
+        }
+    }
+
+    private static string? NormalizeAbsoluteDirectory(string? root)
+    {
+        var trimmed = root?.Trim().Trim('"', '\'');
+        if (string.IsNullOrWhiteSpace(trimmed) || !Path.IsPathRooted(trimmed))
+        {
+            return null;
+        }
+
+        try
+        {
+            return Path.GetFullPath(trimmed);
+        }
+        catch
+        {
+            return null;
         }
     }
 

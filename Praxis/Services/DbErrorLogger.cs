@@ -163,7 +163,7 @@ public sealed class DbErrorLogger : IErrorLogger
         {
             var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);
             CrashFileLogger.WriteException(nameof(DbErrorLogger), ex);
-            CrashFileLogger.WriteWarning(nameof(DbErrorLogger), $"Flush failed unexpectedly: {safeMessage}");
+            CrashFileLogger.WriteWarning(nameof(DbErrorLogger), $"Flush failed unexpectedly ({ex.GetType().Name}): {safeMessage}");
         }
     }
 
@@ -186,7 +186,7 @@ public sealed class DbErrorLogger : IErrorLogger
         {
             var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);
             CrashFileLogger.WriteException(nameof(DbErrorLogger), ex);
-            CrashFileLogger.WriteWarning(nameof(DbErrorLogger), $"Drain loop failed unexpectedly: {safeMessage}");
+            CrashFileLogger.WriteWarning(nameof(DbErrorLogger), $"Drain loop failed unexpectedly ({ex.GetType().Name}): {safeMessage}");
         }
         finally
         {
@@ -225,7 +225,7 @@ public sealed class DbErrorLogger : IErrorLogger
                 {
                     var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);
                     CrashFileLogger.WriteException(nameof(DbErrorLogger), ex);
-                    CrashFileLogger.WriteWarning(nameof(DbErrorLogger), $"Failed to purge old error logs after persisting '{entry.Context}': {safeMessage}");
+                    CrashFileLogger.WriteWarning(nameof(DbErrorLogger), $"Failed to purge old error logs after persisting '{entry.Context}' ({ex.GetType().Name}): {safeMessage}");
                 }
             }
         }

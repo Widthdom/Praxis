@@ -139,6 +139,8 @@ public sealed class CommandExecutor : ICommandExecutor
                     $"Failed to open folder '{normalizedExpandedForLog}'."));
             }
 
+            var pathRooted = Path.IsPathRooted(expanded);
+            CrashFileLogger.WriteWarning(nameof(CommandExecutor), $"Path not found for '{normalizedExpandedForLog}' while rooted={pathRooted}.");
             return Task.FromResult((false, $"Path not found: {expanded}"));
         }
         catch (Exception ex)
@@ -157,8 +159,9 @@ public sealed class CommandExecutor : ICommandExecutor
             var process = Process.Start(startInfo);
             if (process is null)
             {
-                CrashFileLogger.WriteWarning(nameof(CommandExecutor), $"{failurePrefix} No process handle was returned.");
-                return (false, $"{failurePrefix} No process handle was returned.");
+                var failureMessage = BuildNoProcessHandleMessage(failurePrefix, startInfo.FileName, startInfo.UseShellExecute);
+                CrashFileLogger.WriteWarning(nameof(CommandExecutor), failureMessage);
+                return (false, failureMessage);
             }
 
             return (true, successMessage);
@@ -175,6 +178,12 @@ public sealed class CommandExecutor : ICommandExecutor
     {
         var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);
         return $"{prefix} {safeMessage}";
+    }
+
+    private static string BuildNoProcessHandleMessage(string failurePrefix, string fileName, bool useShellExecute)
+    {
+        var normalizedFileName = NormalizeTargetForLog(fileName);
+        return $"{failurePrefix} No process handle was returned for '{normalizedFileName}' while useShellExecute={useShellExecute}.";
     }
 
     private static string NormalizeTargetForLog(string value)

@@ -59,6 +59,41 @@ public class AppLayerSourceGuardTests
     }
 
     [Fact]
+    public void HoverHandCursorBehavior_SetsPlatformCursor_OnPointerEnterAndExit()
+    {
+        var source = ReadRepositoryFile("Praxis", "Behaviors", "HoverHandCursorBehavior.cs");
+
+        Assert.Contains("public sealed class HoverHandCursorBehavior : Behavior<View>", source);
+        Assert.Contains("private readonly PointerGestureRecognizer pointer = new();", source);
+        Assert.Contains("pointer.PointerEntered += OnPointerEntered;", source);
+        Assert.Contains("pointer.PointerExited += OnPointerExited;", source);
+        Assert.Contains("SetHandCursor(sender, useHandCursor: true);", source);
+        Assert.Contains("SetHandCursor(sender, useHandCursor: false);", source);
+        Assert.Contains("NonPublicPropertySetter.TrySet(frameworkElement, \"ProtectedCursor\", cursor);", source);
+        Assert.Contains("var cursorSelector = useHandCursor ? pointingHandCursorSelector : arrowCursorSelector;", source);
+        Assert.Contains("ObjcMsgSendVoid(cursor, setCursorSelector);", source);
+    }
+
+    [Fact]
+    public void MainPage_InteractiveButtons_UseHoverHandCursorBehavior()
+    {
+        var xaml = ReadRepositoryFile("Praxis", "MainPage.xaml");
+
+        Assert.Equal(17, CountOccurrences(xaml, "<behaviors:HoverHandCursorBehavior />"));
+        Assert.Contains("<Border x:Name=\"CreateButton\"", xaml);
+        Assert.Contains("<behaviors:HoverHandCursorBehavior />\n                                        <behaviors:MiddleClickBehavior", xaml);
+        Assert.Contains("<Button x:Name=\"ContextEditButton\"", xaml);
+        Assert.Contains("<Button x:Name=\"ContextDeleteButton\"", xaml);
+        Assert.Contains("<Button x:Name=\"CopyClipWordButton\"", xaml);
+        Assert.Contains("<Button x:Name=\"CopyNoteButton\"", xaml);
+        Assert.Contains("<Button x:Name=\"ModalCancelButton\"", xaml);
+        Assert.Contains("<Button x:Name=\"ModalSaveButton\"", xaml);
+        Assert.Contains("<Button x:Name=\"ConflictReloadButton\"", xaml);
+        Assert.Contains("<Button x:Name=\"ConflictOverwriteButton\"", xaml);
+        Assert.Contains("<Button x:Name=\"ConflictCancelButton\"", xaml);
+    }
+
+    [Fact]
     public void SqliteAppRepository_Initialization_AssignsSharedConnectionOnlyAfterSuccessfulLoad()
     {
         var source = ReadRepositoryFile("Praxis", "Services", "SqliteAppRepository.cs");
@@ -85,6 +120,19 @@ public class AppLayerSourceGuardTests
         Assert.Contains("Root page resolution fell back to an error page; cache not updated.", source);
         Assert.Contains("var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);", source);
         Assert.Contains("new Label { Text = safeMessage },", source);
+    }
+
+    [Fact]
+    public void App_CreateWindow_HandlerChangeFailures_WarningLogRootPageType()
+    {
+        var source = ReadRepositoryFile("Praxis", "App.xaml.cs");
+
+        Assert.Contains("errorLogger?.Log(ex, \"Window.HandlerChanged\");", source);
+        Assert.Contains("var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);", source);
+        Assert.Contains("var platformViewType = window.Handler?.PlatformView?.GetType().Name ?? \"(null)\";", source);
+        Assert.Contains("errorLogger?.LogWarning(", source);
+        Assert.Contains("\"Window handler activation failed for root page '{page.GetType().Name}' with platformView='{platformViewType}': {safeMessage}\"", source);
+        Assert.Contains("\"Window.HandlerChanged\");", source);
     }
 
     [Fact]
@@ -133,12 +181,17 @@ public class AppLayerSourceGuardTests
 
         Assert.Contains("Exception? readFailure = null;", source);
         Assert.Contains("private static string BuildSyncWarningMessage(string prefix, Exception ex)", source);
+        Assert.Contains("return $\"{prefix} ({ex.GetType().Name}) {safeMessage}\";", source);
         Assert.Contains("private static string NormalizePayloadForLog(string payload)", source);
         Assert.Contains("var normalizedPayload = NormalizePayloadForLog(payload);", source);
         Assert.Contains("var normalizedSource = NormalizePayloadForLog(source);", source);
-        Assert.Contains("CrashFileLogger.WriteWarning(nameof(FileStateSyncNotifier), BuildSyncWarningMessage(\"Failed to read sync payload after retries:\", readFailure));", source);
+        Assert.Contains("BuildSyncWarningMessage($\"Failed to read sync payload '{normalizedSignalPath}' after retries:\", readFailure)", source);
         Assert.Contains("CrashFileLogger.WriteWarning(nameof(FileStateSyncNotifier), BuildSyncWarningMessage(\"Unexpected sync publish failure:\", ex));", source);
-        Assert.Contains("CrashFileLogger.WriteWarning(nameof(FileStateSyncNotifier), $\"Ignored malformed sync payload: \\\"{normalizedPayload}\\\"\");", source);
+        Assert.Contains("var warningMessage = BuildMalformedPayloadWarning(signalPath, payload);", source);
+        Assert.Contains("private static string BuildMalformedPayloadWarning(string signalPath, string payload)", source);
+        Assert.Contains("var normalizedSignalPath = NormalizePayloadForLog(signalPath);", source);
+        Assert.Contains("var normalizedPayload = NormalizePayloadForLog(payload);", source);
+        Assert.Contains("return $\"Ignored malformed sync payload from '{normalizedSignalPath}': \\\"{normalizedPayload}\\\"\";", source);
         Assert.Contains("CrashFileLogger.WriteInfo(nameof(FileStateSyncNotifier), $\"Signal observed. Source={normalizedSource} TimestampUtc={timestamp:O}\");", source);
     }
 
@@ -176,6 +229,8 @@ public class AppLayerSourceGuardTests
         Assert.Contains("var normalizedUrlForLog = NormalizeTargetForLog(url);", source);
         Assert.Contains("var normalizedArgumentsForLog = NormalizeTargetForLog(arguments);", source);
         Assert.Contains("var normalizedExpandedForLog = NormalizeTargetForLog(expanded);", source);
+        Assert.Contains("var pathRooted = Path.IsPathRooted(expanded);", source);
+        Assert.Contains("CrashFileLogger.WriteWarning(nameof(CommandExecutor), $\"Path not found for '{normalizedExpandedForLog}' while rooted={pathRooted}.\");", source);
         Assert.Contains("private static string BuildFailureMessage(string prefix, Exception ex)", source);
         Assert.Contains("var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);", source);
     }
@@ -189,9 +244,12 @@ public class AppLayerSourceGuardTests
         Assert.Contains("var resultMessage = BuildFailureMessage(\"Launch target resolution failed:\", ex);", source);
         Assert.Contains("var failureMessage = BuildFailureMessage(failurePrefix, ex);", source);
         Assert.Contains("return Task.FromResult(StartProcess(psi, \"Executed.\", $\"Process launch failed for tool '{normalizedToolForLog}'.\"));", source);
+        Assert.Contains("var failureMessage = BuildNoProcessHandleMessage(failurePrefix, startInfo.FileName, startInfo.UseShellExecute);", source);
+        Assert.Contains("private static string BuildNoProcessHandleMessage(string failurePrefix, string fileName, bool useShellExecute)", source);
+        Assert.Contains("var normalizedFileName = NormalizeTargetForLog(fileName);", source);
         Assert.Contains("CrashFileLogger.WriteWarning(nameof(CommandExecutor), warningMessage);", source);
         Assert.Contains("CrashFileLogger.WriteWarning(nameof(CommandExecutor), failureMessage);", source);
-        Assert.Contains("CrashFileLogger.WriteWarning(nameof(CommandExecutor), $\"{failurePrefix} No process handle was returned.\");", source);
+        Assert.Contains("return $\"{failurePrefix} No process handle was returned for '{normalizedFileName}' while useShellExecute={useShellExecute}.\";", source);
     }
 
     [Fact]
@@ -225,9 +283,9 @@ public class AppLayerSourceGuardTests
 
         Assert.Equal(4, CountOccurrences(source, "var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);"));
         Assert.Contains("CrashFileLogger.WriteException(nameof(DbErrorLogger), ex);", source);
-        Assert.Contains("CrashFileLogger.WriteWarning(nameof(DbErrorLogger), $\"Drain loop failed unexpectedly: {safeMessage}\");", source);
-        Assert.Contains("CrashFileLogger.WriteWarning(nameof(DbErrorLogger), $\"Flush failed unexpectedly: {safeMessage}\");", source);
-        Assert.Contains("CrashFileLogger.WriteWarning(nameof(DbErrorLogger), $\"Failed to purge old error logs after persisting '{entry.Context}': {safeMessage}\");", source);
+        Assert.Contains("CrashFileLogger.WriteWarning(nameof(DbErrorLogger), $\"Drain loop failed unexpectedly ({ex.GetType().Name}): {safeMessage}\");", source);
+        Assert.Contains("CrashFileLogger.WriteWarning(nameof(DbErrorLogger), $\"Flush failed unexpectedly ({ex.GetType().Name}): {safeMessage}\");", source);
+        Assert.Contains("CrashFileLogger.WriteWarning(nameof(DbErrorLogger), $\"Failed to purge old error logs after persisting '{entry.Context}' ({ex.GetType().Name}): {safeMessage}\");", source);
         Assert.Contains("CrashFileLogger.WriteWarning(nameof(DbErrorLogger), $\"Failed to persist {entry.Level} log for '{entry.Context}': {safeMessage}\");", source);
     }
 
@@ -240,8 +298,10 @@ public class AppLayerSourceGuardTests
         Assert.Contains("catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)", source);
         Assert.Contains("inputScopeUnsupported = true;", source);
         Assert.Equal(2, CountOccurrences(source, "var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);"));
-        Assert.Contains("CrashFileLogger.WriteWarning(nameof(CommandEntryHandler), $\"InputScope assignment disabled after compatibility failure: {safeMessage}\");", source);
-        Assert.Contains("CrashFileLogger.WriteWarning(nameof(CommandEntryHandler), $\"InputScope assignment failed unexpectedly: {safeMessage}\");", source);
+        Assert.Equal(2, CountOccurrences(source, "var enforceAsciiInput = (VirtualView as CommandEntry)?.EnforceAsciiInput ?? false;"));
+        Assert.Equal(2, CountOccurrences(source, "var textBoxType = textBox.GetType().Name;"));
+        Assert.Contains("CrashFileLogger.WriteWarning(nameof(CommandEntryHandler), $\"InputScope assignment disabled after compatibility failure while enforceAsciiInput={enforceAsciiInput} textBoxType={textBoxType}: {safeMessage}\");", source);
+        Assert.Contains("CrashFileLogger.WriteWarning(nameof(CommandEntryHandler), $\"InputScope assignment failed unexpectedly while enforceAsciiInput={enforceAsciiInput} textBoxType={textBoxType}: {safeMessage}\");", source);
         Assert.Contains("catch", source);
         Assert.Contains("return false;", source);
     }
@@ -253,12 +313,16 @@ public class AppLayerSourceGuardTests
         var pointerSource = ReadRepositoryFile("Praxis", "MainPage.PointerAndSelection.cs");
         var layoutSource = ReadRepositoryFile("Praxis", "MainPage.LayoutUtilities.cs");
 
+        Assert.Contains("var controlType = control.GetType().Name;", focusSource);
         Assert.Contains("var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);", focusSource);
-        Assert.Contains("CrashFileLogger.WriteWarning(nameof(DisableWindowsSystemFocusVisual), $\"Failed to disable UseSystemFocusVisuals: {safeMessage}\");", focusSource);
+        Assert.Contains("CrashFileLogger.WriteWarning(nameof(DisableWindowsSystemFocusVisual), $\"Failed to disable UseSystemFocusVisuals on {controlType}: {safeMessage}\");", focusSource);
         Assert.Contains("var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);", pointerSource);
-        Assert.Contains("CrashFileLogger.WriteWarning(nameof(FocusModalPrimaryEditorField), $\"Failed to focus modal ButtonText entry: {safeMessage}\");", pointerSource);
+        Assert.Contains("var shouldSelectAll = modalPrimaryFieldSelectAllPending;", pointerSource);
+        Assert.Contains("var modalVisible = EditorOverlay.IsVisible;", pointerSource);
+        Assert.Contains("CrashFileLogger.WriteWarning(nameof(FocusModalPrimaryEditorField), $\"Failed to focus modal ButtonText entry while shouldSelectAll={shouldSelectAll} modalVisible={modalVisible}: {safeMessage}\");", pointerSource);
         Assert.Contains("var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);", layoutSource);
-        Assert.Contains("CrashFileLogger.WriteWarning(nameof(SetTabStop), $\"Failed to set IsTabStop={isTabStop}: {safeMessage}\");", layoutSource);
+        Assert.Contains("var targetType = platformView.GetType().Name;", layoutSource);
+        Assert.Contains("CrashFileLogger.WriteWarning(nameof(SetTabStop), $\"Failed to set IsTabStop={isTabStop} on {targetType}: {safeMessage}\");", layoutSource);
     }
 
     [Fact]
@@ -270,6 +334,8 @@ public class AppLayerSourceGuardTests
         Assert.Contains("private static bool globalExceptionLoggingHooked;", source);
         Assert.Contains("if (globalExceptionLoggingHooked)", source);
         Assert.Contains("var safePayload = CrashFileLogger.SafeObjectDescription(e.ExceptionObject);", source);
+        Assert.Contains("var payloadType = e.ExceptionObject?.GetType().FullName ?? \"null\";", source);
+        Assert.Contains("var payload = $\"Non-Exception object thrown (IsTerminating={e.IsTerminating}, Type={payloadType}): {safePayload}\";", source);
         Assert.Contains("var content = BuildStartupExceptionLogContent(source, exception);", source);
         Assert.Contains("var content = BuildStartupMessageLogContent(source, message);", source);
         Assert.Contains("sb.Append(CrashFileLogger.FormatExceptionPayload(exception));", source);
@@ -308,7 +374,9 @@ public class AppLayerSourceGuardTests
         Assert.Contains("if (globalExceptionLoggingHooked)", source);
         Assert.Contains("globalExceptionLoggingHooked = true;", source);
         Assert.Contains("var safePayload = CrashFileLogger.SafeObjectDescription(e.ExceptionObject);", source);
+        Assert.Contains("var payloadType = e.ExceptionObject?.GetType().FullName ?? \"null\";", source);
         Assert.Equal(2, CountOccurrences(source, "var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);"));
+        Assert.Contains("\"Non-Exception object thrown (IsTerminating={e.IsTerminating}, Type={payloadType}): {safePayload}\"", source);
         Assert.Contains("CrashFileLogger.WriteWarning(nameof(AppDelegate), $\"Failed to hook MarshalManagedException: {safeMessage}\");", source);
         Assert.Contains("CrashFileLogger.WriteWarning(nameof(AppDelegate), $\"Failed to prioritize key command '{selectorName}': {safeMessage}\");", source);
     }
@@ -318,9 +386,10 @@ public class AppLayerSourceGuardTests
     {
         var source = ReadRepositoryFile("Praxis", "ViewModels", "MainViewModel.cs");
 
+        Assert.Contains("var currentThemeForLog = SelectedTheme;", source);
         Assert.Contains("errorLogger.Log(ex, nameof(SyncThemeFromExternalChangeAsync));", source);
-        Assert.Contains("BuildSafeWarningMessage(\"External theme sync dispatch failed\", ex)", source);
-        Assert.Contains("BuildSafeWarningMessage(\"External theme sync failed\", ex)", source);
+        Assert.Contains("BuildSafeWarningMessage($\"External theme sync dispatch failed for theme {latestTheme}\", ex)", source);
+        Assert.Contains("BuildSafeWarningMessage($\"External theme sync failed for theme {currentThemeForLog}\", ex)", source);
         Assert.Contains("BuildSafeWarningMessage(\"External reload failed\", ex)", source);
         Assert.Contains("TaskCreationOptions.RunContinuationsAsynchronously", source);
         Assert.Contains("private static string BuildSafeWarningMessage(string prefix, Exception ex)", source);
@@ -334,10 +403,13 @@ public class AppLayerSourceGuardTests
 
         Assert.Contains("errorLogger.Log(ex, nameof(DebouncedRefreshCommandSuggestionsAsync));", source);
         Assert.Contains("errorLogger.Log(ex, nameof(RefreshCommandSuggestionsOnMainThread));", source);
-        Assert.Contains("BuildSafeWarningMessage(\"Debounced command suggestion refresh failed\", ex)", source);
-        Assert.Contains("BuildSafeWarningMessage(\"Command suggestion close dispatch failed\", dispatchEx)", source);
-        Assert.Contains("BuildSafeWarningMessage(\"Command suggestion refresh dispatch failed\", ex)", source);
-        Assert.Contains("BuildSafeWarningMessage(\"Command lookup fallback failed\", ex)", source);
+        Assert.Contains("var commandInputLength = CommandInput?.Length ?? 0;", source);
+        Assert.Contains("BuildSafeWarningMessage($\"Debounced command suggestion refresh failed for input length {commandInputLength}\", ex)", source);
+        Assert.Contains("BuildSafeWarningMessage($\"Command suggestion close dispatch failed for input length {commandInputLength}\", dispatchEx)", source);
+        Assert.Contains("var valueLength = value?.Length ?? 0;", source);
+        Assert.Contains("BuildSafeWarningMessage($\"Command suggestion refresh dispatch failed for input length {valueLength}\", ex)", source);
+        Assert.Contains("BuildSafeWarningMessage($\"Command suggestion refresh failed for input length {value?.Length ?? 0}\", ex)", source);
+        Assert.Contains("BuildSafeWarningMessage($\"Command lookup fallback failed for input length {cmd.Length}\", ex)", source);
         Assert.Contains("catch (OperationCanceledException) when (token.IsCancellationRequested)", source);
     }
 
@@ -366,6 +438,7 @@ public class AppLayerSourceGuardTests
         Assert.Contains("var normalizedLeft = NormalizePathForLog(left);", source);
         Assert.Contains("var normalizedRight = NormalizePathForLog(right);", source);
         Assert.Contains("private static string BuildSafeWarningMessage(string prefix, Exception ex)", source);
+        Assert.Contains("=> $\"{prefix} ({ex.GetType().Name}): {CrashFileLogger.SafeExceptionMessage(ex)}\";", source);
         Assert.Equal(2, CountOccurrences(source, "CrashFileLogger.WriteWarning(nameof(AppStoragePaths), BuildSafeWarningMessage($\"Legacy database migration failed from '{normalizedSourcePath}'\", ex));"));
         Assert.Contains("CrashFileLogger.WriteWarning(nameof(AppStoragePaths), BuildSafeWarningMessage($\"Ignoring invalid migration path comparison between '{normalizedLeft}' and '{normalizedRight}'\", ex));", source);
     }
@@ -378,9 +451,11 @@ public class AppLayerSourceGuardTests
         Assert.Contains("private static string NormalizePathForLog(string path)", source);
         Assert.Contains("var normalizedPath = NormalizePathForLog(path);", source);
         Assert.Contains("private static void WriteSkippedConfigWarning(string path, Exception ex)", source);
+        Assert.Contains("var exceptionType = ex.GetType().Name;", source);
         Assert.Contains("var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);", source);
-        Assert.Contains("CrashFileLogger.WriteWarning(nameof(FileAppConfigService), $\"Skipping config '{normalizedPath}': {safeMessage}\");", source);
-        Assert.Contains("CrashFileLogger.WriteWarning(nameof(FileAppConfigService), $\"Skipping config '{normalizedPath}' because it does not specify a valid theme.\");", source);
+        Assert.Contains("CrashFileLogger.WriteWarning(nameof(FileAppConfigService), $\"Skipping config '{normalizedPath}' after {exceptionType}: {safeMessage}\");", source);
+        Assert.Contains("var normalizedTheme = NormalizeThemeForLog(config?.Theme);", source);
+        Assert.Contains("$\"Skipping config '{normalizedPath}' because it does not specify a valid theme. Value='{normalizedTheme}'.\"", source);
     }
 
     [Fact]
@@ -390,7 +465,8 @@ public class AppLayerSourceGuardTests
 
         Assert.Contains("if (Application.Current.UserAppTheme == appTheme)", source);
         Assert.Contains("var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);", source);
-        Assert.Contains("CrashFileLogger.WriteWarning(nameof(MauiThemeService), $\"ApplyMacWindowStyle dispatch failed: {safeMessage}\");", source);
+        Assert.Contains("var currentTheme = Application.Current?.UserAppTheme ?? AppTheme.Unspecified;", source);
+        Assert.Contains("CrashFileLogger.WriteWarning(nameof(MauiThemeService), $\"ApplyMacWindowStyle dispatch failed for theme '{appTheme}' while currentTheme='{currentTheme}': {safeMessage}\");", source);
     }
 
     [Fact]
@@ -400,11 +476,13 @@ public class AppLayerSourceGuardTests
 
         Assert.Contains("private static string NormalizePathForLog(string path)", source);
         Assert.Equal(2, CountOccurrences(source, "var normalizedBundlePath = NormalizePathForLog(bundlePath);"));
+        Assert.Equal(2, CountOccurrences(source, "var normalizedRelayExecutable = NormalizePathForLog(relayExecutable);"));
         Assert.Contains("var process = Process.Start(startInfo);", source);
         Assert.Contains("if (process is null)", source);
         Assert.Contains("var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);", source);
-        Assert.Contains("CrashFileLogger.WriteWarning(nameof(Program), $\"LaunchServices relay returned no process for bundle '{normalizedBundlePath}'.\");", source);
-        Assert.Contains("CrashFileLogger.WriteWarning(nameof(Program), $\"LaunchServices relay failed for bundle '{normalizedBundlePath}': {safeMessage}\");", source);
+        Assert.Contains("CrashFileLogger.WriteWarning(nameof(Program), $\"LaunchServices relay returned no process for bundle '{normalizedBundlePath}' via '{normalizedRelayExecutable}'.\");", source);
+        Assert.Contains("var normalizedRelayArg = NormalizePathForLog(OpenRelayArg);", source);
+        Assert.Contains("CrashFileLogger.WriteWarning(nameof(Program), $\"LaunchServices relay failed for bundle '{normalizedBundlePath}' via '{normalizedRelayExecutable}' with relayArg='{normalizedRelayArg}': {safeMessage}\");", source);
     }
 
     [Fact]
@@ -414,20 +492,34 @@ public class AppLayerSourceGuardTests
         var macEditorSource = ReadRepositoryFile("Praxis", "Platforms", "MacCatalyst", "Handlers", "MacEditorHandler.cs");
         var commandEntrySource = ReadRepositoryFile("Praxis", "Platforms", "MacCatalyst", "Handlers", "CommandEntryHandler.cs");
 
-        Assert.Contains("return TryResolveKeyInput(inputName) ?? fallback;", macEntrySource);
+        Assert.Contains("return TryResolveKeyInput(inputName, fallback) ?? fallback;", macEntrySource);
         Assert.Contains("var normalizedInputName = CrashFileLogger.NormalizeMessagePayload(inputName);", macEntrySource);
+        Assert.Contains("var normalizedFallback = DescribeKeyInputFallbackForLog(fallbackForLog);", macEntrySource);
         Assert.Contains("var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);", macEntrySource);
-        Assert.Contains("CrashFileLogger.WriteWarning(nameof(MacEntryHandler), $\"Failed to resolve UIKeyCommand input '{normalizedInputName}': {safeMessage}\");", macEntrySource);
+        Assert.Contains("CrashFileLogger.WriteWarning(nameof(MacEntryHandler), $\"Failed to resolve UIKeyCommand input '{normalizedInputName}' with fallback '{normalizedFallback}': {safeMessage}\");", macEntrySource);
+        Assert.Contains("\"\\t\" => \"Tab\",", macEntrySource);
+        Assert.Contains("\"\\u001B\" => \"Escape\",", macEntrySource);
+        Assert.Contains("\"\\r\" => \"Return\",", macEntrySource);
+        Assert.Contains("\"\\uF700\" => \"UpArrow\",", macEntrySource);
+        Assert.Contains("\"\\uF701\" => \"DownArrow\",", macEntrySource);
+        Assert.Contains("\"\\uF702\" => \"LeftArrow\",", macEntrySource);
+        Assert.Contains("\"\\uF703\" => \"RightArrow\",", macEntrySource);
 
-        Assert.Contains("return TryResolveKeyInput(inputName) ?? fallback;", macEditorSource);
+        Assert.Contains("return TryResolveKeyInput(inputName, fallback) ?? fallback;", macEditorSource);
         Assert.Contains("var normalizedInputName = CrashFileLogger.NormalizeMessagePayload(inputName);", macEditorSource);
+        Assert.Contains("var normalizedFallback = DescribeKeyInputFallbackForLog(fallbackForLog);", macEditorSource);
         Assert.Contains("var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);", macEditorSource);
-        Assert.Contains("CrashFileLogger.WriteWarning(nameof(MacEditorHandler), $\"Failed to resolve UIKeyCommand input '{normalizedInputName}': {safeMessage}\");", macEditorSource);
+        Assert.Contains("CrashFileLogger.WriteWarning(nameof(MacEditorHandler), $\"Failed to resolve UIKeyCommand input '{normalizedInputName}' with fallback '{normalizedFallback}': {safeMessage}\");", macEditorSource);
+        Assert.Contains("\"\\t\" => \"Tab\",", macEditorSource);
+        Assert.Contains("\"\\u001B\" => \"Escape\",", macEditorSource);
+        Assert.Contains("\"\\uF702\" => \"LeftArrow\",", macEditorSource);
+        Assert.Contains("\"\\uF703\" => \"RightArrow\",", macEditorSource);
 
-        Assert.Contains("return TryResolveKeyInput(inputName) ?? fallback;", commandEntrySource);
+        Assert.Contains("return TryResolveKeyInput(inputName, fallback) ?? fallback;", commandEntrySource);
         Assert.Contains("var normalizedInputName = CrashFileLogger.NormalizeMessagePayload(inputName);", commandEntrySource);
+        Assert.Contains("var normalizedFallback = DescribeKeyInputFallbackForLog(fallbackForLog);", commandEntrySource);
         Assert.Contains("var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);", commandEntrySource);
-        Assert.Contains("CrashFileLogger.WriteWarning(nameof(CommandEntryHandler), $\"Failed to resolve UIKeyCommand input '{normalizedInputName}': {safeMessage}\");", commandEntrySource);
+        Assert.Contains("CrashFileLogger.WriteWarning(nameof(CommandEntryHandler), $\"Failed to resolve UIKeyCommand input '{normalizedInputName}' with fallback '{normalizedFallback}': {safeMessage}\");", commandEntrySource);
     }
 
     [Fact]
@@ -438,10 +530,17 @@ public class AppLayerSourceGuardTests
 
         Assert.Equal(2, CountOccurrences(behaviorSource, "var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);"));
         Assert.Contains("CrashFileLogger.WriteWarning(nameof(MiddleClickBehavior), $\"Failed to set buttonMaskRequired={mask}: {safeMessage}\");", behaviorSource);
-        Assert.Contains("CrashFileLogger.WriteWarning(nameof(MiddleClickBehavior), $\"Deferred middle-click execution failed: {safeMessage}\");", behaviorSource);
+        Assert.Contains("var isContextMenuOpen = IsContextMenuCurrentlyOpen();", behaviorSource);
+        Assert.Contains("var hasCommand = Command is not null;", behaviorSource);
+        Assert.Contains("var associatedObjectType = attachedView?.GetType().Name ?? \"(null)\";", behaviorSource);
+        Assert.Contains("CrashFileLogger.WriteWarning(nameof(MiddleClickBehavior), $\"Deferred middle-click execution failed while contextMenuOpen={isContextMenuOpen} hasCommand={hasCommand} associatedObjectType={associatedObjectType}: {safeMessage}\");", behaviorSource);
         Assert.Equal(2, CountOccurrences(macSource, "var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);"));
         Assert.Contains("CrashFileLogger.WriteWarning(nameof(TryCreateMacEditorKeyCommand), $\"Failed to create Mac editor key command '{selectorName}' for input '{keyInput}': {safeMessage}\");", macSource);
-        Assert.Contains("CrashFileLogger.WriteWarning(nameof(IsMacMiddleButtonCurrentlyDown), $\"Failed to query middle button state from CoreGraphics: {safeMessage}\");", macSource);
+        Assert.Contains("var isActive = App.IsMacApplicationActive();", macSource);
+        Assert.Contains("var activationSuppressed = App.IsActivationSuppressionActive();", macSource);
+        Assert.Contains("var pointerKnown = macLastActivePage is not null &&", macSource);
+        Assert.Contains("page.lastPointerOnRoot is not null;", macSource);
+        Assert.Contains("CrashFileLogger.WriteWarning(nameof(IsMacMiddleButtonCurrentlyDown), $\"Failed to query middle button state from CoreGraphics while isActive={isActive} activationSuppressed={activationSuppressed} pointerKnown={pointerKnown}: {safeMessage}\");", macSource);
     }
 
     [Fact]
@@ -450,7 +549,7 @@ public class AppLayerSourceGuardTests
         var source = ReadRepositoryFile("Praxis", "MainPage.xaml.cs");
         Assert.Contains("catch (OperationCanceledException) when (token.IsCancellationRequested)", source);
         Assert.Contains("var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);", source);
-        Assert.Contains("CrashFileLogger.WriteWarning(\"MainPage.CopyIconButton_Clicked\", $\"Copy notice animation failed: {safeMessage}\");", source);
+        Assert.Contains("CrashFileLogger.WriteWarning(\"MainPage.CopyIconButton_Clicked\", $\"Copy notice animation failed while overlayVisible={CopyNoticeOverlay.IsVisible} tokenCanceled={token.IsCancellationRequested}: {safeMessage}\");", source);
     }
 
     [Fact]
@@ -458,7 +557,8 @@ public class AppLayerSourceGuardTests
     {
         var source = ReadRepositoryFile("Praxis", "MainPage.StatusAndTheme.cs");
         Assert.Contains("var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);", source);
-        Assert.Contains("CrashFileLogger.WriteWarning(nameof(TriggerStatusFlash), $\"Status flash animation failed: {safeMessage}\");", source);
+        Assert.Contains("var messageLength = message?.Length ?? 0;", source);
+        Assert.Contains("CrashFileLogger.WriteWarning(nameof(TriggerStatusFlash), $\"Status flash animation failed for message length {messageLength} (isError={StatusFlashErrorPolicy.IsErrorStatus(message)}): {safeMessage}\");", source);
     }
 
     [Fact]
@@ -467,30 +567,30 @@ public class AppLayerSourceGuardTests
         var source = ReadRepositoryFile("Praxis", "MainPage.DockAndQuickLook.cs");
         Assert.Contains("catch (OperationCanceledException) when (token.IsCancellationRequested)", source);
         Assert.Equal(3, CountOccurrences(source, "var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);"));
-        Assert.Contains("CrashFileLogger.WriteWarning(nameof(HideDockScrollBarAfterExitDelayAsync), $\"Dock hover-exit hide failed: {safeMessage}\");", source);
+        Assert.Contains("CrashFileLogger.WriteWarning(nameof(HideDockScrollBarAfterExitDelayAsync), $\"Dock hover-exit hide failed while pointerHover={isDockPointerHovering}: {safeMessage}\");", source);
         Assert.True(
             source.IndexOf("SetDockScrollBarVisibility(isPointerOverDockRegion: false);", StringComparison.Ordinal)
-            < source.IndexOf("CrashFileLogger.WriteWarning(nameof(HideDockScrollBarAfterExitDelayAsync), $\"Dock hover-exit hide failed: {safeMessage}\");", StringComparison.Ordinal));
+            < source.IndexOf("CrashFileLogger.WriteWarning(nameof(HideDockScrollBarAfterExitDelayAsync), $\"Dock hover-exit hide failed while pointerHover={isDockPointerHovering}: {safeMessage}\");", StringComparison.Ordinal));
     }
 
     [Fact]
     public void MainPage_QuickLookShowFailures_AreWarningLogged()
     {
         var source = ReadRepositoryFile("Praxis", "MainPage.DockAndQuickLook.cs");
-        Assert.Contains("CrashFileLogger.WriteWarning(nameof(ShowQuickLookAfterDelayAsync), $\"Quick Look show failed: {safeMessage}\");", source);
+        Assert.Contains("CrashFileLogger.WriteWarning(nameof(ShowQuickLookAfterDelayAsync), $\"Quick Look show failed for item '{item.Id}' while popupVisible={QuickLookPopup.IsVisible}: {safeMessage}\");", source);
         Assert.True(
             source.IndexOf("QuickLookPopup.CancelAnimations();", StringComparison.Ordinal)
-            < source.IndexOf("CrashFileLogger.WriteWarning(nameof(ShowQuickLookAfterDelayAsync), $\"Quick Look show failed: {safeMessage}\");", StringComparison.Ordinal));
+            < source.IndexOf("CrashFileLogger.WriteWarning(nameof(ShowQuickLookAfterDelayAsync), $\"Quick Look show failed for item '{item.Id}' while popupVisible={QuickLookPopup.IsVisible}: {safeMessage}\");", StringComparison.Ordinal));
     }
 
     [Fact]
     public void MainPage_QuickLookHideFailures_AreWarningLogged()
     {
         var source = ReadRepositoryFile("Praxis", "MainPage.DockAndQuickLook.cs");
-        Assert.Contains("CrashFileLogger.WriteWarning(nameof(HideQuickLookAfterDelayAsync), $\"Quick Look hide failed: {safeMessage}\");", source);
+        Assert.Contains("CrashFileLogger.WriteWarning(nameof(HideQuickLookAfterDelayAsync), $\"Quick Look hide failed for pending item '{quickLookPendingItemId}': {safeMessage}\");", source);
         Assert.True(
             source.IndexOf("QuickLookPopup.IsVisible = false;", StringComparison.Ordinal)
-            < source.IndexOf("CrashFileLogger.WriteWarning(nameof(HideQuickLookAfterDelayAsync), $\"Quick Look hide failed: {safeMessage}\");", StringComparison.Ordinal));
+            < source.IndexOf("CrashFileLogger.WriteWarning(nameof(HideQuickLookAfterDelayAsync), $\"Quick Look hide failed for pending item '{quickLookPendingItemId}': {safeMessage}\");", StringComparison.Ordinal));
     }
 
     [Fact]
@@ -498,7 +598,7 @@ public class AppLayerSourceGuardTests
     {
         var source = ReadRepositoryFile("Praxis", "MainPage.EditorAndInput.cs");
         Assert.Contains("var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);", source);
-        Assert.Contains("CrashFileLogger.WriteWarning(nameof(Draggable_Tapped), $\"Button tap execution failed for '{item.ButtonText}': {safeMessage}\");", source);
+        Assert.Contains("CrashFileLogger.WriteWarning(nameof(Draggable_Tapped), $\"Button tap execution failed for '{item.ButtonText}' ({item.Id}): {safeMessage}\");", source);
     }
 
     [Fact]
@@ -506,8 +606,9 @@ public class AppLayerSourceGuardTests
     {
         var source = ReadRepositoryFile("Praxis", "MainPage.PointerAndSelection.cs");
         Assert.Equal(2, CountOccurrences(source, "var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);"));
-        Assert.Contains("CrashFileLogger.WriteWarning(nameof(PlacementCanvas_SecondaryTapped), $\"Secondary-tap create flow failed: {safeMessage}\");", source);
-        Assert.Contains("CrashFileLogger.WriteWarning(nameof(FocusModalPrimaryEditorField), $\"Failed to focus modal ButtonText entry: {safeMessage}\");", source);
+        Assert.Contains("CrashFileLogger.WriteWarning(nameof(PlacementCanvas_SecondaryTapped), $\"Secondary-tap create flow failed at ({canvasPoint.X:0.##}, {canvasPoint.Y:0.##}): {safeMessage}\");", source);
+        Assert.Contains("var modalVisible = EditorOverlay.IsVisible;", source);
+        Assert.Contains("CrashFileLogger.WriteWarning(nameof(FocusModalPrimaryEditorField), $\"Failed to focus modal ButtonText entry while shouldSelectAll={shouldSelectAll} modalVisible={modalVisible}: {safeMessage}\");", source);
     }
 
     [Fact]
@@ -516,10 +617,12 @@ public class AppLayerSourceGuardTests
         var focusSource = ReadRepositoryFile("Praxis", "MainPage.FocusAndContext.cs");
         var layoutSource = ReadRepositoryFile("Praxis", "MainPage.LayoutUtilities.cs");
 
+        Assert.Contains("var controlType = control.GetType().Name;", focusSource);
         Assert.Contains("var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);", focusSource);
-        Assert.Contains("CrashFileLogger.WriteWarning(nameof(DisableWindowsSystemFocusVisual), $\"Failed to disable UseSystemFocusVisuals: {safeMessage}\");", focusSource);
+        Assert.Contains("CrashFileLogger.WriteWarning(nameof(DisableWindowsSystemFocusVisual), $\"Failed to disable UseSystemFocusVisuals on {controlType}: {safeMessage}\");", focusSource);
         Assert.Contains("var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);", layoutSource);
-        Assert.Contains("CrashFileLogger.WriteWarning(nameof(SetTabStop), $\"Failed to set IsTabStop={isTabStop}: {safeMessage}\");", layoutSource);
+        Assert.Contains("var targetType = platformView.GetType().Name;", layoutSource);
+        Assert.Contains("CrashFileLogger.WriteWarning(nameof(SetTabStop), $\"Failed to set IsTabStop={isTabStop} on {targetType}: {safeMessage}\");", layoutSource);
     }
 
     private static string ReadRepositoryFile(params string[] segments)
