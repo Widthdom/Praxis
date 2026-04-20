@@ -145,6 +145,7 @@ public class AppLayerSourceGuardTests
 
         Assert.Contains("Exception? readFailure = null;", source);
         Assert.Contains("private static string BuildSyncWarningMessage(string prefix, Exception ex)", source);
+        Assert.Contains("return $\"{prefix} ({ex.GetType().Name}) {safeMessage}\";", source);
         Assert.Contains("private static string NormalizePayloadForLog(string payload)", source);
         Assert.Contains("var normalizedPayload = NormalizePayloadForLog(payload);", source);
         Assert.Contains("var normalizedSource = NormalizePayloadForLog(source);", source);

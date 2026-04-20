@@ -140,6 +140,7 @@ Test-specific operation and coverage inventory are documented in [`docs/TESTING_
 - [`Services/FileStateSyncNotifier.cs`](../Praxis/Services/FileStateSyncNotifier.cs)
   - Uses a local signal file (`buttons.sync`) and `FileSystemWatcher` for multi-window notifications
   - Payload includes instance id and timestamp; self-origin events are ignored
+  - Sync warning helpers include the exception type before the safe message, so retry exhaustion and unexpected publish failures can be bucketed by failure class from crash breadcrumbs alone
   - Hooks watcher events before enabling raising to avoid a construction-time notification gap
   - Tolerates malformed payloads and out-of-range timestamps without faulting the background notifier task, crash-logs subscriber exceptions, warning-logs sync-file read retry exhaustion plus unexpected publish failures, includes the normalized sync-file path in write, read, and malformed-payload warning breadcrumbs, ignores notify requests after disposal, disables watcher event raising before teardown, and writes crash-file Info/Warning breadcrumbs for written, observed, and malformed payloads
 - [`Services/AppStoragePaths.cs`](../Praxis/Services/AppStoragePaths.cs)

@@ -167,7 +167,7 @@ public sealed class FileStateSyncNotifier : IStateSyncNotifier
     private static string BuildSyncWarningMessage(string prefix, Exception ex)
     {
         var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);
-        return $"{prefix} {safeMessage}";
+        return $"{prefix} ({ex.GetType().Name}) {safeMessage}";
     }
 
     private static string BuildMalformedPayloadWarning(string signalPath, string payload)

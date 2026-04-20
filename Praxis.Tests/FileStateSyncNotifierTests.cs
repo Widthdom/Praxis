@@ -13,7 +13,7 @@ public class FileStateSyncNotifierTests
         var result = InvokeBuildSyncWarningMessage(prefix, new ThrowingMessageException());
 
         Assert.Equal(
-            $"{prefix} (failed to read exception message: System.InvalidOperationException: message getter failure)",
+            $"{prefix} (ThrowingMessageException) (failed to read exception message: System.InvalidOperationException: message getter failure)",
             result);
     }
 
@@ -26,7 +26,7 @@ public class FileStateSyncNotifierTests
 
         var result = InvokeBuildSyncWarningMessage(prefix, new MultilineMessageException($"{markerA}\r\n{markerB}"));
 
-        Assert.Equal($"{prefix} {markerA} {markerB}", result);
+        Assert.Equal($"{prefix} (MultilineMessageException) {markerA} {markerB}", result);
     }
 
     [Fact]
@@ -36,7 +36,7 @@ public class FileStateSyncNotifierTests
 
         var result = InvokeBuildSyncWarningMessage(prefix, new WhitespaceMessageException());
 
-        Assert.Equal($"{prefix} (empty)", result);
+        Assert.Equal($"{prefix} (WhitespaceMessageException) (empty)", result);
     }
 
     [Fact]
@@ -79,7 +79,7 @@ public class FileStateSyncNotifierTests
         var result = InvokeBuildSyncWarningMessage(prefix, new MultilineMessageException($"{markerA}\r\n{markerB}"));
 
         Assert.Equal(
-            $"Failed to read sync payload '/tmp/{pathMarkerA} {pathMarkerB}/buttons.sync' after retries: {markerA} {markerB}",
+            $"Failed to read sync payload '/tmp/{pathMarkerA} {pathMarkerB}/buttons.sync' after retries: (MultilineMessageException) {markerA} {markerB}",
             result);
     }
 
