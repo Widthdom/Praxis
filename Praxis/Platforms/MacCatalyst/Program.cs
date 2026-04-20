@@ -76,8 +76,9 @@ public class Program
         {
             var normalizedBundlePath = NormalizePathForLog(bundlePath);
             var normalizedRelayExecutable = NormalizePathForLog(relayExecutable);
+            var normalizedRelayArg = NormalizePathForLog(OpenRelayArg);
             var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);
-            CrashFileLogger.WriteWarning(nameof(Program), $"LaunchServices relay failed for bundle '{normalizedBundlePath}' via '{normalizedRelayExecutable}': {safeMessage}");
+            CrashFileLogger.WriteWarning(nameof(Program), $"LaunchServices relay failed for bundle '{normalizedBundlePath}' via '{normalizedRelayExecutable}' with relayArg='{normalizedRelayArg}': {safeMessage}");
             return false;
         }
     }

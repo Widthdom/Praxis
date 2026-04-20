@@ -16,7 +16,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - `Win.AppDomain.UnhandledException` warnings now include the runtime type name for non-`Exception` payloads before mirroring to `startup.log`, so COM or platform-originated throw objects leave a stronger startup breadcrumb
 - `Mac.AppDomain.UnhandledException` warnings now include the runtime type name for non-`Exception` payloads, so bridge-originated throw objects leave a more actionable breadcrumb than the safe payload text alone
 - Mac key-input reflection warnings now render fallback keys as symbolic names like `Tab`, `Escape`, `Return`, and arrow names, so cross-platform/plain-text crash-log readers do not lose that breadcrumb to control or private-use characters
-- `Program.TryRelaunchViaOpen` now includes the normalized relay executable path in LaunchServices warning breadcrumbs, so Mac startup relay failures distinguish bundle-path problems from `open` relay failures
+- `Program.TryRelaunchViaOpen` now includes both the normalized relay executable path and relay argument in LaunchServices warning breadcrumbs, so Mac startup relay failures distinguish bundle-path problems, `open` relay failures, and relay-contract mismatches
 - `MainPage.DisableWindowsSystemFocusVisual` now includes the native control type in `UseSystemFocusVisuals` warning breadcrumbs, so Windows reflection failures identify which control rejected the write
 - Mac key-input reflection warnings now include the fallback literal for `CommandEntryHandler`, `MacEntryHandler`, and `MacEditorHandler`, making `UIKeyCommand` resolution failures easier to correlate with the control key that would have been used
 - `SecondaryFailureLogger` now normalizes secondary fallback sink roots to absolute directories before combining the `Praxis/secondary-failures.log` path, so quoted absolute overrides still work while blank or relative roots are ignored instead of creating accidental relative diagnostics paths
@@ -58,7 +58,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - Expanded `AppLayerSourceGuardTests` to lock Windows AppDomain non-`Exception` warning breadcrumbs to the runtime payload type
 - Expanded `AppLayerSourceGuardTests` to lock Mac AppDomain non-`Exception` warning breadcrumbs to the runtime payload type
 - Expanded `AppLayerSourceGuardTests` to lock Mac key-input reflection breadcrumbs to symbolic fallback key names instead of raw control/private-use literals
-- Expanded `AppLayerSourceGuardTests` to lock LaunchServices relay warning breadcrumbs to the normalized relay executable path
+- Expanded `AppLayerSourceGuardTests` to lock LaunchServices relay warning breadcrumbs to the normalized relay executable path and relay argument
 - Expanded `AppLayerSourceGuardTests` to lock `DisableWindowsSystemFocusVisual` warning breadcrumbs to the native control type
 - Expanded `AppLayerSourceGuardTests` to lock Mac key-input reflection warnings to the fallback literal
 - Expanded `SecondaryFailureLoggerTests` to cover quoted absolute fallback roots and rejection of relative fallback roots before the startup-diagnostics file path is built
