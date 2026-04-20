@@ -7,6 +7,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 ## [Unreleased]
 
 ### Fixed
+- `DbErrorLogger` now includes the exception type in unexpected flush/drain/purge warning breadcrumbs, so shutdown-time log persistence failures can be grouped by failure class without expanding the safe exception payload
 - `FileStateSyncNotifier` now includes the exception type in retry-exhaustion and unexpected-publish warning breadcrumbs, so watcher failures can be grouped by failure class without expanding the safe exception payload
 - `AppStoragePaths` now includes the exception type in legacy migration warning breadcrumbs, so I/O and permission failures can be distinguished without expanding the safe exception payload
 - `CommandExecutor` now includes `UseShellExecute` in the null-process-handle breadcrumb, so shell launches and direct launches can be distinguished when `Process.Start(...)` returns no handle
@@ -48,6 +49,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - `MainPage.PlacementCanvas_SecondaryTapped` now includes the canvas point in secondary-tap create warning breadcrumbs, so failed create-editor flows can be correlated with placement hit-testing and coordinate conversion issues
 
 ### Tests
+- Expanded `DbErrorLoggerTests` and `AppLayerSourceGuardTests` to lock unexpected flush/drain/purge warning breadcrumbs to the exception type
 - Expanded `FileStateSyncNotifierTests` and `AppLayerSourceGuardTests` to lock sync warning breadcrumbs to the exception type
 - Expanded `AppStoragePathsTests` and `AppLayerSourceGuardTests` to lock legacy migration warning breadcrumbs to the exception type
 - Expanded `CommandExecutorTests` and `AppLayerSourceGuardTests` to lock null-process-handle breadcrumbs to the `UseShellExecute` mode
