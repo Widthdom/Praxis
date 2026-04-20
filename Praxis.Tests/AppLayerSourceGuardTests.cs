@@ -59,6 +59,41 @@ public class AppLayerSourceGuardTests
     }
 
     [Fact]
+    public void HoverHandCursorBehavior_SetsPlatformCursor_OnPointerEnterAndExit()
+    {
+        var source = ReadRepositoryFile("Praxis", "Behaviors", "HoverHandCursorBehavior.cs");
+
+        Assert.Contains("public sealed class HoverHandCursorBehavior : Behavior<View>", source);
+        Assert.Contains("private readonly PointerGestureRecognizer pointer = new();", source);
+        Assert.Contains("pointer.PointerEntered += OnPointerEntered;", source);
+        Assert.Contains("pointer.PointerExited += OnPointerExited;", source);
+        Assert.Contains("SetHandCursor(sender, useHandCursor: true);", source);
+        Assert.Contains("SetHandCursor(sender, useHandCursor: false);", source);
+        Assert.Contains("NonPublicPropertySetter.TrySet(frameworkElement, \"ProtectedCursor\", cursor);", source);
+        Assert.Contains("var cursorSelector = useHandCursor ? pointingHandCursorSelector : arrowCursorSelector;", source);
+        Assert.Contains("ObjcMsgSendVoid(cursor, setCursorSelector);", source);
+    }
+
+    [Fact]
+    public void MainPage_InteractiveButtons_UseHoverHandCursorBehavior()
+    {
+        var xaml = ReadRepositoryFile("Praxis", "MainPage.xaml");
+
+        Assert.Equal(17, CountOccurrences(xaml, "<behaviors:HoverHandCursorBehavior />"));
+        Assert.Contains("<Border x:Name=\"CreateButton\"", xaml);
+        Assert.Contains("<behaviors:HoverHandCursorBehavior />\n                                        <behaviors:MiddleClickBehavior", xaml);
+        Assert.Contains("<Button x:Name=\"ContextEditButton\"", xaml);
+        Assert.Contains("<Button x:Name=\"ContextDeleteButton\"", xaml);
+        Assert.Contains("<Button x:Name=\"CopyClipWordButton\"", xaml);
+        Assert.Contains("<Button x:Name=\"CopyNoteButton\"", xaml);
+        Assert.Contains("<Button x:Name=\"ModalCancelButton\"", xaml);
+        Assert.Contains("<Button x:Name=\"ModalSaveButton\"", xaml);
+        Assert.Contains("<Button x:Name=\"ConflictReloadButton\"", xaml);
+        Assert.Contains("<Button x:Name=\"ConflictOverwriteButton\"", xaml);
+        Assert.Contains("<Button x:Name=\"ConflictCancelButton\"", xaml);
+    }
+
+    [Fact]
     public void SqliteAppRepository_Initialization_AssignsSharedConnectionOnlyAfterSuccessfulLoad()
     {
         var source = ReadRepositoryFile("Praxis", "Services", "SqliteAppRepository.cs");
@@ -497,13 +532,14 @@ public class AppLayerSourceGuardTests
         Assert.Contains("CrashFileLogger.WriteWarning(nameof(MiddleClickBehavior), $\"Failed to set buttonMaskRequired={mask}: {safeMessage}\");", behaviorSource);
         Assert.Contains("var isContextMenuOpen = IsContextMenuCurrentlyOpen();", behaviorSource);
         Assert.Contains("var hasCommand = Command is not null;", behaviorSource);
-        Assert.Contains("var associatedObjectType = AssociatedObject?.GetType().Name ?? \"(null)\";", behaviorSource);
+        Assert.Contains("var associatedObjectType = attachedView?.GetType().Name ?? \"(null)\";", behaviorSource);
         Assert.Contains("CrashFileLogger.WriteWarning(nameof(MiddleClickBehavior), $\"Deferred middle-click execution failed while contextMenuOpen={isContextMenuOpen} hasCommand={hasCommand} associatedObjectType={associatedObjectType}: {safeMessage}\");", behaviorSource);
         Assert.Equal(2, CountOccurrences(macSource, "var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);"));
         Assert.Contains("CrashFileLogger.WriteWarning(nameof(TryCreateMacEditorKeyCommand), $\"Failed to create Mac editor key command '{selectorName}' for input '{keyInput}': {safeMessage}\");", macSource);
         Assert.Contains("var isActive = App.IsMacApplicationActive();", macSource);
         Assert.Contains("var activationSuppressed = App.IsActivationSuppressionActive();", macSource);
-        Assert.Contains("var pointerKnown = lastPointerOnRoot is not null;", macSource);
+        Assert.Contains("var pointerKnown = macLastActivePage is not null &&", macSource);
+        Assert.Contains("page.lastPointerOnRoot is not null;", macSource);
         Assert.Contains("CrashFileLogger.WriteWarning(nameof(IsMacMiddleButtonCurrentlyDown), $\"Failed to query middle button state from CoreGraphics while isActive={isActive} activationSuppressed={activationSuppressed} pointerKnown={pointerKnown}: {safeMessage}\");", macSource);
     }
 

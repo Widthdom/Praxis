@@ -7,6 +7,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 ## [Unreleased]
 
 ### Fixed
+- Windows and Mac Catalyst now switch the top-bar create action, modal copy/action buttons, and placement/Dock launcher buttons to a pointing-hand cursor on hover instead of leaving those clickable targets on the arrow cursor
 - `DbErrorLogger` now includes the exception type in unexpected flush/drain/purge warning breadcrumbs, so shutdown-time log persistence failures can be grouped by failure class without expanding the safe exception payload
 - `FileStateSyncNotifier` now includes the exception type in retry-exhaustion and unexpected-publish warning breadcrumbs, so watcher failures can be grouped by failure class without expanding the safe exception payload
 - `AppStoragePaths` now includes the exception type in legacy migration warning breadcrumbs, so I/O and permission failures can be distinguished without expanding the safe exception payload
@@ -50,6 +51,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - `MainPage.FocusModalPrimaryEditorField` now includes current modal visibility in `ButtonText` focus warning breadcrumbs, so modal-open races can be separated from hidden-modal retries
 
 ### Tests
+- Expanded `AppLayerSourceGuardTests` to lock hover-hand cursor behavior wiring for the top-bar create action, modal copy/action buttons, and placement/Dock launcher buttons
 - Expanded `DbErrorLoggerTests` and `AppLayerSourceGuardTests` to lock unexpected flush/drain/purge warning breadcrumbs to the exception type
 - Expanded `FileStateSyncNotifierTests` and `AppLayerSourceGuardTests` to lock sync warning breadcrumbs to the exception type
 - Expanded `AppStoragePathsTests` and `AppLayerSourceGuardTests` to lock legacy migration warning breadcrumbs to the exception type

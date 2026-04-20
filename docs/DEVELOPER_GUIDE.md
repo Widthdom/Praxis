@@ -274,6 +274,7 @@ sequenceDiagram
 - Main modal copy buttons trigger a center overlay notification animation in [`MainPage.xaml`](../Praxis/MainPage.xaml)([`.cs`](../Praxis/MainPage.xaml.cs)).
 - Top-bar create action uses a custom line-art logo (outer hexagon, inscribed circle, inner hexagon, center plus) built from MAUI shapes.
 - Modal footer action buttons (`Cancel`/`Save`) are centered and use equal width for visual balance.
+- The top-bar create action, modal copy/action buttons, and placement/Dock launcher buttons share [`Behaviors/HoverHandCursorBehavior.cs`](../Praxis/Behaviors/HoverHandCursorBehavior.cs), so Windows and Mac Catalyst both switch to a pointing-hand cursor on hover instead of leaving clickable surfaces on the arrow cursor.
 - Dock item visuals are intentionally matched to placement-area button visuals.
 - Placement-area and Dock buttons support per-button inverted theme colors (`UseInvertedThemeColors`):
   - In Light theme: render with Dark-theme button colors
@@ -708,6 +709,7 @@ sequenceDiagram
 - モーダルのコピーアイコン押下時は [`MainPage.xaml`](../Praxis/MainPage.xaml)([`.cs`](../Praxis/MainPage.xaml.cs)) で中央通知オーバーレイをアニメーション表示する。
 - 上部 Create アクションは MAUI Shapes で構成した線画ロゴ（外六角形・内接円・内六角形・中央 +）を使用する。
 - モーダル下部のアクションボタン（`Cancel` / `Save`）は中央寄せ・同一幅で揃えている。
+- 上部 Create アクション、モーダルのコピー/アクションボタン、配置領域・Dock のランチャーボタンは [`Behaviors/HoverHandCursorBehavior.cs`](../Praxis/Behaviors/HoverHandCursorBehavior.cs) を共有し、Windows / Mac Catalyst の両方で hover 時に矢印ではなく hand cursor へ切り替える。
 - Dock ボタンの見た目は、配置領域のボタンと意図的に揃えている。
 - 配置領域/Dock の各ボタンは `UseInvertedThemeColors` で個別に反転配色できる。
   - ライトテーマ時はダークテーマ配色

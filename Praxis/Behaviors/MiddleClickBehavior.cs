@@ -238,7 +238,7 @@ public sealed class MiddleClickBehavior : Behavior<View>
                 var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);
                 var isContextMenuOpen = IsContextMenuCurrentlyOpen();
                 var hasCommand = Command is not null;
-                var associatedObjectType = AssociatedObject?.GetType().Name ?? "(null)";
+                var associatedObjectType = attachedView?.GetType().Name ?? "(null)";
                 CrashFileLogger.WriteWarning(nameof(MiddleClickBehavior), $"Deferred middle-click execution failed while contextMenuOpen={isContextMenuOpen} hasCommand={hasCommand} associatedObjectType={associatedObjectType}: {safeMessage}");
             }
         });
