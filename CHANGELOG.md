@@ -10,10 +10,10 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - Placement-area launcher buttons now keep the default arrow cursor on hover (instead of the pointing-hand cursor) and switch to a closed-hand "grab" cursor only while the primary pointer is pressed, so drag-to-reposition reads as a grabbed object while idle hover stops implying a click target. Dock launcher buttons intentionally keep the existing hover-hand cursor so the Dock still signals "click to launch"
 
 ### Added
-- `Behaviors/GrabHandCursorBehavior.cs` encapsulates the placement-area press/release/enter/exit cursor swap (macOS `NSCursor.closedHandCursor`, Windows `InputSystemCursorShape.SizeAll` substitute via reflective `ProtectedCursor` assignment), mirroring the platform wiring of `HoverHandCursorBehavior` but keyed off pointer-pressed state instead of hover
+- `Behaviors/GrabHandCursorBehavior.cs` encapsulates the placement-area press/release/enter/exit cursor swap (macOS `NSCursor.closedHandCursor`, Windows `InputSystemCursorShape.SizeAll` substitute via reflective `ProtectedCursor` assignment), mirroring the platform wiring of `HoverHandCursorBehavior` but keyed off pointer-pressed state instead of hover. The behavior only reacts to a primary-only press (so right-click context-menu and middle-click editor-open do not hijack the cursor) and also clears the grab cursor from `PointerMoved` when the primary button is no longer down, mirroring the Windows `PointerReleased`-miss fallback used in `MainPage.Draggable_PointerMoved`
 
 ### Tests
-- Expanded `AppLayerSourceGuardTests` to lock the new `GrabHandCursorBehavior` platform wiring and to guard that placement-area launcher buttons in `MainPage.xaml` attach the grab-cursor behavior while the hover-hand count drops to 16 (Dock, top-bar Create, modal copy/action, context, and conflict buttons still share `HoverHandCursorBehavior`)
+- Expanded `AppLayerSourceGuardTests` to lock the new `GrabHandCursorBehavior` platform wiring and to guard that placement-area launcher buttons in `MainPage.xaml` attach the grab-cursor behavior while the hover-hand count drops to 16 (Dock, top-bar Create, modal copy/action, context, and conflict buttons still share `HoverHandCursorBehavior`). Also guards that the behavior subscribes to `PointerMoved`, ignores secondary/middle presses, and clears the grab cursor through the `PointerMoved`/primary-release fallback
 
 ### [1.1.12] - 2026-04-21
 
@@ -457,10 +457,10 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - 配置領域のランチャーボタンは hover 時に既定の矢印カーソルのままとなり（従来の pointing-hand ではなく）、主ポインタが押下されている間だけ「掴んだ手」の grab カーソルへ切り替えるよう変更。これによりボタンのドラッグ移動が「掴んで動かす」操作として読み取れるようになり、ただ hover しているだけのときはクリック可能に見えすぎない挙動になる。Dock ボタンは意図的に従来の hover-hand カーソルのまま維持する（「Dock クリックで起動」のサイン）
 
 ### 追加
-- `Behaviors/GrabHandCursorBehavior.cs` を追加し、配置領域の pointer press/release/enter/exit に応じたカーソル切替（macOS は `NSCursor.closedHandCursor`、Windows は代替として `InputSystemCursorShape.SizeAll` を `ProtectedCursor` 経由で適用）を `HoverHandCursorBehavior` と同じプラットフォーム配線で実装。ただし hover ではなく pointer-pressed 状態を基準にする
+- `Behaviors/GrabHandCursorBehavior.cs` を追加し、配置領域の pointer press/release/move/enter/exit に応じたカーソル切替（macOS は `NSCursor.closedHandCursor`、Windows は代替として `InputSystemCursorShape.SizeAll` を `ProtectedCursor` 経由で適用）を `HoverHandCursorBehavior` と同じプラットフォーム配線で実装。ただし hover ではなく pointer-pressed 状態を基準にし、かつ「主ポインタのみ押されている」場合だけ grab カーソルを出す（右クリック＝コンテキストメニュー、中クリック＝エディタ起動では grab カーソルに切り替えない）。加えて `MainPage.Draggable_PointerMoved` が Windows で使っている「`PointerReleased` 欠落時の primary 再判定」fallback と同じ考え方で、`PointerMoved` でも「もう primary が押されていない」と判定したら grab カーソルを解除する
 
 ### テスト
-- `AppLayerSourceGuardTests` に `GrabHandCursorBehavior` のプラットフォーム配線ガードと、配置領域のランチャーボタンが grab-cursor behavior を貼っていることを固定するアサーションを追加し、hover-hand の XAML 出現数は 16 まで下がる（Dock・上部 Create・モーダルの copy/action・context・conflict の各ボタンは引き続き `HoverHandCursorBehavior` を共有）
+- `AppLayerSourceGuardTests` に `GrabHandCursorBehavior` のプラットフォーム配線ガードと、配置領域のランチャーボタンが grab-cursor behavior を貼っていることを固定するアサーションを追加し、hover-hand の XAML 出現数は 16 まで下がる（Dock・上部 Create・モーダルの copy/action・context・conflict の各ボタンは引き続き `HoverHandCursorBehavior` を共有）。加えて `PointerMoved` 購読、secondary / middle 押下の除外、`PointerMoved` 経由の primary-release fallback もソースレベルで固定する
 
 ### [1.1.12] - 2026-04-21
 

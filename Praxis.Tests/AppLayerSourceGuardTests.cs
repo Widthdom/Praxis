@@ -103,6 +103,7 @@ public class AppLayerSourceGuardTests
         Assert.Contains("private bool isGrabbing;", source);
         Assert.Contains("pointer.PointerPressed += OnPointerPressed;", source);
         Assert.Contains("pointer.PointerReleased += OnPointerReleased;", source);
+        Assert.Contains("pointer.PointerMoved += OnPointerMoved;", source);
         Assert.Contains("pointer.PointerEntered += OnPointerEntered;", source);
         Assert.Contains("pointer.PointerExited += OnPointerExited;", source);
         Assert.Contains("SetGrabCursor(sender, useGrabCursor: true);", source);
@@ -111,6 +112,24 @@ public class AppLayerSourceGuardTests
         Assert.Contains("Microsoft.UI.Input.InputSystemCursorShape.SizeAll", source);
         Assert.Contains("var cursorSelector = useGrabCursor ? closedHandCursorSelector : arrowCursorSelector;", source);
         Assert.Contains("ObjcMsgSendVoid(cursor, setCursorSelector);", source);
+    }
+
+    [Fact]
+    public void GrabHandCursorBehavior_IgnoresSecondaryAndMiddlePress_AndClearsGrabOnMoveWhenPrimaryReleased()
+    {
+        var source = ReadRepositoryFile("Praxis", "Behaviors", "GrabHandCursorBehavior.cs");
+
+        Assert.Contains("if (!IsPrimaryOnlyPointerPressed(e))", source);
+        Assert.Contains("private static bool IsPrimaryOnlyPointerPressed(PointerEventArgs e)", source);
+        Assert.Contains("private static bool IsAnyPrimaryPointerStillPressed(PointerEventArgs e)", source);
+        Assert.Contains("private void OnPointerMoved(object? sender, PointerEventArgs e)", source);
+        Assert.Contains("if (!IsAnyPrimaryPointerStillPressed(e))", source);
+        Assert.Contains("props.IsLeftButtonPressed", source);
+        Assert.Contains("!props.IsRightButtonPressed", source);
+        Assert.Contains("!props.IsMiddleButtonPressed", source);
+        Assert.Contains("OtherMouse", source);
+        Assert.Contains("Secondary", source);
+        Assert.Contains("RightMouse", source);
     }
 
     [Fact]

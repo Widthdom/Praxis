@@ -1,3 +1,4 @@
+using System.Reflection;
 using System.Runtime.InteropServices;
 
 using Microsoft.Maui.Controls;
@@ -24,6 +25,7 @@ public sealed class GrabHandCursorBehavior : Behavior<View>
         base.OnAttachedTo(bindable);
         pointer.PointerPressed += OnPointerPressed;
         pointer.PointerReleased += OnPointerReleased;
+        pointer.PointerMoved += OnPointerMoved;
         pointer.PointerEntered += OnPointerEntered;
         pointer.PointerExited += OnPointerExited;
         bindable.GestureRecognizers.Add(pointer);
@@ -34,6 +36,7 @@ public sealed class GrabHandCursorBehavior : Behavior<View>
         bindable.GestureRecognizers.Remove(pointer);
         pointer.PointerPressed -= OnPointerPressed;
         pointer.PointerReleased -= OnPointerReleased;
+        pointer.PointerMoved -= OnPointerMoved;
         pointer.PointerEntered -= OnPointerEntered;
         pointer.PointerExited -= OnPointerExited;
         isGrabbing = false;
@@ -42,14 +45,43 @@ public sealed class GrabHandCursorBehavior : Behavior<View>
 
     private void OnPointerPressed(object? sender, PointerEventArgs e)
     {
+        // Grab cursor belongs to drag-to-reposition only; right-click opens context menu and
+        // middle-click opens the editor, so those presses must not hijack the cursor.
+        if (!IsPrimaryOnlyPointerPressed(e))
+        {
+            return;
+        }
+
         isGrabbing = true;
         SetGrabCursor(sender, useGrabCursor: true);
     }
 
     private void OnPointerReleased(object? sender, PointerEventArgs e)
     {
+        if (!isGrabbing)
+        {
+            return;
+        }
+
         isGrabbing = false;
         SetGrabCursor(sender, useGrabCursor: false);
+    }
+
+    private void OnPointerMoved(object? sender, PointerEventArgs e)
+    {
+        if (!isGrabbing)
+        {
+            return;
+        }
+
+        // Windows may miss PointerReleased when the pointer is released outside the element.
+        // Mirror the drag-end fallback used by MainPage.Draggable_PointerMoved so the grab
+        // cursor is cleared as soon as the primary button is no longer down.
+        if (!IsAnyPrimaryPointerStillPressed(e))
+        {
+            isGrabbing = false;
+            SetGrabCursor(sender, useGrabCursor: false);
+        }
     }
 
     private void OnPointerEntered(object? sender, PointerEventArgs e)
@@ -67,6 +99,95 @@ public sealed class GrabHandCursorBehavior : Behavior<View>
             SetGrabCursor(sender, useGrabCursor: false);
         }
     }
+
+    private static bool IsPrimaryOnlyPointerPressed(PointerEventArgs e)
+    {
+#if WINDOWS
+        var routed = TryGetWindowsRoutedArgs(e);
+        var props = routed?.GetCurrentPoint(null).Properties;
+        if (props is null)
+        {
+            return false;
+        }
+
+        return props.IsLeftButtonPressed
+            && !props.IsRightButtonPressed
+            && !props.IsMiddleButtonPressed
+            && !props.IsXButton1Pressed
+            && !props.IsXButton2Pressed;
+#elif MACCATALYST
+        var platformArgs = e.PlatformArgs;
+        if (platformArgs is null)
+        {
+            return true;
+        }
+
+        return !DescribesNonPrimaryMouseButton(platformArgs);
+#else
+        return true;
+#endif
+    }
+
+    private static bool IsAnyPrimaryPointerStillPressed(PointerEventArgs e)
+    {
+#if WINDOWS
+        var routed = TryGetWindowsRoutedArgs(e);
+        var props = routed?.GetCurrentPoint(null).Properties;
+        return props?.IsLeftButtonPressed == true;
+#else
+        // Non-Windows platforms dispatch a reliable PointerReleased / exit, so there is no
+        // Moved-based fallback to run here.
+        return true;
+#endif
+    }
+
+#if WINDOWS
+    private static Microsoft.UI.Xaml.Input.PointerRoutedEventArgs? TryGetWindowsRoutedArgs(PointerEventArgs e)
+    {
+        var platformArgs = e.PlatformArgs;
+        var routedProperty = platformArgs?.GetType().GetProperty("PointerRoutedEventArgs",
+            BindingFlags.Public | BindingFlags.Instance);
+        return routedProperty?.GetValue(platformArgs) as Microsoft.UI.Xaml.Input.PointerRoutedEventArgs;
+    }
+#endif
+
+#if MACCATALYST
+    private static bool DescribesNonPrimaryMouseButton(object platformArgs)
+    {
+        var text = platformArgs.ToString() ?? string.Empty;
+        if (ContainsNonPrimaryMarker(text))
+        {
+            return true;
+        }
+
+        var nativeEvent = TryGetProperty(platformArgs, "Event");
+        if (nativeEvent is not null && ContainsNonPrimaryMarker(nativeEvent.ToString() ?? string.Empty))
+        {
+            return true;
+        }
+
+        var gestureRecognizer = TryGetProperty(platformArgs, "GestureRecognizer");
+        if (gestureRecognizer is not null && ContainsNonPrimaryMarker(gestureRecognizer.ToString() ?? string.Empty))
+        {
+            return true;
+        }
+
+        return false;
+    }
+
+    private static bool ContainsNonPrimaryMarker(string text)
+    {
+        return text.Contains("OtherMouse", StringComparison.OrdinalIgnoreCase)
+            || text.Contains("Secondary", StringComparison.OrdinalIgnoreCase)
+            || text.Contains("RightMouse", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static object? TryGetProperty(object source, string propertyName)
+    {
+        var prop = source.GetType().GetProperty(propertyName, BindingFlags.Public | BindingFlags.Instance);
+        return prop?.GetValue(source);
+    }
+#endif
 
     private static void SetGrabCursor(object? sender, bool useGrabCursor)
     {
