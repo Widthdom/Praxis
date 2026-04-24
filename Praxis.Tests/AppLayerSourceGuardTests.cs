@@ -127,9 +127,27 @@ public class AppLayerSourceGuardTests
         Assert.Contains("props.IsLeftButtonPressed", source);
         Assert.Contains("!props.IsRightButtonPressed", source);
         Assert.Contains("!props.IsMiddleButtonPressed", source);
-        Assert.Contains("OtherMouse", source);
-        Assert.Contains("Secondary", source);
-        Assert.Contains("RightMouse", source);
+        // Mac path delegates to the shared classifier so secondary/middle detection
+        // is not reduced to substring inspection of platform-args text.
+        Assert.Contains("PointerButtonClassifier.IsPrimaryOnly(e.PlatformArgs)", source);
+    }
+
+    [Fact]
+    public void GrabHandCursorBehavior_OnDetachingFrom_ClearsGrabCursor_IfStillGrabbing()
+    {
+        var source = ReadRepositoryFile("Praxis", "Behaviors", "GrabHandCursorBehavior.cs");
+
+        Assert.Contains("protected override void OnDetachingFrom(View bindable)", source);
+        var detachIndex = source.IndexOf("protected override void OnDetachingFrom(View bindable)", StringComparison.Ordinal);
+        Assert.True(detachIndex >= 0, "OnDetachingFrom must exist.");
+
+        var detachBody = source[detachIndex..];
+        var restoreIndex = detachBody.IndexOf("SetGrabCursor(bindable, useGrabCursor: false);", StringComparison.Ordinal);
+        var removeIndex = detachBody.IndexOf("bindable.GestureRecognizers.Remove(pointer);", StringComparison.Ordinal);
+
+        Assert.True(restoreIndex >= 0, "OnDetachingFrom must restore the cursor when detaching while grabbing.");
+        Assert.True(removeIndex > restoreIndex, "Cursor restore should run before gesture recognizers are removed.");
+        Assert.Contains("if (isGrabbing)", detachBody);
     }
 
     [Fact]

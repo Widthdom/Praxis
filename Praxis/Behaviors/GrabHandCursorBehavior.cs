@@ -33,6 +33,15 @@ public sealed class GrabHandCursorBehavior : Behavior<View>
 
     protected override void OnDetachingFrom(View bindable)
     {
+        // If the view is torn down (filtering / template churn / deletion) while the
+        // grab cursor is still active, restore the default cursor first so the native
+        // cursor state does not leak across Mac windows or the Windows ProtectedCursor
+        // does not stay wired to a detached platform view.
+        if (isGrabbing)
+        {
+            SetGrabCursor(bindable, useGrabCursor: false);
+        }
+
         bindable.GestureRecognizers.Remove(pointer);
         pointer.PointerPressed -= OnPointerPressed;
         pointer.PointerReleased -= OnPointerReleased;
@@ -116,13 +125,10 @@ public sealed class GrabHandCursorBehavior : Behavior<View>
             && !props.IsXButton1Pressed
             && !props.IsXButton2Pressed;
 #elif MACCATALYST
-        var platformArgs = e.PlatformArgs;
-        if (platformArgs is null)
-        {
-            return true;
-        }
-
-        return !DescribesNonPrimaryMouseButton(platformArgs);
+        // Delegate to the shared classifier so this behavior honors the same reflection
+        // rules (Type / PressedButton / Button / Buttons / ButtonMask / ButtonNumber /
+        // CurrentEvent) that MainPage.PointerAndSelection.cs uses for drag dispatch.
+        return PointerButtonClassifier.IsPrimaryOnly(e.PlatformArgs);
 #else
         return true;
 #endif
@@ -148,44 +154,6 @@ public sealed class GrabHandCursorBehavior : Behavior<View>
         var routedProperty = platformArgs?.GetType().GetProperty("PointerRoutedEventArgs",
             BindingFlags.Public | BindingFlags.Instance);
         return routedProperty?.GetValue(platformArgs) as Microsoft.UI.Xaml.Input.PointerRoutedEventArgs;
-    }
-#endif
-
-#if MACCATALYST
-    private static bool DescribesNonPrimaryMouseButton(object platformArgs)
-    {
-        var text = platformArgs.ToString() ?? string.Empty;
-        if (ContainsNonPrimaryMarker(text))
-        {
-            return true;
-        }
-
-        var nativeEvent = TryGetProperty(platformArgs, "Event");
-        if (nativeEvent is not null && ContainsNonPrimaryMarker(nativeEvent.ToString() ?? string.Empty))
-        {
-            return true;
-        }
-
-        var gestureRecognizer = TryGetProperty(platformArgs, "GestureRecognizer");
-        if (gestureRecognizer is not null && ContainsNonPrimaryMarker(gestureRecognizer.ToString() ?? string.Empty))
-        {
-            return true;
-        }
-
-        return false;
-    }
-
-    private static bool ContainsNonPrimaryMarker(string text)
-    {
-        return text.Contains("OtherMouse", StringComparison.OrdinalIgnoreCase)
-            || text.Contains("Secondary", StringComparison.OrdinalIgnoreCase)
-            || text.Contains("RightMouse", StringComparison.OrdinalIgnoreCase);
-    }
-
-    private static object? TryGetProperty(object source, string propertyName)
-    {
-        var prop = source.GetType().GetProperty(propertyName, BindingFlags.Public | BindingFlags.Instance);
-        return prop?.GetValue(source);
     }
 #endif
 
