@@ -6,6 +6,15 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 
 ## [Unreleased]
 
+### Changed
+- Placement-area launcher buttons now keep the default arrow cursor on hover (instead of the pointing-hand cursor) and switch to a closed-hand "grab" cursor only while the primary pointer is pressed, so drag-to-reposition reads as a grabbed object while idle hover stops implying a click target. Dock launcher buttons intentionally keep the existing hover-hand cursor so the Dock still signals "click to launch"
+
+### Added
+- `Behaviors/GrabHandCursorBehavior.cs` encapsulates the placement-area press/release/enter/exit cursor swap (macOS `NSCursor.closedHandCursor`, Windows `InputSystemCursorShape.SizeAll` substitute via reflective `ProtectedCursor` assignment), mirroring the platform wiring of `HoverHandCursorBehavior` but keyed off pointer-pressed state instead of hover
+
+### Tests
+- Expanded `AppLayerSourceGuardTests` to lock the new `GrabHandCursorBehavior` platform wiring and to guard that placement-area launcher buttons in `MainPage.xaml` attach the grab-cursor behavior while the hover-hand count drops to 16 (Dock, top-bar Create, modal copy/action, context, and conflict buttons still share `HoverHandCursorBehavior`)
+
 ### [1.1.12] - 2026-04-21
 
 ### Fixed
@@ -443,6 +452,15 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 形式は Keep a Changelog に準拠し、バージョン管理は Semantic Versioning に従います。
 
 ## [Unreleased]
+
+### 変更
+- 配置領域のランチャーボタンは hover 時に既定の矢印カーソルのままとなり（従来の pointing-hand ではなく）、主ポインタが押下されている間だけ「掴んだ手」の grab カーソルへ切り替えるよう変更。これによりボタンのドラッグ移動が「掴んで動かす」操作として読み取れるようになり、ただ hover しているだけのときはクリック可能に見えすぎない挙動になる。Dock ボタンは意図的に従来の hover-hand カーソルのまま維持する（「Dock クリックで起動」のサイン）
+
+### 追加
+- `Behaviors/GrabHandCursorBehavior.cs` を追加し、配置領域の pointer press/release/enter/exit に応じたカーソル切替（macOS は `NSCursor.closedHandCursor`、Windows は代替として `InputSystemCursorShape.SizeAll` を `ProtectedCursor` 経由で適用）を `HoverHandCursorBehavior` と同じプラットフォーム配線で実装。ただし hover ではなく pointer-pressed 状態を基準にする
+
+### テスト
+- `AppLayerSourceGuardTests` に `GrabHandCursorBehavior` のプラットフォーム配線ガードと、配置領域のランチャーボタンが grab-cursor behavior を貼っていることを固定するアサーションを追加し、hover-hand の XAML 出現数は 16 まで下がる（Dock・上部 Create・モーダルの copy/action・context・conflict の各ボタンは引き続き `HoverHandCursorBehavior` を共有）
 
 ### [1.1.12] - 2026-04-21
 

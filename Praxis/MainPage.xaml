@@ -285,7 +285,7 @@
                                         BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#363636}"
                                         Padding="0">
                                     <Border.Behaviors>
-                                        <behaviors:HoverHandCursorBehavior />
+                                        <behaviors:GrabHandCursorBehavior />
                                         <behaviors:MiddleClickBehavior Command="{Binding Source={x:Reference RootPage}, Path=BindingContext.OpenEditorCommand}" />
                                     </Border.Behaviors>
                                     <Border.Triggers>

@@ -79,7 +79,7 @@ public class AppLayerSourceGuardTests
     {
         var xaml = ReadRepositoryFile("Praxis", "MainPage.xaml");
 
-        Assert.Equal(17, CountOccurrences(xaml, "<behaviors:HoverHandCursorBehavior />"));
+        Assert.Equal(16, CountOccurrences(xaml, "<behaviors:HoverHandCursorBehavior />"));
         Assert.Contains("<Border x:Name=\"CreateButton\"", xaml);
         Assert.Contains("<behaviors:HoverHandCursorBehavior />\n                                        <behaviors:MiddleClickBehavior", xaml);
         Assert.Contains("<Button x:Name=\"ContextEditButton\"", xaml);
@@ -91,6 +91,35 @@ public class AppLayerSourceGuardTests
         Assert.Contains("<Button x:Name=\"ConflictReloadButton\"", xaml);
         Assert.Contains("<Button x:Name=\"ConflictOverwriteButton\"", xaml);
         Assert.Contains("<Button x:Name=\"ConflictCancelButton\"", xaml);
+    }
+
+    [Fact]
+    public void GrabHandCursorBehavior_SetsPlatformGrabCursor_WhilePointerIsPressed()
+    {
+        var source = ReadRepositoryFile("Praxis", "Behaviors", "GrabHandCursorBehavior.cs");
+
+        Assert.Contains("public sealed class GrabHandCursorBehavior : Behavior<View>", source);
+        Assert.Contains("private readonly PointerGestureRecognizer pointer = new();", source);
+        Assert.Contains("private bool isGrabbing;", source);
+        Assert.Contains("pointer.PointerPressed += OnPointerPressed;", source);
+        Assert.Contains("pointer.PointerReleased += OnPointerReleased;", source);
+        Assert.Contains("pointer.PointerEntered += OnPointerEntered;", source);
+        Assert.Contains("pointer.PointerExited += OnPointerExited;", source);
+        Assert.Contains("SetGrabCursor(sender, useGrabCursor: true);", source);
+        Assert.Contains("SetGrabCursor(sender, useGrabCursor: false);", source);
+        Assert.Contains("NonPublicPropertySetter.TrySet(frameworkElement, \"ProtectedCursor\", cursor);", source);
+        Assert.Contains("Microsoft.UI.Input.InputSystemCursorShape.SizeAll", source);
+        Assert.Contains("var cursorSelector = useGrabCursor ? closedHandCursorSelector : arrowCursorSelector;", source);
+        Assert.Contains("ObjcMsgSendVoid(cursor, setCursorSelector);", source);
+    }
+
+    [Fact]
+    public void MainPage_PlacementAreaButtons_UseGrabHandCursorBehavior_InsteadOfHoverHand()
+    {
+        var xaml = ReadRepositoryFile("Praxis", "MainPage.xaml");
+
+        Assert.Equal(1, CountOccurrences(xaml, "<behaviors:GrabHandCursorBehavior />"));
+        Assert.Contains("<behaviors:GrabHandCursorBehavior />\n                                        <behaviors:MiddleClickBehavior", xaml);
     }
 
     [Fact]
