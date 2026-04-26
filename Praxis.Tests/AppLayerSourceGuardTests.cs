@@ -79,7 +79,7 @@ public class AppLayerSourceGuardTests
     {
         var xaml = ReadRepositoryFile("Praxis", "MainPage.xaml");
 
-        Assert.Equal(17, CountOccurrences(xaml, "<behaviors:HoverHandCursorBehavior />"));
+        Assert.Equal(16, CountOccurrences(xaml, "<behaviors:HoverHandCursorBehavior />"));
         Assert.Contains("<Border x:Name=\"CreateButton\"", xaml);
         Assert.Contains("<behaviors:HoverHandCursorBehavior />\n                                        <behaviors:MiddleClickBehavior", xaml);
         Assert.Contains("<Button x:Name=\"ContextEditButton\"", xaml);
@@ -91,6 +91,72 @@ public class AppLayerSourceGuardTests
         Assert.Contains("<Button x:Name=\"ConflictReloadButton\"", xaml);
         Assert.Contains("<Button x:Name=\"ConflictOverwriteButton\"", xaml);
         Assert.Contains("<Button x:Name=\"ConflictCancelButton\"", xaml);
+    }
+
+    [Fact]
+    public void GrabHandCursorBehavior_SetsPlatformGrabCursor_WhilePointerIsPressed()
+    {
+        var source = ReadRepositoryFile("Praxis", "Behaviors", "GrabHandCursorBehavior.cs");
+
+        Assert.Contains("public sealed class GrabHandCursorBehavior : Behavior<View>", source);
+        Assert.Contains("private readonly PointerGestureRecognizer pointer = new();", source);
+        Assert.Contains("private bool isGrabbing;", source);
+        Assert.Contains("pointer.PointerPressed += OnPointerPressed;", source);
+        Assert.Contains("pointer.PointerReleased += OnPointerReleased;", source);
+        Assert.Contains("pointer.PointerMoved += OnPointerMoved;", source);
+        Assert.Contains("pointer.PointerEntered += OnPointerEntered;", source);
+        Assert.Contains("pointer.PointerExited += OnPointerExited;", source);
+        Assert.Contains("SetGrabCursor(sender, useGrabCursor: true);", source);
+        Assert.Contains("SetGrabCursor(sender, useGrabCursor: false);", source);
+        Assert.Contains("NonPublicPropertySetter.TrySet(frameworkElement, \"ProtectedCursor\", cursor);", source);
+        Assert.Contains("Microsoft.UI.Input.InputSystemCursorShape.SizeAll", source);
+        Assert.Contains("var cursorSelector = useGrabCursor ? closedHandCursorSelector : arrowCursorSelector;", source);
+        Assert.Contains("ObjcMsgSendVoid(cursor, setCursorSelector);", source);
+    }
+
+    [Fact]
+    public void GrabHandCursorBehavior_IgnoresSecondaryAndMiddlePress_AndClearsGrabOnMoveWhenPrimaryReleased()
+    {
+        var source = ReadRepositoryFile("Praxis", "Behaviors", "GrabHandCursorBehavior.cs");
+
+        Assert.Contains("if (!IsPrimaryOnlyPointerPressed(e))", source);
+        Assert.Contains("private static bool IsPrimaryOnlyPointerPressed(PointerEventArgs e)", source);
+        Assert.Contains("private static bool IsAnyPrimaryPointerStillPressed(PointerEventArgs e)", source);
+        Assert.Contains("private void OnPointerMoved(object? sender, PointerEventArgs e)", source);
+        Assert.Contains("if (!IsAnyPrimaryPointerStillPressed(e))", source);
+        Assert.Contains("props.IsLeftButtonPressed", source);
+        Assert.Contains("!props.IsRightButtonPressed", source);
+        Assert.Contains("!props.IsMiddleButtonPressed", source);
+        // Mac path delegates to the shared classifier so secondary/middle detection
+        // is not reduced to substring inspection of platform-args text.
+        Assert.Contains("PointerButtonClassifier.IsPrimaryOnly(e.PlatformArgs)", source);
+    }
+
+    [Fact]
+    public void GrabHandCursorBehavior_OnDetachingFrom_ClearsGrabCursor_IfStillGrabbing()
+    {
+        var source = ReadRepositoryFile("Praxis", "Behaviors", "GrabHandCursorBehavior.cs");
+
+        Assert.Contains("protected override void OnDetachingFrom(View bindable)", source);
+        var detachIndex = source.IndexOf("protected override void OnDetachingFrom(View bindable)", StringComparison.Ordinal);
+        Assert.True(detachIndex >= 0, "OnDetachingFrom must exist.");
+
+        var detachBody = source[detachIndex..];
+        var restoreIndex = detachBody.IndexOf("SetGrabCursor(bindable, useGrabCursor: false);", StringComparison.Ordinal);
+        var removeIndex = detachBody.IndexOf("bindable.GestureRecognizers.Remove(pointer);", StringComparison.Ordinal);
+
+        Assert.True(restoreIndex >= 0, "OnDetachingFrom must restore the cursor when detaching while grabbing.");
+        Assert.True(removeIndex > restoreIndex, "Cursor restore should run before gesture recognizers are removed.");
+        Assert.Contains("if (isGrabbing)", detachBody);
+    }
+
+    [Fact]
+    public void MainPage_PlacementAreaButtons_UseGrabHandCursorBehavior_InsteadOfHoverHand()
+    {
+        var xaml = ReadRepositoryFile("Praxis", "MainPage.xaml");
+
+        Assert.Equal(1, CountOccurrences(xaml, "<behaviors:GrabHandCursorBehavior />"));
+        Assert.Contains("<behaviors:GrabHandCursorBehavior />\n                                        <behaviors:MiddleClickBehavior", xaml);
     }
 
     [Fact]

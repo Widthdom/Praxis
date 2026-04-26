@@ -6,6 +6,17 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 
 ## [Unreleased]
 
+### Changed
+- Placement-area launcher buttons now keep the default arrow cursor on hover (instead of the pointing-hand cursor) and switch to a closed-hand "grab" cursor only while the primary pointer is pressed, so drag-to-reposition reads as a grabbed object while idle hover stops implying a click target. Dock launcher buttons intentionally keep the existing hover-hand cursor so the Dock still signals "click to launch"
+
+### Added
+- `Behaviors/GrabHandCursorBehavior.cs` encapsulates the placement-area press/release/enter/exit cursor swap (macOS `NSCursor.closedHandCursor`, Windows `InputSystemCursorShape.SizeAll` substitute via reflective `ProtectedCursor` assignment), mirroring the platform wiring of `HoverHandCursorBehavior` but keyed off pointer-pressed state instead of hover. The behavior only reacts to a primary-only press (so right-click context-menu and middle-click editor-open do not hijack the cursor) and also clears the grab cursor from `PointerMoved` when the primary button is no longer down, mirroring the Windows `PointerReleased`-miss fallback used in `MainPage.Draggable_PointerMoved`. `OnDetachingFrom` also restores the default cursor before gesture recognizers are removed so template teardown / filter / sync deletes cannot leave the Mac `NSCursor.closedHandCursor` or Windows `ProtectedCursor` wired to a detached platform view
+- `Praxis.Core/Logic/PointerButtonClassifier.cs` centralizes the reflection-based secondary / middle pointer-button detection rules that `MainPage.PointerAndSelection.cs` already uses (inspecting `Type`, `PressedButton` / `Button` / `Buttons`, `ButtonMask`, `ButtonNumber`, `CurrentEvent`, plus `GestureRecognizer` / `Event` chains), so `GrabHandCursorBehavior` uses the same rules on Mac Catalyst rather than a substring-only ToString() inspection
+
+### Tests
+- Expanded `AppLayerSourceGuardTests` to lock the new `GrabHandCursorBehavior` platform wiring and to guard that placement-area launcher buttons in `MainPage.xaml` attach the grab-cursor behavior while the hover-hand count drops to 16 (Dock, top-bar Create, modal copy/action, context, and conflict buttons still share `HoverHandCursorBehavior`). Also guards that the behavior subscribes to `PointerMoved`, delegates Mac primary-only detection to `PointerButtonClassifier.IsPrimaryOnly(...)`, clears the grab cursor through the `PointerMoved`/primary-release fallback, and restores the default cursor during `OnDetachingFrom` before gesture recognizers are removed
+- Added `PointerButtonClassifierTests` to cover Mac-style platform-args detection with fake objects exercising `Type = "OtherMouseDown"`, `ButtonNumber` variations, `ButtonMask` bits for middle (`0x4` / `0x8` / `0x10`) and secondary (`0x2`), `IsMiddleButtonPressed` / `IsRightButtonPressed`, textual `PressedButton` / `Button` / `Buttons` markers, and `CurrentEvent` / `GestureRecognizer` / `Event` chain traversal
+
 ### [1.1.12] - 2026-04-21
 
 ### Fixed
@@ -443,6 +454,17 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 形式は Keep a Changelog に準拠し、バージョン管理は Semantic Versioning に従います。
 
 ## [Unreleased]
+
+### 変更
+- 配置領域のランチャーボタンは hover 時に既定の矢印カーソルのままとなり（従来の pointing-hand ではなく）、主ポインタが押下されている間だけ「掴んだ手」の grab カーソルへ切り替えるよう変更。これによりボタンのドラッグ移動が「掴んで動かす」操作として読み取れるようになり、ただ hover しているだけのときはクリック可能に見えすぎない挙動になる。Dock ボタンは意図的に従来の hover-hand カーソルのまま維持する（「Dock クリックで起動」のサイン）
+
+### 追加
+- `Behaviors/GrabHandCursorBehavior.cs` を追加し、配置領域の pointer press/release/move/enter/exit に応じたカーソル切替（macOS は `NSCursor.closedHandCursor`、Windows は代替として `InputSystemCursorShape.SizeAll` を `ProtectedCursor` 経由で適用）を `HoverHandCursorBehavior` と同じプラットフォーム配線で実装。ただし hover ではなく pointer-pressed 状態を基準にし、かつ「主ポインタのみ押されている」場合だけ grab カーソルを出す（右クリック＝コンテキストメニュー、中クリック＝エディタ起動では grab カーソルに切り替えない）。加えて `MainPage.Draggable_PointerMoved` が Windows で使っている「`PointerReleased` 欠落時の primary 再判定」fallback と同じ考え方で、`PointerMoved` でも「もう primary が押されていない」と判定したら grab カーソルを解除する。`OnDetachingFrom` では gesture recognizer を外す前に（grab 中なら）既定カーソルへ戻しておくことで、テンプレート再生成／絞り込み／外部同期削除など押下中の teardown でも Mac の `NSCursor.closedHandCursor` や Windows の `ProtectedCursor` が detach 済み platform view に残らないようにする
+- `Praxis.Core/Logic/PointerButtonClassifier.cs` を追加し、secondary / middle ポインタボタン判定の reflection ルール（`Type`, `PressedButton` / `Button` / `Buttons`, `ButtonMask`, `ButtonNumber`, `CurrentEvent` に加えて `GestureRecognizer` / `Event` チェーンを辿る）を共通化。`MainPage.PointerAndSelection.cs` と同じ粒度で `GrabHandCursorBehavior` も Mac Catalyst の判定をこの classifier へ委譲し、プラットフォーム引数の `ToString()` 部分一致だけに頼らないようにする
+
+### テスト
+- `AppLayerSourceGuardTests` に `GrabHandCursorBehavior` のプラットフォーム配線ガードと、配置領域のランチャーボタンが grab-cursor behavior を貼っていることを固定するアサーションを追加し、hover-hand の XAML 出現数は 16 まで下がる（Dock・上部 Create・モーダルの copy/action・context・conflict の各ボタンは引き続き `HoverHandCursorBehavior` を共有）。加えて `PointerMoved` 購読、Mac の primary-only 判定を `PointerButtonClassifier.IsPrimaryOnly(...)` に委譲していること、`PointerMoved` 経由の primary-release fallback、`OnDetachingFrom` で gesture recognizer 解除より前に（grab 中なら）カーソルを戻すこともソースレベルで固定する
+- `PointerButtonClassifierTests` を追加し、`Type = "OtherMouseDown"`・`ButtonNumber` の値域・middle (`0x4` / `0x8` / `0x10`) と secondary (`0x2`) の `ButtonMask` ビット・`IsMiddleButtonPressed` / `IsRightButtonPressed`・`PressedButton` / `Button` / `Buttons` のテキスト判定・`CurrentEvent` / `GestureRecognizer` / `Event` チェーン走査までを fake object を使った policy テストで固定する
 
 ### [1.1.12] - 2026-04-21
 
