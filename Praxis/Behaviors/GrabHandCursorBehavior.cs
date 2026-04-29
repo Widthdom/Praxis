@@ -161,7 +161,7 @@ public sealed class GrabHandCursorBehavior : Behavior<View>
         SetGrabCursor(sender, useGrabCursor: true);
     }
 
-    private static void ClearActiveGrab()
+    internal static void ClearActiveGrab()
     {
         GrabHandCursorBehavior? activeBehavior;
         lock (activeGrabLock)

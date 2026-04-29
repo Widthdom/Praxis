@@ -121,6 +121,14 @@ public partial class MainPage
             ExecuteDragFromItem(bindable.BindingContext, GestureStatus.Completed, pointerLastDx, pointerLastDy);
             return;
         }
+#elif MACCATALYST
+        if (!IsPrimaryPointerPressed(e))
+        {
+            pointerDragging = false;
+            GrabHandCursorBehavior.ClearActiveGrab();
+            ExecuteDragFromItem(bindable.BindingContext, GestureStatus.Completed, pointerLastDx, pointerLastDy);
+            return;
+        }
 #endif
 
         var p = e.GetPosition(this);

@@ -109,7 +109,7 @@ public class AppLayerSourceGuardTests
         Assert.Contains("pointer.PointerEntered += OnPointerEntered;", source);
         Assert.Contains("pointer.PointerExited += OnPointerExited;", source);
         Assert.Contains("private static void SetActiveGrab(GrabHandCursorBehavior behavior, object? sender)", source);
-        Assert.Contains("private static void ClearActiveGrab()", source);
+        Assert.Contains("internal static void ClearActiveGrab()", source);
         Assert.Contains("private void OnPointerReleased(object? sender, PointerEventArgs e)", source);
         Assert.Contains("ClearActiveGrab();", source);
         Assert.Contains("private void OnPointerExited(object? sender, PointerEventArgs e)", source);
@@ -154,6 +154,18 @@ public class AppLayerSourceGuardTests
         Assert.True(restoreIndex >= 0, "OnDetachingFrom must restore the cursor when detaching while grabbing.");
         Assert.True(removeIndex > restoreIndex, "Cursor restore should run before gesture recognizers are removed.");
         Assert.Contains("ReferenceEquals(GetActiveGrabBehavior(), this) && isGrabbing", detachBody);
+    }
+
+    [Fact]
+    public void MainPage_DraggablePointerMoved_HasMacPrimaryReleaseFallback()
+    {
+        var source = ReadRepositoryFile("Praxis", "MainPage.PointerAndSelection.cs");
+
+        Assert.Contains("private void Draggable_PointerMoved(object? sender, PointerEventArgs e)", source);
+        Assert.Contains("#elif MACCATALYST", source);
+        Assert.Contains("if (!IsPrimaryPointerPressed(e))", source);
+        Assert.Contains("GrabHandCursorBehavior.ClearActiveGrab();", source);
+        Assert.Contains("ExecuteDragFromItem(bindable.BindingContext, GestureStatus.Completed, pointerLastDx, pointerLastDy);", source);
     }
 
     [Fact]
