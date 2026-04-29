@@ -6,6 +6,8 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 
 ## [Unreleased]
 
+### [1.1.13] - 2026-04-30
+
 ### Changed
 - Placement-area launcher buttons now keep the default arrow cursor on hover (instead of the pointing-hand cursor) and switch to a closed-hand "grab" cursor only while the primary pointer is pressed, so drag-to-reposition reads as a grabbed object while idle hover stops implying a click target. Dock launcher buttons intentionally keep the existing hover-hand cursor so the Dock still signals "click to launch"
 - macOS placement-area grab cursors now also recover back to arrow when a pointer-release event is missed during pointer movement or exit, so a drag no longer leaves the closed-hand cursor stuck in the button area. The Mac drag path now also clears the cursor from `MainPage.Draggable_PointerMoved` and `Draggable_PointerReleased` so single-button and multi-button drags both recover cleanly after a missed release
@@ -457,6 +459,8 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 
 ## [Unreleased]
 
+### [1.1.13] - 2026-04-30
+
 ### 変更
 - 配置領域のランチャーボタンは hover 時に既定の矢印カーソルのままとなり（従来の pointing-hand ではなく）、主ポインタが押下されている間だけ「掴んだ手」の grab カーソルへ切り替えるよう変更。これによりボタンのドラッグ移動が「掴んで動かす」操作として読み取れるようになり、ただ hover しているだけのときはクリック可能に見えすぎない挙動になる。Dock ボタンは意図的に従来の hover-hand カーソルのまま維持する（「Dock クリックで起動」のサイン）
 - macOS の配置領域 grab カーソルは、pointer release を取り逃した場合でも pointer move / exit のタイミングで arrow に復帰するようにし、閉じた手のまま残り続けるケースを防ぐ。複数の選択済みボタンの間をまたいで pointer が移動しても、共有された grab 状態が解除されるようにした
@@ -776,7 +780,8 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - 重複 `using` ディレクティブの削除と `using` 順序の正規化
 - `MainViewModel` と各 partial クラスに主要ライフサイクルイベントの `LogInfo` 呼び出しを追加
 
-[Unreleased]: https://github.com/Widthdom/Praxis/compare/v1.1.12...HEAD
+[Unreleased]: https://github.com/Widthdom/Praxis/compare/v1.1.13...HEAD
+[1.1.13]: https://github.com/Widthdom/Praxis/compare/v1.1.12...v1.1.13
 [1.1.12]: https://github.com/Widthdom/Praxis/compare/v1.1.11...v1.1.12
 [1.1.11]: https://github.com/Widthdom/Praxis/compare/v1.1.10...v1.1.11
 [1.1.10]: https://github.com/Widthdom/Praxis/compare/v1.1.9...v1.1.10
