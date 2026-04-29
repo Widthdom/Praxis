@@ -1,5 +1,6 @@
 using System.Runtime.InteropServices;
 
+using Praxis.Behaviors;
 using Praxis.Core.Logic;
 using Praxis.Services;
 using Praxis.ViewModels;
@@ -48,6 +49,9 @@ public partial class MainPage
                 }
 
                 ExecuteDragFromItem(panDragItem ?? bindable.BindingContext, GestureStatus.Completed, dx, dy);
+#if MACCATALYST
+                GrabHandCursorBehavior.ClearActiveGrab();
+#endif
                 panDragItem = null;
                 panDragLastDx = 0;
                 panDragLastDy = 0;

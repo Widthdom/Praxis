@@ -26,6 +26,12 @@ public static class PointerButtonClassifier
     public static bool IsPrimaryOnly(object? platformArgs)
         => !IsSecondary(platformArgs) && !IsMiddle(platformArgs);
 
+    public static bool IsPrimaryPressed(object? platformArgs)
+        => platformArgs is not null && (
+            IsPrimaryFromObject(platformArgs)
+            || IsPrimaryFromObject(TryGetProperty(platformArgs, "GestureRecognizer"))
+            || IsPrimaryFromObject(TryGetProperty(platformArgs, "Event")));
+
     private static bool IsSecondaryFromObject(object? source)
     {
         if (source is null)
@@ -73,6 +79,58 @@ public static class PointerButtonClassifier
         if (currentEvent is not null && !ReferenceEquals(currentEvent, source))
         {
             return IsSecondaryFromObject(currentEvent);
+        }
+
+        return false;
+    }
+
+    private static bool IsPrimaryFromObject(object? source)
+    {
+        if (source is null)
+        {
+            return false;
+        }
+
+        var leftPressed = TryGetProperty(source, "IsLeftButtonPressed");
+        if (leftPressed is bool pressed && pressed)
+        {
+            return true;
+        }
+
+        var pressedButton = TryGetProperty(source, "PressedButton");
+        if (IsPrimaryButtonValue(pressedButton))
+        {
+            return true;
+        }
+
+        var button = TryGetProperty(source, "Button");
+        if (IsPrimaryButtonValue(button))
+        {
+            return true;
+        }
+
+        var buttons = TryGetProperty(source, "Buttons");
+        if (IsPrimaryButtonValue(buttons))
+        {
+            return true;
+        }
+
+        var buttonMask = TryGetProperty(source, "ButtonMask");
+        if (TryConvertToUInt64(buttonMask, out var mask) && mask != 0 && (mask & 0x1) != 0 && (mask & ~0x1UL) == 0)
+        {
+            return true;
+        }
+
+        var buttonNumber = TryGetProperty(source, "ButtonNumber");
+        if (TryConvertToInt32(buttonNumber, out var number) && number == 0)
+        {
+            return true;
+        }
+
+        var currentEvent = TryGetProperty(source, "CurrentEvent");
+        if (currentEvent is not null && !ReferenceEquals(currentEvent, source))
+        {
+            return IsPrimaryFromObject(currentEvent);
         }
 
         return false;
@@ -189,6 +247,24 @@ public static class PointerButtonClassifier
         }
 
         return int.TryParse(text, out var number) && number == 1;
+    }
+
+    private static bool IsPrimaryButtonValue(object? value)
+    {
+        if (value is null)
+        {
+            return false;
+        }
+
+        var text = value.ToString() ?? string.Empty;
+        if (text.Contains("Primary", StringComparison.OrdinalIgnoreCase) ||
+            text.Contains("Left", StringComparison.OrdinalIgnoreCase) ||
+            text.Contains("Button0", StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        return int.TryParse(text, out var number) && number == 0;
     }
 
     private static object? TryGetProperty(object? source, string propertyName)
