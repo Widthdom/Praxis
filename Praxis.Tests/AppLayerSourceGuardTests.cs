@@ -110,6 +110,7 @@ public class AppLayerSourceGuardTests
         Assert.Contains("pointer.PointerExited += OnPointerExited;", source);
         Assert.Contains("private static void SetActiveGrab(GrabHandCursorBehavior behavior, object? sender)", source);
         Assert.Contains("private static void ClearActiveGrab()", source);
+        Assert.Contains("if (ReferenceEquals(GetActiveGrabBehavior(), this))", source);
         Assert.Contains("private void OnPointerExited(object? sender, PointerEventArgs e)", source);
         Assert.Contains("NonPublicPropertySetter.TrySet(frameworkElement, \"ProtectedCursor\", cursor);", source);
         Assert.Contains("Microsoft.UI.Input.InputSystemCursorShape.SizeAll", source);

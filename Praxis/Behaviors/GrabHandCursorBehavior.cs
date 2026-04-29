@@ -72,7 +72,7 @@ public sealed class GrabHandCursorBehavior : Behavior<View>
 
     private void OnPointerReleased(object? sender, PointerEventArgs e)
     {
-        if (!IsAnyPrimaryPointerStillPressed(e))
+        if (ReferenceEquals(GetActiveGrabBehavior(), this))
         {
             ClearActiveGrab();
         }
@@ -161,7 +161,7 @@ public sealed class GrabHandCursorBehavior : Behavior<View>
         }
 
         behavior.isGrabbing = true;
-        behavior.SetGrabCursor(sender, useGrabCursor: true);
+        SetGrabCursor(sender, useGrabCursor: true);
     }
 
     private static void ClearActiveGrab()
@@ -179,7 +179,7 @@ public sealed class GrabHandCursorBehavior : Behavior<View>
         }
 
         activeBehavior.isGrabbing = false;
-        activeBehavior.SetGrabCursor(activeBehavior.attachedView, useGrabCursor: false);
+        SetGrabCursor(activeBehavior.attachedView, useGrabCursor: false);
     }
 
 #if WINDOWS
