@@ -13,7 +13,7 @@
         <converters:BoolToScrollBarVisibilityConverter x:Key="BoolToScrollBarVisibilityConverter" />
         <Style x:Key="PlacementButtonTextLabelStyle"
                TargetType="Label">
-            <Setter Property="FontSize" Value="12" />
+            <Setter Property="FontSize" Value="{OnPlatform Default=12, MacCatalyst=14}" />
         </Style>
     </ContentPage.Resources>
 
