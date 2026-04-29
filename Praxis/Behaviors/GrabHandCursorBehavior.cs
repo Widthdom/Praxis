@@ -10,8 +10,12 @@ namespace Praxis.Behaviors;
 
 public sealed class GrabHandCursorBehavior : Behavior<View>
 {
+    private static readonly object activeGrabLock = new();
+    private static GrabHandCursorBehavior? activeGrabBehavior;
+
     private readonly PointerGestureRecognizer pointer = new();
     private bool isGrabbing;
+    private View? attachedView;
 
 #if MACCATALYST
     private static readonly IntPtr nsCursorClass = ObjcGetClass("NSCursor");
@@ -23,6 +27,7 @@ public sealed class GrabHandCursorBehavior : Behavior<View>
     protected override void OnAttachedTo(View bindable)
     {
         base.OnAttachedTo(bindable);
+        attachedView = bindable;
         pointer.PointerPressed += OnPointerPressed;
         pointer.PointerReleased += OnPointerReleased;
         pointer.PointerMoved += OnPointerMoved;
@@ -37,9 +42,9 @@ public sealed class GrabHandCursorBehavior : Behavior<View>
         // grab cursor is still active, restore the default cursor first so the native
         // cursor state does not leak across Mac windows or the Windows ProtectedCursor
         // does not stay wired to a detached platform view.
-        if (isGrabbing)
+        if (ReferenceEquals(GetActiveGrabBehavior(), this) && isGrabbing)
         {
-            SetGrabCursor(bindable, useGrabCursor: false);
+            ClearActiveGrab();
         }
 
         bindable.GestureRecognizers.Remove(pointer);
@@ -49,6 +54,7 @@ public sealed class GrabHandCursorBehavior : Behavior<View>
         pointer.PointerEntered -= OnPointerEntered;
         pointer.PointerExited -= OnPointerExited;
         isGrabbing = false;
+        attachedView = null;
         base.OnDetachingFrom(bindable);
     }
 
@@ -61,41 +67,31 @@ public sealed class GrabHandCursorBehavior : Behavior<View>
             return;
         }
 
-        isGrabbing = true;
-        SetGrabCursor(sender, useGrabCursor: true);
+        SetActiveGrab(this, sender);
     }
 
     private void OnPointerReleased(object? sender, PointerEventArgs e)
     {
-        if (!isGrabbing)
+        if (!IsAnyPrimaryPointerStillPressed(e))
         {
-            return;
+            ClearActiveGrab();
         }
-
-        isGrabbing = false;
-        SetGrabCursor(sender, useGrabCursor: false);
     }
 
     private void OnPointerMoved(object? sender, PointerEventArgs e)
     {
-        if (!isGrabbing)
-        {
-            return;
-        }
-
         // Windows and macOS can miss PointerReleased when the pointer is released outside the
         // element. Mirror the drag-end fallback used by MainPage.Draggable_PointerMoved so the
         // grab cursor is cleared as soon as the primary button is no longer down.
         if (!IsAnyPrimaryPointerStillPressed(e))
         {
-            isGrabbing = false;
-            SetGrabCursor(sender, useGrabCursor: false);
+            ClearActiveGrab();
         }
     }
 
     private void OnPointerEntered(object? sender, PointerEventArgs e)
     {
-        if (isGrabbing)
+        if (ReferenceEquals(GetActiveGrabBehavior(), this))
         {
             SetGrabCursor(sender, useGrabCursor: true);
         }
@@ -103,16 +99,9 @@ public sealed class GrabHandCursorBehavior : Behavior<View>
 
     private void OnPointerExited(object? sender, PointerEventArgs e)
     {
-        if (!isGrabbing)
-        {
-            SetGrabCursor(sender, useGrabCursor: false);
-            return;
-        }
-
         if (!IsAnyPrimaryPointerStillPressed(e))
         {
-            isGrabbing = false;
-            SetGrabCursor(sender, useGrabCursor: false);
+            ClearActiveGrab();
         }
     }
 
@@ -154,6 +143,43 @@ public sealed class GrabHandCursorBehavior : Behavior<View>
         // Moved-based fallback to run here.
         return true;
 #endif
+    }
+
+    private static GrabHandCursorBehavior? GetActiveGrabBehavior()
+    {
+        lock (activeGrabLock)
+        {
+            return activeGrabBehavior;
+        }
+    }
+
+    private static void SetActiveGrab(GrabHandCursorBehavior behavior, object? sender)
+    {
+        lock (activeGrabLock)
+        {
+            activeGrabBehavior = behavior;
+        }
+
+        behavior.isGrabbing = true;
+        behavior.SetGrabCursor(sender, useGrabCursor: true);
+    }
+
+    private static void ClearActiveGrab()
+    {
+        GrabHandCursorBehavior? activeBehavior;
+        lock (activeGrabLock)
+        {
+            activeBehavior = activeGrabBehavior;
+            activeGrabBehavior = null;
+        }
+
+        if (activeBehavior is null)
+        {
+            return;
+        }
+
+        activeBehavior.isGrabbing = false;
+        activeBehavior.SetGrabCursor(activeBehavior.attachedView, useGrabCursor: false);
     }
 
 #if WINDOWS

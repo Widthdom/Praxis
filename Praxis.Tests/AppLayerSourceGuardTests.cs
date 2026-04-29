@@ -99,6 +99,8 @@ public class AppLayerSourceGuardTests
         var source = ReadRepositoryFile("Praxis", "Behaviors", "GrabHandCursorBehavior.cs");
 
         Assert.Contains("public sealed class GrabHandCursorBehavior : Behavior<View>", source);
+        Assert.Contains("private static readonly object activeGrabLock = new();", source);
+        Assert.Contains("private static GrabHandCursorBehavior? activeGrabBehavior;", source);
         Assert.Contains("private readonly PointerGestureRecognizer pointer = new();", source);
         Assert.Contains("private bool isGrabbing;", source);
         Assert.Contains("pointer.PointerPressed += OnPointerPressed;", source);
@@ -106,8 +108,8 @@ public class AppLayerSourceGuardTests
         Assert.Contains("pointer.PointerMoved += OnPointerMoved;", source);
         Assert.Contains("pointer.PointerEntered += OnPointerEntered;", source);
         Assert.Contains("pointer.PointerExited += OnPointerExited;", source);
-        Assert.Contains("SetGrabCursor(sender, useGrabCursor: true);", source);
-        Assert.Contains("SetGrabCursor(sender, useGrabCursor: false);", source);
+        Assert.Contains("private static void SetActiveGrab(GrabHandCursorBehavior behavior, object? sender)", source);
+        Assert.Contains("private static void ClearActiveGrab()", source);
         Assert.Contains("private void OnPointerExited(object? sender, PointerEventArgs e)", source);
         Assert.Contains("NonPublicPropertySetter.TrySet(frameworkElement, \"ProtectedCursor\", cursor);", source);
         Assert.Contains("Microsoft.UI.Input.InputSystemCursorShape.SizeAll", source);
@@ -144,12 +146,12 @@ public class AppLayerSourceGuardTests
         Assert.True(detachIndex >= 0, "OnDetachingFrom must exist.");
 
         var detachBody = source[detachIndex..];
-        var restoreIndex = detachBody.IndexOf("SetGrabCursor(bindable, useGrabCursor: false);", StringComparison.Ordinal);
+        var restoreIndex = detachBody.IndexOf("ClearActiveGrab();", StringComparison.Ordinal);
         var removeIndex = detachBody.IndexOf("bindable.GestureRecognizers.Remove(pointer);", StringComparison.Ordinal);
 
         Assert.True(restoreIndex >= 0, "OnDetachingFrom must restore the cursor when detaching while grabbing.");
         Assert.True(removeIndex > restoreIndex, "Cursor restore should run before gesture recognizers are removed.");
-        Assert.Contains("if (isGrabbing)", detachBody);
+        Assert.Contains("ReferenceEquals(GetActiveGrabBehavior(), this) && isGrabbing", detachBody);
     }
 
     [Fact]

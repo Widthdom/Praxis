@@ -27,7 +27,7 @@ Application exceptions are captured and stored in the local SQLite database for 
 - In `Command` / `Search`, the in-field clear button keeps editing focus on the same input after clear
   - Windows uses guarded native `TextBox` refocus/caret restore to avoid rare clear-button crashes in top-bar inputs.
 - Drag, multi-select, edit, and delete buttons in the placement area
-  - Placement-area buttons keep the default arrow cursor on hover and switch to a closed-hand grab cursor only while the primary pointer is pressed, so drag-to-reposition reads as a grabbed object; on macOS, the grab cursor also falls back to arrow if a release event is missed while moving or leaving the button. Dock buttons intentionally keep the pointing-hand cursor on hover to still signal "click to launch"
+  - Placement-area buttons keep the default arrow cursor on hover and switch to a closed-hand grab cursor only while the primary pointer is pressed, so drag-to-reposition reads as a grabbed object; on macOS, the grab cursor also falls back to arrow if a release event is missed while moving or leaving a button, including when the pointer crosses between multiple selected buttons. Dock buttons intentionally keep the pointing-hand cursor on hover to still signal "click to launch"
 - Undo/Redo for recent button mutations (move/edit/delete):
   - Windows: `Ctrl+Z` / `Ctrl+Y`
   - macOS: `Command+Z` / `Command+Shift+Z`
