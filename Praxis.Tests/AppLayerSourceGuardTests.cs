@@ -169,6 +169,16 @@ public class AppLayerSourceGuardTests
     }
 
     [Fact]
+    public void MainPage_DraggablePointerReleased_ClearsMacGrabCursor()
+    {
+        var source = ReadRepositoryFile("Praxis", "MainPage.PointerAndSelection.cs");
+
+        Assert.Contains("private void Draggable_PointerReleased(object? sender, PointerEventArgs e)", source);
+        Assert.Contains("GrabHandCursorBehavior.ClearActiveGrab();", source);
+        Assert.Contains("ReleaseCapturedPointer();", source);
+    }
+
+    [Fact]
     public void MainPage_PlacementAreaButtons_UseGrabHandCursorBehavior_InsteadOfHoverHand()
     {
         var xaml = ReadRepositoryFile("Praxis", "MainPage.xaml");
