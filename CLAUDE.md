@@ -71,21 +71,29 @@ dotnet build Praxis/Praxis.csproj -c Release -f net10.0-maccatalyst -v minimal -
 
 ### Code Search Rules
 
-This project uses **cdidx** for fast code search via a pre-built SQLite index (`.cdidx/codeindex.db`).
-**Query this database** instead of using `find`, `grep`, or `ls -R`. Use `rg` only as a fast fallback or for one-off raw-text checks.
-The tracked repository setting at `.claude/settings.json` denies `rg` / `grep` / `find`-style shell search commands so Claude sessions stay on the `cdidx` path by default.
+This project uses `cdidx` as the primary code search tool via a local SQLite index at `.cdidx/codeindex.db`.
+Use `cdidx` first for repo-wide investigation. Avoid `find`, `grep`, and `ls -R`; use `rg` only as a one-off fallback or when `cdidx` is unavailable.
+The tracked repository setting in `.claude/settings.json` is expected to keep shell search commands off the default path.
 
-If the AI client has the `cdidx` MCP server configured, prefer those structured tools first. If MCP is not available in the current client, use the CLI workflow below.
+Treat the `cdidx` semantics documented in the upstream README as the source of truth. The current rules are based on the 1.16.x line:
+
+- `map` and `map --json` are the fastest way to get a repo overview before drilling into symbols or text.
+- `status --json` is the freshness gate when trust matters; use `indexed_at`, `latest_modified`, `git_head`, and `git_is_dirty` before relying on results.
+- `inspect` is the one-round-trip symbol view when you already have a candidate name.
+- `symbols` finds symbol names first; `definition` gives the declaration text and `--body` when the extractor can recover the implementation body.
+- `references`, `callers`, and `callees` are for graph-aware symbol queries.
+- `outline` is for single-file structure, `excerpt` for a line range, and `find` when you already know the file and want line/column matches.
+- `files`, `deps`, `impact`, `hotspots`, `unused`, `languages`, and `validate` are the supporting commands for candidate discovery, dependency ripples, dead-code checks, supported-language checks, and encoding validation.
 
 #### Setup
 
-First check whether `cdidx` is available:
+Check whether `cdidx` is available first:
 
 ```bash
 cdidx --version
 ```
 
-If the AI client supports local MCP configuration, add `cdidx` as a stdio MCP server so the agent can use structured search instead of shelling out first:
+If the current client can load local MCP servers, register `cdidx` as a stdio server so structured search is available without shelling out:
 
 Claude Code (`.claude/settings.json` or `.mcp.json`) / Codex CLI (`codex.json` or `~/.codex/config.json`):
 
@@ -100,145 +108,96 @@ Claude Code (`.claude/settings.json` or `.mcp.json`) / Codex CLI (`codex.json` o
 }
 ```
 
-After adding the MCP entry, prefer MCP tools for normal read-only investigation and keep the CLI as the fallback or for explicit local verification.
+Prefer MCP for read-only investigation when it is available. Keep the CLI as the fallback or for explicit local verification.
 
-For this repository, keep the tracked Claude Code project config aligned with that guidance so Claude can use the full `cdidx` MCP surface instead of only CLI fallback.
-
-If not found, install it (no .NET required — downloads a self-contained binary):
+If `cdidx` is missing or stale, install or update it:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/Widthdom/CodeIndex/main/install.sh | bash
-```
-
-Or, if .NET 8+ SDK is available:
-
-```bash
+# or, with .NET 8+:
 dotnet tool install -g cdidx
+dotnet tool update -g cdidx
 ```
 
-If already installed, update to the latest version:
+If install/update fails, fall back to `sqlite3` queries against `.cdidx/codeindex.db` when it already exists, then `rg`. Say explicitly when you fall back.
 
-```bash
-curl -fsSL https://raw.githubusercontent.com/Widthdom/CodeIndex/main/install.sh | bash
-# or: dotnet tool update -g cdidx
-```
-
-If install/update fails, fall back to `sqlite3` direct queries against `.cdidx/codeindex.db` (if the DB already exists), then `rg`. Say so explicitly when you fall back.
-
-Before searching: `cdidx .` (incremental update; purges stale files and skips unchanged ones). Use `cdidx . --dry-run` to preview without mutating the DB.
-
-#### Keeping the index fresh
-
-After editing files, refresh the index again before your next search:
-
-```bash
-cdidx . --files path/to/changed_file.cs   # refresh only touched files
-cdidx . --commits HEAD                     # refresh files changed in the last commit
-cdidx .                                    # full incremental refresh
-```
-
-**Rule: after modifying source files, run one of the above before your next search.**
-If `cdidx status --json` shows `DEGRADED` after a scoped `--files` refresh, rerun `cdidx .` before trusting graph/validate commands.
-After `git reset`, `git rebase`, `git commit --amend`, `git switch`, or `git merge`, prefer `cdidx .` so purges work against the current worktree.
-
-#### Query strategy
-
-- `map` for a quick repo overview before drilling into symbols or text.
-- `status --json` when freshness matters (`indexed_at`, `latest_modified`, `git_head`, `git_is_dirty`). `map --json` exposes both filter-scoped (`indexed_at` / `latest_modified`) and whole-workspace (`workspace_indexed_at` / `workspace_latest_modified`) freshness.
-- `inspect` when you already have a candidate symbol and want definition, nearby symbols, references, callers, callees, file metadata, workspace trust signals (`project_root`, `git_head`, `git_is_dirty`), and graph-support metadata (`graph_language`, `graph_supported`, `graph_support_reason`) in one round-trip.
-- `definition` for declaration text; add `--body` for the implementation body.
-- `find` when you already know the target file and need literal line/column matches without falling back to raw-text tools.
-- `references`, `callers`, `callees` for symbol-aware call graphs in 18 languages (Python, JS/TS, C#, Go, Rust, Java, Kotlin, Ruby, C/C++, PHP, Swift, Dart, Scala, Elixir, Lua, VB.NET). F# uses `search`. If a graph command reports unsupported language metadata, treat that as "unsupported," not "no hits."
-- `symbols` for named entities in 32 languages (including C#, F#, VB.NET, R, Haskell, Shell, SQL, Terraform, Protobuf, GraphQL, Gradle, Makefile, Dockerfile, Zig, PowerShell, CSS/SCSS, Elixir, Lua).
-- `outline` for a file's symbol structure without opening it.
-- `excerpt` for a precise line range instead of reading the whole file.
-- `files` to enumerate candidates before opening them. Use `files --since <ISO-8601>` to focus on recently changed code.
-- `deps` for file-level dependency impact analysis; `--reverse` for what depends on a given file. Use MCP `impact_analysis` when you need the transitive ripple of a symbol change rather than just file edges.
-- `impact` when you want the CLI's transitive caller view for a symbol change rather than only direct file edges.
-- `unused` for potentially dead code in the CLI (graph-supported languages only); the MCP equivalent is `unused_symbols`.
-- `hotspots` for most-referenced symbols in the CLI; the MCP equivalent is `symbol_hotspots`.
-- `languages` when you need the current extractor/graph support matrix rather than relying on stale memory.
-- `validate` for encoding trouble (BOMs, null bytes, replacement characters, mixed line endings).
-- `search` for comments, string literals, configs, docs, XAML, SQL, JSON, YAML, TOML, Markdown, HTML, Vue, Svelte, and languages where symbol/graph data is limited.
-- `search --exact` for case-sensitive raw substring matches instead of FTS behavior.
-- `search --since <ISO-8601>` to scope to recent changes.
-- `--count` for cheap result counts before pulling full result sets.
-- `--exclude-tests` unless you are explicitly investigating tests.
-- `--path <text>` and repeatable `--exclude-path <text>` to narrow noisy searches.
-- `search --snippet-lines <n>` for tighter JSON snippets for downstream tool/model use.
-- `index . --dry-run` to preview indexing work.
-- `status --json` exposes `fold_ready`; if exact symbol matching behaves like legacy ASCII-only matching, prefer `cdidx backfill-fold` first and rebuild with `cdidx . --rebuild` only when folded metadata still cannot be trusted.
-- `status --json` also exposes `csharp_symbol_name_ready`; if exact C# operator / conversion-operator / indexer matches look stale, run `cdidx .` before trusting `symbols --exact-name` or `definition`.
-
-`search --json` returns match-centered snippets with `chunk_start_line`, `chunk_end_line`, `snippet_start_line`, `snippet_end_line`, `match_lines`, and `highlights`; `files --json` includes per-file `checksum`, `modified`, and `indexed_at`; `inspect --json` mirrors whole-workspace freshness plus graph-support metadata. Graph queries for unsupported languages report that explicitly instead of silently implying "no hits."
-
-File cdidx bugs/feature ideas at https://github.com/Widthdom/CodeIndex/issues.
-
-#### Default CLI workflow
+Before searching, refresh the index:
 
 ```bash
 cdidx .
-cdidx map --path Praxis --exclude-tests --json
-cdidx inspect "MainViewModel" --exclude-tests
-cdidx search "keyword" --path Praxis --exclude-tests --snippet-lines 6
-cdidx search "ExactIdentifier" --path Praxis --exclude-tests --exact
-cdidx search "keyword" --path Praxis --exclude-tests --count
-cdidx search "keyword" --path Praxis --exclude-tests --since 2026-01-01T00:00:00Z
-cdidx definition "MainViewModel" --path Praxis/ViewModels --body
-cdidx callers "ApplyButtonDiffAsync" --lang csharp --exclude-tests
-cdidx callees "ReloadButtonsAsync" --lang csharp --exclude-tests
-cdidx symbols "CrashFileLogger" --lang csharp --exclude-tests
-cdidx find "SemaphoreSlim" --path Praxis/Services/SqliteAppRepository.cs
-cdidx outline Praxis/MainPage.EditorAndInput.cs
-cdidx excerpt Praxis/Services/SqliteAppRepository.cs --start 1 --end 80
-cdidx files --lang csharp --path Praxis.Core
-cdidx files --since 2026-01-01T00:00:00Z --path Praxis
-cdidx deps --path Praxis/ViewModels --exclude-tests
-cdidx impact "ReloadButtonsAsync" --lang csharp --exclude-tests
-cdidx unused --lang csharp --exclude-tests
-cdidx hotspots --path Praxis --exclude-tests
-cdidx languages --json
-cdidx backfill-fold
-cdidx validate
-cdidx status --json
-cdidx index . --dry-run
-git log --oneline -- path/to/file
 ```
 
-#### MCP workflow
+Use the incremental refresh variants after edits:
 
-If the current AI client exposes `cdidx` as MCP tools, prefer those structured tools before shelling out:
+```bash
+cdidx . --files path/to/changed_file.cs
+cdidx . --commits HEAD
+cdidx . --dry-run
+```
 
-- `map` for repo overview
-- `analyze_symbol` or the client's `inspect` equivalent for one-symbol deep context
-- `search`, `definition`, `references`, `callers`, `callees`, `symbols`, `files`, `find_in_file`, `excerpt`, `outline`, `deps`, `impact_analysis`, `unused_symbols`, `symbol_hotspots`, `status`, `languages`, `validate`, `ping`, `index`, and `backfill_fold`
-- `batch_query` when you need multiple small read-only queries in one round-trip
-- `suggest_improvement` when `cdidx` itself appears to miss symbols, misreport graph support, or expose an indexing/CLI/MCP gap that should be fed back upstream
+After modifying source files, refresh the index before the next search. After `git reset`, `git rebase`, `git commit --amend`, `git switch`, or `git merge`, prefer a full `cdidx .` so purges run against the current worktree.
 
-Before using `suggest_improvement`, search existing GitHub issues to avoid duplicates. If `CDIDX_GITHUB_TOKEN` is configured, `suggest_improvement` may also open an upstream issue; otherwise it stays local in `.cdidx/suggestions.json`.
-All MCP tools expose safety annotations, so read-only `cdidx` queries should be considered safe to approve automatically when the client understands those hints.
+If `cdidx status --json` reports `DEGRADED` after a scoped refresh, rerun `cdidx .` before trusting graph or validation commands.
 
-If MCP is available, prefer it over maintaining local SQL templates for routine investigation. Keep the SQL fallback only for sessions where MCP and CLI are both unavailable or broken.
+#### Query Strategy
 
-When MCP is unavailable in the current client, do not invent the tool names; use the CLI commands above instead.
+- Use `map` or `map --json` for a quick repo overview.
+- Use `status --json` when freshness or trust flags matter.
+- Use `inspect` when you want bundled definition, nearby symbols, references, callers, callees, file metadata, and graph-support metadata in one call.
+- Use `symbols` to resolve candidate names before `definition`, `references`, `callers`, `callees`, or `impact`.
+- Use `definition` for declaration text, and add `--body` when the body matters.
+- Use `references`, `callers`, and `callees` for symbol-aware graph questions. If a language is unsupported, treat that as unsupported rather than "no hits."
+- Use `search` for comments, strings, configs, docs, markup, and languages where symbol or graph support is limited.
+- Use `find` when you already know the target file and want literal matches without switching to raw text tools.
+- Use `excerpt` when you need a precise line range.
+- Use `files` to enumerate candidates, `deps` for file-level dependency impact, `impact` for pre-edit ripple checks, `hotspots` for most-referenced symbols, and `unused` for dead-code checks.
+- Use `languages` when you need the current extractor and graph support matrix.
+- Use `validate` for BOMs, null bytes, replacement characters, and mixed line endings.
 
-#### Search rules by change type
+#### Search Syntax
 
-- **UI / page behavior**
-  - Search `Praxis/MainPage.xaml`, `Praxis/MainPage*.cs`, and platform handlers under `Praxis/Platforms/**/Handlers/`.
-  - Many behaviors are split across `MainPage.PointerAndSelection.cs`, `MainPage.FocusAndContext.cs`, `MainPage.EditorAndInput.cs`, `MainPage.ShortcutsAndConflict.cs`, `MainPage.WindowsInput.cs`, `MainPage.MacCatalystBehavior.cs`, `MainPage.ViewModelEvents.cs`, and field partials.
-- **ViewModel workflow**
-  - Search `Praxis/ViewModels/MainViewModel*.cs`, related services, and `Praxis.Tests/MainViewModelWorkflowIntegrationTests.cs`.
-- **Core logic / policies**
-  - Search `Praxis.Core/Logic/` first, then the calling UI/handler code, then matching tests in `Praxis.Tests/`.
-- **SQLite / schema / storage / logging**
-  - Search `Praxis/Services/SqliteAppRepository.cs`, `Praxis/Services/DbErrorLogger.cs`, `Praxis/Services/CrashFileLogger.cs`, `docs/DATABASE_SCHEMA.md`, `Praxis.Tests/DatabaseSchemaVersionPolicyTests.cs`, `Praxis.Tests/AppStoragePathLayoutResolverTests.cs`, `Praxis.Tests/DbErrorLoggerTests.cs`, and `Praxis.Tests/CrashFileLoggerTests.cs`.
-- **CI / release / coverage**
-  - Search `.github/workflows/*.yml`, `Praxis.Tests/CiCoverageWorkflowPolicyTests.cs`, `README.md`, `docs/DEVELOPER_GUIDE.md`, `docs/TESTING_GUIDE.md`, and `version.json`.
-- **Partial-class structure**
-  - Search both the implementation files and `Praxis.Tests/MainPageStructureTests.cs` before moving fields, renaming XAML elements, or reordering modal fields.
-- **Linked-source test coverage**
-  - If you touch app-layer files compiled into tests, inspect `Praxis.Tests/Praxis.Tests.csproj` to see whether the file is linked into the test project.
+- Prefer `--exact-substring` for case-sensitive literal search in `search`.
+- Prefer `--exact-name` for symbol commands and `inspect`.
+- Keep `--exact` only as the legacy compatibility spelling.
+- Use `--query` or `--` when a query starts with `-`.
+- Use `--path` and repeatable `--exclude-path` to narrow noisy searches.
+- Use `--exclude-tests` unless you are explicitly investigating tests.
+- Use `--since <ISO-8601>` to scope to recently changed files.
+- Use `--count` when you only need a result count.
+- Use `--snippet-lines <n>` to shrink or widen search excerpts.
+- Use `--max-line-width <n>` when long single lines would otherwise dominate the output.
+- Use `--fts` only when you want raw FTS5 syntax.
+- Use `--no-dedup` only when overlapping-chunk deduplication would hide raw results.
+- Use `--top` as the alias for `--limit` when that reads better in a command.
+
+`search --json` and MCP `search` return compact, match-centered snippets instead of whole chunks. `status --json`, `map --json`, `inspect --json`, and the graph-oriented MCP calls also expose the trust and support metadata that tells you whether to trust the current DB snapshot.
+
+For repo-level search issues or feature ideas, file them at `https://github.com/Widthdom/CodeIndex/issues`.
+
+#### MCP Workflow
+
+If the client exposes `cdidx` as MCP tools, prefer them before shelling out:
+
+- `map`
+- `inspect` or `analyze_symbol`
+- `search`, `definition`, `references`, `callers`, `callees`, `symbols`, `files`, `find_in_file`, `excerpt`, `outline`, `deps`, `impact_analysis`, `unused_symbols`, `symbol_hotspots`, `status`, `languages`, `validate`, `ping`, `index`, `backfill_fold`
+- `batch_query` for multiple small read-only queries in one round-trip
+- `suggest_improvement` when `cdidx` itself appears to miss symbols, misreport graph support, or expose an indexing or MCP gap
+
+Before using `suggest_improvement`, check existing GitHub issues to avoid duplicates. If `CDIDX_GITHUB_TOKEN` is configured, it may also open an upstream issue; otherwise it stays local in `.cdidx/suggestions.json`.
+
+All read-only MCP calls are safe to prefer when the client understands safety annotations. Keep the SQL fallback only for sessions where MCP and CLI are both unavailable or broken.
+
+#### Search Rules By Change Type
+
+- UI or page behavior: search `Praxis/MainPage.xaml`, `Praxis/MainPage*.cs`, and platform handlers under `Praxis/Platforms/**/Handlers/`.
+- MainPage behavior is split across `MainPage.PointerAndSelection.cs`, `MainPage.FocusAndContext.cs`, `MainPage.EditorAndInput.cs`, `MainPage.ShortcutsAndConflict.cs`, `MainPage.WindowsInput.cs`, `MainPage.MacCatalystBehavior.cs`, `MainPage.ViewModelEvents.cs`, and the field partials.
+- ViewModel workflow: search `Praxis/ViewModels/MainViewModel*.cs`, related services, and `Praxis.Tests/MainViewModelWorkflowIntegrationTests.cs`.
+- Core logic or policies: search `Praxis.Core/Logic/` first, then the caller sites in `Praxis/`, then matching tests in `Praxis.Tests/`.
+- SQLite, schema, storage, or logging: search `Praxis/Services/SqliteAppRepository.cs`, `Praxis/Services/DbErrorLogger.cs`, `Praxis/Services/CrashFileLogger.cs`, `docs/DATABASE_SCHEMA.md`, `Praxis.Tests/DatabaseSchemaVersionPolicyTests.cs`, `Praxis.Tests/AppStoragePathLayoutResolverTests.cs`, `Praxis.Tests/DbErrorLoggerTests.cs`, and `Praxis.Tests/CrashFileLoggerTests.cs`.
+- CI, release, or coverage: search `.github/workflows/*.yml`, `Praxis.Tests/CiCoverageWorkflowPolicyTests.cs`, `README.md`, `docs/DEVELOPER_GUIDE.md`, `docs/TESTING_GUIDE.md`, and `version.json`.
+- Partial-class structure: search both the implementation files and `Praxis.Tests/MainPageStructureTests.cs` before moving fields, renaming XAML elements, or reordering modal fields.
+- Linked-source tests: if you touch app-layer files compiled into tests, check `Praxis.Tests/Praxis.Tests.csproj` to make sure the linked-source list still matches.
 
 #### Direct SQL fallback
 
