@@ -108,6 +108,7 @@ public class AppLayerSourceGuardTests
         Assert.Contains("pointer.PointerExited += OnPointerExited;", source);
         Assert.Contains("SetGrabCursor(sender, useGrabCursor: true);", source);
         Assert.Contains("SetGrabCursor(sender, useGrabCursor: false);", source);
+        Assert.Contains("private void OnPointerExited(object? sender, PointerEventArgs e)", source);
         Assert.Contains("NonPublicPropertySetter.TrySet(frameworkElement, \"ProtectedCursor\", cursor);", source);
         Assert.Contains("Microsoft.UI.Input.InputSystemCursorShape.SizeAll", source);
         Assert.Contains("var cursorSelector = useGrabCursor ? closedHandCursorSelector : arrowCursorSelector;", source);
@@ -130,6 +131,7 @@ public class AppLayerSourceGuardTests
         // Mac path delegates to the shared classifier so secondary/middle detection
         // is not reduced to substring inspection of platform-args text.
         Assert.Contains("PointerButtonClassifier.IsPrimaryOnly(e.PlatformArgs)", source);
+        Assert.Contains("PointerButtonClassifier.IsPrimaryPressed(e.PlatformArgs)", source);
     }
 
     [Fact]

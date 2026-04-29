@@ -138,6 +138,45 @@ public class PointerButtonClassifierTests
         Assert.True(PointerButtonClassifier.IsPrimaryOnly(new FakePlatformArgs { ButtonNumber = 0 }));
     }
 
+    [Fact]
+    public void IsPrimaryPressed_DetectsLeftButtonState()
+    {
+        Assert.True(PointerButtonClassifier.IsPrimaryPressed(new FakePlatformArgs { IsLeftButtonPressed = true }));
+        Assert.True(PointerButtonClassifier.IsPrimaryPressed(new FakePlatformArgs { PressedButton = "Left" }));
+        Assert.True(PointerButtonClassifier.IsPrimaryPressed(new FakePlatformArgs { Button = "Primary" }));
+        Assert.True(PointerButtonClassifier.IsPrimaryPressed(new FakePlatformArgs { Buttons = "Button0" }));
+        Assert.True(PointerButtonClassifier.IsPrimaryPressed(new FakePlatformArgs { ButtonMask = 0x1UL }));
+        Assert.True(PointerButtonClassifier.IsPrimaryPressed(new FakePlatformArgs { ButtonNumber = 0 }));
+    }
+
+    [Fact]
+    public void IsPrimaryPressed_FollowsCurrentEventGestureRecognizerAndEventChains()
+    {
+        var inner = new FakePlatformArgs { ButtonNumber = 0 };
+        Assert.True(PointerButtonClassifier.IsPrimaryPressed(new FakePlatformArgs { CurrentEvent = inner }));
+
+        var gestureHost = new FakePlatformArgs
+        {
+            GestureRecognizer = new FakePlatformArgs { IsLeftButtonPressed = true },
+        };
+        Assert.True(PointerButtonClassifier.IsPrimaryPressed(gestureHost));
+
+        var eventHost = new FakePlatformArgs
+        {
+            Event = new FakePlatformArgs { ButtonMask = 0x1UL },
+        };
+        Assert.True(PointerButtonClassifier.IsPrimaryPressed(eventHost));
+    }
+
+    [Fact]
+    public void IsPrimaryPressed_IsFalse_WhenPrimaryStateIsMissing()
+    {
+        Assert.False(PointerButtonClassifier.IsPrimaryPressed(null));
+        Assert.False(PointerButtonClassifier.IsPrimaryPressed(new FakePlatformArgs()));
+        Assert.False(PointerButtonClassifier.IsPrimaryPressed(new FakePlatformArgs { Type = "OtherMouseDown" }));
+        Assert.False(PointerButtonClassifier.IsPrimaryPressed(new FakePlatformArgs { ButtonMask = 0x2UL }));
+    }
+
     private sealed class FakePlatformArgs
     {
         public string? Type { get; set; }

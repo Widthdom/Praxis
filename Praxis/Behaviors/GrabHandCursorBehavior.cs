@@ -83,9 +83,9 @@ public sealed class GrabHandCursorBehavior : Behavior<View>
             return;
         }
 
-        // Windows may miss PointerReleased when the pointer is released outside the element.
-        // Mirror the drag-end fallback used by MainPage.Draggable_PointerMoved so the grab
-        // cursor is cleared as soon as the primary button is no longer down.
+        // Windows and macOS can miss PointerReleased when the pointer is released outside the
+        // element. Mirror the drag-end fallback used by MainPage.Draggable_PointerMoved so the
+        // grab cursor is cleared as soon as the primary button is no longer down.
         if (!IsAnyPrimaryPointerStillPressed(e))
         {
             isGrabbing = false;
@@ -105,6 +105,13 @@ public sealed class GrabHandCursorBehavior : Behavior<View>
     {
         if (!isGrabbing)
         {
+            SetGrabCursor(sender, useGrabCursor: false);
+            return;
+        }
+
+        if (!IsAnyPrimaryPointerStillPressed(e))
+        {
+            isGrabbing = false;
             SetGrabCursor(sender, useGrabCursor: false);
         }
     }
@@ -140,6 +147,8 @@ public sealed class GrabHandCursorBehavior : Behavior<View>
         var routed = TryGetWindowsRoutedArgs(e);
         var props = routed?.GetCurrentPoint(null).Properties;
         return props?.IsLeftButtonPressed == true;
+#elif MACCATALYST
+        return PointerButtonClassifier.IsPrimaryPressed(e.PlatformArgs);
 #else
         // Non-Windows platforms dispatch a reliable PointerReleased / exit, so there is no
         // Moved-based fallback to run here.
