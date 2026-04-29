@@ -72,10 +72,7 @@ public sealed class GrabHandCursorBehavior : Behavior<View>
 
     private void OnPointerReleased(object? sender, PointerEventArgs e)
     {
-        if (ReferenceEquals(GetActiveGrabBehavior(), this))
-        {
-            ClearActiveGrab();
-        }
+        ClearActiveGrab();
     }
 
     private void OnPointerMoved(object? sender, PointerEventArgs e)
