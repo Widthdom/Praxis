@@ -176,6 +176,30 @@ public class AppLayerSourceGuardTests
         Assert.Contains("private void Draggable_PointerReleased(object? sender, PointerEventArgs e)", source);
         Assert.Contains("GrabHandCursorBehavior.ClearActiveGrab();", source);
         Assert.Contains("ReleaseCapturedPointer();", source);
+
+        var releaseIndex = source.IndexOf("private void Draggable_PointerReleased(object? sender, PointerEventArgs e)", StringComparison.Ordinal);
+        var clearIndex = source.IndexOf("GrabHandCursorBehavior.ClearActiveGrab();", releaseIndex, StringComparison.Ordinal);
+        var guardIndex = source.IndexOf("if (!pointerDragging || sender is not BindableObject bindable)", releaseIndex, StringComparison.Ordinal);
+
+        Assert.True(clearIndex > releaseIndex, "PointerReleased should clear the grab cursor on macOS.");
+        Assert.True(clearIndex < guardIndex, "PointerReleased should clear the grab cursor before the non-mac drag guard returns.");
+    }
+
+    [Fact]
+    public void MainPage_DraggablePanUpdated_ClearsMacGrabCursor()
+    {
+        var source = ReadRepositoryFile("Praxis", "MainPage.EditorAndInput.cs");
+
+        Assert.Contains("private void Draggable_PanUpdated(object? sender, PanUpdatedEventArgs e)", source);
+        Assert.Contains("GrabHandCursorBehavior.ClearActiveGrab();", source);
+        Assert.Contains("ExecuteDragFromItem(panDragItem ?? bindable.BindingContext, GestureStatus.Completed, dx, dy);", source);
+
+        var panIndex = source.IndexOf("private void Draggable_PanUpdated(object? sender, PanUpdatedEventArgs e)", StringComparison.Ordinal);
+        var clearIndex = source.IndexOf("GrabHandCursorBehavior.ClearActiveGrab();", panIndex, StringComparison.Ordinal);
+        var completedIndex = source.IndexOf("ExecuteDragFromItem(panDragItem ?? bindable.BindingContext, GestureStatus.Completed, dx, dy);", panIndex, StringComparison.Ordinal);
+
+        Assert.True(clearIndex > panIndex, "PanUpdated should clear the grab cursor when the drag completes.");
+        Assert.True(clearIndex > completedIndex, "PanUpdated should clear the grab cursor after dispatching drag completion.");
     }
 
     [Fact]

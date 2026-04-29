@@ -166,6 +166,9 @@ public partial class MainPage
             return;
         }
 
+#if MACCATALYST
+        GrabHandCursorBehavior.ClearActiveGrab();
+#endif
         if (!pointerDragging || sender is not BindableObject bindable)
         {
             return;
@@ -173,9 +176,6 @@ public partial class MainPage
 
         pointerDragging = false;
         ReleaseCapturedPointer();
-#if MACCATALYST
-        GrabHandCursorBehavior.ClearActiveGrab();
-#endif
         var p = e.GetPosition(this);
         var dx = p?.X - pointerStart.X ?? pointerLastDx;
         var dy = p?.Y - pointerStart.Y ?? pointerLastDy;
