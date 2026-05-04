@@ -12,7 +12,7 @@ namespace Praxis;
 public partial class App
 {
     private const nint MacFullSizeContentViewMask = (nint)(1 << 15);
-    private const nint MacNativeDummyRootTag = 0x50475852;
+    private const nint MacNativeSubviewBelow = -1;
     private static readonly NSString MacNativeNsDummyRootIdentifier = new("PraxisNativeDummyRootGlass");
     private static int macBackdropDiagnosticsLogged;
 
@@ -109,10 +109,11 @@ public partial class App
                 ClearNativeWindowChrome(nativeMacWindow, "toolbarView");
                 ClearNativeWindowChrome(nativeMacWindow, "titlebarContainerView");
                 ClearNativeWindowChrome(nativeMacWindow, "toolbarContainerView");
-                EnsureNativeNsDummyRootGlass(nativeMacWindow, nativeWindow.Bounds);
+                EnsureNativeNsDummyRootGlass(
+                    nativeMacWindow,
+                    nativeWindow.Bounds,
+                    nativeWindow.TraitCollection.UserInterfaceStyle == UIUserInterfaceStyle.Dark);
             }
-
-            EnsureNativeDummyRootGlass(nativeWindow);
         }
         catch (Exception ex)
         {
@@ -121,87 +122,7 @@ public partial class App
         }
     }
 
-    private static void EnsureNativeDummyRootGlass(UIWindow nativeWindow)
-    {
-        try
-        {
-            var dummyRoot = FindNativeDummyRootGlass(nativeWindow) ?? CreateNativeDummyRootGlass();
-            if (!ReferenceEquals(dummyRoot.Superview, nativeWindow))
-            {
-                dummyRoot.RemoveFromSuperview();
-                nativeWindow.AddSubview(dummyRoot);
-            }
-
-            nativeWindow.BringSubviewToFront(dummyRoot);
-
-            const double inset = 18d;
-            var bounds = nativeWindow.Bounds;
-            dummyRoot.Frame = new CGRect(
-                inset,
-                inset,
-                Math.Max(0d, bounds.Width - (inset * 2d)),
-                Math.Max(0d, bounds.Height - (inset * 2d)));
-            dummyRoot.Hidden = false;
-            dummyRoot.Alpha = 1f;
-            dummyRoot.UserInteractionEnabled = false;
-            dummyRoot.BackgroundColor = nativeWindow.TraitCollection.UserInterfaceStyle == UIUserInterfaceStyle.Dark
-                ? UIColor.FromRGBA(33, 38, 45, 0.55f)
-                : UIColor.FromRGBA(255, 255, 255, 0.45f);
-            dummyRoot.ClipsToBounds = true;
-            dummyRoot.Layer.CornerRadius = 28f;
-            dummyRoot.Layer.MasksToBounds = true;
-            dummyRoot.Layer.BorderWidth = 1f;
-            dummyRoot.Layer.BorderColor = nativeWindow.TraitCollection.UserInterfaceStyle == UIUserInterfaceStyle.Dark
-                ? UIColor.FromRGBA(113, 123, 136, 0.60f).CGColor
-                : UIColor.FromRGBA(255, 255, 255, 0.80f).CGColor;
-
-            foreach (var subview in dummyRoot.Subviews)
-            {
-                subview.Frame = dummyRoot.Bounds;
-                subview.ClipsToBounds = true;
-                subview.Layer.CornerRadius = 28f;
-                subview.Layer.MasksToBounds = true;
-            }
-        }
-        catch (Exception ex)
-        {
-            var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);
-            CrashFileLogger.WriteWarning(nameof(App), $"Failed to apply native Mac dummy root glass: {safeMessage}");
-        }
-    }
-
-    private static UIView CreateNativeDummyRootGlass()
-    {
-        var container = new UIView
-        {
-            Tag = MacNativeDummyRootTag,
-            UserInteractionEnabled = false,
-            AutoresizingMask = UIViewAutoresizing.FlexibleWidth | UIViewAutoresizing.FlexibleHeight,
-        };
-
-        container.AddSubview(new UIVisualEffectView(UIBlurEffect.FromStyle(UIBlurEffectStyle.SystemUltraThinMaterial))
-        {
-            UserInteractionEnabled = false,
-            AutoresizingMask = UIViewAutoresizing.FlexibleWidth | UIViewAutoresizing.FlexibleHeight,
-        });
-
-        return container;
-    }
-
-    private static UIView? FindNativeDummyRootGlass(UIWindow nativeWindow)
-    {
-        foreach (var subview in nativeWindow.Subviews)
-        {
-            if (subview.Tag == MacNativeDummyRootTag)
-            {
-                return subview;
-            }
-        }
-
-        return null;
-    }
-
-    private static void EnsureNativeNsDummyRootGlass(NSObject nativeMacWindow, CGRect uiBounds)
+    private static void EnsureNativeNsDummyRootGlass(NSObject nativeMacWindow, CGRect uiBounds, bool isDark)
     {
         try
         {
@@ -232,23 +153,39 @@ public partial class App
 
             if (dummyRoot.ValueForKey(new NSString("layer")) is CALayer layer)
             {
-                layer.BackgroundColor = UIColor.FromRGBA(255, 255, 255, 0.42f).CGColor;
+                layer.BackgroundColor = isDark
+                    ? UIColor.FromRGBA(25, 29, 35, 0.34f).CGColor
+                    : UIColor.FromRGBA(255, 255, 255, 0.24f).CGColor;
                 layer.CornerRadius = 28f;
                 layer.MasksToBounds = true;
                 layer.BorderWidth = 1f;
-                layer.BorderColor = UIColor.FromRGBA(255, 255, 255, 0.82f).CGColor;
+                layer.BorderColor = isDark
+                    ? UIColor.FromRGBA(118, 128, 142, 0.48f).CGColor
+                    : UIColor.FromRGBA(255, 255, 255, 0.72f).CGColor;
             }
 
-            if (dummyRoot.ValueForKey(new NSString("superview")) is null)
-            {
-                contentView.PerformSelector(new Selector("addSubview:"), dummyRoot);
-            }
+            InsertNativeSubviewBelowContent(contentView, dummyRoot);
         }
         catch (Exception ex)
         {
             var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);
             CrashFileLogger.WriteWarning(nameof(App), $"Failed to apply native NS dummy root glass: {safeMessage}");
         }
+    }
+
+    private static void InsertNativeSubviewBelowContent(NSObject contentView, NSObject dummyRoot)
+    {
+        if (dummyRoot.ValueForKey(new NSString("superview")) is not null)
+        {
+            ObjcMsgSendVoid(dummyRoot.Handle, SelRegisterName("removeFromSuperview"));
+        }
+
+        ObjcMsgSendAddSubviewPositioned(
+            contentView.Handle,
+            SelRegisterName("addSubview:positioned:relativeTo:"),
+            dummyRoot.Handle,
+            MacNativeSubviewBelow,
+            IntPtr.Zero);
     }
 
     private static NSObject? CreateNativeNsDummyRootGlass(CGRect frame)
@@ -306,6 +243,12 @@ public partial class App
 
     [DllImport("/usr/lib/libobjc.A.dylib", EntryPoint = "objc_msgSend")]
     private static extern IntPtr ObjcMsgSendCGRect(IntPtr receiver, IntPtr selector, CGRect frame);
+
+    [DllImport("/usr/lib/libobjc.A.dylib", EntryPoint = "objc_msgSend")]
+    private static extern void ObjcMsgSendVoid(IntPtr receiver, IntPtr selector);
+
+    [DllImport("/usr/lib/libobjc.A.dylib", EntryPoint = "objc_msgSend")]
+    private static extern void ObjcMsgSendAddSubviewPositioned(IntPtr receiver, IntPtr selector, IntPtr subview, nint positioned, IntPtr relativeTo);
 
     private static NSObject? FindNativeNsDummyRootGlass(NSObject contentView)
     {
