@@ -726,7 +726,10 @@ public class AppLayerSourceGuardTests
         Assert.Contains("borderLayer.StrokeColor = glassFieldVisual ? TransparentBorderColor : borderColor;", macEntrySource);
         Assert.Contains("focusBorderLayer.Hidden = !(IsFirstResponder || pseudoFocused);", macEntrySource);
         Assert.Contains("ApplyGlassFieldBackground(dark);", macEntrySource);
-        Assert.Contains("UIBlurEffect.FromStyle(UIBlurEffectStyle.SystemUltraThinMaterial)", macEntrySource);
+        Assert.Contains("private UIView? glassBackdropView;", macEntrySource);
+        Assert.Contains("glassBackdropView ??= new UIView", macEntrySource);
+        Assert.Contains("effectView.Effect = null;", macEntrySource);
+        Assert.DoesNotContain("UIBlurEffect.FromStyle", macEntrySource);
         Assert.Contains("Layer.BackgroundColor = UIColor.Clear.CGColor;", macEntrySource);
         Assert.Contains("Background = null;", macEntrySource);
         Assert.Contains("ClearNativeGlassHostBackground(this, glassBackdropView);", macEntrySource);
@@ -739,13 +742,13 @@ public class AppLayerSourceGuardTests
         Assert.Contains("ClearMacGlassTextEditorBackgrounds(textView, backdropView);", macPageSource);
         Assert.Contains("private static void ApplyMacCrispTextRendering(UIView view, nfloat scale)", macPageSource);
         Assert.Contains("view.Layer.ShouldRasterize = false;", macPageSource);
-        Assert.Contains("label.Font = UIFont.SystemFontOfSize(label.Font.PointSize, UIFontWeight.Semibold);", macPageSource);
-        Assert.Contains("textField.Font = UIFont.SystemFontOfSize(textField.Font.PointSize, UIFontWeight.Semibold);", macPageSource);
+        Assert.Contains("label.Font = UIFont.SystemFontOfSize(label.Font.PointSize, UIFontWeight.Medium);", macPageSource);
+        Assert.Contains("textField.Font = UIFont.SystemFontOfSize(textField.Font.PointSize, UIFontWeight.Medium);", macPageSource);
         Assert.Contains("private void ApplyMacModalButtonVisualState()", macPageSource);
         Assert.Contains("ApplyMacGlassButtonVisual(CopyGuidButton);", macPageSource);
         Assert.Contains("ApplyMacGlassButtonVisual(ModalSaveButton);", macPageSource);
         Assert.Contains("nativeButton.Layer.BackgroundColor = backgroundColor.CGColor;", macPageSource);
-        Assert.Contains("titleLabel.Font = UIFont.SystemFontOfSize(titleLabel.Font.PointSize, UIFontWeight.Semibold);", macPageSource);
+        Assert.Contains("titleLabel.Font = UIFont.SystemFontOfSize(titleLabel.Font.PointSize, UIFontWeight.Medium);", macPageSource);
         Assert.Contains("private bool IsGlassEntryVisual(Entry entry)", macPageSource);
         Assert.Contains("ReferenceEquals(entry, MainCommandEntry) ||", macPageSource);
         Assert.Contains("ReferenceEquals(entry, MainSearchEntry) ||", macPageSource);

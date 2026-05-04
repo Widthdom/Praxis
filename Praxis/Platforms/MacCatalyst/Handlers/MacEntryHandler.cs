@@ -36,13 +36,12 @@ public class MacEntryHandler : EntryHandler
         private static readonly CGColor LightFocusUnderlineColor = UIColor.FromRGB(0x4A, 0x4A, 0x4A).CGColor;
         private static readonly CGColor DarkFocusUnderlineColor = UIColor.FromRGB(0xA0, 0xA0, 0xA0).CGColor;
         private static readonly CGColor TransparentBorderColor = UIColor.Clear.CGColor;
-        private static readonly UIColor LightGlassFieldBackground = UIColor.FromRGBA(255, 255, 255, 0.07f);
-        private static readonly UIColor DarkGlassFieldBackground = UIColor.FromRGBA(54, 59, 67, 0.16f);
+        private static readonly UIColor LightGlassFieldBackground = UIColor.FromRGBA(255, 255, 255, 0.14f);
+        private static readonly UIColor DarkGlassFieldBackground = UIColor.FromRGBA(54, 59, 67, 0.22f);
         private static readonly UIColor LightPlaceholderColor = UIColor.FromRGBA(0, 0, 0, 0.82f);
         private static readonly UIColor DarkPlaceholderColor = UIColor.FromRGBA(255, 255, 255, 0.76f);
         private static readonly UIColor LightTextColor = UIColor.FromRGB(0x05, 0x05, 0x05);
         private static readonly UIColor DarkTextColor = UIColor.White;
-        private static readonly nfloat GlassBackdropOpacity = 0.58f;
         private static readonly nfloat CornerRadius = 4;
         private static readonly nfloat BorderWidth = 1;
         private static readonly nfloat FocusBorderWidth = 1.5f;
@@ -50,7 +49,7 @@ public class MacEntryHandler : EntryHandler
         private readonly CAShapeLayer borderLayer = new();
         private readonly CAShapeLayer focusBorderLayer = new();
         private readonly CALayer focusBorderMaskLayer = new();
-        private UIVisualEffectView? glassBackdropView;
+        private UIView? glassBackdropView;
         private bool pseudoFocused;
         private bool glassFieldVisual;
         private UIKeyCommand? cancelCommand;
@@ -190,7 +189,7 @@ public class MacEntryHandler : EntryHandler
             var textColor = dark ? DarkTextColor : LightTextColor;
             TintColor = textColor;
             TextColor = textColor;
-            Font = UIFont.SystemFontOfSize(Font?.PointSize ?? 13, UIFontWeight.Semibold);
+            Font = UIFont.SystemFontOfSize(Font?.PointSize ?? 13, UIFontWeight.Medium);
             borderLayer.StrokeColor = glassFieldVisual ? TransparentBorderColor : borderColor;
             focusBorderLayer.StrokeColor = focusColor;
             focusBorderLayer.Hidden = !(IsFirstResponder || pseudoFocused);
@@ -217,11 +216,9 @@ public class MacEntryHandler : EntryHandler
             Layer.MasksToBounds = true;
             if (glassBackdropView is not null)
             {
-                glassBackdropView.BackgroundColor = UIColor.Clear;
+                glassBackdropView.BackgroundColor = tintColor;
                 glassBackdropView.Opaque = false;
-                glassBackdropView.ContentView.Opaque = false;
-                glassBackdropView.Alpha = GlassBackdropOpacity;
-                glassBackdropView.ContentView.BackgroundColor = tintColor;
+                glassBackdropView.Alpha = 1f;
                 SendSubviewToBack(glassBackdropView);
                 UpdateGlassBackdropFrame();
                 ClearNativeGlassHostBackground(this, glassBackdropView);
@@ -230,7 +227,7 @@ public class MacEntryHandler : EntryHandler
 
         private void EnsureGlassBackdrop()
         {
-            glassBackdropView ??= new UIVisualEffectView(UIBlurEffect.FromStyle(UIBlurEffectStyle.SystemUltraThinMaterial))
+            glassBackdropView ??= new UIView
             {
                 UserInteractionEnabled = false,
                 Opaque = false,
@@ -264,9 +261,11 @@ public class MacEntryHandler : EntryHandler
                     continue;
                 }
 
-                if (subview is UIVisualEffectView)
+                if (subview is UIVisualEffectView effectView)
                 {
-                    continue;
+                    effectView.Effect = null;
+                    effectView.ContentView.Opaque = false;
+                    effectView.ContentView.BackgroundColor = UIColor.Clear;
                 }
 
                 subview.Opaque = false;
@@ -296,8 +295,8 @@ public class MacEntryHandler : EntryHandler
 
             var placeholderColor = dark ? DarkPlaceholderColor : LightPlaceholderColor;
             var placeholderFont = Font is not null
-                ? UIFont.SystemFontOfSize(Font.PointSize, UIFontWeight.Semibold)
-                : UIFont.SystemFontOfSize(14, UIFontWeight.Semibold);
+                ? UIFont.SystemFontOfSize(Font.PointSize, UIFontWeight.Medium)
+                : UIFont.SystemFontOfSize(14, UIFontWeight.Medium);
             AttributedPlaceholder = new NSAttributedString(
                 Placeholder,
                 new UIStringAttributes

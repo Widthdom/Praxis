@@ -676,8 +676,8 @@ public partial class MainPage
     {
         var dark = IsDarkThemeActive();
         var tintColor = dark
-            ? UIColor.FromRGBA(54, 59, 67, 0.16f)
-            : UIColor.FromRGBA(255, 255, 255, 0.07f);
+            ? UIColor.FromRGBA(54, 59, 67, 0.22f)
+            : UIColor.FromRGBA(255, 255, 255, 0.14f);
         var textColor = dark ? UIColor.White : UIColor.FromRGB(0x05, 0x05, 0x05);
         var backdropView = EnsureMacModalTextEditorGlassBackdrop(textView);
 
@@ -688,11 +688,9 @@ public partial class MainPage
         textView.Layer.MasksToBounds = true;
         textView.TextColor = textColor;
         textView.TintColor = textColor;
-        backdropView.Alpha = 0.58f;
-        backdropView.ContentView.BackgroundColor = tintColor;
-        backdropView.BackgroundColor = UIColor.Clear;
+        backdropView.Alpha = 1f;
+        backdropView.BackgroundColor = tintColor;
         backdropView.Opaque = false;
-        backdropView.ContentView.Opaque = false;
         backdropView.Frame = textView.Bounds;
         backdropView.Layer.CornerRadius = 4;
         backdropView.Layer.MasksToBounds = true;
@@ -701,17 +699,17 @@ public partial class MainPage
         ClearMacGlassTextEditorBackgrounds(textView, backdropView);
     }
 
-    private static UIVisualEffectView EnsureMacModalTextEditorGlassBackdrop(UITextView textView)
+    private static UIView EnsureMacModalTextEditorGlassBackdrop(UITextView textView)
     {
         foreach (var subview in textView.Subviews)
         {
-            if (subview is UIVisualEffectView effectView && effectView.Tag == MacModalTextEditorGlassBackdropTag)
+            if (subview.Tag == MacModalTextEditorGlassBackdropTag)
             {
-                return effectView;
+                return subview;
             }
         }
 
-        var backdropView = new UIVisualEffectView(UIBlurEffect.FromStyle(UIBlurEffectStyle.SystemUltraThinMaterial))
+        var backdropView = new UIView
         {
             Tag = MacModalTextEditorGlassBackdropTag,
             UserInteractionEnabled = false,
@@ -731,9 +729,11 @@ public partial class MainPage
                 continue;
             }
 
-            if (subview is UIVisualEffectView)
+            if (subview is UIVisualEffectView effectView)
             {
-                continue;
+                effectView.Effect = null;
+                effectView.ContentView.Opaque = false;
+                effectView.ContentView.BackgroundColor = UIColor.Clear;
             }
 
             subview.Opaque = false;
@@ -785,8 +785,10 @@ public partial class MainPage
         if (nativeButton.TitleLabel is UILabel titleLabel)
         {
             titleLabel.Opaque = false;
-            titleLabel.Font = UIFont.SystemFontOfSize(titleLabel.Font.PointSize, UIFontWeight.Semibold);
+            titleLabel.Layer.ShouldRasterize = false;
+            titleLabel.Font = UIFont.SystemFontOfSize(titleLabel.Font.PointSize, UIFontWeight.Medium);
         }
+        nativeButton.Layer.ShouldRasterize = false;
         nativeButton.SetNeedsDisplay();
     }
 
@@ -1166,7 +1168,7 @@ public partial class MainPage
             label.ContentScaleFactor = scale;
             label.Layer.ContentsScale = scale;
             label.Layer.ShouldRasterize = false;
-            label.Font = UIFont.SystemFontOfSize(label.Font.PointSize, UIFontWeight.Semibold);
+            label.Font = UIFont.SystemFontOfSize(label.Font.PointSize, UIFontWeight.Medium);
         }
 
         if (view is UIButton button && button.TitleLabel is UILabel titleLabel && titleLabel.Font is not null)
@@ -1175,7 +1177,7 @@ public partial class MainPage
             titleLabel.ContentScaleFactor = scale;
             titleLabel.Layer.ContentsScale = scale;
             titleLabel.Layer.ShouldRasterize = false;
-            titleLabel.Font = UIFont.SystemFontOfSize(titleLabel.Font.PointSize, UIFontWeight.Semibold);
+            titleLabel.Font = UIFont.SystemFontOfSize(titleLabel.Font.PointSize, UIFontWeight.Medium);
         }
 
         if (view is UITextField textField && textField.Font is not null)
@@ -1184,7 +1186,7 @@ public partial class MainPage
             textField.ContentScaleFactor = scale;
             textField.Layer.ContentsScale = scale;
             textField.Layer.ShouldRasterize = false;
-            textField.Font = UIFont.SystemFontOfSize(textField.Font.PointSize, UIFontWeight.Semibold);
+            textField.Font = UIFont.SystemFontOfSize(textField.Font.PointSize, UIFontWeight.Medium);
         }
     }
 
