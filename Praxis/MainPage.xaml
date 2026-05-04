@@ -40,7 +40,6 @@
                                 MacOSBehindWindowBlur="True"
                                 MacOSBackdropOpacity="0.30"
                                 InputTransparent="True"
-                                Margin="-12,0,12,0"
                                 HorizontalOptions="Fill"
                                 VerticalOptions="Fill"
                                 Stroke="{AppThemeBinding Light={StaticResource GlassStrokeLight}, Dark={StaticResource GlassStrokeDark}}"

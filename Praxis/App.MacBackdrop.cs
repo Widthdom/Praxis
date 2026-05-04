@@ -131,15 +131,7 @@ public partial class App
                 return;
             }
 
-            const double leftInset = 6d;
-            const double topInset = 18d;
-            const double rightInset = 30d;
-            const double bottomInset = 18d;
-            var frame = new CGRect(
-                leftInset,
-                topInset,
-                Math.Max(0d, uiBounds.Width - leftInset - rightInset),
-                Math.Max(0d, uiBounds.Height - topInset - bottomInset));
+            var frame = new CGRect(0d, 0d, uiBounds.Width, uiBounds.Height);
             var dummyRoot = FindNativeNsDummyRootGlass(contentView) ?? CreateNativeNsDummyRootGlass(frame);
             if (dummyRoot is null)
             {
@@ -157,14 +149,12 @@ public partial class App
             if (dummyRoot.ValueForKey(new NSString("layer")) is CALayer layer)
             {
                 layer.BackgroundColor = isDark
-                    ? UIColor.FromRGBA(25, 29, 35, 0.20f).CGColor
-                    : UIColor.FromRGBA(255, 255, 255, 0.10f).CGColor;
-                layer.CornerRadius = 28f;
+                    ? UIColor.FromRGBA(25, 29, 35, 0.22f).CGColor
+                    : UIColor.FromRGBA(255, 255, 255, 0.12f).CGColor;
+                layer.CornerRadius = 18f;
                 layer.MasksToBounds = true;
-                layer.BorderWidth = 1f;
-                layer.BorderColor = isDark
-                    ? UIColor.FromRGBA(118, 128, 142, 0.40f).CGColor
-                    : UIColor.FromRGBA(255, 255, 255, 0.58f).CGColor;
+                layer.BorderWidth = 0f;
+                layer.BorderColor = UIColor.Clear.CGColor;
             }
 
             InsertNativeSubviewBelowContent(contentView, dummyRoot);

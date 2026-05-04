@@ -299,8 +299,8 @@ public class AppLayerSourceGuardTests
         Assert.Contains("nativeWindow.TraitCollection.UserInterfaceStyle == UIUserInterfaceStyle.Dark", appSource);
         Assert.Contains("Class.GetHandle(\"NSVisualEffectView\")", appSource);
         Assert.Contains("Class.GetHandle(\"NSView\")", appSource);
-        Assert.Contains("const double leftInset = 6d;", appSource);
-        Assert.Contains("const double rightInset = 30d;", appSource);
+        Assert.Contains("var frame = new CGRect(0d, 0d, uiBounds.Width, uiBounds.Height);", appSource);
+        Assert.Contains("layer.BorderWidth = 0f;", appSource);
         Assert.Contains("ObjcMsgSendCGRect(allocated, SelRegisterName(\"initWithFrame:\"), frame);", appSource);
         Assert.Contains("MacNativeSubviewBelow = -1", appSource);
         Assert.Contains("ObjcMsgSendVoid(dummyRoot.Handle, SelRegisterName(\"removeFromSuperview\"));", appSource);
@@ -319,9 +319,14 @@ public class AppLayerSourceGuardTests
     public void MainPage_MacOnAppearing_ReappliesGlassBackdropAfterXamlLoads()
     {
         var source = ReadRepositoryFile("Praxis", "MainPage.xaml.cs");
+        var themeSource = ReadRepositoryFile("Praxis", "MainPage.StatusAndTheme.cs");
 
         Assert.Contains("App.RefreshMacWindowBackdropForConnectedScenes();", source);
         Assert.Contains("ForceTransparentRootBackground();", source);
+        Assert.Contains("DummyRootGlassFrame.MacOSBehindWindowBlur = false;", themeSource);
+        Assert.Contains("DummyRootGlassFrame.BackgroundColor = Colors.Transparent;", themeSource);
+        Assert.Contains("DummyRootGlassFrame.StrokeThickness = 0;", themeSource);
+        Assert.Contains("DummyRootGlassFrame.Shadow.Opacity = 0;", themeSource);
     }
 
     [Fact]

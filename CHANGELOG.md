@@ -11,13 +11,9 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - The full-window root glass fill and large placement/Dock/status material fills were removed so the backmost launcher layer is genuinely transparent before frosted panels are layered back on top
 - Added a transparent-input dummy root `MaterialFrame` as the only large frosted RoundRect over the fully transparent page/root layer
 - The page/root opacity and dummy root visibility are now reasserted during startup and `OnAppearing` so the diagnostic `Opacity=0` state cannot persist across Mac Catalyst rebuilds
-- Mac Catalyst now also inserts a native `UIVisualEffectView` dummy root directly into the transparent `UIWindow`, making the frosted RoundRect independent of MAUI XAML root rendering
-- The native Mac dummy root is now a visible frontmost non-interactive `UIView` with a blur child and stronger tint, so the RoundRect can be visually confirmed before tuning the glass opacity down
-- Mac Catalyst now also inserts a diagnostic `NSVisualEffectView` RoundRect directly into `NSWindow.contentView`, bypassing the Catalyst `UIWindow` stacking path so the first frosted root panel can be visually confirmed
-- The Mac Catalyst `NSVisualEffectView` root glass now sits below the MAUI content instead of covering it, and its tint was softened for both light and dark themes
-- The root glass tint is now lighter on Mac Catalyst so the blurred desktop remains visible while launcher controls stay readable
-- The Mac Catalyst root glass was shifted left slightly at the titlebar edge so the backmost RoundRect aligns better around the traffic-light buttons
-- The Mac Catalyst root glass now shifts left as a whole, keeping the right and bottom edges aligned with the corrected left/titlebar edge
+- Mac Catalyst now draws the backmost root glass as a single native `NSVisualEffectView` in `NSWindow.contentView`, behind the MAUI content, so the frosted surface aligns with the actual rounded window bounds
+- The Mac Catalyst XAML dummy root frame now becomes transparent at runtime, avoiding a second rounded rectangle fighting the native backmost glass around the traffic-light and bottom-right corners
+- The root glass tint is lighter on Mac Catalyst so the blurred desktop remains visible while launcher controls stay readable
 
 ### Tests
 - Expanded `MainPageStructureTests` and `AppLayerSourceGuardTests` to lock the transparent glass surface, `MaterialFrame` usage, platform backdrop hook wiring, Windows acrylic interop, and macOS native material blur behavior
