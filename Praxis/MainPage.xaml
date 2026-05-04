@@ -12,8 +12,8 @@
              BackgroundColor="Transparent">
     <ContentPage.Resources>
         <converters:BoolToScrollBarVisibilityConverter x:Key="BoolToScrollBarVisibilityConverter" />
-        <Color x:Key="DummyRootGlassLight">#30FFFFFF</Color>
-        <Color x:Key="DummyRootGlassDark">#4021262D</Color>
+        <Color x:Key="DummyRootGlassLight">#24FFFFFF</Color>
+        <Color x:Key="DummyRootGlassDark">#3021262D</Color>
         <Color x:Key="GlassPanelLight">#00FFFFFF</Color>
         <Color x:Key="GlassPanelDark">#00000000</Color>
         <Color x:Key="GlassSurfaceLight">#00FFFFFF</Color>
@@ -38,7 +38,7 @@
                                 Grid.RowSpan="4"
                                 CornerRadius="28"
                                 MacOSBehindWindowBlur="True"
-                                MacOSBackdropOpacity="0.45"
+                                MacOSBackdropOpacity="0.30"
                                 InputTransparent="True"
                                 HorizontalOptions="Fill"
                                 VerticalOptions="Fill"

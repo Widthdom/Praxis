@@ -154,14 +154,14 @@ public partial class App
             if (dummyRoot.ValueForKey(new NSString("layer")) is CALayer layer)
             {
                 layer.BackgroundColor = isDark
-                    ? UIColor.FromRGBA(25, 29, 35, 0.34f).CGColor
-                    : UIColor.FromRGBA(255, 255, 255, 0.24f).CGColor;
+                    ? UIColor.FromRGBA(25, 29, 35, 0.20f).CGColor
+                    : UIColor.FromRGBA(255, 255, 255, 0.10f).CGColor;
                 layer.CornerRadius = 28f;
                 layer.MasksToBounds = true;
                 layer.BorderWidth = 1f;
                 layer.BorderColor = isDark
-                    ? UIColor.FromRGBA(118, 128, 142, 0.48f).CGColor
-                    : UIColor.FromRGBA(255, 255, 255, 0.72f).CGColor;
+                    ? UIColor.FromRGBA(118, 128, 142, 0.40f).CGColor
+                    : UIColor.FromRGBA(255, 255, 255, 0.58f).CGColor;
             }
 
             InsertNativeSubviewBelowContent(contentView, dummyRoot);

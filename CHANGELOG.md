@@ -15,6 +15,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - The native Mac dummy root is now a visible frontmost non-interactive `UIView` with a blur child and stronger tint, so the RoundRect can be visually confirmed before tuning the glass opacity down
 - Mac Catalyst now also inserts a diagnostic `NSVisualEffectView` RoundRect directly into `NSWindow.contentView`, bypassing the Catalyst `UIWindow` stacking path so the first frosted root panel can be visually confirmed
 - The Mac Catalyst `NSVisualEffectView` root glass now sits below the MAUI content instead of covering it, and its tint was softened for both light and dark themes
+- The root glass tint is now lighter on Mac Catalyst so the blurred desktop remains visible while launcher controls stay readable
 
 ### Tests
 - Expanded `MainPageStructureTests` and `AppLayerSourceGuardTests` to lock the transparent glass surface, `MaterialFrame` usage, platform backdrop hook wiring, Windows acrylic interop, and macOS native material blur behavior
