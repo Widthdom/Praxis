@@ -131,12 +131,15 @@ public partial class App
                 return;
             }
 
-            const double inset = 18d;
+            const double leftInset = 6d;
+            const double topInset = 18d;
+            const double rightInset = 18d;
+            const double bottomInset = 18d;
             var frame = new CGRect(
-                inset,
-                inset,
-                Math.Max(0d, uiBounds.Width - (inset * 2d)),
-                Math.Max(0d, uiBounds.Height - (inset * 2d)));
+                leftInset,
+                topInset,
+                Math.Max(0d, uiBounds.Width - leftInset - rightInset),
+                Math.Max(0d, uiBounds.Height - topInset - bottomInset));
             var dummyRoot = FindNativeNsDummyRootGlass(contentView) ?? CreateNativeNsDummyRootGlass(frame);
             if (dummyRoot is null)
             {

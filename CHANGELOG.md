@@ -16,6 +16,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - Mac Catalyst now also inserts a diagnostic `NSVisualEffectView` RoundRect directly into `NSWindow.contentView`, bypassing the Catalyst `UIWindow` stacking path so the first frosted root panel can be visually confirmed
 - The Mac Catalyst `NSVisualEffectView` root glass now sits below the MAUI content instead of covering it, and its tint was softened for both light and dark themes
 - The root glass tint is now lighter on Mac Catalyst so the blurred desktop remains visible while launcher controls stay readable
+- The Mac Catalyst root glass was shifted left slightly at the titlebar edge so the backmost RoundRect aligns better around the traffic-light buttons
 
 ### Tests
 - Expanded `MainPageStructureTests` and `AppLayerSourceGuardTests` to lock the transparent glass surface, `MaterialFrame` usage, platform backdrop hook wiring, Windows acrylic interop, and macOS native material blur behavior
