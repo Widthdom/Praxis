@@ -12,12 +12,10 @@
              BackgroundColor="Transparent">
     <ContentPage.Resources>
         <converters:BoolToScrollBarVisibilityConverter x:Key="BoolToScrollBarVisibilityConverter" />
-        <Color x:Key="GlassRootLight">#10FFFFFF</Color>
-        <Color x:Key="GlassRootDark">#2414171C</Color>
-        <Color x:Key="GlassPanelLight">#24FFFFFF</Color>
-        <Color x:Key="GlassPanelDark">#421D2128</Color>
-        <Color x:Key="GlassSurfaceLight">#36FFFFFF</Color>
-        <Color x:Key="GlassSurfaceDark">#501F242B</Color>
+        <Color x:Key="GlassPanelLight">#12FFFFFF</Color>
+        <Color x:Key="GlassPanelDark">#301D2128</Color>
+        <Color x:Key="GlassSurfaceLight">#24FFFFFF</Color>
+        <Color x:Key="GlassSurfaceDark">#401F242B</Color>
         <Color x:Key="GlassPopupLight">#66FFFFFF</Color>
         <Color x:Key="GlassPopupDark">#8C1E2228</Color>
         <Color x:Key="GlassStrokeLight">#9FFFFFFF</Color>
@@ -34,19 +32,6 @@
                                       PointerMoved="RootGrid_PointerMoved"
                                       PointerExited="RootGrid_PointerExited" />
         </Grid.GestureRecognizers>
-        <controls:MaterialFrame x:Name="MainGlassFrame"
-                                Grid.RowSpan="4"
-                                CornerRadius="28"
-                                MacOSBehindWindowBlur="True"
-                                MacOSBackdropOpacity="0.24"
-                                InputTransparent="True"
-                                Stroke="{AppThemeBinding Light={StaticResource GlassStrokeLight}, Dark={StaticResource GlassStrokeDark}}"
-                                StrokeThickness="1"
-                                BackgroundColor="{AppThemeBinding Light={StaticResource GlassRootLight}, Dark={StaticResource GlassRootDark}}">
-            <controls:MaterialFrame.Shadow>
-                <Shadow Brush="{AppThemeBinding Light=#44000000, Dark=#B0000000}" Opacity="0.24" Offset="0,18" Radius="34" />
-            </controls:MaterialFrame.Shadow>
-        </controls:MaterialFrame>
         <Grid x:Name="TopBarGrid" ColumnDefinitions="2*,Auto,2*" ColumnSpacing="8">
             <Grid Grid.Column="0">
                 <controls:CommandEntry x:Name="MainCommandEntry"
@@ -277,7 +262,7 @@
         <controls:MaterialFrame Grid.Row="1"
                                 CornerRadius="20"
                                 MacOSBehindWindowBlur="True"
-                                MacOSBackdropOpacity="0.38"
+                                MacOSBackdropOpacity="0.18"
                                 Stroke="{AppThemeBinding Light={StaticResource GlassStrokeLight}, Dark={StaticResource GlassStrokeDark}}"
                                 BackgroundColor="{AppThemeBinding Light={StaticResource GlassPanelLight}, Dark={StaticResource GlassPanelDark}}"
                                 Padding="14"
@@ -380,7 +365,7 @@
                                 Grid.Row="2"
                                 CornerRadius="20"
                                 MacOSBehindWindowBlur="True"
-                                MacOSBackdropOpacity="0.38"
+                                MacOSBackdropOpacity="0.18"
                                 Stroke="{AppThemeBinding Light={StaticResource GlassStrokeLight}, Dark={StaticResource GlassStrokeDark}}"
                                 BackgroundColor="{AppThemeBinding Light={StaticResource GlassPanelLight}, Dark={StaticResource GlassPanelDark}}"
                                 Margin="{OnPlatform Default='0', WinUI='0,-4,0,-4', MacCatalyst='0,-4,0,-4'}"
@@ -469,7 +454,7 @@
                                 Grid.Row="3"
                                 CornerRadius="10"
                                 MacOSBehindWindowBlur="True"
-                                MacOSBackdropOpacity="0.34"
+                                MacOSBackdropOpacity="0.18"
                                 Stroke="{AppThemeBinding Light={StaticResource GlassStrokeLight}, Dark={StaticResource GlassStrokeDark}}"
                                 BackgroundColor="{AppThemeBinding Light={StaticResource GlassSurfaceLight}, Dark={StaticResource GlassSurfaceDark}}"
                                 Padding="10,6">

@@ -272,7 +272,7 @@ sequenceDiagram
 - Add tests for any new non-UI logic
 
 ## Current UI Notes
-- The main launcher page is explicitly transparent and uses [`Controls/MaterialFrame.cs`](../Praxis/Controls/MaterialFrame.cs) for glassmorphism panels. On Mac Catalyst, `MaterialFrame.MacOSBehindWindowBlur` attaches [`Behaviors/MacGlassBackdropBehavior.cs`](../Praxis/Behaviors/MacGlassBackdropBehavior.cs), which inserts a rounded `UIVisualEffectView` behind the MAUI content. Windows gets the blurred backdrop from [`App.WindowsBackdrop.cs`](../Praxis/App.WindowsBackdrop.cs), with semi-transparent XAML panels layered above it.
+- The main launcher page and root layout are explicitly transparent; do not reintroduce a full-window painted glass frame there. Glassmorphism belongs to the separate rounded panels implemented by [`Controls/MaterialFrame.cs`](../Praxis/Controls/MaterialFrame.cs). On Mac Catalyst, `MaterialFrame.MacOSBehindWindowBlur` attaches [`Behaviors/MacGlassBackdropBehavior.cs`](../Praxis/Behaviors/MacGlassBackdropBehavior.cs), which inserts a rounded `UIVisualEffectView` behind the MAUI content. Windows gets the blurred backdrop from [`App.WindowsBackdrop.cs`](../Praxis/App.WindowsBackdrop.cs), with semi-transparent XAML panels layered above it.
 - Main modal copy buttons trigger a center overlay notification animation in [`MainPage.xaml`](../Praxis/MainPage.xaml)([`.cs`](../Praxis/MainPage.xaml.cs)).
 - Top-bar create action uses a custom line-art logo (outer hexagon, inscribed circle, inner hexagon, center plus) built from MAUI shapes.
 - Modal footer action buttons (`Cancel`/`Save`) are centered and use equal width for visual balance.
@@ -710,7 +710,7 @@ sequenceDiagram
 - UI 非依存ロジックの新規追加時は必ずテストを追加する
 
 ## 現在の UI 実装メモ
-- メインランチャー画面は明示的に透明化し、glassmorphism パネルは [`Controls/MaterialFrame.cs`](../Praxis/Controls/MaterialFrame.cs) で表現する。Mac Catalyst では `MaterialFrame.MacOSBehindWindowBlur` が [`Behaviors/MacGlassBackdropBehavior.cs`](../Praxis/Behaviors/MacGlassBackdropBehavior.cs) を貼り、MAUI content の背面に角丸 `UIVisualEffectView` を挿入する。Windows は [`App.WindowsBackdrop.cs`](../Praxis/App.WindowsBackdrop.cs) の acrylic backdrop を使い、その上に半透明 XAML パネルを重ねる。
+- メインランチャー画面と root layout は明示的に透明化し、全画面を塗る glass frame は置かない。glassmorphism は [`Controls/MaterialFrame.cs`](../Praxis/Controls/MaterialFrame.cs) の独立した角丸パネルで表現する。Mac Catalyst では `MaterialFrame.MacOSBehindWindowBlur` が [`Behaviors/MacGlassBackdropBehavior.cs`](../Praxis/Behaviors/MacGlassBackdropBehavior.cs) を貼り、MAUI content の背面に角丸 `UIVisualEffectView` を挿入する。Windows は [`App.WindowsBackdrop.cs`](../Praxis/App.WindowsBackdrop.cs) の acrylic backdrop を使い、その上に半透明 XAML パネルを重ねる。
 - モーダルのコピーアイコン押下時は [`MainPage.xaml`](../Praxis/MainPage.xaml)([`.cs`](../Praxis/MainPage.xaml.cs)) で中央通知オーバーレイをアニメーション表示する。
 - 上部 Create アクションは MAUI Shapes で構成した線画ロゴ（外六角形・内接円・内六角形・中央 +）を使用する。
 - モーダル下部のアクションボタン（`Cancel` / `Save`）は中央寄せ・同一幅で揃えている。

@@ -77,11 +77,11 @@ public class MainPageStructureTests
         var xaml = File.ReadAllText(Path.Combine(root, "Praxis", "MainPage.xaml"));
 
         Assert.Contains("BackgroundColor=\"Transparent\"", xaml);
-        Assert.Contains("x:Name=\"MainGlassFrame\"", xaml);
+        Assert.DoesNotContain("x:Name=\"MainGlassFrame\"", xaml);
+        Assert.DoesNotContain("StaticResource GlassRootLight", xaml);
+        Assert.DoesNotContain("StaticResource GlassRootDark", xaml);
         Assert.Contains("MacOSBehindWindowBlur=\"True\"", xaml);
-        Assert.Contains("MacOSBackdropOpacity=\"0.24\"", xaml);
-        Assert.Contains("StaticResource GlassRootLight", xaml);
-        Assert.Contains("StaticResource GlassRootDark", xaml);
+        Assert.Contains("MacOSBackdropOpacity=\"0.18\"", xaml);
         Assert.True(CountOccurrences(xaml, "<controls:MaterialFrame ") >= 9);
     }
 
