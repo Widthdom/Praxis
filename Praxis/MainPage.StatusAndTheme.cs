@@ -12,7 +12,11 @@ public partial class MainPage
     private void ForceTransparentRootBackground()
     {
         BackgroundColor = Colors.Transparent;
+        Opacity = 1;
         RootGrid.BackgroundColor = Colors.Transparent;
+        RootGrid.Opacity = 1;
+        DummyRootGlassFrame.IsVisible = true;
+        DummyRootGlassFrame.Opacity = 1;
     }
 
     private async void TriggerStatusFlash(string? message)

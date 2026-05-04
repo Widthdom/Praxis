@@ -128,6 +128,7 @@ public partial class MainPage : ContentPage
 #if MACCATALYST
         App.RefreshMacWindowBackdropForConnectedScenes();
 #endif
+        ForceTransparentRootBackground();
         AttachWindowActivationHook();
         AttachEditorPropertyChanged(viewModel.Editor);
 

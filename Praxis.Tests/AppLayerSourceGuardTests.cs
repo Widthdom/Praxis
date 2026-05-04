@@ -309,6 +309,7 @@ public class AppLayerSourceGuardTests
         var source = ReadRepositoryFile("Praxis", "MainPage.xaml.cs");
 
         Assert.Contains("App.RefreshMacWindowBackdropForConnectedScenes();", source);
+        Assert.Contains("ForceTransparentRootBackground();", source);
     }
 
     [Fact]
