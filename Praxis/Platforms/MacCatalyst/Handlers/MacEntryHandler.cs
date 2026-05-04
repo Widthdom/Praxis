@@ -209,21 +209,27 @@ public class MacEntryHandler : EntryHandler
             EnsureGlassBackdrop();
             var tintColor = dark ? DarkGlassFieldBackground : LightGlassFieldBackground;
             Opaque = false;
+            Background = null;
+            DisabledBackground = null;
             BackgroundColor = UIColor.Clear;
             Layer.BackgroundColor = UIColor.Clear.CGColor;
             Layer.MasksToBounds = true;
             if (glassBackdropView is not null)
             {
+                glassBackdropView.BackgroundColor = UIColor.Clear;
+                glassBackdropView.Opaque = false;
+                glassBackdropView.ContentView.Opaque = false;
                 glassBackdropView.Alpha = GlassBackdropOpacity;
                 glassBackdropView.ContentView.BackgroundColor = tintColor;
                 SendSubviewToBack(glassBackdropView);
                 UpdateGlassBackdropFrame();
+                ClearNativeGlassHostBackground(this, glassBackdropView);
             }
         }
 
         private void EnsureGlassBackdrop()
         {
-            glassBackdropView ??= new UIVisualEffectView(UIBlurEffect.FromStyle(UIBlurEffectStyle.SystemUltraThinMaterial))
+            glassBackdropView ??= new UIVisualEffectView(UIBlurEffect.FromStyle(UIBlurEffectStyle.SystemThinMaterial))
             {
                 UserInteractionEnabled = false,
                 Opaque = false,
@@ -246,6 +252,26 @@ public class MacEntryHandler : EntryHandler
             glassBackdropView.Layer.CornerRadius = CornerRadius;
             glassBackdropView.Layer.MasksToBounds = true;
             glassBackdropView.ClipsToBounds = true;
+        }
+
+        private static void ClearNativeGlassHostBackground(UIView view, UIView preservedBackdrop)
+        {
+            foreach (var subview in view.Subviews)
+            {
+                if (ReferenceEquals(subview, preservedBackdrop))
+                {
+                    continue;
+                }
+
+                if (subview is UIVisualEffectView)
+                {
+                    continue;
+                }
+
+                subview.Opaque = false;
+                subview.BackgroundColor = UIColor.Clear;
+                subview.Layer.BackgroundColor = UIColor.Clear.CGColor;
+            }
         }
 
         private void RemoveGlassBackdrop()

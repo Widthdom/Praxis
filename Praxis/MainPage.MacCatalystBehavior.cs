@@ -690,11 +690,15 @@ public partial class MainPage
         textView.TintColor = textColor;
         backdropView.Alpha = 0.78f;
         backdropView.ContentView.BackgroundColor = tintColor;
+        backdropView.BackgroundColor = UIColor.Clear;
+        backdropView.Opaque = false;
+        backdropView.ContentView.Opaque = false;
         backdropView.Frame = textView.Bounds;
         backdropView.Layer.CornerRadius = 4;
         backdropView.Layer.MasksToBounds = true;
         backdropView.ClipsToBounds = true;
         textView.SendSubviewToBack(backdropView);
+        ClearMacGlassTextEditorBackgrounds(textView, backdropView);
     }
 
     private static UIVisualEffectView EnsureMacModalTextEditorGlassBackdrop(UITextView textView)
@@ -707,7 +711,7 @@ public partial class MainPage
             }
         }
 
-        var backdropView = new UIVisualEffectView(UIBlurEffect.FromStyle(UIBlurEffectStyle.SystemUltraThinMaterial))
+        var backdropView = new UIVisualEffectView(UIBlurEffect.FromStyle(UIBlurEffectStyle.SystemThinMaterial))
         {
             Tag = MacModalTextEditorGlassBackdropTag,
             UserInteractionEnabled = false,
@@ -716,6 +720,26 @@ public partial class MainPage
         };
         textView.InsertSubview(backdropView, 0);
         return backdropView;
+    }
+
+    private static void ClearMacGlassTextEditorBackgrounds(UITextView textView, UIView preservedBackdrop)
+    {
+        foreach (var subview in textView.Subviews)
+        {
+            if (ReferenceEquals(subview, preservedBackdrop))
+            {
+                continue;
+            }
+
+            if (subview is UIVisualEffectView)
+            {
+                continue;
+            }
+
+            subview.Opaque = false;
+            subview.BackgroundColor = UIColor.Clear;
+            subview.Layer.BackgroundColor = UIColor.Clear.CGColor;
+        }
     }
 
     private void ApplyMacModalButtonVisualState()

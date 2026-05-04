@@ -726,14 +726,17 @@ public class AppLayerSourceGuardTests
         Assert.Contains("borderLayer.StrokeColor = glassFieldVisual ? TransparentBorderColor : borderColor;", macEntrySource);
         Assert.Contains("focusBorderLayer.Hidden = !(IsFirstResponder || pseudoFocused);", macEntrySource);
         Assert.Contains("ApplyGlassFieldBackground(dark);", macEntrySource);
-        Assert.Contains("UIBlurEffect.FromStyle(UIBlurEffectStyle.SystemUltraThinMaterial)", macEntrySource);
+        Assert.Contains("UIBlurEffect.FromStyle(UIBlurEffectStyle.SystemThinMaterial)", macEntrySource);
         Assert.Contains("Layer.BackgroundColor = UIColor.Clear.CGColor;", macEntrySource);
+        Assert.Contains("Background = null;", macEntrySource);
+        Assert.Contains("ClearNativeGlassHostBackground(this, glassBackdropView);", macEntrySource);
         Assert.Contains("AttributedPlaceholder = new NSAttributedString(", macEntrySource);
         Assert.Contains("Font = placeholderFont,", macEntrySource);
         Assert.Contains("public void SetGlassFieldVisual(bool enabled)", macEntrySource);
         Assert.Contains("macEntryTextField.SetGlassFieldVisual(IsGlassEntryVisual(entry));", macPageSource);
         Assert.Contains("ApplyMacModalTextEditorVisualState(textView);", macPageSource);
         Assert.Contains("EnsureMacModalTextEditorGlassBackdrop(textView);", macPageSource);
+        Assert.Contains("ClearMacGlassTextEditorBackgrounds(textView, backdropView);", macPageSource);
         Assert.Contains("private void ApplyMacModalButtonVisualState()", macPageSource);
         Assert.Contains("ApplyMacGlassButtonVisual(CopyGuidButton);", macPageSource);
         Assert.Contains("ApplyMacGlassButtonVisual(ModalSaveButton);", macPageSource);
