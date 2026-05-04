@@ -726,21 +726,30 @@ public partial class MainPage
     {
         foreach (var subview in textView.Subviews)
         {
-            if (ReferenceEquals(subview, preservedBackdrop))
-            {
-                continue;
-            }
+            ClearMacGlassTextEditorSubviewBackground(subview, preservedBackdrop);
+        }
+    }
 
-            if (subview is UIVisualEffectView effectView)
-            {
-                effectView.Effect = null;
-                effectView.ContentView.Opaque = false;
-                effectView.ContentView.BackgroundColor = UIColor.Clear;
-            }
+    private static void ClearMacGlassTextEditorSubviewBackground(UIView view, UIView preservedBackdrop)
+    {
+        if (ReferenceEquals(view, preservedBackdrop))
+        {
+            return;
+        }
 
-            subview.Opaque = false;
-            subview.BackgroundColor = UIColor.Clear;
-            subview.Layer.BackgroundColor = UIColor.Clear.CGColor;
+        if (view is UIVisualEffectView effectView)
+        {
+            effectView.Effect = null;
+            effectView.ContentView.Opaque = false;
+            effectView.ContentView.BackgroundColor = UIColor.Clear;
+        }
+
+        view.Opaque = false;
+        view.BackgroundColor = UIColor.Clear;
+        view.Layer.BackgroundColor = UIColor.Clear.CGColor;
+        foreach (var subview in view.Subviews)
+        {
+            ClearMacGlassTextEditorSubviewBackground(subview, preservedBackdrop);
         }
     }
 

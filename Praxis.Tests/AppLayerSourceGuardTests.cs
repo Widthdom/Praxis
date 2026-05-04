@@ -731,8 +731,10 @@ public class AppLayerSourceGuardTests
         Assert.Contains("effectView.Effect = null;", macEntrySource);
         Assert.DoesNotContain("UIBlurEffect.FromStyle", macEntrySource);
         Assert.Contains("Layer.BackgroundColor = UIColor.Clear.CGColor;", macEntrySource);
-        Assert.Contains("Background = null;", macEntrySource);
+        Assert.Contains("Background = TransparentFieldImage;", macEntrySource);
+        Assert.Contains("public override CGRect BorderRect(CGRect forBounds)", macEntrySource);
         Assert.Contains("ClearNativeGlassHostBackground(this, glassBackdropView);", macEntrySource);
+        Assert.Contains("ClearNativeGlassSubviewBackground(subview, preservedBackdrop);", macEntrySource);
         Assert.Contains("ClearNativeGlassHostLayers();", macEntrySource);
         Assert.Contains("BorderStyle = UITextBorderStyle.None;", macEntrySource);
         Assert.Contains("AttributedPlaceholder = new NSAttributedString(", macEntrySource);
@@ -742,6 +744,7 @@ public class AppLayerSourceGuardTests
         Assert.Contains("ApplyMacModalTextEditorVisualState(textView);", macPageSource);
         Assert.Contains("EnsureMacModalTextEditorGlassBackdrop(textView);", macPageSource);
         Assert.Contains("ClearMacGlassTextEditorBackgrounds(textView, backdropView);", macPageSource);
+        Assert.Contains("ClearMacGlassTextEditorSubviewBackground(subview, preservedBackdrop);", macPageSource);
         Assert.Contains("ClearMacGlassTextEditorLayers(textView, backdropView);", macPageSource);
         Assert.Contains("private static void ApplyMacCrispTextRendering(UIView view, nfloat scale)", macPageSource);
         Assert.Contains("view.Layer.ShouldRasterize = false;", macPageSource);

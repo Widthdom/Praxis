@@ -115,6 +115,9 @@ public class MacEntryHandler : EntryHandler
         public override CGRect PlaceholderRect(CGRect forBounds)
             => InsetTextBounds(forBounds);
 
+        public override CGRect BorderRect(CGRect forBounds)
+            => glassFieldVisual ? CGRect.Empty : base.BorderRect(forBounds);
+
         public override void PressesBegan(NSSet<UIPress> presses, UIPressesEvent? evt)
         {
             if (TryHandleHistoryShortcuts(presses))
@@ -210,8 +213,8 @@ public class MacEntryHandler : EntryHandler
             EnsureGlassBackdrop();
             var tintColor = dark ? DarkGlassFieldBackground : LightGlassFieldBackground;
             Opaque = false;
-            Background = null;
-            DisabledBackground = null;
+            Background = TransparentFieldImage;
+            DisabledBackground = TransparentFieldImage;
             BackgroundColor = UIColor.Clear;
             Layer.BackgroundColor = UIColor.Clear.CGColor;
             Layer.MasksToBounds = true;
@@ -255,25 +258,36 @@ public class MacEntryHandler : EntryHandler
             glassBackdropView.ClipsToBounds = true;
         }
 
+        private static readonly UIImage TransparentFieldImage = new();
+
         private static void ClearNativeGlassHostBackground(UIView view, UIView preservedBackdrop)
         {
             foreach (var subview in view.Subviews)
             {
-                if (ReferenceEquals(subview, preservedBackdrop))
-                {
-                    continue;
-                }
+                ClearNativeGlassSubviewBackground(subview, preservedBackdrop);
+            }
+        }
 
-                if (subview is UIVisualEffectView effectView)
-                {
-                    effectView.Effect = null;
-                    effectView.ContentView.Opaque = false;
-                    effectView.ContentView.BackgroundColor = UIColor.Clear;
-                }
+        private static void ClearNativeGlassSubviewBackground(UIView view, UIView preservedBackdrop)
+        {
+            if (ReferenceEquals(view, preservedBackdrop))
+            {
+                return;
+            }
 
-                subview.Opaque = false;
-                subview.BackgroundColor = UIColor.Clear;
-                subview.Layer.BackgroundColor = UIColor.Clear.CGColor;
+            if (view is UIVisualEffectView effectView)
+            {
+                effectView.Effect = null;
+                effectView.ContentView.Opaque = false;
+                effectView.ContentView.BackgroundColor = UIColor.Clear;
+            }
+
+            view.Opaque = false;
+            view.BackgroundColor = UIColor.Clear;
+            view.Layer.BackgroundColor = UIColor.Clear.CGColor;
+            foreach (var subview in view.Subviews)
+            {
+                ClearNativeGlassSubviewBackground(subview, preservedBackdrop);
             }
         }
 
