@@ -36,8 +36,10 @@ public class MacEntryHandler : EntryHandler
         private static readonly CGColor LightFocusUnderlineColor = UIColor.FromRGB(0x4A, 0x4A, 0x4A).CGColor;
         private static readonly CGColor DarkFocusUnderlineColor = UIColor.FromRGB(0xA0, 0xA0, 0xA0).CGColor;
         private static readonly CGColor TransparentBorderColor = UIColor.Clear.CGColor;
-        private static readonly UIColor LightGlassFieldBackground = UIColor.FromRGBA(255, 255, 255, 0.24f);
-        private static readonly UIColor DarkGlassFieldBackground = UIColor.FromRGBA(54, 59, 67, 0.31f);
+        private static readonly UIColor LightGlassFieldBackground = UIColor.FromRGBA(255, 255, 255, 0.18f);
+        private static readonly UIColor DarkGlassFieldBackground = UIColor.FromRGBA(54, 59, 67, 0.25f);
+        private static readonly UIColor LightPlaceholderColor = UIColor.FromRGBA(0, 0, 0, 0.52f);
+        private static readonly UIColor DarkPlaceholderColor = UIColor.FromRGBA(255, 255, 255, 0.58f);
         private static readonly nfloat CornerRadius = 4;
         private static readonly nfloat BorderWidth = 1;
         private static readonly nfloat FocusBorderWidth = 1.5f;
@@ -77,6 +79,7 @@ public class MacEntryHandler : EntryHandler
             Layer.CornerRadius = CornerRadius;
             Layer.BorderWidth = 0;
             Layer.MasksToBounds = false;
+            Opaque = false;
 
             borderLayer.FillColor = UIColor.Clear.CGColor;
             borderLayer.LineWidth = BorderWidth;
@@ -183,8 +186,31 @@ public class MacEntryHandler : EntryHandler
             focusBorderLayer.Hidden = !(IsFirstResponder || pseudoFocused);
             if (glassFieldVisual)
             {
-                BackgroundColor = dark ? DarkGlassFieldBackground : LightGlassFieldBackground;
+                ApplyGlassFieldBackground(dark);
             }
+            ApplyPlaceholderVisualState(dark);
+        }
+
+        private void ApplyGlassFieldBackground(bool dark)
+        {
+            var backgroundColor = dark ? DarkGlassFieldBackground : LightGlassFieldBackground;
+            Opaque = false;
+            BackgroundColor = backgroundColor;
+            Layer.BackgroundColor = backgroundColor.CGColor;
+            Layer.MasksToBounds = true;
+        }
+
+        private void ApplyPlaceholderVisualState(bool dark)
+        {
+            if (string.IsNullOrEmpty(Placeholder))
+            {
+                return;
+            }
+
+            var placeholderColor = dark ? DarkPlaceholderColor : LightPlaceholderColor;
+            AttributedPlaceholder = new NSAttributedString(
+                Placeholder,
+                new UIStringAttributes { ForegroundColor = placeholderColor });
         }
 
         private bool ResolveDarkThemeState()

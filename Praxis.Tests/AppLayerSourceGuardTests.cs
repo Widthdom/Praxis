@@ -725,9 +725,16 @@ public class AppLayerSourceGuardTests
         Assert.Contains("private bool glassFieldVisual;", macEntrySource);
         Assert.Contains("borderLayer.StrokeColor = glassFieldVisual ? TransparentBorderColor : borderColor;", macEntrySource);
         Assert.Contains("focusBorderLayer.Hidden = !(IsFirstResponder || pseudoFocused);", macEntrySource);
-        Assert.Contains("BackgroundColor = dark ? DarkGlassFieldBackground : LightGlassFieldBackground;", macEntrySource);
+        Assert.Contains("ApplyGlassFieldBackground(dark);", macEntrySource);
+        Assert.Contains("Layer.BackgroundColor = backgroundColor.CGColor;", macEntrySource);
+        Assert.Contains("AttributedPlaceholder = new NSAttributedString(", macEntrySource);
         Assert.Contains("public void SetGlassFieldVisual(bool enabled)", macEntrySource);
         Assert.Contains("macEntryTextField.SetGlassFieldVisual(IsGlassEntryVisual(entry));", macPageSource);
+        Assert.Contains("ApplyMacModalTextEditorVisualState(textView);", macPageSource);
+        Assert.Contains("private void ApplyMacModalButtonVisualState()", macPageSource);
+        Assert.Contains("ApplyMacGlassButtonVisual(CopyGuidButton);", macPageSource);
+        Assert.Contains("ApplyMacGlassButtonVisual(ModalSaveButton);", macPageSource);
+        Assert.Contains("nativeButton.Layer.BackgroundColor = backgroundColor.CGColor;", macPageSource);
         Assert.Contains("private bool IsGlassEntryVisual(Entry entry)", macPageSource);
         Assert.Contains("ReferenceEquals(entry, MainCommandEntry) ||", macPageSource);
         Assert.Contains("ReferenceEquals(entry, MainSearchEntry) ||", macPageSource);

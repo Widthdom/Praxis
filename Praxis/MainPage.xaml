@@ -18,15 +18,41 @@
         <Color x:Key="GlassPanelDark">#00000000</Color>
         <Color x:Key="GlassSurfaceLight">#00FFFFFF</Color>
         <Color x:Key="GlassSurfaceDark">#00000000</Color>
-        <Color x:Key="GlassPopupLight">#42FFFFFF</Color>
-        <Color x:Key="GlassPopupDark">#5A1E2228</Color>
-        <Color x:Key="GlassInputLight">#3EFFFFFF</Color>
-        <Color x:Key="GlassInputDark">#4F363B43</Color>
+        <Color x:Key="GlassPopupLight">#24FFFFFF</Color>
+        <Color x:Key="GlassPopupDark">#381E2228</Color>
+        <Color x:Key="GlassInputLight">#30FFFFFF</Color>
+        <Color x:Key="GlassInputDark">#40363B43</Color>
+        <Color x:Key="GlassButtonLight">#6AFFFFFF</Color>
+        <Color x:Key="GlassButtonDark">#78363B43</Color>
+        <Color x:Key="GlassButtonStrokeLight">#B6FFFFFF</Color>
+        <Color x:Key="GlassButtonStrokeDark">#747C8794</Color>
         <Color x:Key="GlassStrokeLight">#9FFFFFFF</Color>
         <Color x:Key="GlassStrokeDark">#66717B88</Color>
         <Style x:Key="PlacementButtonTextLabelStyle"
                TargetType="Label">
             <Setter Property="FontSize" Value="{OnPlatform Default=12, MacCatalyst=14}" />
+            <Setter Property="FontAutoScalingEnabled" Value="False" />
+        </Style>
+        <Style x:Key="GlassModalActionButtonStyle"
+               TargetType="Button">
+            <Setter Property="HeightRequest" Value="38" />
+            <Setter Property="Padding" Value="12,6" />
+            <Setter Property="CornerRadius" Value="12" />
+            <Setter Property="BorderWidth" Value="1" />
+            <Setter Property="BorderColor" Value="{AppThemeBinding Light={StaticResource GlassButtonStrokeLight}, Dark={StaticResource GlassButtonStrokeDark}}" />
+            <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource GlassButtonLight}, Dark={StaticResource GlassButtonDark}}" />
+            <Setter Property="TextColor" Value="{AppThemeBinding Light=#050505, Dark=#FFFFFF}" />
+        </Style>
+        <Style x:Key="GlassCopyButtonStyle"
+               TargetType="Button">
+            <Setter Property="HeightRequest" Value="40" />
+            <Setter Property="WidthRequest" Value="40" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="CornerRadius" Value="12" />
+            <Setter Property="BorderWidth" Value="1" />
+            <Setter Property="BorderColor" Value="{AppThemeBinding Light={StaticResource GlassButtonStrokeLight}, Dark={StaticResource GlassButtonStrokeDark}}" />
+            <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource GlassButtonLight}, Dark={StaticResource GlassButtonDark}}" />
+            <Setter Property="TextColor" Value="{AppThemeBinding Light=#050505, Dark=#FFFFFF}" />
         </Style>
     </ContentPage.Resources>
 
@@ -348,12 +374,12 @@
                                     <Grid Padding="0,0" InputTransparent="True">
                                         <Label Text="{Binding ButtonText}"
                                                Style="{StaticResource PlacementButtonTextLabelStyle}"
-                                               TextColor="{AppThemeBinding Light=#1A1A1A, Dark=#F2F2F2}"
+                                               TextColor="{AppThemeBinding Light=#050505, Dark=#FFFFFF}"
                                                HorizontalTextAlignment="Center"
                                                VerticalTextAlignment="Center">
                                             <Label.Triggers>
                                                 <DataTrigger TargetType="Label" Binding="{Binding UseInvertedThemeColors}" Value="True">
-                                                    <Setter Property="TextColor" Value="{AppThemeBinding Light=#F2F2F2, Dark=#1A1A1A}" />
+                                                    <Setter Property="TextColor" Value="{AppThemeBinding Light=#FFFFFF, Dark=#050505}" />
                                                 </DataTrigger>
                                             </Label.Triggers>
                                         </Label>
@@ -436,12 +462,12 @@
                                         </Grid.GestureRecognizers>
                                         <Label Text="{Binding ButtonText}"
                                                Style="{StaticResource PlacementButtonTextLabelStyle}"
-                                               TextColor="{AppThemeBinding Light=#1A1A1A, Dark=#F2F2F2}"
+                                               TextColor="{AppThemeBinding Light=#050505, Dark=#FFFFFF}"
                                                HorizontalTextAlignment="Center"
                                                VerticalTextAlignment="Center">
                                             <Label.Triggers>
                                                 <DataTrigger TargetType="Label" Binding="{Binding UseInvertedThemeColors}" Value="True">
-                                                    <Setter Property="TextColor" Value="{AppThemeBinding Light=#F2F2F2, Dark=#1A1A1A}" />
+                                                    <Setter Property="TextColor" Value="{AppThemeBinding Light=#FFFFFF, Dark=#050505}" />
                                                 </DataTrigger>
                                             </Label.Triggers>
                                         </Label>
@@ -479,7 +505,7 @@
                                 IsVisible="False"
                                 CornerRadius="12"
                                 MacOSBehindWindowBlur="True"
-                                MacOSBackdropOpacity="0.82"
+                                MacOSBackdropOpacity="0.62"
                                 Stroke="{AppThemeBinding Light={StaticResource GlassStrokeLight}, Dark={StaticResource GlassStrokeDark}}"
                                 BackgroundColor="{AppThemeBinding Light={StaticResource GlassPopupLight}, Dark={StaticResource GlassPopupDark}}"
                                 Padding="10,9"
@@ -573,7 +599,7 @@
                                     Padding="18"
                                     CornerRadius="18"
                                     MacOSBehindWindowBlur="True"
-                                    MacOSBackdropOpacity="0.82"
+                                    MacOSBackdropOpacity="0.62"
                                     Stroke="{AppThemeBinding Light={StaticResource GlassStrokeLight}, Dark={StaticResource GlassStrokeDark}}"
                                     BackgroundColor="{AppThemeBinding Light={StaticResource GlassPopupLight}, Dark={StaticResource GlassPopupDark}}">
                 <controls:MaterialFrame.Shadow>
@@ -587,10 +613,11 @@
                         <Grid ColumnDefinitions="140,*,44" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto" ColumnSpacing="8" RowSpacing="8">
                             <Label Grid.Row="0" Grid.Column="0" Text="GUID" VerticalTextAlignment="Center" HeightRequest="40" />
                             <Entry x:Name="ModalGuidEntry" Grid.Row="0" Grid.Column="1" Text="{Binding Editor.GuidText}" IsReadOnly="{OnPlatform Default=True, MacCatalyst=False}" HeightRequest="40" BackgroundColor="{AppThemeBinding Light={StaticResource GlassInputLight}, Dark={StaticResource GlassInputDark}}" HandlerChanged="ModalGuidEntry_HandlerChanged" />
-                            <Button x:Name="CopyGuidButton" Grid.Row="0" Grid.Column="2" Text="{OnPlatform WinUI='&#xE8C8;', MacCatalyst='⧉'}" FontFamily="{OnPlatform WinUI='Segoe MDL2 Assets', MacCatalyst=''}"
+                            <Button x:Name="CopyGuidButton" Grid.Row="0" Grid.Column="2" Style="{StaticResource GlassCopyButtonStyle}" Text="{OnPlatform WinUI='&#xE8C8;', MacCatalyst='⧉'}" FontFamily="{OnPlatform WinUI='Segoe MDL2 Assets', MacCatalyst=''}"
                                     Command="{Binding CopyFieldCommand}"
                                     CommandParameter="{Binding Editor.GuidText}" HeightRequest="40" WidthRequest="40" Padding="0"
                                     VerticalOptions="Center"
+                                    HandlerChanged="ModalGlassButton_HandlerChanged"
                                     Clicked="CopyIconButton_Clicked">
                                 <Button.Behaviors>
                                     <behaviors:HoverHandCursorBehavior />
@@ -599,10 +626,11 @@
 
                             <Label Grid.Row="1" Grid.Column="0" Text="Button Text" VerticalTextAlignment="Center" HeightRequest="40" />
                             <Entry x:Name="ModalButtonTextEntry" Grid.Row="1" Grid.Column="1" Text="{Binding Editor.ButtonText}" HeightRequest="40" BackgroundColor="{AppThemeBinding Light={StaticResource GlassInputLight}, Dark={StaticResource GlassInputDark}}" HandlerChanged="ModalTextInput_HandlerChanged" />
-                            <Button x:Name="CopyButtonTextButton" Grid.Row="1" Grid.Column="2" Text="{OnPlatform WinUI='&#xE8C8;', MacCatalyst='⧉'}" FontFamily="{OnPlatform WinUI='Segoe MDL2 Assets', MacCatalyst=''}"
+                            <Button x:Name="CopyButtonTextButton" Grid.Row="1" Grid.Column="2" Style="{StaticResource GlassCopyButtonStyle}" Text="{OnPlatform WinUI='&#xE8C8;', MacCatalyst='⧉'}" FontFamily="{OnPlatform WinUI='Segoe MDL2 Assets', MacCatalyst=''}"
                                     Command="{Binding CopyFieldCommand}"
                                     CommandParameter="{Binding Editor.ButtonText}" HeightRequest="40" WidthRequest="40" Padding="0"
                                     VerticalOptions="Center"
+                                    HandlerChanged="ModalGlassButton_HandlerChanged"
                                     Clicked="CopyIconButton_Clicked">
                                 <Button.Behaviors>
                                     <behaviors:HoverHandCursorBehavior />
@@ -618,9 +646,11 @@
                                                    KeepAsciiImeWhileFocused="True"
                                                    HandlerChanged="ModalTextInput_HandlerChanged" />
                             <Button x:Name="CopyCommandButton" Grid.Row="2" Grid.Column="2" Text="{OnPlatform WinUI='&#xE8C8;', MacCatalyst='⧉'}" FontFamily="{OnPlatform WinUI='Segoe MDL2 Assets', MacCatalyst=''}"
+                                    Style="{StaticResource GlassCopyButtonStyle}"
                                     Command="{Binding CopyFieldCommand}"
                                     CommandParameter="{Binding Editor.Command}" HeightRequest="40" WidthRequest="40" Padding="0"
                                     VerticalOptions="Center"
+                                    HandlerChanged="ModalGlassButton_HandlerChanged"
                                     Clicked="CopyIconButton_Clicked">
                                 <Button.Behaviors>
                                     <behaviors:HoverHandCursorBehavior />
@@ -629,10 +659,11 @@
 
                             <Label Grid.Row="3" Grid.Column="0" Text="Tool" VerticalTextAlignment="Center" HeightRequest="40" />
                             <Entry x:Name="ModalToolEntry" Grid.Row="3" Grid.Column="1" Text="{Binding Editor.Tool}" HeightRequest="40" BackgroundColor="{AppThemeBinding Light={StaticResource GlassInputLight}, Dark={StaticResource GlassInputDark}}" HandlerChanged="ModalTextInput_HandlerChanged" />
-                            <Button x:Name="CopyToolButton" Grid.Row="3" Grid.Column="2" Text="{OnPlatform WinUI='&#xE8C8;', MacCatalyst='⧉'}" FontFamily="{OnPlatform WinUI='Segoe MDL2 Assets', MacCatalyst=''}"
+                            <Button x:Name="CopyToolButton" Grid.Row="3" Grid.Column="2" Style="{StaticResource GlassCopyButtonStyle}" Text="{OnPlatform WinUI='&#xE8C8;', MacCatalyst='⧉'}" FontFamily="{OnPlatform WinUI='Segoe MDL2 Assets', MacCatalyst=''}"
                                     Command="{Binding CopyFieldCommand}"
                                     CommandParameter="{Binding Editor.Tool}" HeightRequest="40" WidthRequest="40" Padding="0"
                                     VerticalOptions="Center"
+                                    HandlerChanged="ModalGlassButton_HandlerChanged"
                                     Clicked="CopyIconButton_Clicked">
                                 <Button.Behaviors>
                                     <behaviors:HoverHandCursorBehavior />
@@ -641,10 +672,11 @@
 
                             <Label Grid.Row="4" Grid.Column="0" Text="Arguments" VerticalTextAlignment="Center" HeightRequest="40" />
                             <Entry x:Name="ModalArgumentsEntry" Grid.Row="4" Grid.Column="1" Text="{Binding Editor.Arguments}" HeightRequest="40" BackgroundColor="{AppThemeBinding Light={StaticResource GlassInputLight}, Dark={StaticResource GlassInputDark}}" HandlerChanged="ModalTextInput_HandlerChanged" />
-                            <Button x:Name="CopyArgumentsButton" Grid.Row="4" Grid.Column="2" Text="{OnPlatform WinUI='&#xE8C8;', MacCatalyst='⧉'}" FontFamily="{OnPlatform WinUI='Segoe MDL2 Assets', MacCatalyst=''}"
+                            <Button x:Name="CopyArgumentsButton" Grid.Row="4" Grid.Column="2" Style="{StaticResource GlassCopyButtonStyle}" Text="{OnPlatform WinUI='&#xE8C8;', MacCatalyst='⧉'}" FontFamily="{OnPlatform WinUI='Segoe MDL2 Assets', MacCatalyst=''}"
                                     Command="{Binding CopyFieldCommand}"
                                     CommandParameter="{Binding Editor.Arguments}" HeightRequest="40" WidthRequest="40" Padding="0"
                                     VerticalOptions="Center"
+                                    HandlerChanged="ModalGlassButton_HandlerChanged"
                                     Clicked="CopyIconButton_Clicked">
                                 <Button.Behaviors>
                                     <behaviors:HoverHandCursorBehavior />
@@ -668,7 +700,7 @@
                                                                   AutoSize="Disabled"
                                                                   MinimumHeightRequest="40"
                                                                   HeightRequest="40"
-                                                                  BackgroundColor="Transparent"
+                                                                  BackgroundColor="{AppThemeBinding Light={StaticResource GlassInputLight}, Dark={StaticResource GlassInputDark}}"
                                                                   TextColor="{AppThemeBinding Light=#111111, Dark=#F2F2F2}"
                                                                   TextChanged="ModalClipWordEditor_TextChanged"
                                                                   HandlerChanged="ModalClipWordEditor_HandlerChanged"
@@ -685,9 +717,10 @@
                                              BackgroundColor="{AppThemeBinding Light=#4A4A4A, Dark=#A0A0A0}" />
                                 </Grid>
                             </Border>
-                            <Button x:Name="CopyClipWordButton" Grid.Row="5" Grid.Column="2" Text="{OnPlatform WinUI='&#xE8C8;', MacCatalyst='⧉'}" FontFamily="{OnPlatform WinUI='Segoe MDL2 Assets', MacCatalyst=''}"
+                            <Button x:Name="CopyClipWordButton" Grid.Row="5" Grid.Column="2" Style="{StaticResource GlassCopyButtonStyle}" Text="{OnPlatform WinUI='&#xE8C8;', MacCatalyst='⧉'}" FontFamily="{OnPlatform WinUI='Segoe MDL2 Assets', MacCatalyst=''}"
                                     Command="{Binding CopyFieldCommand}"
                                     CommandParameter="{Binding Editor.ClipText}" HeightRequest="40" WidthRequest="40" Padding="0" VerticalOptions="Center"
+                                    HandlerChanged="ModalGlassButton_HandlerChanged"
                                     Clicked="CopyIconButton_Clicked">
                                 <Button.Behaviors>
                                     <behaviors:HoverHandCursorBehavior />
@@ -711,7 +744,7 @@
                                                                   AutoSize="Disabled"
                                                                   MinimumHeightRequest="40"
                                                                   HeightRequest="40"
-                                                                  BackgroundColor="Transparent"
+                                                                  BackgroundColor="{AppThemeBinding Light={StaticResource GlassInputLight}, Dark={StaticResource GlassInputDark}}"
                                                                   TextColor="{AppThemeBinding Light=#111111, Dark=#F2F2F2}"
                                                                   TextChanged="ModalNoteEditor_TextChanged"
                                                                   HandlerChanged="ModalNoteEditor_HandlerChanged"
@@ -728,9 +761,10 @@
                                              BackgroundColor="{AppThemeBinding Light=#4A4A4A, Dark=#A0A0A0}" />
                                 </Grid>
                             </Border>
-                            <Button x:Name="CopyNoteButton" Grid.Row="6" Grid.Column="2" Text="{OnPlatform WinUI='&#xE8C8;', MacCatalyst='⧉'}" FontFamily="{OnPlatform WinUI='Segoe MDL2 Assets', MacCatalyst=''}"
+                            <Button x:Name="CopyNoteButton" Grid.Row="6" Grid.Column="2" Style="{StaticResource GlassCopyButtonStyle}" Text="{OnPlatform WinUI='&#xE8C8;', MacCatalyst='⧉'}" FontFamily="{OnPlatform WinUI='Segoe MDL2 Assets', MacCatalyst=''}"
                                     Command="{Binding CopyFieldCommand}"
                                     CommandParameter="{Binding Editor.Note}" HeightRequest="40" WidthRequest="40" Padding="0" VerticalOptions="Center"
+                                    HandlerChanged="ModalGlassButton_HandlerChanged"
                                     Clicked="CopyIconButton_Clicked">
                                 <Button.Behaviors>
                                     <behaviors:HoverHandCursorBehavior />
@@ -798,14 +832,10 @@
                                            HorizontalOptions="Center"
                                            Spacing="10">
                         <Button x:Name="ModalCancelButton"
+                                Style="{StaticResource GlassModalActionButtonStyle}"
                                 Text="Cancel"
                                 WidthRequest="96"
-                                HeightRequest="38"
-                                Padding="12,6"
-                                CornerRadius="12"
-                                BorderWidth="0"
-                                BackgroundColor="{AppThemeBinding Light=#62FFFFFF, Dark=#78363B43}"
-                                TextColor="{AppThemeBinding Light=#1A1A1A, Dark=#F2F2F2}"
+                                HandlerChanged="ModalGlassButton_HandlerChanged"
                                 Unfocused="ModalActionButton_Unfocused"
                                 Command="{Binding CancelEditorCommand}">
                             <Button.Behaviors>
@@ -813,14 +843,10 @@
                             </Button.Behaviors>
                         </Button>
                         <Button x:Name="ModalSaveButton"
+                                Style="{StaticResource GlassModalActionButtonStyle}"
                                 Text="Save"
                                 WidthRequest="96"
-                                HeightRequest="38"
-                                Padding="12,6"
-                                CornerRadius="12"
-                                BorderWidth="0"
-                                BackgroundColor="{AppThemeBinding Light=#62FFFFFF, Dark=#78363B43}"
-                                TextColor="{AppThemeBinding Light=#1A1A1A, Dark=#F2F2F2}"
+                                HandlerChanged="ModalGlassButton_HandlerChanged"
                                 Unfocused="ModalActionButton_Unfocused"
                                 Command="{Binding SaveEditorCommand}">
                             <Button.Behaviors>

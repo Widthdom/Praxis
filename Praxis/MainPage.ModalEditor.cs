@@ -111,6 +111,13 @@ public partial class MainPage
 #endif
     }
 
+    private void ModalGlassButton_HandlerChanged(object? sender, EventArgs e)
+    {
+#if MACCATALYST
+        ApplyMacModalButtonVisualState();
+#endif
+    }
+
     private void ApplyModalEditorThemeTextColors()
     {
         var dark = IsDarkThemeActive();

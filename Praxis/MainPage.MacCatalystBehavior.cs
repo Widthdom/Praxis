@@ -583,6 +583,7 @@ public partial class MainPage
         ApplyMacEntryVisualState();
         ApplyMacClipWordEditorVisualState();
         ApplyMacNoteEditorVisualState();
+        ApplyMacModalButtonVisualState();
         ApplyMacModalPseudoFocusVisuals();
         ApplyMacCommandSuggestionKeyCommands();
         ApplyMacEditorKeyCommands();
@@ -633,8 +634,7 @@ public partial class MainPage
             return;
         }
 
-        var dark = IsDarkThemeActive();
-        textView.TintColor = dark ? UIColor.White : UIColor.Black;
+        ApplyMacModalTextEditorVisualState(textView);
     }
 
     private void ApplyMacInitialCommandFocus()
@@ -667,8 +667,69 @@ public partial class MainPage
             return;
         }
 
+        ApplyMacModalTextEditorVisualState(textView);
+    }
+
+    private void ApplyMacModalTextEditorVisualState(UITextView textView)
+    {
         var dark = IsDarkThemeActive();
+        var backgroundColor = dark
+            ? UIColor.FromRGBA(54, 59, 67, 0.25f)
+            : UIColor.FromRGBA(255, 255, 255, 0.18f);
+
+        textView.Opaque = false;
+        textView.BackgroundColor = backgroundColor;
+        textView.Layer.BackgroundColor = backgroundColor.CGColor;
+        textView.Layer.CornerRadius = 4;
+        textView.Layer.MasksToBounds = true;
         textView.TintColor = dark ? UIColor.White : UIColor.Black;
+    }
+
+    private void ApplyMacModalButtonVisualState()
+    {
+        ApplyMacGlassButtonVisual(CopyGuidButton);
+        ApplyMacGlassButtonVisual(CopyButtonTextButton);
+        ApplyMacGlassButtonVisual(CopyCommandButton);
+        ApplyMacGlassButtonVisual(CopyToolButton);
+        ApplyMacGlassButtonVisual(CopyArgumentsButton);
+        ApplyMacGlassButtonVisual(CopyClipWordButton);
+        ApplyMacGlassButtonVisual(CopyNoteButton);
+        ApplyMacGlassButtonVisual(ModalCancelButton);
+        ApplyMacGlassButtonVisual(ModalSaveButton);
+    }
+
+    private void ApplyMacGlassButtonVisual(Button button)
+    {
+        if (button.Handler?.PlatformView is not UIButton nativeButton)
+        {
+            return;
+        }
+
+        var dark = IsDarkThemeActive();
+        var backgroundColor = dark
+            ? UIColor.FromRGBA(54, 59, 67, 0.47f)
+            : UIColor.FromRGBA(255, 255, 255, 0.42f);
+        var borderColor = dark
+            ? UIColor.FromRGBA(124, 135, 148, 0.45f).CGColor
+            : UIColor.FromRGBA(255, 255, 255, 0.72f).CGColor;
+        var titleColor = dark ? UIColor.White : UIColor.FromRGB(0x05, 0x05, 0x05);
+
+        nativeButton.Opaque = false;
+        nativeButton.BackgroundColor = backgroundColor;
+        nativeButton.Layer.BackgroundColor = backgroundColor.CGColor;
+        nativeButton.Layer.CornerRadius = 12;
+        nativeButton.Layer.BorderWidth = 1;
+        nativeButton.Layer.BorderColor = borderColor;
+        nativeButton.Layer.MasksToBounds = true;
+        nativeButton.ClipsToBounds = true;
+        nativeButton.TintColor = titleColor;
+        nativeButton.SetTitleColor(titleColor, UIControlState.Normal);
+        nativeButton.SetTitleColor(titleColor.ColorWithAlpha(0.82f), UIControlState.Highlighted);
+        if (nativeButton.TitleLabel is UILabel titleLabel)
+        {
+            titleLabel.Opaque = false;
+        }
+        nativeButton.SetNeedsDisplay();
     }
 
     private void TryHandleMacEditorTabTextInsertion(object? sender, TextChangedEventArgs e)
