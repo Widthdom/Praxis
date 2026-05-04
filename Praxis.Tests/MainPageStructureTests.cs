@@ -81,8 +81,11 @@ public class MainPageStructureTests
         Assert.DoesNotContain("StaticResource GlassRootLight", xaml);
         Assert.DoesNotContain("StaticResource GlassRootDark", xaml);
         Assert.Contains("x:Name=\"RootPage\"", xaml);
-        Assert.Contains("Opacity=\"0\"", xaml);
         Assert.Contains("x:Name=\"RootGrid\"", xaml);
+        Assert.Contains("x:Name=\"DummyRootGlassFrame\"", xaml);
+        Assert.Contains("MacOSBackdropOpacity=\"0.45\"", xaml);
+        Assert.Contains("StaticResource DummyRootGlassLight", xaml);
+        Assert.Contains("StaticResource DummyRootGlassDark", xaml);
         Assert.Contains("MacOSBehindWindowBlur=\"True\"", xaml);
         Assert.Contains("<Color x:Key=\"GlassPanelLight\">#00FFFFFF</Color>", xaml);
         Assert.Contains("<Color x:Key=\"GlassPanelDark\">#00000000</Color>", xaml);

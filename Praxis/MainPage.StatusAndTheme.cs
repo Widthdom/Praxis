@@ -12,9 +12,7 @@ public partial class MainPage
     private void ForceTransparentRootBackground()
     {
         BackgroundColor = Colors.Transparent;
-        Opacity = 0;
         RootGrid.BackgroundColor = Colors.Transparent;
-        RootGrid.Opacity = 0;
     }
 
     private async void TriggerStatusFlash(string? message)
