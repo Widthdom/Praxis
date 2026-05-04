@@ -733,6 +733,8 @@ public class AppLayerSourceGuardTests
         Assert.Contains("Layer.BackgroundColor = UIColor.Clear.CGColor;", macEntrySource);
         Assert.Contains("Background = null;", macEntrySource);
         Assert.Contains("ClearNativeGlassHostBackground(this, glassBackdropView);", macEntrySource);
+        Assert.Contains("ClearNativeGlassHostLayers();", macEntrySource);
+        Assert.Contains("BorderStyle = UITextBorderStyle.None;", macEntrySource);
         Assert.Contains("AttributedPlaceholder = new NSAttributedString(", macEntrySource);
         Assert.Contains("Font = placeholderFont,", macEntrySource);
         Assert.Contains("public void SetGlassFieldVisual(bool enabled)", macEntrySource);
@@ -740,6 +742,7 @@ public class AppLayerSourceGuardTests
         Assert.Contains("ApplyMacModalTextEditorVisualState(textView);", macPageSource);
         Assert.Contains("EnsureMacModalTextEditorGlassBackdrop(textView);", macPageSource);
         Assert.Contains("ClearMacGlassTextEditorBackgrounds(textView, backdropView);", macPageSource);
+        Assert.Contains("ClearMacGlassTextEditorLayers(textView, backdropView);", macPageSource);
         Assert.Contains("private static void ApplyMacCrispTextRendering(UIView view, nfloat scale)", macPageSource);
         Assert.Contains("view.Layer.ShouldRasterize = false;", macPageSource);
         Assert.Contains("label.Font = UIFont.SystemFontOfSize(label.Font.PointSize, UIFontWeight.Medium);", macPageSource);

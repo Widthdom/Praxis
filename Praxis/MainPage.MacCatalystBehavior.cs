@@ -676,8 +676,8 @@ public partial class MainPage
     {
         var dark = IsDarkThemeActive();
         var tintColor = dark
-            ? UIColor.FromRGBA(54, 59, 67, 0.22f)
-            : UIColor.FromRGBA(255, 255, 255, 0.14f);
+            ? UIColor.FromRGBA(54, 59, 67, 0.16f)
+            : UIColor.FromRGBA(255, 255, 255, 0.055f);
         var textColor = dark ? UIColor.White : UIColor.FromRGB(0x05, 0x05, 0x05);
         var backdropView = EnsureMacModalTextEditorGlassBackdrop(textView);
 
@@ -688,6 +688,7 @@ public partial class MainPage
         textView.Layer.MasksToBounds = true;
         textView.TextColor = textColor;
         textView.TintColor = textColor;
+        textView.Font = UIFont.SystemFontOfSize(textView.Font?.PointSize ?? 13, UIFontWeight.Medium);
         backdropView.Alpha = 1f;
         backdropView.BackgroundColor = tintColor;
         backdropView.Opaque = false;
@@ -697,6 +698,7 @@ public partial class MainPage
         backdropView.ClipsToBounds = true;
         textView.SendSubviewToBack(backdropView);
         ClearMacGlassTextEditorBackgrounds(textView, backdropView);
+        ClearMacGlassTextEditorLayers(textView, backdropView);
     }
 
     private static UIView EnsureMacModalTextEditorGlassBackdrop(UITextView textView)
@@ -739,6 +741,26 @@ public partial class MainPage
             subview.Opaque = false;
             subview.BackgroundColor = UIColor.Clear;
             subview.Layer.BackgroundColor = UIColor.Clear.CGColor;
+        }
+    }
+
+    private static void ClearMacGlassTextEditorLayers(UITextView textView, UIView preservedBackdrop)
+    {
+        var layers = textView.Layer.Sublayers;
+        if (layers is null)
+        {
+            return;
+        }
+
+        foreach (var layer in layers)
+        {
+            if (ReferenceEquals(layer, preservedBackdrop.Layer))
+            {
+                continue;
+            }
+
+            layer.BackgroundColor = UIColor.Clear.CGColor;
+            layer.ShouldRasterize = false;
         }
     }
 

@@ -36,8 +36,8 @@ public class MacEntryHandler : EntryHandler
         private static readonly CGColor LightFocusUnderlineColor = UIColor.FromRGB(0x4A, 0x4A, 0x4A).CGColor;
         private static readonly CGColor DarkFocusUnderlineColor = UIColor.FromRGB(0xA0, 0xA0, 0xA0).CGColor;
         private static readonly CGColor TransparentBorderColor = UIColor.Clear.CGColor;
-        private static readonly UIColor LightGlassFieldBackground = UIColor.FromRGBA(255, 255, 255, 0.14f);
-        private static readonly UIColor DarkGlassFieldBackground = UIColor.FromRGBA(54, 59, 67, 0.22f);
+        private static readonly UIColor LightGlassFieldBackground = UIColor.FromRGBA(255, 255, 255, 0.055f);
+        private static readonly UIColor DarkGlassFieldBackground = UIColor.FromRGBA(54, 59, 67, 0.16f);
         private static readonly UIColor LightPlaceholderColor = UIColor.FromRGBA(0, 0, 0, 0.82f);
         private static readonly UIColor DarkPlaceholderColor = UIColor.FromRGBA(255, 255, 255, 0.76f);
         private static readonly UIColor LightTextColor = UIColor.FromRGB(0x05, 0x05, 0x05);
@@ -189,6 +189,7 @@ public class MacEntryHandler : EntryHandler
             var textColor = dark ? DarkTextColor : LightTextColor;
             TintColor = textColor;
             TextColor = textColor;
+            BorderStyle = UITextBorderStyle.None;
             Font = UIFont.SystemFontOfSize(Font?.PointSize ?? 13, UIFontWeight.Medium);
             borderLayer.StrokeColor = glassFieldVisual ? TransparentBorderColor : borderColor;
             focusBorderLayer.StrokeColor = focusColor;
@@ -214,6 +215,7 @@ public class MacEntryHandler : EntryHandler
             BackgroundColor = UIColor.Clear;
             Layer.BackgroundColor = UIColor.Clear.CGColor;
             Layer.MasksToBounds = true;
+            BorderStyle = UITextBorderStyle.None;
             if (glassBackdropView is not null)
             {
                 glassBackdropView.BackgroundColor = tintColor;
@@ -222,6 +224,7 @@ public class MacEntryHandler : EntryHandler
                 SendSubviewToBack(glassBackdropView);
                 UpdateGlassBackdropFrame();
                 ClearNativeGlassHostBackground(this, glassBackdropView);
+                ClearNativeGlassHostLayers();
             }
         }
 
@@ -271,6 +274,29 @@ public class MacEntryHandler : EntryHandler
                 subview.Opaque = false;
                 subview.BackgroundColor = UIColor.Clear;
                 subview.Layer.BackgroundColor = UIColor.Clear.CGColor;
+            }
+        }
+
+        private void ClearNativeGlassHostLayers()
+        {
+            var layers = Layer.Sublayers;
+            if (layers is null)
+            {
+                return;
+            }
+
+            foreach (var layer in layers)
+            {
+                if (ReferenceEquals(layer, borderLayer) ||
+                    ReferenceEquals(layer, focusBorderLayer) ||
+                    ReferenceEquals(layer, focusBorderMaskLayer) ||
+                    ReferenceEquals(layer, glassBackdropView?.Layer))
+                {
+                    continue;
+                }
+
+                layer.BackgroundColor = UIColor.Clear.CGColor;
+                layer.ShouldRasterize = false;
             }
         }
 
