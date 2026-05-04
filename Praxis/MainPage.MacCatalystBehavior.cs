@@ -688,7 +688,7 @@ public partial class MainPage
         textView.Layer.MasksToBounds = true;
         textView.TextColor = textColor;
         textView.TintColor = textColor;
-        backdropView.Alpha = 0.78f;
+        backdropView.Alpha = 0.58f;
         backdropView.ContentView.BackgroundColor = tintColor;
         backdropView.BackgroundColor = UIColor.Clear;
         backdropView.Opaque = false;
@@ -711,7 +711,7 @@ public partial class MainPage
             }
         }
 
-        var backdropView = new UIVisualEffectView(UIBlurEffect.FromStyle(UIBlurEffectStyle.SystemThinMaterial))
+        var backdropView = new UIVisualEffectView(UIBlurEffect.FromStyle(UIBlurEffectStyle.SystemUltraThinMaterial))
         {
             Tag = MacModalTextEditorGlassBackdropTag,
             UserInteractionEnabled = false,
@@ -1149,9 +1149,42 @@ public partial class MainPage
     {
         view.ContentScaleFactor = scale;
         view.Layer.ContentsScale = scale;
+        ApplyMacCrispTextRendering(view, scale);
         foreach (var subview in view.Subviews)
         {
             ApplyMacContentScaleRecursive(subview, scale);
+        }
+    }
+
+    private static void ApplyMacCrispTextRendering(UIView view, nfloat scale)
+    {
+        view.Layer.ShouldRasterize = false;
+        view.Layer.RasterizationScale = scale;
+        if (view is UILabel label && label.Font is not null && label.Font.PointSize <= 15)
+        {
+            label.Opaque = false;
+            label.ContentScaleFactor = scale;
+            label.Layer.ContentsScale = scale;
+            label.Layer.ShouldRasterize = false;
+            label.Font = UIFont.SystemFontOfSize(label.Font.PointSize, UIFontWeight.Semibold);
+        }
+
+        if (view is UIButton button && button.TitleLabel is UILabel titleLabel && titleLabel.Font is not null)
+        {
+            titleLabel.Opaque = false;
+            titleLabel.ContentScaleFactor = scale;
+            titleLabel.Layer.ContentsScale = scale;
+            titleLabel.Layer.ShouldRasterize = false;
+            titleLabel.Font = UIFont.SystemFontOfSize(titleLabel.Font.PointSize, UIFontWeight.Semibold);
+        }
+
+        if (view is UITextField textField && textField.Font is not null)
+        {
+            textField.Opaque = false;
+            textField.ContentScaleFactor = scale;
+            textField.Layer.ContentsScale = scale;
+            textField.Layer.ShouldRasterize = false;
+            textField.Font = UIFont.SystemFontOfSize(textField.Font.PointSize, UIFontWeight.Semibold);
         }
     }
 

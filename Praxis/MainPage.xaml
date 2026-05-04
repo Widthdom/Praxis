@@ -31,7 +31,7 @@
         <Style x:Key="PlacementButtonTextLabelStyle"
                TargetType="Label">
             <Setter Property="FontSize" Value="{OnPlatform Default=12, MacCatalyst=14}" />
-            <Setter Property="FontFamily" Value="OpenSansSemibold" />
+            <Setter Property="FontAttributes" Value="Bold" />
             <Setter Property="FontAutoScalingEnabled" Value="False" />
         </Style>
         <Style x:Key="GlassModalActionButtonStyle"
@@ -43,7 +43,7 @@
             <Setter Property="BorderColor" Value="{AppThemeBinding Light={StaticResource GlassButtonStrokeLight}, Dark={StaticResource GlassButtonStrokeDark}}" />
             <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource GlassButtonLight}, Dark={StaticResource GlassButtonDark}}" />
             <Setter Property="TextColor" Value="{AppThemeBinding Light=#050505, Dark=#FFFFFF}" />
-            <Setter Property="FontFamily" Value="OpenSansSemibold" />
+            <Setter Property="FontAttributes" Value="Bold" />
         </Style>
         <Style x:Key="GlassCopyButtonStyle"
                TargetType="Button">
@@ -55,7 +55,7 @@
             <Setter Property="BorderColor" Value="{AppThemeBinding Light={StaticResource GlassButtonStrokeLight}, Dark={StaticResource GlassButtonStrokeDark}}" />
             <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource GlassButtonLight}, Dark={StaticResource GlassButtonDark}}" />
             <Setter Property="TextColor" Value="{AppThemeBinding Light=#050505, Dark=#FFFFFF}" />
-            <Setter Property="FontFamily" Value="OpenSansSemibold" />
+            <Setter Property="FontAttributes" Value="Bold" />
         </Style>
     </ContentPage.Resources>
 

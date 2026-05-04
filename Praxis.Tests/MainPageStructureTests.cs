@@ -58,6 +58,8 @@ public class MainPageStructureTests
 
         Assert.Contains("<Style x:Key=\"PlacementButtonTextLabelStyle\"", xaml);
         Assert.Contains("<Setter Property=\"FontSize\" Value=\"{OnPlatform Default=12, MacCatalyst=14}\" />", xaml);
+        Assert.Contains("<Setter Property=\"FontAttributes\" Value=\"Bold\" />", xaml);
+        Assert.DoesNotContain("<Setter Property=\"FontFamily\" Value=\"OpenSansSemibold\" />", xaml);
         Assert.Equal(2, CountOccurrences(xaml, "Style=\"{StaticResource PlacementButtonTextLabelStyle}\""));
     }
 

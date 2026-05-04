@@ -42,7 +42,7 @@ public class MacEntryHandler : EntryHandler
         private static readonly UIColor DarkPlaceholderColor = UIColor.FromRGBA(255, 255, 255, 0.76f);
         private static readonly UIColor LightTextColor = UIColor.FromRGB(0x05, 0x05, 0x05);
         private static readonly UIColor DarkTextColor = UIColor.White;
-        private static readonly nfloat GlassBackdropOpacity = 0.78f;
+        private static readonly nfloat GlassBackdropOpacity = 0.58f;
         private static readonly nfloat CornerRadius = 4;
         private static readonly nfloat BorderWidth = 1;
         private static readonly nfloat FocusBorderWidth = 1.5f;
@@ -190,6 +190,7 @@ public class MacEntryHandler : EntryHandler
             var textColor = dark ? DarkTextColor : LightTextColor;
             TintColor = textColor;
             TextColor = textColor;
+            Font = UIFont.SystemFontOfSize(Font?.PointSize ?? 13, UIFontWeight.Semibold);
             borderLayer.StrokeColor = glassFieldVisual ? TransparentBorderColor : borderColor;
             focusBorderLayer.StrokeColor = focusColor;
             focusBorderLayer.Hidden = !(IsFirstResponder || pseudoFocused);
@@ -229,7 +230,7 @@ public class MacEntryHandler : EntryHandler
 
         private void EnsureGlassBackdrop()
         {
-            glassBackdropView ??= new UIVisualEffectView(UIBlurEffect.FromStyle(UIBlurEffectStyle.SystemThinMaterial))
+            glassBackdropView ??= new UIVisualEffectView(UIBlurEffect.FromStyle(UIBlurEffectStyle.SystemUltraThinMaterial))
             {
                 UserInteractionEnabled = false,
                 Opaque = false,

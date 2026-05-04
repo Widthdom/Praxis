@@ -307,7 +307,7 @@ public class AppLayerSourceGuardTests
         Assert.Contains("SelRegisterName(\"addSubview:positioned:relativeTo:\")", appSource);
         Assert.Contains("ObjcMsgSendAddSubviewPositioned(", appSource);
         Assert.DoesNotContain("nativeWindow.BringSubviewToFront(dummyRoot);", appSource);
-        Assert.Contains("new UIVisualEffectView(UIBlurEffect.FromStyle(UIBlurEffectStyle.SystemThinMaterial))", behaviorSource);
+        Assert.Contains("new UIVisualEffectView(UIBlurEffect.FromStyle(UIBlurEffectStyle.SystemUltraThinMaterial))", behaviorSource);
         Assert.Contains("platformView.Layer.CornerRadius = (nfloat)cornerRadius;", behaviorSource);
         Assert.Contains("backdropView.Alpha = GetBackdropOpacity();", behaviorSource);
         Assert.Contains("public sealed class MaterialFrame : Border", frameSource);
@@ -726,7 +726,7 @@ public class AppLayerSourceGuardTests
         Assert.Contains("borderLayer.StrokeColor = glassFieldVisual ? TransparentBorderColor : borderColor;", macEntrySource);
         Assert.Contains("focusBorderLayer.Hidden = !(IsFirstResponder || pseudoFocused);", macEntrySource);
         Assert.Contains("ApplyGlassFieldBackground(dark);", macEntrySource);
-        Assert.Contains("UIBlurEffect.FromStyle(UIBlurEffectStyle.SystemThinMaterial)", macEntrySource);
+        Assert.Contains("UIBlurEffect.FromStyle(UIBlurEffectStyle.SystemUltraThinMaterial)", macEntrySource);
         Assert.Contains("Layer.BackgroundColor = UIColor.Clear.CGColor;", macEntrySource);
         Assert.Contains("Background = null;", macEntrySource);
         Assert.Contains("ClearNativeGlassHostBackground(this, glassBackdropView);", macEntrySource);
@@ -737,6 +737,10 @@ public class AppLayerSourceGuardTests
         Assert.Contains("ApplyMacModalTextEditorVisualState(textView);", macPageSource);
         Assert.Contains("EnsureMacModalTextEditorGlassBackdrop(textView);", macPageSource);
         Assert.Contains("ClearMacGlassTextEditorBackgrounds(textView, backdropView);", macPageSource);
+        Assert.Contains("private static void ApplyMacCrispTextRendering(UIView view, nfloat scale)", macPageSource);
+        Assert.Contains("view.Layer.ShouldRasterize = false;", macPageSource);
+        Assert.Contains("label.Font = UIFont.SystemFontOfSize(label.Font.PointSize, UIFontWeight.Semibold);", macPageSource);
+        Assert.Contains("textField.Font = UIFont.SystemFontOfSize(textField.Font.PointSize, UIFontWeight.Semibold);", macPageSource);
         Assert.Contains("private void ApplyMacModalButtonVisualState()", macPageSource);
         Assert.Contains("ApplyMacGlassButtonVisual(CopyGuidButton);", macPageSource);
         Assert.Contains("ApplyMacGlassButtonVisual(ModalSaveButton);", macPageSource);
