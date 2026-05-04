@@ -94,6 +94,7 @@ public partial class MainPage
     {
 #if MACCATALYST
         EnsureMacGuidEntryReadOnlyBehavior();
+        ApplyMacEntryVisualState();
 #endif
 #if WINDOWS
         EnsureWindowsTextBoxHooks();
@@ -102,6 +103,9 @@ public partial class MainPage
 
     private void ModalTextInput_HandlerChanged(object? sender, EventArgs e)
     {
+#if MACCATALYST
+        ApplyMacEntryVisualState();
+#endif
 #if WINDOWS
         EnsureWindowsTextBoxHooks();
 #endif

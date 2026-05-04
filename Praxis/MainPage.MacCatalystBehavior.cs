@@ -608,13 +608,22 @@ public partial class MainPage
 
         if (textField is Praxis.Controls.MacEntryHandler.MacEntryTextField macEntryTextField)
         {
-            macEntryTextField.SetTopBarGlassVisual(
-                ReferenceEquals(entry, MainCommandEntry) ||
-                ReferenceEquals(entry, MainSearchEntry));
+            macEntryTextField.SetGlassFieldVisual(IsGlassEntryVisual(entry));
         }
 
         textField.SetNeedsLayout();
         textField.LayoutIfNeeded();
+    }
+
+    private bool IsGlassEntryVisual(Entry entry)
+    {
+        return ReferenceEquals(entry, MainCommandEntry) ||
+            ReferenceEquals(entry, MainSearchEntry) ||
+            ReferenceEquals(entry, ModalGuidEntry) ||
+            ReferenceEquals(entry, ModalButtonTextEntry) ||
+            ReferenceEquals(entry, ModalCommandEntry) ||
+            ReferenceEquals(entry, ModalToolEntry) ||
+            ReferenceEquals(entry, ModalArgumentsEntry);
     }
 
     private void ApplyMacClipWordEditorVisualState()

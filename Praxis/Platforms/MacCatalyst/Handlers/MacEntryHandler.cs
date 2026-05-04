@@ -36,8 +36,8 @@ public class MacEntryHandler : EntryHandler
         private static readonly CGColor LightFocusUnderlineColor = UIColor.FromRGB(0x4A, 0x4A, 0x4A).CGColor;
         private static readonly CGColor DarkFocusUnderlineColor = UIColor.FromRGB(0xA0, 0xA0, 0xA0).CGColor;
         private static readonly CGColor TransparentBorderColor = UIColor.Clear.CGColor;
-        private static readonly UIColor LightTopBarGlassBackground = UIColor.FromRGBA(255, 255, 255, 0.38f);
-        private static readonly UIColor DarkTopBarGlassBackground = UIColor.FromRGBA(54, 59, 67, 0.47f);
+        private static readonly UIColor LightGlassFieldBackground = UIColor.FromRGBA(255, 255, 255, 0.24f);
+        private static readonly UIColor DarkGlassFieldBackground = UIColor.FromRGBA(54, 59, 67, 0.31f);
         private static readonly nfloat CornerRadius = 4;
         private static readonly nfloat BorderWidth = 1;
         private static readonly nfloat FocusBorderWidth = 1.5f;
@@ -46,7 +46,7 @@ public class MacEntryHandler : EntryHandler
         private readonly CAShapeLayer focusBorderLayer = new();
         private readonly CALayer focusBorderMaskLayer = new();
         private bool pseudoFocused;
-        private bool topBarGlassVisual;
+        private bool glassFieldVisual;
         private UIKeyCommand? cancelCommand;
 
         public override UIKeyCommand[] KeyCommands
@@ -178,12 +178,12 @@ public class MacEntryHandler : EntryHandler
             var borderColor = dark ? DarkBorderColor : LightBorderColor;
             var focusColor = dark ? DarkFocusUnderlineColor : LightFocusUnderlineColor;
             TintColor = dark ? UIColor.White : UIColor.Black;
-            borderLayer.StrokeColor = topBarGlassVisual ? TransparentBorderColor : borderColor;
+            borderLayer.StrokeColor = glassFieldVisual ? TransparentBorderColor : borderColor;
             focusBorderLayer.StrokeColor = focusColor;
             focusBorderLayer.Hidden = !(IsFirstResponder || pseudoFocused);
-            if (topBarGlassVisual)
+            if (glassFieldVisual)
             {
-                BackgroundColor = dark ? DarkTopBarGlassBackground : LightTopBarGlassBackground;
+                BackgroundColor = dark ? DarkGlassFieldBackground : LightGlassFieldBackground;
             }
         }
 
@@ -213,9 +213,9 @@ public class MacEntryHandler : EntryHandler
             ApplyFocusVisualState();
         }
 
-        public void SetTopBarGlassVisual(bool enabled)
+        public void SetGlassFieldVisual(bool enabled)
         {
-            topBarGlassVisual = enabled;
+            glassFieldVisual = enabled;
             ApplyFocusVisualState();
         }
 

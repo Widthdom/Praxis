@@ -94,12 +94,18 @@ public class MainPageStructureTests
         Assert.Contains("<Color x:Key=\"GlassPanelDark\">#00000000</Color>", xaml);
         Assert.Contains("<Color x:Key=\"GlassPopupLight\">#42FFFFFF</Color>", xaml);
         Assert.Contains("<Color x:Key=\"GlassPopupDark\">#5A1E2228</Color>", xaml);
-        Assert.Contains("x:Name=\"MainCommandEntry\"\n                                       Placeholder=\"Command\"\n                                       Text=\"{Binding CommandInput}\"\n                                       BackgroundColor=\"{AppThemeBinding Light=#62FFFFFF, Dark=#78363B43}\"", xaml);
-        Assert.Contains("x:Name=\"MainSearchEntry\"\n                                      Placeholder=\"Search\"\n                                      Text=\"{Binding SearchText}\"\n                                      BackgroundColor=\"{AppThemeBinding Light=#62FFFFFF, Dark=#78363B43}\"", xaml);
+        Assert.Contains("<Color x:Key=\"GlassInputLight\">#3EFFFFFF</Color>", xaml);
+        Assert.Contains("<Color x:Key=\"GlassInputDark\">#4F363B43</Color>", xaml);
+        Assert.Contains("x:Name=\"MainCommandEntry\"\n                                       Placeholder=\"Command\"\n                                       Text=\"{Binding CommandInput}\"\n                                       BackgroundColor=\"{AppThemeBinding Light={StaticResource GlassInputLight}, Dark={StaticResource GlassInputDark}}\"", xaml);
+        Assert.Contains("x:Name=\"MainSearchEntry\"\n                                      Placeholder=\"Search\"\n                                      Text=\"{Binding SearchText}\"\n                                      BackgroundColor=\"{AppThemeBinding Light={StaticResource GlassInputLight}, Dark={StaticResource GlassInputDark}}\"", xaml);
         Assert.Contains("x:Name=\"QuickLookPopup\"", xaml);
-        Assert.Contains("MacOSBackdropOpacity=\"0.34\"", xaml);
         Assert.Contains("x:Name=\"EditorOverlay\"", xaml);
-        Assert.Contains("MacOSBackdropOpacity=\"0.38\"", xaml);
+        Assert.True(CountOccurrences(xaml, "MacOSBackdropOpacity=\"0.82\"") >= 2);
+        Assert.Contains("ModalGuidEntry\" Grid.Row=\"0\" Grid.Column=\"1\" Text=\"{Binding Editor.GuidText}\" IsReadOnly=\"{OnPlatform Default=True, MacCatalyst=False}\" HeightRequest=\"40\" BackgroundColor=\"{AppThemeBinding Light={StaticResource GlassInputLight}, Dark={StaticResource GlassInputDark}}\"", xaml);
+        Assert.Contains("ModalClipWordContainer\"\n                                    Grid.Row=\"5\"\n                                    Grid.Column=\"1\"\n                                    Stroke=\"Transparent\"\n                                    StrokeThickness=\"0\"", xaml);
+        Assert.Contains("ModalNoteContainer\"\n                                    Grid.Row=\"6\"\n                                    Grid.Column=\"1\"\n                                    Stroke=\"Transparent\"\n                                    StrokeThickness=\"0\"", xaml);
+        Assert.Contains("x:Name=\"ModalCancelButton\"\n                                Text=\"Cancel\"\n                                WidthRequest=\"96\"\n                                HeightRequest=\"38\"", xaml);
+        Assert.Contains("x:Name=\"ModalSaveButton\"\n                                Text=\"Save\"\n                                WidthRequest=\"96\"\n                                HeightRequest=\"38\"", xaml);
         Assert.DoesNotContain("MacOSBackdropOpacity=\"0.18\"", xaml);
         Assert.True(CountOccurrences(xaml, "<controls:MaterialFrame ") >= 9);
     }
@@ -167,7 +173,7 @@ public class MainPageStructureTests
         Assert.True(modalEntryIndex >= 0, "ModalCommandEntry was not found in MainPage.xaml.");
 
         var mainRegion = xaml.Substring(mainEntryIndex, Math.Min(500, xaml.Length - mainEntryIndex));
-        var modalRegion = xaml.Substring(modalEntryIndex, Math.Min(500, xaml.Length - modalEntryIndex));
+        var modalRegion = xaml.Substring(modalEntryIndex, Math.Min(750, xaml.Length - modalEntryIndex));
 
         Assert.DoesNotContain("EnforceAsciiInput=\"True\"", mainRegion);
         Assert.Contains("EnforceAsciiInput=\"True\"", modalRegion);

@@ -307,7 +307,7 @@ public class AppLayerSourceGuardTests
         Assert.Contains("SelRegisterName(\"addSubview:positioned:relativeTo:\")", appSource);
         Assert.Contains("ObjcMsgSendAddSubviewPositioned(", appSource);
         Assert.DoesNotContain("nativeWindow.BringSubviewToFront(dummyRoot);", appSource);
-        Assert.Contains("new UIVisualEffectView(UIBlurEffect.FromStyle(UIBlurEffectStyle.SystemUltraThinMaterial))", behaviorSource);
+        Assert.Contains("new UIVisualEffectView(UIBlurEffect.FromStyle(UIBlurEffectStyle.SystemThinMaterial))", behaviorSource);
         Assert.Contains("platformView.Layer.CornerRadius = (nfloat)cornerRadius;", behaviorSource);
         Assert.Contains("backdropView.Alpha = GetBackdropOpacity();", behaviorSource);
         Assert.Contains("public sealed class MaterialFrame : Border", frameSource);
@@ -717,19 +717,25 @@ public class AppLayerSourceGuardTests
     }
 
     [Fact]
-    public void MacTopBarEntries_KeepOnlyFocusedUnderlineForGlassChrome()
+    public void MacGlassEntries_KeepOnlyFocusedUnderlineForGlassChrome()
     {
         var macEntrySource = ReadRepositoryFile("Praxis", "Platforms", "MacCatalyst", "Handlers", "MacEntryHandler.cs");
         var macPageSource = ReadRepositoryFile("Praxis", "MainPage.MacCatalystBehavior.cs");
 
-        Assert.Contains("private bool topBarGlassVisual;", macEntrySource);
-        Assert.Contains("borderLayer.StrokeColor = topBarGlassVisual ? TransparentBorderColor : borderColor;", macEntrySource);
+        Assert.Contains("private bool glassFieldVisual;", macEntrySource);
+        Assert.Contains("borderLayer.StrokeColor = glassFieldVisual ? TransparentBorderColor : borderColor;", macEntrySource);
         Assert.Contains("focusBorderLayer.Hidden = !(IsFirstResponder || pseudoFocused);", macEntrySource);
-        Assert.Contains("BackgroundColor = dark ? DarkTopBarGlassBackground : LightTopBarGlassBackground;", macEntrySource);
-        Assert.Contains("public void SetTopBarGlassVisual(bool enabled)", macEntrySource);
-        Assert.Contains("macEntryTextField.SetTopBarGlassVisual(", macPageSource);
+        Assert.Contains("BackgroundColor = dark ? DarkGlassFieldBackground : LightGlassFieldBackground;", macEntrySource);
+        Assert.Contains("public void SetGlassFieldVisual(bool enabled)", macEntrySource);
+        Assert.Contains("macEntryTextField.SetGlassFieldVisual(IsGlassEntryVisual(entry));", macPageSource);
+        Assert.Contains("private bool IsGlassEntryVisual(Entry entry)", macPageSource);
         Assert.Contains("ReferenceEquals(entry, MainCommandEntry) ||", macPageSource);
-        Assert.Contains("ReferenceEquals(entry, MainSearchEntry));", macPageSource);
+        Assert.Contains("ReferenceEquals(entry, MainSearchEntry) ||", macPageSource);
+        Assert.Contains("ReferenceEquals(entry, ModalGuidEntry) ||", macPageSource);
+        Assert.Contains("ReferenceEquals(entry, ModalButtonTextEntry) ||", macPageSource);
+        Assert.Contains("ReferenceEquals(entry, ModalCommandEntry) ||", macPageSource);
+        Assert.Contains("ReferenceEquals(entry, ModalToolEntry) ||", macPageSource);
+        Assert.Contains("ReferenceEquals(entry, ModalArgumentsEntry);", macPageSource);
     }
 
     [Fact]

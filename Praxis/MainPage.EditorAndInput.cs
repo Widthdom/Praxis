@@ -139,6 +139,7 @@ public partial class MainPage
         EnsureWindowsTextBoxHooks();
 #endif
 #if MACCATALYST
+        ApplyMacEntryVisualState();
         ApplyMacCommandSuggestionKeyCommands();
 #endif
         UpdateCommandSuggestionPopupPlacement();
@@ -183,6 +184,9 @@ public partial class MainPage
 #if WINDOWS
         EnsureWindowsKeyHooks();
         EnsureWindowsTextBoxHooks();
+#endif
+#if MACCATALYST
+        ApplyMacEntryVisualState();
 #endif
     }
 
