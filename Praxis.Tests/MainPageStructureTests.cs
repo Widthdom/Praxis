@@ -79,6 +79,7 @@ public class MainPageStructureTests
         Assert.Contains("BackgroundColor=\"Transparent\"", xaml);
         Assert.Contains("x:Name=\"MainGlassFrame\"", xaml);
         Assert.Contains("MacOSBehindWindowBlur=\"True\"", xaml);
+        Assert.Contains("MacOSBackdropOpacity=\"0.24\"", xaml);
         Assert.Contains("StaticResource GlassRootLight", xaml);
         Assert.Contains("StaticResource GlassRootDark", xaml);
         Assert.True(CountOccurrences(xaml, "<controls:MaterialFrame ") >= 9);
@@ -214,7 +215,7 @@ public class MainPageStructureTests
         Assert.Contains("Text=\"Invert Theme\"", xaml);
         Assert.Contains("IsChecked=\"{Binding Editor.UseInvertedThemeColors}\"", xaml);
         Assert.Contains("Opacity=\"0\"", xaml);
-        Assert.Contains("Color=\"{AppThemeBinding Light=#80FFFFFF, Dark=#80282D34}\"", xaml);
+        Assert.Contains("Color=\"{AppThemeBinding Light=#54FFFFFF, Dark=#68282D34}\"", xaml);
         Assert.Contains("Color=\"{AppThemeBinding Light=#CECECE, Dark=#4E4E4E}\"", xaml);
         Assert.Contains("HeightRequest=\"1\"", xaml);
         Assert.Contains("WidthRequest=\"1\"", xaml);

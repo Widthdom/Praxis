@@ -47,7 +47,7 @@ public sealed class MacGlassBackdropBehavior : Behavior<View>
 
     private void OnPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
     {
-        if (e.PropertyName is nameof(VisualElement.IsVisible) or nameof(MaterialFrame.CornerRadius))
+        if (e.PropertyName is nameof(VisualElement.IsVisible) or nameof(MaterialFrame.CornerRadius) or nameof(MaterialFrame.MacOSBackdropOpacity))
         {
             ApplyBackdrop();
         }
@@ -75,7 +75,7 @@ public sealed class MacGlassBackdropBehavior : Behavior<View>
             platformView.InsertSubview(backdropView, 0);
         }
 
-        backdropView.Alpha = 1f;
+        backdropView.Alpha = GetBackdropOpacity();
         UpdateBackdropFrame();
     }
 
@@ -130,6 +130,15 @@ public sealed class MacGlassBackdropBehavior : Behavior<View>
             backdropView.Layer.CornerRadius = (nfloat)cornerRadius;
             backdropView.Layer.MasksToBounds = cornerRadius > 0;
         }
+    }
+
+    private nfloat GetBackdropOpacity()
+    {
+        var opacity = attachedView is MaterialFrame frame
+            ? frame.MacOSBackdropOpacity
+            : 1d;
+
+        return (nfloat)Math.Clamp(opacity, 0d, 1d);
     }
 
     private void RemoveBackdrop()

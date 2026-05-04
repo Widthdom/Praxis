@@ -12,14 +12,14 @@
              BackgroundColor="Transparent">
     <ContentPage.Resources>
         <converters:BoolToScrollBarVisibilityConverter x:Key="BoolToScrollBarVisibilityConverter" />
-        <Color x:Key="GlassRootLight">#70FFFFFF</Color>
-        <Color x:Key="GlassRootDark">#6614171C</Color>
-        <Color x:Key="GlassPanelLight">#66FFFFFF</Color>
-        <Color x:Key="GlassPanelDark">#731D2128</Color>
-        <Color x:Key="GlassSurfaceLight">#80FFFFFF</Color>
-        <Color x:Key="GlassSurfaceDark">#801F242B</Color>
-        <Color x:Key="GlassPopupLight">#99FFFFFF</Color>
-        <Color x:Key="GlassPopupDark">#B31E2228</Color>
+        <Color x:Key="GlassRootLight">#10FFFFFF</Color>
+        <Color x:Key="GlassRootDark">#2414171C</Color>
+        <Color x:Key="GlassPanelLight">#24FFFFFF</Color>
+        <Color x:Key="GlassPanelDark">#421D2128</Color>
+        <Color x:Key="GlassSurfaceLight">#36FFFFFF</Color>
+        <Color x:Key="GlassSurfaceDark">#501F242B</Color>
+        <Color x:Key="GlassPopupLight">#66FFFFFF</Color>
+        <Color x:Key="GlassPopupDark">#8C1E2228</Color>
         <Color x:Key="GlassStrokeLight">#9FFFFFFF</Color>
         <Color x:Key="GlassStrokeDark">#66717B88</Color>
         <Style x:Key="PlacementButtonTextLabelStyle"
@@ -38,6 +38,7 @@
                                 Grid.RowSpan="4"
                                 CornerRadius="28"
                                 MacOSBehindWindowBlur="True"
+                                MacOSBackdropOpacity="0.24"
                                 InputTransparent="True"
                                 Stroke="{AppThemeBinding Light={StaticResource GlassStrokeLight}, Dark={StaticResource GlassStrokeDark}}"
                                 StrokeThickness="1"
@@ -110,7 +111,7 @@
                     WidthRequest="44"
                     HeightRequest="40"
                     StrokeThickness="0"
-                    BackgroundColor="{AppThemeBinding Light=#80FFFFFF, Dark=#70333A42}"
+                    BackgroundColor="{AppThemeBinding Light=#48FFFFFF, Dark=#5C333A42}"
                     StrokeShape="RoundRectangle 10"
                     Padding="0">
                 <Border.Behaviors>
@@ -216,6 +217,7 @@
                                 IsVisible="{Binding IsCommandSuggestionOpen}"
                                 CornerRadius="10"
                                 MacOSBehindWindowBlur="True"
+                                MacOSBackdropOpacity="0.55"
                                 Stroke="{AppThemeBinding Light={StaticResource GlassStrokeLight}, Dark={StaticResource GlassStrokeDark}}"
                                 BackgroundColor="{AppThemeBinding Light={StaticResource GlassPopupLight}, Dark={StaticResource GlassPopupDark}}"
                                 Padding="6"
@@ -242,7 +244,7 @@
                             <Grid.Triggers>
                                 <DataTrigger TargetType="Grid" Binding="{Binding IsSelected}" Value="True">
                                     <Setter Property="BackgroundColor"
-                                            Value="{AppThemeBinding Light=#80F2F5F8, Dark=#80434851}" />
+                                            Value="{AppThemeBinding Light=#70F2F5F8, Dark=#70434851}" />
                                 </DataTrigger>
                             </Grid.Triggers>
                             <Grid.GestureRecognizers>
@@ -275,6 +277,7 @@
         <controls:MaterialFrame Grid.Row="1"
                                 CornerRadius="20"
                                 MacOSBehindWindowBlur="True"
+                                MacOSBackdropOpacity="0.38"
                                 Stroke="{AppThemeBinding Light={StaticResource GlassStrokeLight}, Dark={StaticResource GlassStrokeDark}}"
                                 BackgroundColor="{AppThemeBinding Light={StaticResource GlassPanelLight}, Dark={StaticResource GlassPanelDark}}"
                                 Padding="14"
@@ -307,7 +310,7 @@
                                         AbsoluteLayout.LayoutFlags="None"
                                         Stroke="{AppThemeBinding Light=#9FFFFFFF, Dark=#5E74808C}"
                                         StrokeShape="RoundRectangle 12"
-                                        BackgroundColor="{AppThemeBinding Light=#90FFFFFF, Dark=#99363B43}"
+                                        BackgroundColor="{AppThemeBinding Light=#62FFFFFF, Dark=#78363B43}"
                                         Padding="0">
                                     <Border.Behaviors>
                                         <behaviors:GrabHandCursorBehavior />
@@ -315,7 +318,7 @@
                                     </Border.Behaviors>
                                     <Border.Triggers>
                                         <DataTrigger TargetType="Border" Binding="{Binding IsSelected}" Value="True">
-                                            <Setter Property="BackgroundColor" Value="{AppThemeBinding Light=#BAFFFFFF, Dark=#B0505660}" />
+                                            <Setter Property="BackgroundColor" Value="{AppThemeBinding Light=#86FFFFFF, Dark=#90505660}" />
                                         </DataTrigger>
                                         <DataTrigger TargetType="Border" Binding="{Binding UseInvertedThemeColors}" Value="True">
                                             <Setter Property="Stroke" Value="{AppThemeBinding Light=#75545454, Dark=#C9FFFFFF}" />
@@ -377,6 +380,7 @@
                                 Grid.Row="2"
                                 CornerRadius="20"
                                 MacOSBehindWindowBlur="True"
+                                MacOSBackdropOpacity="0.38"
                                 Stroke="{AppThemeBinding Light={StaticResource GlassStrokeLight}, Dark={StaticResource GlassStrokeDark}}"
                                 BackgroundColor="{AppThemeBinding Light={StaticResource GlassPanelLight}, Dark={StaticResource GlassPanelDark}}"
                                 Margin="{OnPlatform Default='0', WinUI='0,-4,0,-4', MacCatalyst='0,-4,0,-4'}"
@@ -408,7 +412,7 @@
                             <DataTemplate>
                                 <Border Stroke="{AppThemeBinding Light=#9FFFFFFF, Dark=#5E74808C}"
                                         StrokeShape="RoundRectangle 12"
-                                        BackgroundColor="{AppThemeBinding Light=#90FFFFFF, Dark=#99363B43}"
+                                        BackgroundColor="{AppThemeBinding Light=#62FFFFFF, Dark=#78363B43}"
                                         WidthRequest="{x:Static corelogic:ButtonLayoutDefaults.Width}"
                                         HeightRequest="{x:Static corelogic:ButtonLayoutDefaults.Height}"
                                         Padding="0">
@@ -465,6 +469,7 @@
                                 Grid.Row="3"
                                 CornerRadius="10"
                                 MacOSBehindWindowBlur="True"
+                                MacOSBackdropOpacity="0.34"
                                 Stroke="{AppThemeBinding Light={StaticResource GlassStrokeLight}, Dark={StaticResource GlassStrokeDark}}"
                                 BackgroundColor="{AppThemeBinding Light={StaticResource GlassSurfaceLight}, Dark={StaticResource GlassSurfaceDark}}"
                                 Padding="10,6">
@@ -476,6 +481,7 @@
                                 IsVisible="False"
                                 CornerRadius="12"
                                 MacOSBehindWindowBlur="True"
+                                MacOSBackdropOpacity="0.55"
                                 Stroke="{AppThemeBinding Light={StaticResource GlassStrokeLight}, Dark={StaticResource GlassStrokeDark}}"
                                 BackgroundColor="{AppThemeBinding Light={StaticResource GlassPopupLight}, Dark={StaticResource GlassPopupDark}}"
                                 Padding="10,9"
@@ -530,6 +536,7 @@
                                     Padding="10"
                                     CornerRadius="14"
                                     MacOSBehindWindowBlur="True"
+                                    MacOSBackdropOpacity="0.55"
                                     Stroke="{AppThemeBinding Light={StaticResource GlassStrokeLight}, Dark={StaticResource GlassStrokeDark}}"
                                     BackgroundColor="{AppThemeBinding Light={StaticResource GlassPopupLight}, Dark={StaticResource GlassPopupDark}}">
                 <VerticalStackLayout Spacing="8">
@@ -568,6 +575,7 @@
                                     Padding="18"
                                     CornerRadius="18"
                                     MacOSBehindWindowBlur="True"
+                                    MacOSBackdropOpacity="0.62"
                                     Stroke="{AppThemeBinding Light={StaticResource GlassStrokeLight}, Dark={StaticResource GlassStrokeDark}}"
                                     BackgroundColor="{AppThemeBinding Light={StaticResource GlassPopupLight}, Dark={StaticResource GlassPopupDark}}">
                 <controls:MaterialFrame.Shadow>
@@ -650,7 +658,7 @@
                                     Grid.Column="1"
                                     Stroke="{AppThemeBinding Light=#CECECE, Dark=#4E4E4E}"
                                     StrokeThickness="1"
-                                    BackgroundColor="{AppThemeBinding Light=#80FFFFFF, Dark=#80282D34}"
+                                    BackgroundColor="{AppThemeBinding Light=#54FFFFFF, Dark=#68282D34}"
                                     StrokeShape="RoundRectangle 6"
                                     MinimumHeightRequest="40"
                                     HeightRequest="40"
@@ -693,7 +701,7 @@
                                     Grid.Column="1"
                                     Stroke="{AppThemeBinding Light=#CECECE, Dark=#4E4E4E}"
                                     StrokeThickness="1"
-                                    BackgroundColor="{AppThemeBinding Light=#80FFFFFF, Dark=#80282D34}"
+                                    BackgroundColor="{AppThemeBinding Light=#54FFFFFF, Dark=#68282D34}"
                                     StrokeShape="RoundRectangle 6"
                                     MinimumHeightRequest="40"
                                     HeightRequest="40"
@@ -750,7 +758,7 @@
                                             <TapGestureRecognizer Tapped="ModalInvertThemeToggle_Tapped" />
                                         </Grid.GestureRecognizers>
                                         <BoxView Margin="1"
-                                                 Color="{AppThemeBinding Light=#80FFFFFF, Dark=#80282D34}" />
+                                                 Color="{AppThemeBinding Light=#54FFFFFF, Dark=#68282D34}" />
                                         <BoxView IsVisible="{Binding Editor.UseInvertedThemeColors}"
                                                  Margin="1"
                                                  Color="{AppThemeBinding Light=#111111, Dark=#F2F2F2}" />
@@ -817,6 +825,7 @@
                                     Padding="18"
                                     CornerRadius="18"
                                     MacOSBehindWindowBlur="True"
+                                    MacOSBackdropOpacity="0.62"
                                     Stroke="{AppThemeBinding Light={StaticResource GlassStrokeLight}, Dark={StaticResource GlassStrokeDark}}"
                                     BackgroundColor="{AppThemeBinding Light={StaticResource GlassPopupLight}, Dark={StaticResource GlassPopupDark}}">
                 <controls:MaterialFrame.Shadow>
@@ -881,6 +890,7 @@
                                     HeightRequest="78"
                                     CornerRadius="18"
                                     MacOSBehindWindowBlur="True"
+                                    MacOSBackdropOpacity="0.55"
                                     BackgroundColor="{AppThemeBinding Light=#D9FFFFFF, Dark=#D9202020}"
                                     Stroke="{AppThemeBinding Light={StaticResource GlassStrokeLight}, Dark={StaticResource GlassStrokeDark}}">
                 <Label Text="{OnPlatform WinUI='&#xE8C8;', MacCatalyst='⧉'}"

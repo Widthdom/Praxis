@@ -292,8 +292,10 @@ public class AppLayerSourceGuardTests
         Assert.Contains("ClearNativeWindowChrome(nativeMacWindow, \"contentView\");", appSource);
         Assert.Contains("new UIVisualEffectView(UIBlurEffect.FromStyle(UIBlurEffectStyle.SystemUltraThinMaterial))", behaviorSource);
         Assert.Contains("platformView.Layer.CornerRadius = (nfloat)cornerRadius;", behaviorSource);
+        Assert.Contains("backdropView.Alpha = GetBackdropOpacity();", behaviorSource);
         Assert.Contains("public sealed class MaterialFrame : Border", frameSource);
         Assert.Contains("MacOSBehindWindowBlurProperty", frameSource);
+        Assert.Contains("MacOSBackdropOpacityProperty", frameSource);
     }
 
     [Fact]

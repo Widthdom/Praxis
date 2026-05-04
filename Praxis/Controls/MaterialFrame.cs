@@ -23,6 +23,13 @@ public sealed class MaterialFrame : Border
             false,
             propertyChanged: OnMacOSBehindWindowBlurChanged);
 
+    public static readonly BindableProperty MacOSBackdropOpacityProperty =
+        BindableProperty.Create(
+            nameof(MacOSBackdropOpacity),
+            typeof(double),
+            typeof(MaterialFrame),
+            1d);
+
     public MaterialFrame()
     {
         StrokeThickness = 1;
@@ -39,6 +46,12 @@ public sealed class MaterialFrame : Border
     {
         get => (bool)GetValue(MacOSBehindWindowBlurProperty);
         set => SetValue(MacOSBehindWindowBlurProperty, value);
+    }
+
+    public double MacOSBackdropOpacity
+    {
+        get => (double)GetValue(MacOSBackdropOpacityProperty);
+        set => SetValue(MacOSBackdropOpacityProperty, value);
     }
 
     static void OnCornerRadiusChanged(BindableObject bindable, object? oldValue, object? newValue)

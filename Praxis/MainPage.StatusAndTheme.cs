@@ -99,12 +99,12 @@ public partial class MainPage
             var actual = fe.ActualTheme;
             if (actual == Microsoft.UI.Xaml.ElementTheme.Dark)
             {
-                return Color.FromArgb("#801F242B");
+                return Color.FromArgb("#501F242B");
             }
 
             if (actual == Microsoft.UI.Xaml.ElementTheme.Light)
             {
-                return Color.FromArgb("#80FFFFFF");
+                return Color.FromArgb("#36FFFFFF");
             }
         }
 #endif
@@ -116,8 +116,8 @@ public partial class MainPage
         };
 
         return theme == AppTheme.Dark
-            ? Color.FromArgb("#801F242B")
-            : Color.FromArgb("#80FFFFFF");
+            ? Color.FromArgb("#501F242B")
+            : Color.FromArgb("#36FFFFFF");
     }
 
     private bool IsDarkThemeActive()
