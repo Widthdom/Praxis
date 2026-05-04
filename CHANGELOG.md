@@ -12,6 +12,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - Added a transparent-input dummy root `MaterialFrame` as the only large frosted RoundRect over the fully transparent page/root layer
 - The page/root opacity and dummy root visibility are now reasserted during startup and `OnAppearing` so the diagnostic `Opacity=0` state cannot persist across Mac Catalyst rebuilds
 - Mac Catalyst now also inserts a native `UIVisualEffectView` dummy root directly into the transparent `UIWindow`, making the frosted RoundRect independent of MAUI XAML root rendering
+- The native Mac dummy root is now a visible frontmost non-interactive `UIView` with a blur child and stronger tint, so the RoundRect can be visually confirmed before tuning the glass opacity down
 
 ### Tests
 - Expanded `MainPageStructureTests` and `AppLayerSourceGuardTests` to lock the transparent glass surface, `MaterialFrame` usage, platform backdrop hook wiring, Windows acrylic interop, and macOS native material blur behavior

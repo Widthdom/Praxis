@@ -296,7 +296,8 @@ public class AppLayerSourceGuardTests
         Assert.Contains("layer.Opaque = false;", appSource);
         Assert.Contains("ClearNativeWindowChrome(nativeMacWindow, \"contentView\");", appSource);
         Assert.Contains("EnsureNativeDummyRootGlass(nativeWindow);", appSource);
-        Assert.Contains("nativeWindow.InsertSubview(dummyRoot, 0);", appSource);
+        Assert.Contains("nativeWindow.AddSubview(dummyRoot);", appSource);
+        Assert.Contains("nativeWindow.BringSubviewToFront(dummyRoot);", appSource);
         Assert.Contains("new UIVisualEffectView(UIBlurEffect.FromStyle(UIBlurEffectStyle.SystemUltraThinMaterial))", appSource);
         Assert.Contains("dummyRoot.Layer.CornerRadius = 28f;", appSource);
         Assert.Contains("new UIVisualEffectView(UIBlurEffect.FromStyle(UIBlurEffectStyle.SystemUltraThinMaterial))", behaviorSource);

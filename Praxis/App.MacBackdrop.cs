@@ -123,10 +123,13 @@ public partial class App
         try
         {
             var dummyRoot = FindNativeDummyRootGlass(nativeWindow) ?? CreateNativeDummyRootGlass();
-            if (dummyRoot.Superview is null)
+            if (!ReferenceEquals(dummyRoot.Superview, nativeWindow))
             {
-                nativeWindow.InsertSubview(dummyRoot, 0);
+                dummyRoot.RemoveFromSuperview();
+                nativeWindow.AddSubview(dummyRoot);
             }
+
+            nativeWindow.BringSubviewToFront(dummyRoot);
 
             const double inset = 18d;
             var bounds = nativeWindow.Bounds;
@@ -137,15 +140,25 @@ public partial class App
                 Math.Max(0d, bounds.Height - (inset * 2d)));
             dummyRoot.Hidden = false;
             dummyRoot.Alpha = 1f;
+            dummyRoot.UserInteractionEnabled = false;
             dummyRoot.BackgroundColor = nativeWindow.TraitCollection.UserInterfaceStyle == UIUserInterfaceStyle.Dark
-                ? UIColor.FromRGBA(33, 38, 45, 0.25f)
-                : UIColor.FromRGBA(255, 255, 255, 0.22f);
+                ? UIColor.FromRGBA(33, 38, 45, 0.55f)
+                : UIColor.FromRGBA(255, 255, 255, 0.45f);
+            dummyRoot.ClipsToBounds = true;
             dummyRoot.Layer.CornerRadius = 28f;
             dummyRoot.Layer.MasksToBounds = true;
             dummyRoot.Layer.BorderWidth = 1f;
             dummyRoot.Layer.BorderColor = nativeWindow.TraitCollection.UserInterfaceStyle == UIUserInterfaceStyle.Dark
-                ? UIColor.FromRGBA(113, 123, 136, 0.38f).CGColor
-                : UIColor.FromRGBA(255, 255, 255, 0.62f).CGColor;
+                ? UIColor.FromRGBA(113, 123, 136, 0.60f).CGColor
+                : UIColor.FromRGBA(255, 255, 255, 0.80f).CGColor;
+
+            foreach (var subview in dummyRoot.Subviews)
+            {
+                subview.Frame = dummyRoot.Bounds;
+                subview.ClipsToBounds = true;
+                subview.Layer.CornerRadius = 28f;
+                subview.Layer.MasksToBounds = true;
+            }
         }
         catch (Exception ex)
         {
@@ -154,23 +167,31 @@ public partial class App
         }
     }
 
-    private static UIVisualEffectView CreateNativeDummyRootGlass()
+    private static UIView CreateNativeDummyRootGlass()
     {
-        return new UIVisualEffectView(UIBlurEffect.FromStyle(UIBlurEffectStyle.SystemUltraThinMaterial))
+        var container = new UIView
         {
             Tag = MacNativeDummyRootTag,
             UserInteractionEnabled = false,
             AutoresizingMask = UIViewAutoresizing.FlexibleWidth | UIViewAutoresizing.FlexibleHeight,
         };
+
+        container.AddSubview(new UIVisualEffectView(UIBlurEffect.FromStyle(UIBlurEffectStyle.SystemUltraThinMaterial))
+        {
+            UserInteractionEnabled = false,
+            AutoresizingMask = UIViewAutoresizing.FlexibleWidth | UIViewAutoresizing.FlexibleHeight,
+        });
+
+        return container;
     }
 
-    private static UIVisualEffectView? FindNativeDummyRootGlass(UIWindow nativeWindow)
+    private static UIView? FindNativeDummyRootGlass(UIWindow nativeWindow)
     {
         foreach (var subview in nativeWindow.Subviews)
         {
-            if (subview is UIVisualEffectView effectView && effectView.Tag == MacNativeDummyRootTag)
+            if (subview.Tag == MacNativeDummyRootTag)
             {
-                return effectView;
+                return subview;
             }
         }
 
