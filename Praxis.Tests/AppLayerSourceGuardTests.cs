@@ -717,6 +717,22 @@ public class AppLayerSourceGuardTests
     }
 
     [Fact]
+    public void MacTopBarEntries_KeepOnlyFocusedUnderlineForGlassChrome()
+    {
+        var macEntrySource = ReadRepositoryFile("Praxis", "Platforms", "MacCatalyst", "Handlers", "MacEntryHandler.cs");
+        var macPageSource = ReadRepositoryFile("Praxis", "MainPage.MacCatalystBehavior.cs");
+
+        Assert.Contains("private bool topBarGlassVisual;", macEntrySource);
+        Assert.Contains("borderLayer.StrokeColor = topBarGlassVisual ? TransparentBorderColor : borderColor;", macEntrySource);
+        Assert.Contains("focusBorderLayer.Hidden = !(IsFirstResponder || pseudoFocused);", macEntrySource);
+        Assert.Contains("BackgroundColor = dark ? DarkTopBarGlassBackground : LightTopBarGlassBackground;", macEntrySource);
+        Assert.Contains("public void SetTopBarGlassVisual(bool enabled)", macEntrySource);
+        Assert.Contains("macEntryTextField.SetTopBarGlassVisual(", macPageSource);
+        Assert.Contains("ReferenceEquals(entry, MainCommandEntry) ||", macPageSource);
+        Assert.Contains("ReferenceEquals(entry, MainSearchEntry));", macPageSource);
+    }
+
+    [Fact]
     public void MacMiddleClickAndKeyCommandFallbackFailures_AreWarningLogged()
     {
         var behaviorSource = ReadRepositoryFile("Praxis", "Behaviors", "MiddleClickBehavior.cs");

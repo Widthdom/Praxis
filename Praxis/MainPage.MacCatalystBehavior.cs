@@ -599,11 +599,18 @@ public partial class MainPage
         RefreshMacEntryVisualState(ModalArgumentsEntry);
     }
 
-    private static void RefreshMacEntryVisualState(Entry entry)
+    private void RefreshMacEntryVisualState(Entry entry)
     {
         if (entry.Handler?.PlatformView is not UITextField textField)
         {
             return;
+        }
+
+        if (textField is Praxis.Controls.MacEntryHandler.MacEntryTextField macEntryTextField)
+        {
+            macEntryTextField.SetTopBarGlassVisual(
+                ReferenceEquals(entry, MainCommandEntry) ||
+                ReferenceEquals(entry, MainSearchEntry));
         }
 
         textField.SetNeedsLayout();

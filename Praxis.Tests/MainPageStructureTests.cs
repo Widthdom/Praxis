@@ -92,6 +92,14 @@ public class MainPageStructureTests
         Assert.Contains("MacOSBehindWindowBlur=\"True\"", xaml);
         Assert.Contains("<Color x:Key=\"GlassPanelLight\">#00FFFFFF</Color>", xaml);
         Assert.Contains("<Color x:Key=\"GlassPanelDark\">#00000000</Color>", xaml);
+        Assert.Contains("<Color x:Key=\"GlassPopupLight\">#42FFFFFF</Color>", xaml);
+        Assert.Contains("<Color x:Key=\"GlassPopupDark\">#5A1E2228</Color>", xaml);
+        Assert.Contains("x:Name=\"MainCommandEntry\"\n                                       Placeholder=\"Command\"\n                                       Text=\"{Binding CommandInput}\"\n                                       BackgroundColor=\"{AppThemeBinding Light=#62FFFFFF, Dark=#78363B43}\"", xaml);
+        Assert.Contains("x:Name=\"MainSearchEntry\"\n                                      Placeholder=\"Search\"\n                                      Text=\"{Binding SearchText}\"\n                                      BackgroundColor=\"{AppThemeBinding Light=#62FFFFFF, Dark=#78363B43}\"", xaml);
+        Assert.Contains("x:Name=\"QuickLookPopup\"", xaml);
+        Assert.Contains("MacOSBackdropOpacity=\"0.34\"", xaml);
+        Assert.Contains("x:Name=\"EditorOverlay\"", xaml);
+        Assert.Contains("MacOSBackdropOpacity=\"0.38\"", xaml);
         Assert.DoesNotContain("MacOSBackdropOpacity=\"0.18\"", xaml);
         Assert.True(CountOccurrences(xaml, "<controls:MaterialFrame ") >= 9);
     }

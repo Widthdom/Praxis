@@ -14,6 +14,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - Mac Catalyst now draws the backmost root glass as a single native `NSVisualEffectView` in `NSWindow.contentView`, behind the MAUI content, so the frosted surface aligns with the actual rounded window bounds
 - The Mac Catalyst XAML dummy root frame now becomes transparent at runtime, avoiding a second rounded rectangle fighting the native backmost glass around the traffic-light and bottom-right corners
 - The root glass tint is lighter on Mac Catalyst so the blurred desktop remains visible while launcher controls stay readable
+- The command/search fields now share the launcher-button glass fill while hiding the normal Mac entry border and preserving the focused underline; modal and Quick Look glass surfaces were also made lighter
 
 ### Tests
 - Expanded `MainPageStructureTests` and `AppLayerSourceGuardTests` to lock the transparent glass surface, `MaterialFrame` usage, platform backdrop hook wiring, Windows acrylic interop, and macOS native material blur behavior
