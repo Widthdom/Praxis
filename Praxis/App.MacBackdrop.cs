@@ -1,5 +1,6 @@
 #if MACCATALYST
 using CoreAnimation;
+using CoreGraphics;
 using Foundation;
 using ObjCRuntime;
 using UIKit;
@@ -10,6 +11,7 @@ namespace Praxis;
 public partial class App
 {
     private const nint MacFullSizeContentViewMask = (nint)(1 << 15);
+    private const nint MacNativeDummyRootTag = 0x50475852;
     private static int macBackdropDiagnosticsLogged;
 
     static partial void ApplyPlatformWindowBackdrop(Microsoft.Maui.Controls.Window window)
@@ -106,12 +108,73 @@ public partial class App
                 ClearNativeWindowChrome(nativeMacWindow, "titlebarContainerView");
                 ClearNativeWindowChrome(nativeMacWindow, "toolbarContainerView");
             }
+
+            EnsureNativeDummyRootGlass(nativeWindow);
         }
         catch (Exception ex)
         {
             var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);
             CrashFileLogger.WriteWarning(nameof(App), $"Failed to apply Mac glass backdrop: {safeMessage}");
         }
+    }
+
+    private static void EnsureNativeDummyRootGlass(UIWindow nativeWindow)
+    {
+        try
+        {
+            var dummyRoot = FindNativeDummyRootGlass(nativeWindow) ?? CreateNativeDummyRootGlass();
+            if (dummyRoot.Superview is null)
+            {
+                nativeWindow.InsertSubview(dummyRoot, 0);
+            }
+
+            const double inset = 18d;
+            var bounds = nativeWindow.Bounds;
+            dummyRoot.Frame = new CGRect(
+                inset,
+                inset,
+                Math.Max(0d, bounds.Width - (inset * 2d)),
+                Math.Max(0d, bounds.Height - (inset * 2d)));
+            dummyRoot.Hidden = false;
+            dummyRoot.Alpha = 1f;
+            dummyRoot.BackgroundColor = nativeWindow.TraitCollection.UserInterfaceStyle == UIUserInterfaceStyle.Dark
+                ? UIColor.FromRGBA(33, 38, 45, 0.25f)
+                : UIColor.FromRGBA(255, 255, 255, 0.22f);
+            dummyRoot.Layer.CornerRadius = 28f;
+            dummyRoot.Layer.MasksToBounds = true;
+            dummyRoot.Layer.BorderWidth = 1f;
+            dummyRoot.Layer.BorderColor = nativeWindow.TraitCollection.UserInterfaceStyle == UIUserInterfaceStyle.Dark
+                ? UIColor.FromRGBA(113, 123, 136, 0.38f).CGColor
+                : UIColor.FromRGBA(255, 255, 255, 0.62f).CGColor;
+        }
+        catch (Exception ex)
+        {
+            var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);
+            CrashFileLogger.WriteWarning(nameof(App), $"Failed to apply native Mac dummy root glass: {safeMessage}");
+        }
+    }
+
+    private static UIVisualEffectView CreateNativeDummyRootGlass()
+    {
+        return new UIVisualEffectView(UIBlurEffect.FromStyle(UIBlurEffectStyle.SystemUltraThinMaterial))
+        {
+            Tag = MacNativeDummyRootTag,
+            UserInteractionEnabled = false,
+            AutoresizingMask = UIViewAutoresizing.FlexibleWidth | UIViewAutoresizing.FlexibleHeight,
+        };
+    }
+
+    private static UIVisualEffectView? FindNativeDummyRootGlass(UIWindow nativeWindow)
+    {
+        foreach (var subview in nativeWindow.Subviews)
+        {
+            if (subview is UIVisualEffectView effectView && effectView.Tag == MacNativeDummyRootTag)
+            {
+                return effectView;
+            }
+        }
+
+        return null;
     }
 
     private static void LogMacBackdropDiagnostics(UIWindow nativeWindow, NSObject nativeMacWindow)
