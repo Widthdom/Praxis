@@ -300,6 +300,11 @@ public class AppLayerSourceGuardTests
         Assert.Contains("nativeWindow.BringSubviewToFront(dummyRoot);", appSource);
         Assert.Contains("new UIVisualEffectView(UIBlurEffect.FromStyle(UIBlurEffectStyle.SystemUltraThinMaterial))", appSource);
         Assert.Contains("dummyRoot.Layer.CornerRadius = 28f;", appSource);
+        Assert.Contains("EnsureNativeNsDummyRootGlass(nativeMacWindow, nativeWindow.Bounds);", appSource);
+        Assert.Contains("Class.GetHandle(\"NSVisualEffectView\")", appSource);
+        Assert.Contains("Class.GetHandle(\"NSView\")", appSource);
+        Assert.Contains("ObjcMsgSendCGRect(allocated, SelRegisterName(\"initWithFrame:\"), frame);", appSource);
+        Assert.Contains("contentView.PerformSelector(new Selector(\"addSubview:\"), dummyRoot);", appSource);
         Assert.Contains("new UIVisualEffectView(UIBlurEffect.FromStyle(UIBlurEffectStyle.SystemUltraThinMaterial))", behaviorSource);
         Assert.Contains("platformView.Layer.CornerRadius = (nfloat)cornerRadius;", behaviorSource);
         Assert.Contains("backdropView.Alpha = GetBackdropOpacity();", behaviorSource);

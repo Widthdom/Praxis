@@ -3,6 +3,7 @@ using CoreAnimation;
 using CoreGraphics;
 using Foundation;
 using ObjCRuntime;
+using System.Runtime.InteropServices;
 using UIKit;
 using Praxis.Services;
 
@@ -12,6 +13,7 @@ public partial class App
 {
     private const nint MacFullSizeContentViewMask = (nint)(1 << 15);
     private const nint MacNativeDummyRootTag = 0x50475852;
+    private static readonly NSString MacNativeNsDummyRootIdentifier = new("PraxisNativeDummyRootGlass");
     private static int macBackdropDiagnosticsLogged;
 
     static partial void ApplyPlatformWindowBackdrop(Microsoft.Maui.Controls.Window window)
@@ -107,6 +109,7 @@ public partial class App
                 ClearNativeWindowChrome(nativeMacWindow, "toolbarView");
                 ClearNativeWindowChrome(nativeMacWindow, "titlebarContainerView");
                 ClearNativeWindowChrome(nativeMacWindow, "toolbarContainerView");
+                EnsureNativeNsDummyRootGlass(nativeMacWindow, nativeWindow.Bounds);
             }
 
             EnsureNativeDummyRootGlass(nativeWindow);
@@ -193,6 +196,142 @@ public partial class App
             {
                 return subview;
             }
+        }
+
+        return null;
+    }
+
+    private static void EnsureNativeNsDummyRootGlass(NSObject nativeMacWindow, CGRect uiBounds)
+    {
+        try
+        {
+            if (nativeMacWindow.ValueForKey(new NSString("contentView")) is not NSObject contentView)
+            {
+                return;
+            }
+
+            const double inset = 18d;
+            var frame = new CGRect(
+                inset,
+                inset,
+                Math.Max(0d, uiBounds.Width - (inset * 2d)),
+                Math.Max(0d, uiBounds.Height - (inset * 2d)));
+            var dummyRoot = FindNativeNsDummyRootGlass(contentView) ?? CreateNativeNsDummyRootGlass(frame);
+            if (dummyRoot is null)
+            {
+                return;
+            }
+
+            TrySetNativeFrame(dummyRoot, frame);
+            TrySetBool(dummyRoot, "hidden", false);
+            TrySetBool(dummyRoot, "wantsLayer", true);
+            TrySetObject(dummyRoot, "identifier", MacNativeNsDummyRootIdentifier);
+            TrySetInt(dummyRoot, "blendingMode", 0);
+            TrySetInt(dummyRoot, "material", 6);
+            TrySetInt(dummyRoot, "state", 1);
+
+            if (dummyRoot.ValueForKey(new NSString("layer")) is CALayer layer)
+            {
+                layer.BackgroundColor = UIColor.FromRGBA(255, 255, 255, 0.42f).CGColor;
+                layer.CornerRadius = 28f;
+                layer.MasksToBounds = true;
+                layer.BorderWidth = 1f;
+                layer.BorderColor = UIColor.FromRGBA(255, 255, 255, 0.82f).CGColor;
+            }
+
+            if (dummyRoot.ValueForKey(new NSString("superview")) is null)
+            {
+                contentView.PerformSelector(new Selector("addSubview:"), dummyRoot);
+            }
+        }
+        catch (Exception ex)
+        {
+            var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);
+            CrashFileLogger.WriteWarning(nameof(App), $"Failed to apply native NS dummy root glass: {safeMessage}");
+        }
+    }
+
+    private static NSObject? CreateNativeNsDummyRootGlass(CGRect frame)
+    {
+        try
+        {
+            var viewClass = Class.GetHandle("NSVisualEffectView");
+            if (viewClass == IntPtr.Zero)
+            {
+                viewClass = Class.GetHandle("NSView");
+            }
+
+            if (viewClass == IntPtr.Zero)
+            {
+                return null;
+            }
+
+            var allocated = ObjcMsgSendIntPtr(viewClass, SelRegisterName("alloc"));
+            var initialized = ObjcMsgSendCGRect(allocated, SelRegisterName("initWithFrame:"), frame);
+            return Runtime.GetNSObject(initialized);
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private static void TrySetNativeFrame(NSObject target, CGRect frame)
+    {
+        try
+        {
+            target.SetValueForKey(NSValue.FromCGRect(frame), new NSString("frame"));
+        }
+        catch
+        {
+        }
+    }
+
+    private static void TrySetInt(NSObject target, string key, int value)
+    {
+        try
+        {
+            target.SetValueForKey(NSNumber.FromInt32(value), new NSString(key));
+        }
+        catch
+        {
+        }
+    }
+
+    [DllImport("/usr/lib/libobjc.A.dylib", EntryPoint = "sel_registerName")]
+    private static extern IntPtr SelRegisterName(string name);
+
+    [DllImport("/usr/lib/libobjc.A.dylib", EntryPoint = "objc_msgSend")]
+    private static extern IntPtr ObjcMsgSendIntPtr(IntPtr receiver, IntPtr selector);
+
+    [DllImport("/usr/lib/libobjc.A.dylib", EntryPoint = "objc_msgSend")]
+    private static extern IntPtr ObjcMsgSendCGRect(IntPtr receiver, IntPtr selector, CGRect frame);
+
+    private static NSObject? FindNativeNsDummyRootGlass(NSObject contentView)
+    {
+        try
+        {
+            if (contentView.ValueForKey(new NSString("subviews")) is not NSArray subviews)
+            {
+                return null;
+            }
+
+            foreach (var child in subviews)
+            {
+                if (child is not NSObject childObject)
+                {
+                    continue;
+                }
+
+                var identifier = childObject.ValueForKey(new NSString("identifier"))?.ToString();
+                if (string.Equals(identifier, MacNativeNsDummyRootIdentifier.ToString(), StringComparison.Ordinal))
+                {
+                    return childObject;
+                }
+            }
+        }
+        catch
+        {
         }
 
         return null;
