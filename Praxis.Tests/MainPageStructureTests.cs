@@ -214,7 +214,7 @@ public class MainPageStructureTests
         Assert.Contains("Text=\"Invert Theme\"", xaml);
         Assert.Contains("IsChecked=\"{Binding Editor.UseInvertedThemeColors}\"", xaml);
         Assert.Contains("Opacity=\"0\"", xaml);
-        Assert.Contains("Color=\"{AppThemeBinding Light=#CCFFFFFF, Dark=#88282D34}\"", xaml);
+        Assert.Contains("Color=\"{AppThemeBinding Light=#80FFFFFF, Dark=#80282D34}\"", xaml);
         Assert.Contains("Color=\"{AppThemeBinding Light=#CECECE, Dark=#4E4E4E}\"", xaml);
         Assert.Contains("HeightRequest=\"1\"", xaml);
         Assert.Contains("WidthRequest=\"1\"", xaml);

@@ -124,6 +124,9 @@ public partial class MainPage : ContentPage
             return;
         }
 
+#if MACCATALYST
+        App.RefreshMacWindowBackdropForConnectedScenes();
+#endif
         AttachWindowActivationHook();
         AttachEditorPropertyChanged(viewModel.Editor);
 

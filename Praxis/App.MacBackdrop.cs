@@ -70,6 +70,12 @@ public partial class App
         {
             nativeWindow.Opaque = false;
             nativeWindow.BackgroundColor = UIColor.Clear;
+            ClearMacViewTree(nativeWindow);
+
+            if (nativeWindow.RootViewController?.View is UIView rootView)
+            {
+                ClearMacViewTree(rootView);
+            }
 
             if (nativeWindow.WindowScene?.Titlebar is UITitlebar titlebar)
             {
@@ -89,7 +95,11 @@ public partial class App
                 TrySetObject(nativeMacWindow, "backgroundColor", CreateNativeColor("clearColor") ?? UIColor.Clear);
                 TrySetBool(nativeMacWindow, "titlebarAppearsTransparent", true);
                 TryUpdateStyleMask(nativeMacWindow);
-
+                ClearNativeWindowChrome(nativeMacWindow, "contentView");
+                ClearNativeWindowChrome(nativeMacWindow, "titlebarView");
+                ClearNativeWindowChrome(nativeMacWindow, "toolbarView");
+                ClearNativeWindowChrome(nativeMacWindow, "titlebarContainerView");
+                ClearNativeWindowChrome(nativeMacWindow, "toolbarContainerView");
             }
         }
         catch (Exception ex)

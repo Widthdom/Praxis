@@ -12,14 +12,14 @@
              BackgroundColor="Transparent">
     <ContentPage.Resources>
         <converters:BoolToScrollBarVisibilityConverter x:Key="BoolToScrollBarVisibilityConverter" />
-        <Color x:Key="GlassRootLight">#B8FFFFFF</Color>
-        <Color x:Key="GlassRootDark">#8A14171C</Color>
-        <Color x:Key="GlassPanelLight">#AFFFFFFF</Color>
-        <Color x:Key="GlassPanelDark">#8A1D2128</Color>
-        <Color x:Key="GlassSurfaceLight">#CCFFFFFF</Color>
-        <Color x:Key="GlassSurfaceDark">#A01F242B</Color>
-        <Color x:Key="GlassPopupLight">#E0FFFFFF</Color>
-        <Color x:Key="GlassPopupDark">#D11E2228</Color>
+        <Color x:Key="GlassRootLight">#70FFFFFF</Color>
+        <Color x:Key="GlassRootDark">#6614171C</Color>
+        <Color x:Key="GlassPanelLight">#66FFFFFF</Color>
+        <Color x:Key="GlassPanelDark">#731D2128</Color>
+        <Color x:Key="GlassSurfaceLight">#80FFFFFF</Color>
+        <Color x:Key="GlassSurfaceDark">#801F242B</Color>
+        <Color x:Key="GlassPopupLight">#99FFFFFF</Color>
+        <Color x:Key="GlassPopupDark">#B31E2228</Color>
         <Color x:Key="GlassStrokeLight">#9FFFFFFF</Color>
         <Color x:Key="GlassStrokeDark">#66717B88</Color>
         <Style x:Key="PlacementButtonTextLabelStyle"
@@ -110,7 +110,7 @@
                     WidthRequest="44"
                     HeightRequest="40"
                     StrokeThickness="0"
-                    BackgroundColor="{AppThemeBinding Light=#BFFFFFFF, Dark=#80333A42}"
+                    BackgroundColor="{AppThemeBinding Light=#80FFFFFF, Dark=#70333A42}"
                     StrokeShape="RoundRectangle 10"
                     Padding="0">
                 <Border.Behaviors>
@@ -242,7 +242,7 @@
                             <Grid.Triggers>
                                 <DataTrigger TargetType="Grid" Binding="{Binding IsSelected}" Value="True">
                                     <Setter Property="BackgroundColor"
-                                            Value="{AppThemeBinding Light=#D6F2F5F8, Dark=#A0434851}" />
+                                            Value="{AppThemeBinding Light=#80F2F5F8, Dark=#80434851}" />
                                 </DataTrigger>
                             </Grid.Triggers>
                             <Grid.GestureRecognizers>
@@ -307,7 +307,7 @@
                                         AbsoluteLayout.LayoutFlags="None"
                                         Stroke="{AppThemeBinding Light=#9FFFFFFF, Dark=#5E74808C}"
                                         StrokeShape="RoundRectangle 12"
-                                        BackgroundColor="{AppThemeBinding Light=#DFFFFFFF, Dark=#B8363B43}"
+                                        BackgroundColor="{AppThemeBinding Light=#90FFFFFF, Dark=#99363B43}"
                                         Padding="0">
                                     <Border.Behaviors>
                                         <behaviors:GrabHandCursorBehavior />
@@ -315,7 +315,7 @@
                                     </Border.Behaviors>
                                     <Border.Triggers>
                                         <DataTrigger TargetType="Border" Binding="{Binding IsSelected}" Value="True">
-                                            <Setter Property="BackgroundColor" Value="{AppThemeBinding Light=#E8FFFFFF, Dark=#C9505660}" />
+                                            <Setter Property="BackgroundColor" Value="{AppThemeBinding Light=#BAFFFFFF, Dark=#B0505660}" />
                                         </DataTrigger>
                                         <DataTrigger TargetType="Border" Binding="{Binding UseInvertedThemeColors}" Value="True">
                                             <Setter Property="Stroke" Value="{AppThemeBinding Light=#75545454, Dark=#C9FFFFFF}" />
@@ -408,7 +408,7 @@
                             <DataTemplate>
                                 <Border Stroke="{AppThemeBinding Light=#9FFFFFFF, Dark=#5E74808C}"
                                         StrokeShape="RoundRectangle 12"
-                                        BackgroundColor="{AppThemeBinding Light=#DFFFFFFF, Dark=#B8363B43}"
+                                        BackgroundColor="{AppThemeBinding Light=#90FFFFFF, Dark=#99363B43}"
                                         WidthRequest="{x:Static corelogic:ButtonLayoutDefaults.Width}"
                                         HeightRequest="{x:Static corelogic:ButtonLayoutDefaults.Height}"
                                         Padding="0">
@@ -650,7 +650,7 @@
                                     Grid.Column="1"
                                     Stroke="{AppThemeBinding Light=#CECECE, Dark=#4E4E4E}"
                                     StrokeThickness="1"
-                                    BackgroundColor="{AppThemeBinding Light=#CCFFFFFF, Dark=#88282D34}"
+                                    BackgroundColor="{AppThemeBinding Light=#80FFFFFF, Dark=#80282D34}"
                                     StrokeShape="RoundRectangle 6"
                                     MinimumHeightRequest="40"
                                     HeightRequest="40"
@@ -693,7 +693,7 @@
                                     Grid.Column="1"
                                     Stroke="{AppThemeBinding Light=#CECECE, Dark=#4E4E4E}"
                                     StrokeThickness="1"
-                                    BackgroundColor="{AppThemeBinding Light=#CCFFFFFF, Dark=#88282D34}"
+                                    BackgroundColor="{AppThemeBinding Light=#80FFFFFF, Dark=#80282D34}"
                                     StrokeShape="RoundRectangle 6"
                                     MinimumHeightRequest="40"
                                     HeightRequest="40"
@@ -750,7 +750,7 @@
                                             <TapGestureRecognizer Tapped="ModalInvertThemeToggle_Tapped" />
                                         </Grid.GestureRecognizers>
                                         <BoxView Margin="1"
-                                                 Color="{AppThemeBinding Light=#CCFFFFFF, Dark=#88282D34}" />
+                                                 Color="{AppThemeBinding Light=#80FFFFFF, Dark=#80282D34}" />
                                         <BoxView IsVisible="{Binding Editor.UseInvertedThemeColors}"
                                                  Margin="1"
                                                  Color="{AppThemeBinding Light=#111111, Dark=#F2F2F2}" />

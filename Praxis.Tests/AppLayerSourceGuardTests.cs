@@ -288,10 +288,20 @@ public class AppLayerSourceGuardTests
         Assert.Contains("static partial void ApplyPlatformWindowBackdrop(Microsoft.Maui.Controls.Window window)", appSource);
         Assert.Contains("TrySetBool(nativeMacWindow, \"opaque\", false);", appSource);
         Assert.Contains("titlebar.TitleVisibility = UITitlebarTitleVisibility.Hidden;", appSource);
+        Assert.Contains("ClearMacViewTree(nativeWindow);", appSource);
+        Assert.Contains("ClearNativeWindowChrome(nativeMacWindow, \"contentView\");", appSource);
         Assert.Contains("new UIVisualEffectView(UIBlurEffect.FromStyle(UIBlurEffectStyle.SystemUltraThinMaterial))", behaviorSource);
         Assert.Contains("platformView.Layer.CornerRadius = (nfloat)cornerRadius;", behaviorSource);
         Assert.Contains("public sealed class MaterialFrame : Border", frameSource);
         Assert.Contains("MacOSBehindWindowBlurProperty", frameSource);
+    }
+
+    [Fact]
+    public void MainPage_MacOnAppearing_ReappliesGlassBackdropAfterXamlLoads()
+    {
+        var source = ReadRepositoryFile("Praxis", "MainPage.xaml.cs");
+
+        Assert.Contains("App.RefreshMacWindowBackdropForConnectedScenes();", source);
     }
 
     [Fact]

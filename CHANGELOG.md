@@ -7,7 +7,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 ## [Unreleased]
 
 ### Changed
-- Main UI chrome now uses a light/dark glassmorphism treatment: the app page is transparent, the launcher surface and popups sit in semi-transparent rounded material frames, macOS frames use native `UIVisualEffectView` blur, and Windows applies native acrylic blur/rounded corners through local platform interop instead of adding an OSS dependency
+- Main UI chrome now uses a light/dark glassmorphism treatment: the app page is transparent, the launcher surface and popups sit in semi-transparent rounded material frames, macOS clears the native content/chrome tree so `UIVisualEffectView` blur can show through, and Windows applies native acrylic blur/rounded corners through local platform interop instead of adding an OSS dependency
 
 ### Tests
 - Expanded `MainPageStructureTests` and `AppLayerSourceGuardTests` to lock the transparent glass surface, `MaterialFrame` usage, platform backdrop hook wiring, Windows acrylic interop, and macOS native material blur behavior

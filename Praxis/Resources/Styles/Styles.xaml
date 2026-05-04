@@ -12,21 +12,21 @@
     </Style>
 
     <Style TargetType="Entry" ApplyToDerivedTypes="True">
-        <Setter Property="BackgroundColor" Value="{AppThemeBinding Light=#CCFFFFFF, Dark=#88282D34}" />
+        <Setter Property="BackgroundColor" Value="{AppThemeBinding Light=#80FFFFFF, Dark=#80282D34}" />
         <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource TextLight}, Dark={StaticResource TextDark}}" />
         <Setter Property="PlaceholderColor" Value="{AppThemeBinding Light=#8A8A8A, Dark=#909090}" />
         <Setter Property="HeightRequest" Value="40" />
     </Style>
 
     <Style TargetType="Editor">
-        <Setter Property="BackgroundColor" Value="{AppThemeBinding Light=#CCFFFFFF, Dark=#88282D34}" />
+        <Setter Property="BackgroundColor" Value="{AppThemeBinding Light=#80FFFFFF, Dark=#80282D34}" />
         <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource TextLight}, Dark={StaticResource TextDark}}" />
     </Style>
 
     <Style TargetType="Button">
         <Setter Property="FontFamily" Value="{OnPlatform WinUI=OpenSansSemibold}" />
         <Setter Property="TextColor" Value="{AppThemeBinding Light=#141414, Dark=#F0F0F0}" />
-        <Setter Property="BackgroundColor" Value="{AppThemeBinding Light=#BFFFFFFF, Dark=#80333A42}" />
+        <Setter Property="BackgroundColor" Value="{AppThemeBinding Light=#80FFFFFF, Dark=#70333A42}" />
         <Setter Property="CornerRadius" Value="10" />
         <Setter Property="Padding" Value="12,8" />
         <Setter Property="HeightRequest" Value="40" />
