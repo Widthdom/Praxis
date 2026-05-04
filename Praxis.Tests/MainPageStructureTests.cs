@@ -71,6 +71,20 @@ public class MainPageStructureTests
     }
 
     [Fact]
+    public void MainPage_GlassmorphismSurface_IsTransparentAndUsesMaterialFrames()
+    {
+        var root = ResolveRepositoryRoot();
+        var xaml = File.ReadAllText(Path.Combine(root, "Praxis", "MainPage.xaml"));
+
+        Assert.Contains("BackgroundColor=\"Transparent\"", xaml);
+        Assert.Contains("x:Name=\"MainGlassFrame\"", xaml);
+        Assert.Contains("MacOSBehindWindowBlur=\"True\"", xaml);
+        Assert.Contains("StaticResource GlassRootLight", xaml);
+        Assert.Contains("StaticResource GlassRootDark", xaml);
+        Assert.True(CountOccurrences(xaml, "<controls:MaterialFrame ") >= 9);
+    }
+
+    [Fact]
     public void MainPage_EditorModal_PlacesButtonTextBeforeCommand()
     {
         var root = ResolveRepositoryRoot();
@@ -200,7 +214,7 @@ public class MainPageStructureTests
         Assert.Contains("Text=\"Invert Theme\"", xaml);
         Assert.Contains("IsChecked=\"{Binding Editor.UseInvertedThemeColors}\"", xaml);
         Assert.Contains("Opacity=\"0\"", xaml);
-        Assert.Contains("Color=\"{AppThemeBinding Light=#FFFFFF, Dark=#2A2A2A}\"", xaml);
+        Assert.Contains("Color=\"{AppThemeBinding Light=#CCFFFFFF, Dark=#88282D34}\"", xaml);
         Assert.Contains("Color=\"{AppThemeBinding Light=#CECECE, Dark=#4E4E4E}\"", xaml);
         Assert.Contains("HeightRequest=\"1\"", xaml);
         Assert.Contains("WidthRequest=\"1\"", xaml);

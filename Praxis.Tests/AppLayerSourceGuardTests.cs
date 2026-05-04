@@ -254,6 +254,47 @@ public class AppLayerSourceGuardTests
     }
 
     [Fact]
+    public void App_CreateWindow_AppliesGlassBackdrop_OnHandlerAndThemeChanges()
+    {
+        var source = ReadRepositoryFile("Praxis", "App.xaml.cs");
+
+        Assert.Contains("RequestedThemeChanged += (_, _) => RefreshWindowBackdrops();", source);
+        Assert.Contains("window.HandlerChanged += (_, _) => ApplyPlatformWindowBackdrop(window);", source);
+        Assert.Contains("private static void RefreshWindowBackdrops()", source);
+        Assert.Contains("foreach (var window in windows)", source);
+        Assert.Contains("static partial void ApplyPlatformWindowBackdrop(Window window);", source);
+    }
+
+    [Fact]
+    public void WindowsGlassBackdrop_UsesNativeAcrylicAndTransparentChrome()
+    {
+        var source = ReadRepositoryFile("Praxis", "App.WindowsBackdrop.cs");
+
+        Assert.Contains("static partial void ApplyPlatformWindowBackdrop(Microsoft.Maui.Controls.Window window)", source);
+        Assert.Contains("ApplyWindowsRootTransparency(nativeWindow);", source);
+        Assert.Contains("ApplyWindowsTitleBarTransparency(nativeWindow);", source);
+        Assert.Contains("AccentState.ACCENT_ENABLE_ACRYLICBLURBEHIND", source);
+        Assert.Contains("SetWindowCompositionAttribute(hwnd, ref data);", source);
+        Assert.Contains("DwmSetWindowAttribute(hwnd, DWMWINDOWATTRIBUTE.DWMWA_WINDOW_CORNER_PREFERENCE", source);
+    }
+
+    [Fact]
+    public void MacGlassBackdrop_UsesNativeMaterialBlurAndRoundedClip()
+    {
+        var appSource = ReadRepositoryFile("Praxis", "App.MacBackdrop.cs");
+        var behaviorSource = ReadRepositoryFile("Praxis", "Behaviors", "MacGlassBackdropBehavior.cs");
+        var frameSource = ReadRepositoryFile("Praxis", "Controls", "MaterialFrame.cs");
+
+        Assert.Contains("static partial void ApplyPlatformWindowBackdrop(Microsoft.Maui.Controls.Window window)", appSource);
+        Assert.Contains("TrySetBool(nativeMacWindow, \"opaque\", false);", appSource);
+        Assert.Contains("titlebar.TitleVisibility = UITitlebarTitleVisibility.Hidden;", appSource);
+        Assert.Contains("new UIVisualEffectView(UIBlurEffect.FromStyle(UIBlurEffectStyle.SystemUltraThinMaterial))", behaviorSource);
+        Assert.Contains("platformView.Layer.CornerRadius = (nfloat)cornerRadius;", behaviorSource);
+        Assert.Contains("public sealed class MaterialFrame : Border", frameSource);
+        Assert.Contains("MacOSBehindWindowBlurProperty", frameSource);
+    }
+
+    [Fact]
     public void App_FlushFailures_AreWarningLogged_DuringUnhandledExceptionAndProcessExit()
     {
         var source = ReadRepositoryFile("Praxis", "App.xaml.cs");

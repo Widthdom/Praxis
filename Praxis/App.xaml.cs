@@ -57,6 +57,7 @@ public partial class App : Application
         try
         {
             InitializeComponent();
+            RequestedThemeChanged += (_, _) => RefreshWindowBackdrops();
         }
         catch (Exception ex)
         {
@@ -130,6 +131,8 @@ public partial class App : Application
             Title = "Praxis",
         };
 
+        window.HandlerChanged += (_, _) => ApplyPlatformWindowBackdrop(window);
+
 #if WINDOWS
         window.HandlerChanged += (_, _) =>
         {
@@ -159,6 +162,29 @@ public partial class App : Application
         errorLogger?.LogInfo($"Window created. RootPage={page.GetType().Name}", nameof(CreateWindow));
         return window;
     }
+
+    private static void RefreshWindowBackdrops()
+    {
+        try
+        {
+            var windows = Current?.Windows;
+            if (windows is null)
+            {
+                return;
+            }
+
+            foreach (var window in windows)
+            {
+                ApplyPlatformWindowBackdrop(window);
+            }
+        }
+        catch (Exception ex)
+        {
+            errorLogger?.Log(ex, nameof(RefreshWindowBackdrops));
+        }
+    }
+
+    static partial void ApplyPlatformWindowBackdrop(Window window);
 
     private static void TryFlushLogs(TimeSpan timeout, string context)
     {

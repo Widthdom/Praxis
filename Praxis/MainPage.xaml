@@ -8,21 +8,44 @@
              xmlns:corelogic="clr-namespace:Praxis.Core.Logic;assembly=Praxis.Core"
              x:Class="Praxis.MainPage"
              x:Name="RootPage"
-             Title="Praxis">
+             Title="Praxis"
+             BackgroundColor="Transparent">
     <ContentPage.Resources>
         <converters:BoolToScrollBarVisibilityConverter x:Key="BoolToScrollBarVisibilityConverter" />
+        <Color x:Key="GlassRootLight">#B8FFFFFF</Color>
+        <Color x:Key="GlassRootDark">#8A14171C</Color>
+        <Color x:Key="GlassPanelLight">#AFFFFFFF</Color>
+        <Color x:Key="GlassPanelDark">#8A1D2128</Color>
+        <Color x:Key="GlassSurfaceLight">#CCFFFFFF</Color>
+        <Color x:Key="GlassSurfaceDark">#A01F242B</Color>
+        <Color x:Key="GlassPopupLight">#E0FFFFFF</Color>
+        <Color x:Key="GlassPopupDark">#D11E2228</Color>
+        <Color x:Key="GlassStrokeLight">#9FFFFFFF</Color>
+        <Color x:Key="GlassStrokeDark">#66717B88</Color>
         <Style x:Key="PlacementButtonTextLabelStyle"
                TargetType="Label">
             <Setter Property="FontSize" Value="{OnPlatform Default=12, MacCatalyst=14}" />
         </Style>
     </ContentPage.Resources>
 
-    <Grid x:Name="RootGrid" Padding="18" RowDefinitions="Auto,*,Auto,Auto" RowSpacing="14">
+    <Grid x:Name="RootGrid" Padding="18" RowDefinitions="Auto,*,Auto,Auto" RowSpacing="14" BackgroundColor="Transparent">
         <Grid.GestureRecognizers>
             <PointerGestureRecognizer PointerPressed="RootGrid_PointerPressed"
                                       PointerMoved="RootGrid_PointerMoved"
                                       PointerExited="RootGrid_PointerExited" />
         </Grid.GestureRecognizers>
+        <controls:MaterialFrame x:Name="MainGlassFrame"
+                                Grid.RowSpan="4"
+                                CornerRadius="28"
+                                MacOSBehindWindowBlur="True"
+                                InputTransparent="True"
+                                Stroke="{AppThemeBinding Light={StaticResource GlassStrokeLight}, Dark={StaticResource GlassStrokeDark}}"
+                                StrokeThickness="1"
+                                BackgroundColor="{AppThemeBinding Light={StaticResource GlassRootLight}, Dark={StaticResource GlassRootDark}}">
+            <controls:MaterialFrame.Shadow>
+                <Shadow Brush="{AppThemeBinding Light=#44000000, Dark=#B0000000}" Opacity="0.24" Offset="0,18" Radius="34" />
+            </controls:MaterialFrame.Shadow>
+        </controls:MaterialFrame>
         <Grid x:Name="TopBarGrid" ColumnDefinitions="2*,Auto,2*" ColumnSpacing="8">
             <Grid Grid.Column="0">
                 <controls:CommandEntry x:Name="MainCommandEntry"
@@ -87,7 +110,7 @@
                     WidthRequest="44"
                     HeightRequest="40"
                     StrokeThickness="0"
-                    BackgroundColor="{AppThemeBinding Light=#E6E6E6, Dark=#3A3A3A}"
+                    BackgroundColor="{AppThemeBinding Light=#BFFFFFFF, Dark=#80333A42}"
                     StrokeShape="RoundRectangle 10"
                     Padding="0">
                 <Border.Behaviors>
@@ -188,24 +211,25 @@
             </Grid>
         </Grid>
 
-        <Border x:Name="CommandSuggestionPopup"
-                Grid.RowSpan="4"
-                IsVisible="{Binding IsCommandSuggestionOpen}"
-                Stroke="{AppThemeBinding Light=#BBBBBB, Dark=#565656}"
-                BackgroundColor="{AppThemeBinding Light=#F3F3F3, Dark=#252525}"
-                StrokeShape="RoundRectangle 10"
-                Padding="6"
-                HeightRequest="{Binding CommandSuggestionPopupHeight}"
-                MinimumHeightRequest="44"
-                MaximumHeightRequest="280"
-                HorizontalOptions="Start"
-                VerticalOptions="Start"
-                TranslationX="0"
-                TranslationY="0"
-                ZIndex="950">
-            <Border.Shadow>
+        <controls:MaterialFrame x:Name="CommandSuggestionPopup"
+                                Grid.RowSpan="4"
+                                IsVisible="{Binding IsCommandSuggestionOpen}"
+                                CornerRadius="10"
+                                MacOSBehindWindowBlur="True"
+                                Stroke="{AppThemeBinding Light={StaticResource GlassStrokeLight}, Dark={StaticResource GlassStrokeDark}}"
+                                BackgroundColor="{AppThemeBinding Light={StaticResource GlassPopupLight}, Dark={StaticResource GlassPopupDark}}"
+                                Padding="6"
+                                HeightRequest="{Binding CommandSuggestionPopupHeight}"
+                                MinimumHeightRequest="44"
+                                MaximumHeightRequest="280"
+                                HorizontalOptions="Start"
+                                VerticalOptions="Start"
+                                TranslationX="0"
+                                TranslationY="0"
+                                ZIndex="950">
+            <controls:MaterialFrame.Shadow>
                 <Shadow Brush="{AppThemeBinding Light=#55000000, Dark=#AA000000}" Opacity="0.22" Offset="0,8" Radius="18" />
-            </Border.Shadow>
+            </controls:MaterialFrame.Shadow>
             <CollectionView IsVisible="False"
                             ItemsSource="{Binding CommandSuggestions}"
                             SelectionMode="None">
@@ -218,7 +242,7 @@
                             <Grid.Triggers>
                                 <DataTrigger TargetType="Grid" Binding="{Binding IsSelected}" Value="True">
                                     <Setter Property="BackgroundColor"
-                                            Value="{AppThemeBinding Light=#E6E6E6, Dark=#3D3D3D}" />
+                                            Value="{AppThemeBinding Light=#D6F2F5F8, Dark=#A0434851}" />
                                 </DataTrigger>
                             </Grid.Triggers>
                             <Grid.GestureRecognizers>
@@ -246,17 +270,18 @@
                                      Spacing="2"
                                      HorizontalOptions="Fill" />
             </ScrollView>
-        </Border>
+        </controls:MaterialFrame>
 
-        <Border Grid.Row="1"
-                Stroke="{AppThemeBinding Light=#CECECE, Dark=#4E4E4E}"
-                BackgroundColor="{AppThemeBinding Light=#FCFCFC, Dark=#212121}"
-                StrokeShape="RoundRectangle 20"
-                Padding="14"
-                SizeChanged="PlacementArea_SizeChanged">
-            <Border.Shadow>
+        <controls:MaterialFrame Grid.Row="1"
+                                CornerRadius="20"
+                                MacOSBehindWindowBlur="True"
+                                Stroke="{AppThemeBinding Light={StaticResource GlassStrokeLight}, Dark={StaticResource GlassStrokeDark}}"
+                                BackgroundColor="{AppThemeBinding Light={StaticResource GlassPanelLight}, Dark={StaticResource GlassPanelDark}}"
+                                Padding="14"
+                                SizeChanged="PlacementArea_SizeChanged">
+            <controls:MaterialFrame.Shadow>
                 <Shadow Brush="{AppThemeBinding Light=#55000000, Dark=#AA000000}" Opacity="0.20" Offset="0,8" Radius="20" />
-            </Border.Shadow>
+            </controls:MaterialFrame.Shadow>
 
             <Grid>
                 <ScrollView Orientation="{Binding PlacementScrollOrientation}"
@@ -280,9 +305,9 @@
                             <DataTemplate>
                                 <Border AbsoluteLayout.LayoutBounds="{Binding LayoutBounds}"
                                         AbsoluteLayout.LayoutFlags="None"
-                                        Stroke="{AppThemeBinding Light=#B6B6B6, Dark=#545454}"
+                                        Stroke="{AppThemeBinding Light=#9FFFFFFF, Dark=#5E74808C}"
                                         StrokeShape="RoundRectangle 12"
-                                        BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#363636}"
+                                        BackgroundColor="{AppThemeBinding Light=#DFFFFFFF, Dark=#B8363B43}"
                                         Padding="0">
                                     <Border.Behaviors>
                                         <behaviors:GrabHandCursorBehavior />
@@ -290,18 +315,18 @@
                                     </Border.Behaviors>
                                     <Border.Triggers>
                                         <DataTrigger TargetType="Border" Binding="{Binding IsSelected}" Value="True">
-                                            <Setter Property="BackgroundColor" Value="{AppThemeBinding Light=#DCDCDC, Dark=#505050}" />
+                                            <Setter Property="BackgroundColor" Value="{AppThemeBinding Light=#E8FFFFFF, Dark=#C9505660}" />
                                         </DataTrigger>
                                         <DataTrigger TargetType="Border" Binding="{Binding UseInvertedThemeColors}" Value="True">
-                                            <Setter Property="Stroke" Value="{AppThemeBinding Light=#545454, Dark=#B6B6B6}" />
-                                            <Setter Property="BackgroundColor" Value="{AppThemeBinding Light=#363636, Dark=#FFFFFF}" />
+                                            <Setter Property="Stroke" Value="{AppThemeBinding Light=#75545454, Dark=#C9FFFFFF}" />
+                                            <Setter Property="BackgroundColor" Value="{AppThemeBinding Light=#BA363636, Dark=#E8FFFFFF}" />
                                         </DataTrigger>
                                         <MultiTrigger TargetType="Border">
                                             <MultiTrigger.Conditions>
                                                 <BindingCondition Binding="{Binding IsSelected}" Value="True" />
                                                 <BindingCondition Binding="{Binding UseInvertedThemeColors}" Value="True" />
                                             </MultiTrigger.Conditions>
-                                            <Setter Property="BackgroundColor" Value="{AppThemeBinding Light=#505050, Dark=#DCDCDC}" />
+                                            <Setter Property="BackgroundColor" Value="{AppThemeBinding Light=#C9505050, Dark=#E8DCDCDC}" />
                                         </MultiTrigger>
                                     </Border.Triggers>
                                     <Border.GestureRecognizers>
@@ -346,23 +371,24 @@
                         BackgroundColor="{AppThemeBinding Light=#40B0B0B0, Dark=#40686868}"
                         StrokeShape="RoundRectangle 2" />
             </Grid>
-        </Border>
+        </controls:MaterialFrame>
 
-        <Border x:Name="DockRegionBorder"
-                Grid.Row="2"
-                Stroke="{AppThemeBinding Light=#CECECE, Dark=#4E4E4E}"
-                BackgroundColor="{AppThemeBinding Light=#FCFCFC, Dark=#212121}"
-                StrokeShape="RoundRectangle 20"
-                Margin="{OnPlatform Default='0', WinUI='0,-4,0,-4', MacCatalyst='0,-4,0,-4'}"
-                Padding="12"
-                MinimumHeightRequest="{OnPlatform Default=92, WinUI=100, MacCatalyst=100}">
-            <Border.GestureRecognizers>
+        <controls:MaterialFrame x:Name="DockRegionBorder"
+                                Grid.Row="2"
+                                CornerRadius="20"
+                                MacOSBehindWindowBlur="True"
+                                Stroke="{AppThemeBinding Light={StaticResource GlassStrokeLight}, Dark={StaticResource GlassStrokeDark}}"
+                                BackgroundColor="{AppThemeBinding Light={StaticResource GlassPanelLight}, Dark={StaticResource GlassPanelDark}}"
+                                Margin="{OnPlatform Default='0', WinUI='0,-4,0,-4', MacCatalyst='0,-4,0,-4'}"
+                                Padding="12"
+                                MinimumHeightRequest="{OnPlatform Default=92, WinUI=100, MacCatalyst=100}">
+            <controls:MaterialFrame.GestureRecognizers>
                 <PointerGestureRecognizer PointerEntered="DockRegion_PointerEntered"
                                           PointerExited="DockRegion_PointerExited" />
-            </Border.GestureRecognizers>
-            <Border.Shadow>
+            </controls:MaterialFrame.GestureRecognizers>
+            <controls:MaterialFrame.Shadow>
                 <Shadow Brush="{AppThemeBinding Light=#44000000, Dark=#99000000}" Opacity="0.18" Offset="0,6" Radius="18" />
-            </Border.Shadow>
+            </controls:MaterialFrame.Shadow>
 
             <Grid>
                 <ScrollView x:Name="DockScroll"
@@ -380,16 +406,16 @@
                         </HorizontalStackLayout.GestureRecognizers>
                         <BindableLayout.ItemTemplate>
                             <DataTemplate>
-                                <Border Stroke="{AppThemeBinding Light=#B6B6B6, Dark=#545454}"
+                                <Border Stroke="{AppThemeBinding Light=#9FFFFFFF, Dark=#5E74808C}"
                                         StrokeShape="RoundRectangle 12"
-                                        BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#363636}"
+                                        BackgroundColor="{AppThemeBinding Light=#DFFFFFFF, Dark=#B8363B43}"
                                         WidthRequest="{x:Static corelogic:ButtonLayoutDefaults.Width}"
                                         HeightRequest="{x:Static corelogic:ButtonLayoutDefaults.Height}"
                                         Padding="0">
                                     <Border.Triggers>
                                         <DataTrigger TargetType="Border" Binding="{Binding UseInvertedThemeColors}" Value="True">
-                                            <Setter Property="Stroke" Value="{AppThemeBinding Light=#545454, Dark=#B6B6B6}" />
-                                            <Setter Property="BackgroundColor" Value="{AppThemeBinding Light=#363636, Dark=#FFFFFF}" />
+                                            <Setter Property="Stroke" Value="{AppThemeBinding Light=#75545454, Dark=#C9FFFFFF}" />
+                                            <Setter Property="BackgroundColor" Value="{AppThemeBinding Light=#BA363636, Dark=#E8FFFFFF}" />
                                         </DataTrigger>
                                     </Border.Triggers>
                                     <Border.Behaviors>
@@ -429,38 +455,40 @@
                         VerticalOptions="End"
                         Margin="0,0,0,2"
                         InputTransparent="True"
-                        BackgroundColor="{AppThemeBinding Light=#FCFCFC, Dark=#212121}"
+                        BackgroundColor="{AppThemeBinding Light={StaticResource GlassPanelLight}, Dark={StaticResource GlassPanelDark}}"
                         StrokeThickness="0"
                         IsVisible="True" />
             </Grid>
-        </Border>
+        </controls:MaterialFrame>
 
-        <Border x:Name="StatusBarBorder"
-                Grid.Row="3"
-                Stroke="{AppThemeBinding Light=#B8B8B8, Dark=#4C4C4C}"
-                BackgroundColor="{AppThemeBinding Light=#F2F2F2, Dark=#1E1E1E}"
-                StrokeShape="RoundRectangle 10"
-                Padding="10,6">
+        <controls:MaterialFrame x:Name="StatusBarBorder"
+                                Grid.Row="3"
+                                CornerRadius="10"
+                                MacOSBehindWindowBlur="True"
+                                Stroke="{AppThemeBinding Light={StaticResource GlassStrokeLight}, Dark={StaticResource GlassStrokeDark}}"
+                                BackgroundColor="{AppThemeBinding Light={StaticResource GlassSurfaceLight}, Dark={StaticResource GlassSurfaceDark}}"
+                                Padding="10,6">
             <Label Text="{Binding StatusText}" FontSize="13" />
-        </Border>
+        </controls:MaterialFrame>
 
-        <Border x:Name="QuickLookPopup"
-                Grid.RowSpan="4"
-                IsVisible="False"
-                Stroke="{AppThemeBinding Light=#D0D0D0, Dark=#4D4D4D}"
-                BackgroundColor="{AppThemeBinding Light=#FDFDFD, Dark=#252525}"
-                StrokeShape="RoundRectangle 12"
-                Padding="10,9"
-                WidthRequest="420"
-                MaximumWidthRequest="460"
-                HorizontalOptions="Start"
-                VerticalOptions="Start"
-                TranslationX="0"
-                TranslationY="0"
-                ZIndex="960">
-            <Border.Shadow>
+        <controls:MaterialFrame x:Name="QuickLookPopup"
+                                Grid.RowSpan="4"
+                                IsVisible="False"
+                                CornerRadius="12"
+                                MacOSBehindWindowBlur="True"
+                                Stroke="{AppThemeBinding Light={StaticResource GlassStrokeLight}, Dark={StaticResource GlassStrokeDark}}"
+                                BackgroundColor="{AppThemeBinding Light={StaticResource GlassPopupLight}, Dark={StaticResource GlassPopupDark}}"
+                                Padding="10,9"
+                                WidthRequest="420"
+                                MaximumWidthRequest="460"
+                                HorizontalOptions="Start"
+                                VerticalOptions="Start"
+                                TranslationX="0"
+                                TranslationY="0"
+                                ZIndex="960">
+            <controls:MaterialFrame.Shadow>
                 <Shadow Brush="{AppThemeBinding Light=#44000000, Dark=#88000000}" Opacity="0.18" Offset="0,6" Radius="16" />
-            </Border.Shadow>
+            </controls:MaterialFrame.Shadow>
             <VerticalStackLayout Spacing="3">
                 <Label x:Name="QuickLookCommandLabel"
                        FontSize="12"
@@ -488,7 +516,7 @@
                        LineBreakMode="TailTruncation"
                        TextColor="{AppThemeBinding Light=#3A3A3A, Dark=#D4D4D4}" />
             </VerticalStackLayout>
-        </Border>
+        </controls:MaterialFrame>
 
         <Grid Grid.RowSpan="4"
               IsVisible="{Binding IsContextMenuOpen}"
@@ -496,13 +524,14 @@
             <Grid.GestureRecognizers>
                 <TapGestureRecognizer Command="{Binding CloseContextMenuCommand}" />
             </Grid.GestureRecognizers>
-            <Border HorizontalOptions="Center"
-                    VerticalOptions="Center"
-                    WidthRequest="220"
-                    Padding="10"
-                    Stroke="{AppThemeBinding Light=#B8B8B8, Dark=#505050}"
-                    BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#1F1F1F}"
-                    StrokeShape="RoundRectangle 14">
+            <controls:MaterialFrame HorizontalOptions="Center"
+                                    VerticalOptions="Center"
+                                    WidthRequest="220"
+                                    Padding="10"
+                                    CornerRadius="14"
+                                    MacOSBehindWindowBlur="True"
+                                    Stroke="{AppThemeBinding Light={StaticResource GlassStrokeLight}, Dark={StaticResource GlassStrokeDark}}"
+                                    BackgroundColor="{AppThemeBinding Light={StaticResource GlassPopupLight}, Dark={StaticResource GlassPopupDark}}">
                 <VerticalStackLayout Spacing="8">
                     <Button x:Name="ContextEditButton"
                             Text="Edit"
@@ -525,24 +554,25 @@
                         </Button.Behaviors>
                     </Button>
                 </VerticalStackLayout>
-            </Border>
+            </controls:MaterialFrame>
         </Grid>
 
         <Grid x:Name="EditorOverlay"
               Grid.RowSpan="4"
               IsVisible="{Binding IsEditorOpen}"
               BackgroundColor="Transparent">
-            <Border HorizontalOptions="Center"
-                    VerticalOptions="Center"
-                    WidthRequest="760"
-                    MaximumWidthRequest="860"
-                    Padding="18"
-                    Stroke="{AppThemeBinding Light=#B5B5B5, Dark=#505050}"
-                    BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#1F1F1F}"
-                    StrokeShape="RoundRectangle 18">
-                <Border.Shadow>
+            <controls:MaterialFrame HorizontalOptions="Center"
+                                    VerticalOptions="Center"
+                                    WidthRequest="760"
+                                    MaximumWidthRequest="860"
+                                    Padding="18"
+                                    CornerRadius="18"
+                                    MacOSBehindWindowBlur="True"
+                                    Stroke="{AppThemeBinding Light={StaticResource GlassStrokeLight}, Dark={StaticResource GlassStrokeDark}}"
+                                    BackgroundColor="{AppThemeBinding Light={StaticResource GlassPopupLight}, Dark={StaticResource GlassPopupDark}}">
+                <controls:MaterialFrame.Shadow>
                     <Shadow Brush="{AppThemeBinding Light=#66000000, Dark=#AA000000}" Opacity="0.22" Offset="0,10" Radius="22" />
-                </Border.Shadow>
+                </controls:MaterialFrame.Shadow>
 
                 <Grid RowDefinitions="Auto,Auto" RowSpacing="12">
                     <ScrollView x:Name="EditorFieldsScrollView"
@@ -620,7 +650,7 @@
                                     Grid.Column="1"
                                     Stroke="{AppThemeBinding Light=#CECECE, Dark=#4E4E4E}"
                                     StrokeThickness="1"
-                                    BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#2A2A2A}"
+                                    BackgroundColor="{AppThemeBinding Light=#CCFFFFFF, Dark=#88282D34}"
                                     StrokeShape="RoundRectangle 6"
                                     MinimumHeightRequest="40"
                                     HeightRequest="40"
@@ -663,7 +693,7 @@
                                     Grid.Column="1"
                                     Stroke="{AppThemeBinding Light=#CECECE, Dark=#4E4E4E}"
                                     StrokeThickness="1"
-                                    BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#2A2A2A}"
+                                    BackgroundColor="{AppThemeBinding Light=#CCFFFFFF, Dark=#88282D34}"
                                     StrokeShape="RoundRectangle 6"
                                     MinimumHeightRequest="40"
                                     HeightRequest="40"
@@ -720,7 +750,7 @@
                                             <TapGestureRecognizer Tapped="ModalInvertThemeToggle_Tapped" />
                                         </Grid.GestureRecognizers>
                                         <BoxView Margin="1"
-                                                 Color="{AppThemeBinding Light=#FFFFFF, Dark=#2A2A2A}" />
+                                                 Color="{AppThemeBinding Light=#CCFFFFFF, Dark=#88282D34}" />
                                         <BoxView IsVisible="{Binding Editor.UseInvertedThemeColors}"
                                                  Margin="1"
                                                  Color="{AppThemeBinding Light=#111111, Dark=#F2F2F2}" />
@@ -772,7 +802,7 @@
                         </Button>
                     </HorizontalStackLayout>
                 </Grid>
-            </Border>
+            </controls:MaterialFrame>
         </Grid>
 
         <Grid x:Name="ConflictOverlay"
@@ -780,17 +810,18 @@
               IsVisible="False"
               BackgroundColor="Transparent"
               ZIndex="980">
-            <Border HorizontalOptions="Center"
-                    VerticalOptions="Center"
-                    WidthRequest="520"
-                    MaximumWidthRequest="620"
-                    Padding="18"
-                    Stroke="{AppThemeBinding Light=#B5B5B5, Dark=#505050}"
-                    BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#1F1F1F}"
-                    StrokeShape="RoundRectangle 18">
-                <Border.Shadow>
+            <controls:MaterialFrame HorizontalOptions="Center"
+                                    VerticalOptions="Center"
+                                    WidthRequest="520"
+                                    MaximumWidthRequest="620"
+                                    Padding="18"
+                                    CornerRadius="18"
+                                    MacOSBehindWindowBlur="True"
+                                    Stroke="{AppThemeBinding Light={StaticResource GlassStrokeLight}, Dark={StaticResource GlassStrokeDark}}"
+                                    BackgroundColor="{AppThemeBinding Light={StaticResource GlassPopupLight}, Dark={StaticResource GlassPopupDark}}">
+                <controls:MaterialFrame.Shadow>
                     <Shadow Brush="{AppThemeBinding Light=#66000000, Dark=#AA000000}" Opacity="0.22" Offset="0,10" Radius="22" />
-                </Border.Shadow>
+                </controls:MaterialFrame.Shadow>
                 <VerticalStackLayout Spacing="12">
                     <Label x:Name="ConflictTitleLabel"
                            FontSize="22"
@@ -834,7 +865,7 @@
                         </Button>
                     </HorizontalStackLayout>
                 </VerticalStackLayout>
-            </Border>
+            </controls:MaterialFrame>
         </Grid>
 
         <Grid x:Name="CopyNoticeOverlay"
@@ -843,21 +874,22 @@
               Opacity="0"
               InputTransparent="True"
               ZIndex="999">
-            <Border x:Name="CopyNoticeBox"
-                    HorizontalOptions="Center"
-                    VerticalOptions="Center"
-                    WidthRequest="78"
-                    HeightRequest="78"
-                    BackgroundColor="{AppThemeBinding Light=#D9FFFFFF, Dark=#D9202020}"
-                    Stroke="{AppThemeBinding Light=#C4C4C4, Dark=#707070}"
-                    StrokeShape="RoundRectangle 18">
+            <controls:MaterialFrame x:Name="CopyNoticeBox"
+                                    HorizontalOptions="Center"
+                                    VerticalOptions="Center"
+                                    WidthRequest="78"
+                                    HeightRequest="78"
+                                    CornerRadius="18"
+                                    MacOSBehindWindowBlur="True"
+                                    BackgroundColor="{AppThemeBinding Light=#D9FFFFFF, Dark=#D9202020}"
+                                    Stroke="{AppThemeBinding Light={StaticResource GlassStrokeLight}, Dark={StaticResource GlassStrokeDark}}">
                 <Label Text="{OnPlatform WinUI='&#xE8C8;', MacCatalyst='⧉'}"
                        FontFamily="{OnPlatform WinUI='Segoe MDL2 Assets', MacCatalyst=''}"
                        FontSize="30"
                        HorizontalTextAlignment="Center"
                        VerticalTextAlignment="Center"
                        TextColor="{AppThemeBinding Light=#202020, Dark=#F2F2F2}" />
-            </Border>
+            </controls:MaterialFrame>
         </Grid>
     </Grid>
 </ContentPage>
