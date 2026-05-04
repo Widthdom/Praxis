@@ -13,6 +13,8 @@ namespace Praxis;
 public partial class MainPage
 {
 #if MACCATALYST
+    private const nint MacModalTextEditorGlassBackdropTag = 0x50544542;
+
     private void MoveModalFocus(bool forward)
     {
         if (ModalFocusOrder.Length == 0)
@@ -673,16 +675,47 @@ public partial class MainPage
     private void ApplyMacModalTextEditorVisualState(UITextView textView)
     {
         var dark = IsDarkThemeActive();
-        var backgroundColor = dark
-            ? UIColor.FromRGBA(54, 59, 67, 0.25f)
-            : UIColor.FromRGBA(255, 255, 255, 0.18f);
+        var tintColor = dark
+            ? UIColor.FromRGBA(54, 59, 67, 0.16f)
+            : UIColor.FromRGBA(255, 255, 255, 0.07f);
+        var textColor = dark ? UIColor.White : UIColor.FromRGB(0x05, 0x05, 0x05);
+        var backdropView = EnsureMacModalTextEditorGlassBackdrop(textView);
 
         textView.Opaque = false;
-        textView.BackgroundColor = backgroundColor;
-        textView.Layer.BackgroundColor = backgroundColor.CGColor;
+        textView.BackgroundColor = UIColor.Clear;
+        textView.Layer.BackgroundColor = UIColor.Clear.CGColor;
         textView.Layer.CornerRadius = 4;
         textView.Layer.MasksToBounds = true;
-        textView.TintColor = dark ? UIColor.White : UIColor.Black;
+        textView.TextColor = textColor;
+        textView.TintColor = textColor;
+        backdropView.Alpha = 0.78f;
+        backdropView.ContentView.BackgroundColor = tintColor;
+        backdropView.Frame = textView.Bounds;
+        backdropView.Layer.CornerRadius = 4;
+        backdropView.Layer.MasksToBounds = true;
+        backdropView.ClipsToBounds = true;
+        textView.SendSubviewToBack(backdropView);
+    }
+
+    private static UIVisualEffectView EnsureMacModalTextEditorGlassBackdrop(UITextView textView)
+    {
+        foreach (var subview in textView.Subviews)
+        {
+            if (subview is UIVisualEffectView effectView && effectView.Tag == MacModalTextEditorGlassBackdropTag)
+            {
+                return effectView;
+            }
+        }
+
+        var backdropView = new UIVisualEffectView(UIBlurEffect.FromStyle(UIBlurEffectStyle.SystemUltraThinMaterial))
+        {
+            Tag = MacModalTextEditorGlassBackdropTag,
+            UserInteractionEnabled = false,
+            Opaque = false,
+            AutoresizingMask = UIViewAutoresizing.FlexibleWidth | UIViewAutoresizing.FlexibleHeight,
+        };
+        textView.InsertSubview(backdropView, 0);
+        return backdropView;
     }
 
     private void ApplyMacModalButtonVisualState()
@@ -728,6 +761,7 @@ public partial class MainPage
         if (nativeButton.TitleLabel is UILabel titleLabel)
         {
             titleLabel.Opaque = false;
+            titleLabel.Font = UIFont.SystemFontOfSize(titleLabel.Font.PointSize, UIFontWeight.Semibold);
         }
         nativeButton.SetNeedsDisplay();
     }

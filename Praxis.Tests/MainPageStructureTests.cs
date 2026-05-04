@@ -92,10 +92,10 @@ public class MainPageStructureTests
         Assert.Contains("MacOSBehindWindowBlur=\"True\"", xaml);
         Assert.Contains("<Color x:Key=\"GlassPanelLight\">#00FFFFFF</Color>", xaml);
         Assert.Contains("<Color x:Key=\"GlassPanelDark\">#00000000</Color>", xaml);
-        Assert.Contains("<Color x:Key=\"GlassPopupLight\">#24FFFFFF</Color>", xaml);
-        Assert.Contains("<Color x:Key=\"GlassPopupDark\">#381E2228</Color>", xaml);
-        Assert.Contains("<Color x:Key=\"GlassInputLight\">#30FFFFFF</Color>", xaml);
-        Assert.Contains("<Color x:Key=\"GlassInputDark\">#40363B43</Color>", xaml);
+        Assert.Contains("<Color x:Key=\"GlassPopupLight\">#10FFFFFF</Color>", xaml);
+        Assert.Contains("<Color x:Key=\"GlassPopupDark\">#241E2228</Color>", xaml);
+        Assert.Contains("<Color x:Key=\"GlassInputLight\">#16FFFFFF</Color>", xaml);
+        Assert.Contains("<Color x:Key=\"GlassInputDark\">#2A363B43</Color>", xaml);
         Assert.Contains("<Color x:Key=\"GlassButtonLight\">#6AFFFFFF</Color>", xaml);
         Assert.Contains("<Color x:Key=\"GlassButtonDark\">#78363B43</Color>", xaml);
         Assert.Contains("x:Key=\"GlassModalActionButtonStyle\"", xaml);
@@ -104,7 +104,7 @@ public class MainPageStructureTests
         Assert.Contains("x:Name=\"MainSearchEntry\"\n                                      Placeholder=\"Search\"\n                                      Text=\"{Binding SearchText}\"\n                                      BackgroundColor=\"{AppThemeBinding Light={StaticResource GlassInputLight}, Dark={StaticResource GlassInputDark}}\"", xaml);
         Assert.Contains("x:Name=\"QuickLookPopup\"", xaml);
         Assert.Contains("x:Name=\"EditorOverlay\"", xaml);
-        Assert.True(CountOccurrences(xaml, "MacOSBackdropOpacity=\"0.62\"") >= 2);
+        Assert.True(CountOccurrences(xaml, "MacOSBackdropOpacity=\"0.92\"") >= 2);
         Assert.Contains("ModalGuidEntry\" Grid.Row=\"0\" Grid.Column=\"1\" Text=\"{Binding Editor.GuidText}\" IsReadOnly=\"{OnPlatform Default=True, MacCatalyst=False}\" HeightRequest=\"40\" BackgroundColor=\"{AppThemeBinding Light={StaticResource GlassInputLight}, Dark={StaticResource GlassInputDark}}\"", xaml);
         Assert.Contains("ModalClipWordContainer\"\n                                    Grid.Row=\"5\"\n                                    Grid.Column=\"1\"\n                                    Stroke=\"Transparent\"\n                                    StrokeThickness=\"0\"", xaml);
         Assert.Contains("ModalNoteContainer\"\n                                    Grid.Row=\"6\"\n                                    Grid.Column=\"1\"\n                                    Stroke=\"Transparent\"\n                                    StrokeThickness=\"0\"", xaml);

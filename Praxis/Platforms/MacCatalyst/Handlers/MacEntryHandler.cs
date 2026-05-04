@@ -36,10 +36,13 @@ public class MacEntryHandler : EntryHandler
         private static readonly CGColor LightFocusUnderlineColor = UIColor.FromRGB(0x4A, 0x4A, 0x4A).CGColor;
         private static readonly CGColor DarkFocusUnderlineColor = UIColor.FromRGB(0xA0, 0xA0, 0xA0).CGColor;
         private static readonly CGColor TransparentBorderColor = UIColor.Clear.CGColor;
-        private static readonly UIColor LightGlassFieldBackground = UIColor.FromRGBA(255, 255, 255, 0.18f);
-        private static readonly UIColor DarkGlassFieldBackground = UIColor.FromRGBA(54, 59, 67, 0.25f);
-        private static readonly UIColor LightPlaceholderColor = UIColor.FromRGBA(0, 0, 0, 0.52f);
-        private static readonly UIColor DarkPlaceholderColor = UIColor.FromRGBA(255, 255, 255, 0.58f);
+        private static readonly UIColor LightGlassFieldBackground = UIColor.FromRGBA(255, 255, 255, 0.07f);
+        private static readonly UIColor DarkGlassFieldBackground = UIColor.FromRGBA(54, 59, 67, 0.16f);
+        private static readonly UIColor LightPlaceholderColor = UIColor.FromRGBA(0, 0, 0, 0.82f);
+        private static readonly UIColor DarkPlaceholderColor = UIColor.FromRGBA(255, 255, 255, 0.76f);
+        private static readonly UIColor LightTextColor = UIColor.FromRGB(0x05, 0x05, 0x05);
+        private static readonly UIColor DarkTextColor = UIColor.White;
+        private static readonly nfloat GlassBackdropOpacity = 0.78f;
         private static readonly nfloat CornerRadius = 4;
         private static readonly nfloat BorderWidth = 1;
         private static readonly nfloat FocusBorderWidth = 1.5f;
@@ -47,6 +50,7 @@ public class MacEntryHandler : EntryHandler
         private readonly CAShapeLayer borderLayer = new();
         private readonly CAShapeLayer focusBorderLayer = new();
         private readonly CALayer focusBorderMaskLayer = new();
+        private UIVisualEffectView? glassBackdropView;
         private bool pseudoFocused;
         private bool glassFieldVisual;
         private UIKeyCommand? cancelCommand;
@@ -89,6 +93,8 @@ public class MacEntryHandler : EntryHandler
             focusBorderLayer.LineWidth = FocusBorderWidth;
             focusBorderLayer.Mask = focusBorderMaskLayer;
             focusBorderLayer.Hidden = true;
+            borderLayer.ZPosition = 10;
+            focusBorderLayer.ZPosition = 11;
             Layer.AddSublayer(focusBorderLayer);
         }
 
@@ -158,6 +164,7 @@ public class MacEntryHandler : EntryHandler
                 Math.Max(0, Bounds.Width - (bottomMaskInset * 2)),
                 bottomMaskHeight);
             focusBorderMaskLayer.BackgroundColor = UIColor.White.CGColor;
+            UpdateGlassBackdropFrame();
             ApplyFocusVisualState();
         }
 
@@ -180,7 +187,9 @@ public class MacEntryHandler : EntryHandler
             var dark = ResolveDarkThemeState();
             var borderColor = dark ? DarkBorderColor : LightBorderColor;
             var focusColor = dark ? DarkFocusUnderlineColor : LightFocusUnderlineColor;
-            TintColor = dark ? UIColor.White : UIColor.Black;
+            var textColor = dark ? DarkTextColor : LightTextColor;
+            TintColor = textColor;
+            TextColor = textColor;
             borderLayer.StrokeColor = glassFieldVisual ? TransparentBorderColor : borderColor;
             focusBorderLayer.StrokeColor = focusColor;
             focusBorderLayer.Hidden = !(IsFirstResponder || pseudoFocused);
@@ -188,16 +197,67 @@ public class MacEntryHandler : EntryHandler
             {
                 ApplyGlassFieldBackground(dark);
             }
+            else
+            {
+                RemoveGlassBackdrop();
+            }
             ApplyPlaceholderVisualState(dark);
         }
 
         private void ApplyGlassFieldBackground(bool dark)
         {
-            var backgroundColor = dark ? DarkGlassFieldBackground : LightGlassFieldBackground;
+            EnsureGlassBackdrop();
+            var tintColor = dark ? DarkGlassFieldBackground : LightGlassFieldBackground;
             Opaque = false;
-            BackgroundColor = backgroundColor;
-            Layer.BackgroundColor = backgroundColor.CGColor;
+            BackgroundColor = UIColor.Clear;
+            Layer.BackgroundColor = UIColor.Clear.CGColor;
             Layer.MasksToBounds = true;
+            if (glassBackdropView is not null)
+            {
+                glassBackdropView.Alpha = GlassBackdropOpacity;
+                glassBackdropView.ContentView.BackgroundColor = tintColor;
+                SendSubviewToBack(glassBackdropView);
+                UpdateGlassBackdropFrame();
+            }
+        }
+
+        private void EnsureGlassBackdrop()
+        {
+            glassBackdropView ??= new UIVisualEffectView(UIBlurEffect.FromStyle(UIBlurEffectStyle.SystemUltraThinMaterial))
+            {
+                UserInteractionEnabled = false,
+                Opaque = false,
+            };
+
+            if (glassBackdropView.Superview is null)
+            {
+                InsertSubview(glassBackdropView, 0);
+            }
+        }
+
+        private void UpdateGlassBackdropFrame()
+        {
+            if (glassBackdropView is null)
+            {
+                return;
+            }
+
+            glassBackdropView.Frame = Bounds;
+            glassBackdropView.Layer.CornerRadius = CornerRadius;
+            glassBackdropView.Layer.MasksToBounds = true;
+            glassBackdropView.ClipsToBounds = true;
+        }
+
+        private void RemoveGlassBackdrop()
+        {
+            if (glassBackdropView is null)
+            {
+                return;
+            }
+
+            glassBackdropView.RemoveFromSuperview();
+            glassBackdropView.Dispose();
+            glassBackdropView = null;
         }
 
         private void ApplyPlaceholderVisualState(bool dark)
@@ -208,9 +268,16 @@ public class MacEntryHandler : EntryHandler
             }
 
             var placeholderColor = dark ? DarkPlaceholderColor : LightPlaceholderColor;
+            var placeholderFont = Font is not null
+                ? UIFont.SystemFontOfSize(Font.PointSize, UIFontWeight.Semibold)
+                : UIFont.SystemFontOfSize(14, UIFontWeight.Semibold);
             AttributedPlaceholder = new NSAttributedString(
                 Placeholder,
-                new UIStringAttributes { ForegroundColor = placeholderColor });
+                new UIStringAttributes
+                {
+                    ForegroundColor = placeholderColor,
+                    Font = placeholderFont,
+                });
         }
 
         private bool ResolveDarkThemeState()

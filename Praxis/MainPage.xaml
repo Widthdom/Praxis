@@ -18,10 +18,10 @@
         <Color x:Key="GlassPanelDark">#00000000</Color>
         <Color x:Key="GlassSurfaceLight">#00FFFFFF</Color>
         <Color x:Key="GlassSurfaceDark">#00000000</Color>
-        <Color x:Key="GlassPopupLight">#24FFFFFF</Color>
-        <Color x:Key="GlassPopupDark">#381E2228</Color>
-        <Color x:Key="GlassInputLight">#30FFFFFF</Color>
-        <Color x:Key="GlassInputDark">#40363B43</Color>
+        <Color x:Key="GlassPopupLight">#10FFFFFF</Color>
+        <Color x:Key="GlassPopupDark">#241E2228</Color>
+        <Color x:Key="GlassInputLight">#16FFFFFF</Color>
+        <Color x:Key="GlassInputDark">#2A363B43</Color>
         <Color x:Key="GlassButtonLight">#6AFFFFFF</Color>
         <Color x:Key="GlassButtonDark">#78363B43</Color>
         <Color x:Key="GlassButtonStrokeLight">#B6FFFFFF</Color>
@@ -31,6 +31,7 @@
         <Style x:Key="PlacementButtonTextLabelStyle"
                TargetType="Label">
             <Setter Property="FontSize" Value="{OnPlatform Default=12, MacCatalyst=14}" />
+            <Setter Property="FontFamily" Value="OpenSansSemibold" />
             <Setter Property="FontAutoScalingEnabled" Value="False" />
         </Style>
         <Style x:Key="GlassModalActionButtonStyle"
@@ -42,6 +43,7 @@
             <Setter Property="BorderColor" Value="{AppThemeBinding Light={StaticResource GlassButtonStrokeLight}, Dark={StaticResource GlassButtonStrokeDark}}" />
             <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource GlassButtonLight}, Dark={StaticResource GlassButtonDark}}" />
             <Setter Property="TextColor" Value="{AppThemeBinding Light=#050505, Dark=#FFFFFF}" />
+            <Setter Property="FontFamily" Value="OpenSansSemibold" />
         </Style>
         <Style x:Key="GlassCopyButtonStyle"
                TargetType="Button">
@@ -53,6 +55,7 @@
             <Setter Property="BorderColor" Value="{AppThemeBinding Light={StaticResource GlassButtonStrokeLight}, Dark={StaticResource GlassButtonStrokeDark}}" />
             <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource GlassButtonLight}, Dark={StaticResource GlassButtonDark}}" />
             <Setter Property="TextColor" Value="{AppThemeBinding Light=#050505, Dark=#FFFFFF}" />
+            <Setter Property="FontFamily" Value="OpenSansSemibold" />
         </Style>
     </ContentPage.Resources>
 
@@ -505,7 +508,7 @@
                                 IsVisible="False"
                                 CornerRadius="12"
                                 MacOSBehindWindowBlur="True"
-                                MacOSBackdropOpacity="0.62"
+                                MacOSBackdropOpacity="0.92"
                                 Stroke="{AppThemeBinding Light={StaticResource GlassStrokeLight}, Dark={StaticResource GlassStrokeDark}}"
                                 BackgroundColor="{AppThemeBinding Light={StaticResource GlassPopupLight}, Dark={StaticResource GlassPopupDark}}"
                                 Padding="10,9"
@@ -599,7 +602,7 @@
                                     Padding="18"
                                     CornerRadius="18"
                                     MacOSBehindWindowBlur="True"
-                                    MacOSBackdropOpacity="0.62"
+                                    MacOSBackdropOpacity="0.92"
                                     Stroke="{AppThemeBinding Light={StaticResource GlassStrokeLight}, Dark={StaticResource GlassStrokeDark}}"
                                     BackgroundColor="{AppThemeBinding Light={StaticResource GlassPopupLight}, Dark={StaticResource GlassPopupDark}}">
                 <controls:MaterialFrame.Shadow>
