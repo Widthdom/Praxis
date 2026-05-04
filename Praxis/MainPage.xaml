@@ -12,10 +12,10 @@
              BackgroundColor="Transparent">
     <ContentPage.Resources>
         <converters:BoolToScrollBarVisibilityConverter x:Key="BoolToScrollBarVisibilityConverter" />
-        <Color x:Key="GlassPanelLight">#12FFFFFF</Color>
-        <Color x:Key="GlassPanelDark">#301D2128</Color>
-        <Color x:Key="GlassSurfaceLight">#24FFFFFF</Color>
-        <Color x:Key="GlassSurfaceDark">#401F242B</Color>
+        <Color x:Key="GlassPanelLight">#00FFFFFF</Color>
+        <Color x:Key="GlassPanelDark">#00000000</Color>
+        <Color x:Key="GlassSurfaceLight">#00FFFFFF</Color>
+        <Color x:Key="GlassSurfaceDark">#00000000</Color>
         <Color x:Key="GlassPopupLight">#66FFFFFF</Color>
         <Color x:Key="GlassPopupDark">#8C1E2228</Color>
         <Color x:Key="GlassStrokeLight">#9FFFFFFF</Color>
@@ -261,16 +261,12 @@
 
         <controls:MaterialFrame Grid.Row="1"
                                 CornerRadius="20"
-                                MacOSBehindWindowBlur="True"
-                                MacOSBackdropOpacity="0.18"
-                                Stroke="{AppThemeBinding Light={StaticResource GlassStrokeLight}, Dark={StaticResource GlassStrokeDark}}"
+                                MacOSBehindWindowBlur="False"
+                                Stroke="Transparent"
+                                StrokeThickness="0"
                                 BackgroundColor="{AppThemeBinding Light={StaticResource GlassPanelLight}, Dark={StaticResource GlassPanelDark}}"
                                 Padding="14"
                                 SizeChanged="PlacementArea_SizeChanged">
-            <controls:MaterialFrame.Shadow>
-                <Shadow Brush="{AppThemeBinding Light=#55000000, Dark=#AA000000}" Opacity="0.20" Offset="0,8" Radius="20" />
-            </controls:MaterialFrame.Shadow>
-
             <Grid>
                 <ScrollView Orientation="{Binding PlacementScrollOrientation}"
                             x:Name="PlacementScroll"
@@ -364,9 +360,9 @@
         <controls:MaterialFrame x:Name="DockRegionBorder"
                                 Grid.Row="2"
                                 CornerRadius="20"
-                                MacOSBehindWindowBlur="True"
-                                MacOSBackdropOpacity="0.18"
-                                Stroke="{AppThemeBinding Light={StaticResource GlassStrokeLight}, Dark={StaticResource GlassStrokeDark}}"
+                                MacOSBehindWindowBlur="False"
+                                Stroke="Transparent"
+                                StrokeThickness="0"
                                 BackgroundColor="{AppThemeBinding Light={StaticResource GlassPanelLight}, Dark={StaticResource GlassPanelDark}}"
                                 Margin="{OnPlatform Default='0', WinUI='0,-4,0,-4', MacCatalyst='0,-4,0,-4'}"
                                 Padding="12"
@@ -375,10 +371,6 @@
                 <PointerGestureRecognizer PointerEntered="DockRegion_PointerEntered"
                                           PointerExited="DockRegion_PointerExited" />
             </controls:MaterialFrame.GestureRecognizers>
-            <controls:MaterialFrame.Shadow>
-                <Shadow Brush="{AppThemeBinding Light=#44000000, Dark=#99000000}" Opacity="0.18" Offset="0,6" Radius="18" />
-            </controls:MaterialFrame.Shadow>
-
             <Grid>
                 <ScrollView x:Name="DockScroll"
                             Orientation="Horizontal"
@@ -453,9 +445,9 @@
         <controls:MaterialFrame x:Name="StatusBarBorder"
                                 Grid.Row="3"
                                 CornerRadius="10"
-                                MacOSBehindWindowBlur="True"
-                                MacOSBackdropOpacity="0.18"
-                                Stroke="{AppThemeBinding Light={StaticResource GlassStrokeLight}, Dark={StaticResource GlassStrokeDark}}"
+                                MacOSBehindWindowBlur="False"
+                                Stroke="Transparent"
+                                StrokeThickness="0"
                                 BackgroundColor="{AppThemeBinding Light={StaticResource GlassSurfaceLight}, Dark={StaticResource GlassSurfaceDark}}"
                                 Padding="10,6">
             <Label Text="{Binding StatusText}" FontSize="13" />

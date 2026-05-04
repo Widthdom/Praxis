@@ -47,6 +47,7 @@ public partial class MainPage : ContentPage
             return;
         }
 
+        ForceTransparentRootBackground();
         SetDockScrollBarVisibility(isPointerOverDockRegion: false);
         ApplyClearButtonGlyphAlignmentTuning();
         this.viewModel.ResolveEditorConflictAsync = ResolveEditorConflictAsync;

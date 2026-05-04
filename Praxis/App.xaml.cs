@@ -130,6 +130,7 @@ public partial class App : Application
             Height = 700,
             Title = "Praxis",
         };
+        page.BackgroundColor = Colors.Transparent;
 
         window.HandlerChanged += (_, _) => ApplyPlatformWindowBackdrop(window);
 

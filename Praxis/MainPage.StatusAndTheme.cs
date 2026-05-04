@@ -9,6 +9,12 @@ namespace Praxis;
 
 public partial class MainPage
 {
+    private void ForceTransparentRootBackground()
+    {
+        BackgroundColor = Colors.Transparent;
+        RootGrid.BackgroundColor = Colors.Transparent;
+    }
+
     private async void TriggerStatusFlash(string? message)
     {
         if (string.IsNullOrWhiteSpace(message) || string.Equals(message, "Ready", StringComparison.OrdinalIgnoreCase))
@@ -99,25 +105,16 @@ public partial class MainPage
             var actual = fe.ActualTheme;
             if (actual == Microsoft.UI.Xaml.ElementTheme.Dark)
             {
-                return Color.FromArgb("#501F242B");
+                return Colors.Transparent;
             }
 
             if (actual == Microsoft.UI.Xaml.ElementTheme.Light)
             {
-                return Color.FromArgb("#36FFFFFF");
+                return Colors.Transparent;
             }
         }
 #endif
-        var theme = viewModel.SelectedTheme switch
-        {
-            ThemeMode.Light => AppTheme.Light,
-            ThemeMode.Dark => AppTheme.Dark,
-            _ => Application.Current?.RequestedTheme ?? AppTheme.Unspecified,
-        };
-
-        return theme == AppTheme.Dark
-            ? Color.FromArgb("#501F242B")
-            : Color.FromArgb("#36FFFFFF");
+        return Colors.Transparent;
     }
 
     private bool IsDarkThemeActive()

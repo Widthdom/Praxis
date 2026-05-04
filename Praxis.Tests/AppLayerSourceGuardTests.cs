@@ -259,6 +259,7 @@ public class AppLayerSourceGuardTests
         var source = ReadRepositoryFile("Praxis", "App.xaml.cs");
 
         Assert.Contains("RequestedThemeChanged += (_, _) => RefreshWindowBackdrops();", source);
+        Assert.Contains("page.BackgroundColor = Colors.Transparent;", source);
         Assert.Contains("window.HandlerChanged += (_, _) => ApplyPlatformWindowBackdrop(window);", source);
         Assert.Contains("private static void RefreshWindowBackdrops()", source);
         Assert.Contains("foreach (var window in windows)", source);
@@ -289,6 +290,10 @@ public class AppLayerSourceGuardTests
         Assert.Contains("TrySetBool(nativeMacWindow, \"opaque\", false);", appSource);
         Assert.Contains("titlebar.TitleVisibility = UITitlebarTitleVisibility.Hidden;", appSource);
         Assert.Contains("ClearMacViewTree(nativeWindow);", appSource);
+        Assert.Contains("nativeWindow.Layer.Opaque = false;", appSource);
+        Assert.Contains("view.Layer.Opaque = false;", appSource);
+        Assert.Contains("TrySetBool(target, \"opaque\", false);", appSource);
+        Assert.Contains("layer.Opaque = false;", appSource);
         Assert.Contains("ClearNativeWindowChrome(nativeMacWindow, \"contentView\");", appSource);
         Assert.Contains("new UIVisualEffectView(UIBlurEffect.FromStyle(UIBlurEffectStyle.SystemUltraThinMaterial))", behaviorSource);
         Assert.Contains("platformView.Layer.CornerRadius = (nfloat)cornerRadius;", behaviorSource);

@@ -70,6 +70,11 @@ public partial class App
         {
             nativeWindow.Opaque = false;
             nativeWindow.BackgroundColor = UIColor.Clear;
+            if (nativeWindow.Layer is not null)
+            {
+                nativeWindow.Layer.Opaque = false;
+                nativeWindow.Layer.BackgroundColor = UIColor.Clear.CGColor;
+            }
             ClearMacViewTree(nativeWindow);
 
             if (nativeWindow.RootViewController?.View is UIView rootView)
@@ -349,6 +354,7 @@ public partial class App
         view.BackgroundColor = UIColor.Clear;
         if (view.Layer is not null)
         {
+            view.Layer.Opaque = false;
             view.Layer.BackgroundColor = UIColor.Clear.CGColor;
         }
 
@@ -377,9 +383,11 @@ public partial class App
         try
         {
             TrySetBool(target, "wantsLayer", true);
+            TrySetBool(target, "opaque", false);
             TrySetObject(target, "backgroundColor", CreateNativeColor("clearColor") ?? UIColor.Clear);
             if (target.ValueForKey(new NSString("layer")) is CALayer layer)
             {
+                layer.Opaque = false;
                 layer.BackgroundColor = UIColor.Clear.CGColor;
             }
 
