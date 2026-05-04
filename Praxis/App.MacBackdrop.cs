@@ -133,7 +133,7 @@ public partial class App
 
             const double leftInset = 6d;
             const double topInset = 18d;
-            const double rightInset = 18d;
+            const double rightInset = 30d;
             const double bottomInset = 18d;
             var frame = new CGRect(
                 leftInset,

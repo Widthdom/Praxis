@@ -84,7 +84,7 @@ public class MainPageStructureTests
         Assert.Contains("x:Name=\"RootGrid\"", xaml);
         Assert.Contains("x:Name=\"DummyRootGlassFrame\"", xaml);
         Assert.Contains("MacOSBackdropOpacity=\"0.30\"", xaml);
-        Assert.Contains("Margin=\"-12,0,0,0\"", xaml);
+        Assert.Contains("Margin=\"-12,0,12,0\"", xaml);
         Assert.Contains("HorizontalOptions=\"Fill\"", xaml);
         Assert.Contains("VerticalOptions=\"Fill\"", xaml);
         Assert.Contains("StaticResource DummyRootGlassLight", xaml);

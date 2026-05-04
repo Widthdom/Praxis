@@ -300,7 +300,7 @@ public class AppLayerSourceGuardTests
         Assert.Contains("Class.GetHandle(\"NSVisualEffectView\")", appSource);
         Assert.Contains("Class.GetHandle(\"NSView\")", appSource);
         Assert.Contains("const double leftInset = 6d;", appSource);
-        Assert.Contains("const double rightInset = 18d;", appSource);
+        Assert.Contains("const double rightInset = 30d;", appSource);
         Assert.Contains("ObjcMsgSendCGRect(allocated, SelRegisterName(\"initWithFrame:\"), frame);", appSource);
         Assert.Contains("MacNativeSubviewBelow = -1", appSource);
         Assert.Contains("ObjcMsgSendVoid(dummyRoot.Handle, SelRegisterName(\"removeFromSuperview\"));", appSource);
