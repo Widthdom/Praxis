@@ -300,10 +300,11 @@ public class AppLayerSourceGuardTests
         Assert.Contains("Class.GetHandle(\"NSVisualEffectView\")", appSource);
         Assert.Contains("Class.GetHandle(\"NSView\")", appSource);
         Assert.Contains("var frame = new CGRect(0d, 0d, uiBounds.Width, uiBounds.Height);", appSource);
-        Assert.Contains("MacNativePopoverMaterial = 6", appSource);
-        Assert.Contains("MacNativeRootGlassLightAlpha = 0.08d", appSource);
-        Assert.Contains("MacNativeRootGlassDarkAlpha = 0.18d", appSource);
-        Assert.Contains("TrySetInt(dummyRoot, \"material\", MacNativePopoverMaterial);", appSource);
+        Assert.Contains("MacNativeUnderWindowBackgroundMaterial = 21", appSource);
+        Assert.Contains("MacNativeRootGlassLightAlpha = 1d", appSource);
+        Assert.Contains("MacNativeRootGlassDarkAlpha = 0.96d", appSource);
+        Assert.Contains("TrySetInt(dummyRoot, \"material\", MacNativeUnderWindowBackgroundMaterial);", appSource);
+        Assert.Contains("TrySetBool(dummyRoot, \"emphasized\", true);", appSource);
         Assert.Contains("var rootGlassAlpha = isDark ? MacNativeRootGlassDarkAlpha : MacNativeRootGlassLightAlpha;", appSource);
         Assert.Contains("TrySetDouble(dummyRoot, \"alphaValue\", rootGlassAlpha);", appSource);
         Assert.Contains("TrySendDouble(dummyRoot, \"setAlphaValue:\", rootGlassAlpha);", appSource);
@@ -317,7 +318,7 @@ public class AppLayerSourceGuardTests
         Assert.Contains("SelRegisterName(\"addSubview:positioned:relativeTo:\")", appSource);
         Assert.Contains("ObjcMsgSendAddSubviewPositioned(", appSource);
         Assert.DoesNotContain("nativeWindow.BringSubviewToFront(dummyRoot);", appSource);
-        Assert.Contains("new UIVisualEffectView(UIBlurEffect.FromStyle(UIBlurEffectStyle.SystemThinMaterial))", behaviorSource);
+        Assert.Contains("new UIVisualEffectView(UIBlurEffect.FromStyle(UIBlurEffectStyle.SystemMaterial))", behaviorSource);
         Assert.Contains("platformView.Layer.CornerRadius = (nfloat)cornerRadius;", behaviorSource);
         Assert.Contains("backdropView.Alpha = GetBackdropOpacity();", behaviorSource);
         Assert.Contains("backdropView.ContentView.BackgroundColor = UIColor.Clear;", behaviorSource);
@@ -764,6 +765,8 @@ public class AppLayerSourceGuardTests
         Assert.Contains("Font = placeholderFont,", macEntrySource);
         Assert.Contains("public void SetGlassFieldVisual(bool enabled)", macEntrySource);
         Assert.Contains("macEntryTextField.SetGlassFieldVisual(IsGlassEntryVisual(entry));", macPageSource);
+        Assert.Contains("nativeButton.SetBackgroundImage(CreateMacGlassButtonBackgroundImage(backgroundColor), UIControlState.Normal);", macPageSource);
+        Assert.Contains("private static UIImage CreateMacGlassButtonBackgroundImage(UIColor color)", macPageSource);
         Assert.Contains("ScheduleMacRootTransparencyRefresh();", macPageSource);
         Assert.Contains("private void ApplyMacRootTransparency()", macPageSource);
         Assert.Contains("ClearMacLargeContainerBackgrounds(pageView, rootSize, 0);", macPageSource);

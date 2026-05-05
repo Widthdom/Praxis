@@ -13,9 +13,9 @@ public partial class App
 {
     private const nint MacFullSizeContentViewMask = (nint)(1 << 15);
     private const nint MacNativeSubviewBelow = -1;
-    private const int MacNativePopoverMaterial = 6;
-    private const double MacNativeRootGlassLightAlpha = 0.08d;
-    private const double MacNativeRootGlassDarkAlpha = 0.18d;
+    private const int MacNativeUnderWindowBackgroundMaterial = 21;
+    private const double MacNativeRootGlassLightAlpha = 1d;
+    private const double MacNativeRootGlassDarkAlpha = 0.96d;
     private static readonly NSString MacNativeNsDummyRootIdentifier = new("PraxisNativeDummyRootGlass");
     private static int macBackdropDiagnosticsLogged;
 
@@ -146,8 +146,9 @@ public partial class App
             TrySetBool(dummyRoot, "wantsLayer", true);
             TrySetObject(dummyRoot, "identifier", MacNativeNsDummyRootIdentifier);
             TrySetInt(dummyRoot, "blendingMode", 0);
-            TrySetInt(dummyRoot, "material", MacNativePopoverMaterial);
+            TrySetInt(dummyRoot, "material", MacNativeUnderWindowBackgroundMaterial);
             TrySetInt(dummyRoot, "state", 1);
+            TrySetBool(dummyRoot, "emphasized", true);
             var rootGlassAlpha = isDark ? MacNativeRootGlassDarkAlpha : MacNativeRootGlassLightAlpha;
             TrySetDouble(dummyRoot, "alphaValue", rootGlassAlpha);
             TrySendDouble(dummyRoot, "setAlphaValue:", rootGlassAlpha);
@@ -156,8 +157,8 @@ public partial class App
             {
                 layer.Opaque = false;
                 layer.BackgroundColor = isDark
-                    ? UIColor.FromRGBA(25, 29, 35, 0.10f).CGColor
-                    : UIColor.FromRGBA(255, 255, 255, 0.025f).CGColor;
+                    ? UIColor.FromRGBA(18, 22, 27, 0.06f).CGColor
+                    : UIColor.FromRGBA(255, 255, 255, 0.02f).CGColor;
                 layer.CornerRadius = 18f;
                 layer.MasksToBounds = true;
                 layer.BorderWidth = 0f;

@@ -964,6 +964,9 @@ public partial class MainPage
         nativeButton.TintColor = titleColor;
         nativeButton.SetTitleColor(titleColor, UIControlState.Normal);
         nativeButton.SetTitleColor(titleColor.ColorWithAlpha(0.82f), UIControlState.Highlighted);
+        nativeButton.SetBackgroundImage(CreateMacGlassButtonBackgroundImage(backgroundColor), UIControlState.Normal);
+        nativeButton.SetBackgroundImage(CreateMacGlassButtonBackgroundImage(backgroundColor.ColorWithAlpha(0.66f)), UIControlState.Highlighted);
+        nativeButton.SetBackgroundImage(CreateMacGlassButtonBackgroundImage(backgroundColor.ColorWithAlpha(0.48f)), UIControlState.Disabled);
         if (nativeButton.TitleLabel is UILabel titleLabel)
         {
             titleLabel.Opaque = false;
@@ -975,6 +978,17 @@ public partial class MainPage
         ClearMacGlassButtonSubviews(nativeButton);
         nativeButton.Layer.ShouldRasterize = false;
         nativeButton.SetNeedsDisplay();
+    }
+
+    private static UIImage CreateMacGlassButtonBackgroundImage(UIColor color)
+    {
+        var renderer = new UIGraphicsImageRenderer(new CGSize(2, 2));
+        var image = renderer.CreateImage(_ =>
+        {
+            color.SetFill();
+            UIBezierPath.FromRoundedRect(new CGRect(0, 0, 2, 2), 1).Fill();
+        });
+        return image.CreateResizableImage(new UIEdgeInsets(1, 1, 1, 1));
     }
 
     private static void ClearMacGlassButtonSubviews(UIButton nativeButton)

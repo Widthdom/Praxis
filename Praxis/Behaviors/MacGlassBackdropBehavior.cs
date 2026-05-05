@@ -85,7 +85,7 @@ public sealed class MacGlassBackdropBehavior : Behavior<View>
 
     private static UIVisualEffectView CreateBackdrop()
     {
-        return new UIVisualEffectView(UIBlurEffect.FromStyle(UIBlurEffectStyle.SystemThinMaterial))
+        return new UIVisualEffectView(UIBlurEffect.FromStyle(UIBlurEffectStyle.SystemMaterial))
         {
             Tag = BackdropTag,
             UserInteractionEnabled = false,
