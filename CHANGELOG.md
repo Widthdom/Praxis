@@ -15,8 +15,11 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - The Mac Catalyst XAML dummy root frame stays visible at runtime and is kept aligned with the native backmost glass around the traffic-light and bottom-right corners
 - The root glass tint is lighter on Mac Catalyst so the blurred desktop remains visible while launcher controls stay readable
 - Mac Catalyst no longer clears the XAML dummy root glass frame during `OnAppearing`, so the main window keeps the visible frosted RoundRect over the transparent root instead of falling back to a nearly invisible native-only backdrop
-- The Mac Catalyst main glass tint was reduced again and now uses the native under-window material for the backmost blur, so the root RoundRect reads as translucent frosted glass instead of a white plate
-- Modal editor input surfaces now use a slightly stronger glass-white backing than the main command/search fields, keeping typed text stable without returning to native opaque text boxes
+- The Mac Catalyst main glass tint was reduced again and now uses a low-alpha native popover material for the backmost blur, so the root RoundRect reads as translucent frosted glass instead of a white plate
+- The native Mac backmost glass now explicitly lowers the `NSVisualEffectView` alpha instead of only lowering layer tint, preventing the root material from turning into an opaque white plate
+- Mac Catalyst now repeatedly clears large native page/container backgrounds after handler/layout activation so MAUI root wrappers cannot repaint the transparent glass window white, while preserving only the app-owned material backdrops
+- The XAML dummy root now acts as a thin tint/stroke shell over the native Mac `NSVisualEffectView` root glass instead of adding a second white-prone `UIVisualEffectView` layer
+- Modal editor input surfaces now use a lighter glass-white backing than opaque native text boxes while keeping typed text stable
 - The command/search fields now keep the Mac native text controls transparent while a separate thin MAUI glass input surface sits behind them, use a real transparent native background image, clear native private background/wrapper layers recursively after they join the native view tree, hide the normal Mac entry border, and preserve the focused underline; modal editor entries and Clip Word/Note editors use the same independent input surface approach without tinting the text view itself, copy buttons and modal action buttons clear UIKit button configuration/subview backgrounds before applying matching pale glass controls, small UI text rendering was tightened with system medium native text, and modal/Quick Look popup tint was made more transparent while using stronger native material blur
 
 ### Tests

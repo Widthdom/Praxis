@@ -18,12 +18,12 @@
         <Color x:Key="GlassPanelDark">#00000000</Color>
         <Color x:Key="GlassSurfaceLight">#00FFFFFF</Color>
         <Color x:Key="GlassSurfaceDark">#00000000</Color>
-        <Color x:Key="GlassPopupLight">#04FFFFFF</Color>
-        <Color x:Key="GlassPopupDark">#101E2228</Color>
-        <Color x:Key="GlassInputLight">#18FFFFFF</Color>
-        <Color x:Key="GlassInputDark">#2C363B43</Color>
-        <Color x:Key="GlassModalInputLight">#2CFFFFFF</Color>
-        <Color x:Key="GlassModalInputDark">#38363B43</Color>
+        <Color x:Key="GlassPopupLight">#08FFFFFF</Color>
+        <Color x:Key="GlassPopupDark">#161E2228</Color>
+        <Color x:Key="GlassInputLight">#10FFFFFF</Color>
+        <Color x:Key="GlassInputDark">#24363B43</Color>
+        <Color x:Key="GlassModalInputLight">#26FFFFFF</Color>
+        <Color x:Key="GlassModalInputDark">#32363B43</Color>
         <Color x:Key="GlassButtonLight">#58FFFFFF</Color>
         <Color x:Key="GlassButtonDark">#70363B43</Color>
         <Color x:Key="GlassButtonStrokeLight">#98FFFFFF</Color>
@@ -67,8 +67,8 @@
         <controls:MaterialFrame x:Name="DummyRootGlassFrame"
                                 Grid.RowSpan="4"
                                 CornerRadius="28"
-                                MacOSBehindWindowBlur="True"
-                                MacOSBackdropOpacity="0.08"
+                                MacOSBehindWindowBlur="False"
+                                MacOSBackdropOpacity="0"
                                 InputTransparent="True"
                                 HorizontalOptions="Fill"
                                 VerticalOptions="Fill"
@@ -76,7 +76,7 @@
                                 StrokeThickness="1"
                                 BackgroundColor="{AppThemeBinding Light={StaticResource DummyRootGlassLight}, Dark={StaticResource DummyRootGlassDark}}">
             <controls:MaterialFrame.Shadow>
-                <Shadow Brush="{AppThemeBinding Light=#44000000, Dark=#B0000000}" Opacity="0.22" Offset="0,18" Radius="34" />
+                <Shadow Brush="{AppThemeBinding Light=#44000000, Dark=#B0000000}" Opacity="0.18" Offset="0,18" Radius="34" />
             </controls:MaterialFrame.Shadow>
         </controls:MaterialFrame>
         <Grid x:Name="TopBarGrid" ColumnDefinitions="2*,Auto,2*" ColumnSpacing="8">
@@ -263,7 +263,7 @@
                                 IsVisible="{Binding IsCommandSuggestionOpen}"
                                 CornerRadius="10"
                                 MacOSBehindWindowBlur="True"
-                                MacOSBackdropOpacity="0.55"
+                                MacOSBackdropOpacity="0.46"
                                 Stroke="{AppThemeBinding Light={StaticResource GlassStrokeLight}, Dark={StaticResource GlassStrokeDark}}"
                                 BackgroundColor="{AppThemeBinding Light={StaticResource GlassPopupLight}, Dark={StaticResource GlassPopupDark}}"
                                 Padding="6"
@@ -519,7 +519,7 @@
                                 IsVisible="False"
                                 CornerRadius="12"
                                 MacOSBehindWindowBlur="True"
-                                MacOSBackdropOpacity="0.62"
+                                MacOSBackdropOpacity="0.44"
                                 Stroke="{AppThemeBinding Light={StaticResource GlassStrokeLight}, Dark={StaticResource GlassStrokeDark}}"
                                 BackgroundColor="{AppThemeBinding Light={StaticResource GlassPopupLight}, Dark={StaticResource GlassPopupDark}}"
                                 Padding="10,9"
@@ -574,7 +574,7 @@
                                     Padding="10"
                                     CornerRadius="14"
                                     MacOSBehindWindowBlur="True"
-                                    MacOSBackdropOpacity="0.55"
+                                    MacOSBackdropOpacity="0.42"
                                     Stroke="{AppThemeBinding Light={StaticResource GlassStrokeLight}, Dark={StaticResource GlassStrokeDark}}"
                                     BackgroundColor="{AppThemeBinding Light={StaticResource GlassPopupLight}, Dark={StaticResource GlassPopupDark}}">
                 <VerticalStackLayout Spacing="8">
@@ -613,7 +613,7 @@
                                     Padding="18"
                                     CornerRadius="18"
                                     MacOSBehindWindowBlur="True"
-                                    MacOSBackdropOpacity="0.62"
+                                    MacOSBackdropOpacity="0.44"
                                     Stroke="{AppThemeBinding Light={StaticResource GlassStrokeLight}, Dark={StaticResource GlassStrokeDark}}"
                                     BackgroundColor="{AppThemeBinding Light={StaticResource GlassPopupLight}, Dark={StaticResource GlassPopupDark}}">
                 <controls:MaterialFrame.Shadow>
@@ -889,7 +889,7 @@
                                     Padding="18"
                                     CornerRadius="18"
                                     MacOSBehindWindowBlur="True"
-                                    MacOSBackdropOpacity="0.62"
+                                    MacOSBackdropOpacity="0.44"
                                     Stroke="{AppThemeBinding Light={StaticResource GlassStrokeLight}, Dark={StaticResource GlassStrokeDark}}"
                                     BackgroundColor="{AppThemeBinding Light={StaticResource GlassPopupLight}, Dark={StaticResource GlassPopupDark}}">
                 <controls:MaterialFrame.Shadow>

@@ -76,15 +76,21 @@ public sealed class MacGlassBackdropBehavior : Behavior<View>
         }
 
         backdropView.Alpha = GetBackdropOpacity();
+        backdropView.Opaque = false;
+        backdropView.BackgroundColor = UIColor.Clear;
+        backdropView.ContentView.Opaque = false;
+        backdropView.ContentView.BackgroundColor = UIColor.Clear;
         UpdateBackdropFrame();
     }
 
     private static UIVisualEffectView CreateBackdrop()
     {
-        return new UIVisualEffectView(UIBlurEffect.FromStyle(UIBlurEffectStyle.SystemUltraThinMaterial))
+        return new UIVisualEffectView(UIBlurEffect.FromStyle(UIBlurEffectStyle.SystemThinMaterial))
         {
             Tag = BackdropTag,
             UserInteractionEnabled = false,
+            Opaque = false,
+            BackgroundColor = UIColor.Clear,
             AutoresizingMask = UIViewAutoresizing.FlexibleWidth | UIViewAutoresizing.FlexibleHeight,
         };
     }

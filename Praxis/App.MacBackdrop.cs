@@ -13,7 +13,9 @@ public partial class App
 {
     private const nint MacFullSizeContentViewMask = (nint)(1 << 15);
     private const nint MacNativeSubviewBelow = -1;
-    private const int MacNativeUnderWindowBackgroundMaterial = 21;
+    private const int MacNativePopoverMaterial = 6;
+    private const double MacNativeRootGlassLightAlpha = 0.08d;
+    private const double MacNativeRootGlassDarkAlpha = 0.18d;
     private static readonly NSString MacNativeNsDummyRootIdentifier = new("PraxisNativeDummyRootGlass");
     private static int macBackdropDiagnosticsLogged;
 
@@ -144,15 +146,18 @@ public partial class App
             TrySetBool(dummyRoot, "wantsLayer", true);
             TrySetObject(dummyRoot, "identifier", MacNativeNsDummyRootIdentifier);
             TrySetInt(dummyRoot, "blendingMode", 0);
-            TrySetInt(dummyRoot, "material", MacNativeUnderWindowBackgroundMaterial);
+            TrySetInt(dummyRoot, "material", MacNativePopoverMaterial);
             TrySetInt(dummyRoot, "state", 1);
+            var rootGlassAlpha = isDark ? MacNativeRootGlassDarkAlpha : MacNativeRootGlassLightAlpha;
+            TrySetDouble(dummyRoot, "alphaValue", rootGlassAlpha);
+            TrySendDouble(dummyRoot, "setAlphaValue:", rootGlassAlpha);
 
             if (dummyRoot.ValueForKey(new NSString("layer")) is CALayer layer)
             {
                 layer.Opaque = false;
                 layer.BackgroundColor = isDark
-                    ? UIColor.FromRGBA(25, 29, 35, 0.14f).CGColor
-                    : UIColor.FromRGBA(255, 255, 255, 0.04f).CGColor;
+                    ? UIColor.FromRGBA(25, 29, 35, 0.10f).CGColor
+                    : UIColor.FromRGBA(255, 255, 255, 0.025f).CGColor;
                 layer.CornerRadius = 18f;
                 layer.MasksToBounds = true;
                 layer.BorderWidth = 0f;
@@ -230,6 +235,28 @@ public partial class App
         }
     }
 
+    private static void TrySetDouble(NSObject target, string key, double value)
+    {
+        try
+        {
+            target.SetValueForKey(NSNumber.FromDouble(value), new NSString(key));
+        }
+        catch
+        {
+        }
+    }
+
+    private static void TrySendDouble(NSObject target, string selectorName, double value)
+    {
+        try
+        {
+            ObjcMsgSendDouble(target.Handle, SelRegisterName(selectorName), value);
+        }
+        catch
+        {
+        }
+    }
+
     [DllImport("/usr/lib/libobjc.A.dylib", EntryPoint = "sel_registerName")]
     private static extern IntPtr SelRegisterName(string name);
 
@@ -241,6 +268,9 @@ public partial class App
 
     [DllImport("/usr/lib/libobjc.A.dylib", EntryPoint = "objc_msgSend")]
     private static extern void ObjcMsgSendVoid(IntPtr receiver, IntPtr selector);
+
+    [DllImport("/usr/lib/libobjc.A.dylib", EntryPoint = "objc_msgSend")]
+    private static extern void ObjcMsgSendDouble(IntPtr receiver, IntPtr selector, double value);
 
     [DllImport("/usr/lib/libobjc.A.dylib", EntryPoint = "objc_msgSend")]
     private static extern void ObjcMsgSendAddSubviewPositioned(IntPtr receiver, IntPtr selector, IntPtr subview, nint positioned, IntPtr relativeTo);

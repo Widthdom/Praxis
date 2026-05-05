@@ -14,6 +14,7 @@ namespace Praxis;
 public partial class MainPage
 {
 #if MACCATALYST
+    private const nint MacMaterialFrameBackdropTag = 0x50475842;
     private const nint MacModalTextEditorGlassBackdropTag = 0x50544542;
 
     private void MoveModalFocus(bool forward)
@@ -581,6 +582,7 @@ public partial class MainPage
 
     private void ApplyMacVisualTuning()
     {
+        ScheduleMacRootTransparencyRefresh();
         EnsureMacFirstResponder();
         ApplyMacContentScale();
         ApplyMacEntryVisualState();
@@ -590,6 +592,108 @@ public partial class MainPage
         ApplyMacModalPseudoFocusVisuals();
         ApplyMacCommandSuggestionKeyCommands();
         ApplyMacEditorKeyCommands();
+    }
+
+    private void ScheduleMacRootTransparencyRefresh()
+    {
+        ApplyMacRootTransparency();
+        Dispatcher.DispatchDelayed(TimeSpan.FromMilliseconds(60), ApplyMacRootTransparency);
+        Dispatcher.DispatchDelayed(TimeSpan.FromMilliseconds(240), ApplyMacRootTransparency);
+    }
+
+    private void ApplyMacRootTransparency()
+    {
+        if (Handler?.PlatformView is UIView pageView)
+        {
+            var rootSize = ResolveMacRootTransparencySize(pageView);
+            ClearMacLargeContainerBackgrounds(pageView, rootSize, 0);
+        }
+
+        if (Window?.Handler?.PlatformView is UIWindow nativeWindow)
+        {
+            nativeWindow.Opaque = false;
+            nativeWindow.BackgroundColor = UIColor.Clear;
+            nativeWindow.Layer.Opaque = false;
+            nativeWindow.Layer.BackgroundColor = UIColor.Clear.CGColor;
+            if (nativeWindow.RootViewController?.View is UIView rootView)
+            {
+                var rootSize = ResolveMacRootTransparencySize(rootView);
+                ClearMacLargeContainerBackgrounds(rootView, rootSize, 0);
+            }
+        }
+    }
+
+    private static CGSize ResolveMacRootTransparencySize(UIView view)
+    {
+        if (view.Window?.Bounds.Size is CGSize windowSize &&
+            windowSize.Width > 0 &&
+            windowSize.Height > 0)
+        {
+            return windowSize;
+        }
+
+        return view.Bounds.Size;
+    }
+
+    private static void ClearMacLargeContainerBackgrounds(UIView view, CGSize rootSize, int depth)
+    {
+        if (ShouldClearMacLargeContainerBackground(view, rootSize, depth))
+        {
+            view.Opaque = false;
+            view.BackgroundColor = UIColor.Clear;
+            view.Layer.Opaque = false;
+            view.Layer.BackgroundColor = UIColor.Clear.CGColor;
+            view.Layer.ShouldRasterize = false;
+            if (view is UIVisualEffectView effectView)
+            {
+                effectView.Effect = null;
+                effectView.ContentView.Opaque = false;
+                effectView.ContentView.BackgroundColor = UIColor.Clear;
+                effectView.ContentView.Layer.Opaque = false;
+                effectView.ContentView.Layer.BackgroundColor = UIColor.Clear.CGColor;
+            }
+        }
+
+        if (depth >= 10)
+        {
+            return;
+        }
+
+        foreach (var subview in view.Subviews)
+        {
+            ClearMacLargeContainerBackgrounds(subview, rootSize, depth + 1);
+        }
+    }
+
+    private static bool ShouldClearMacLargeContainerBackground(UIView view, CGSize rootSize, int depth)
+    {
+        if (view is UIControl or UILabel or UITextField or UITextView or UIImageView)
+        {
+            return false;
+        }
+
+        if (IsIntentionalMacGlassBackdrop(view))
+        {
+            return false;
+        }
+
+        if (depth <= 2)
+        {
+            return true;
+        }
+
+        var width = view.Bounds.Width;
+        var height = view.Bounds.Height;
+        return rootSize.Width > 0 &&
+            rootSize.Height > 0 &&
+            width >= rootSize.Width * 0.82 &&
+            height >= rootSize.Height * 0.82;
+    }
+
+    private static bool IsIntentionalMacGlassBackdrop(UIView view)
+    {
+        return view.Tag == MacMaterialFrameBackdropTag ||
+            view.Tag == MacModalTextEditorGlassBackdropTag;
     }
 
     private void ApplyMacEntryVisualState()
