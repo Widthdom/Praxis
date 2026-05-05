@@ -36,8 +36,8 @@ public class MacEntryHandler : EntryHandler
         private static readonly CGColor LightFocusUnderlineColor = UIColor.FromRGB(0x4A, 0x4A, 0x4A).CGColor;
         private static readonly CGColor DarkFocusUnderlineColor = UIColor.FromRGB(0xA0, 0xA0, 0xA0).CGColor;
         private static readonly CGColor TransparentBorderColor = UIColor.Clear.CGColor;
-        private static readonly UIColor LightGlassFieldBackground = UIColor.FromRGBA(255, 255, 255, 0.055f);
-        private static readonly UIColor DarkGlassFieldBackground = UIColor.FromRGBA(54, 59, 67, 0.16f);
+        private static readonly UIColor LightGlassFieldBackground = UIColor.Clear;
+        private static readonly UIColor DarkGlassFieldBackground = UIColor.Clear;
         private static readonly UIColor LightPlaceholderColor = UIColor.FromRGBA(0, 0, 0, 0.82f);
         private static readonly UIColor DarkPlaceholderColor = UIColor.FromRGBA(255, 255, 255, 0.76f);
         private static readonly UIColor LightTextColor = UIColor.FromRGB(0x05, 0x05, 0x05);
@@ -50,6 +50,7 @@ public class MacEntryHandler : EntryHandler
         private readonly CAShapeLayer focusBorderLayer = new();
         private readonly CALayer focusBorderMaskLayer = new();
         private UIView? glassBackdropView;
+        private UIColor currentGlassFieldBackground = LightGlassFieldBackground;
         private bool pseudoFocused;
         private bool glassFieldVisual;
         private UIKeyCommand? cancelCommand;
@@ -118,6 +119,20 @@ public class MacEntryHandler : EntryHandler
         public override CGRect BorderRect(CGRect forBounds)
             => glassFieldVisual ? CGRect.Empty : base.BorderRect(forBounds);
 
+        public override void Draw(CGRect rect)
+        {
+            if (!glassFieldVisual)
+            {
+                base.Draw(rect);
+                return;
+            }
+
+            UIGraphics.GetCurrentContext()?.ClearRect(rect);
+            currentGlassFieldBackground.SetFill();
+            UIBezierPath.FromRoundedRect(Bounds, CornerRadius).Fill();
+            base.Draw(rect);
+        }
+
         public override void PressesBegan(NSSet<UIPress> presses, UIPressesEvent? evt)
         {
             if (TryHandleHistoryShortcuts(presses))
@@ -170,6 +185,18 @@ public class MacEntryHandler : EntryHandler
             ApplyFocusVisualState();
         }
 
+        public override void MovedToSuperview()
+        {
+            base.MovedToSuperview();
+            ApplyFocusVisualState();
+        }
+
+        public override void MovedToWindow()
+        {
+            base.MovedToWindow();
+            ApplyFocusVisualState();
+        }
+
         public override bool BecomeFirstResponder()
         {
             var result = base.BecomeFirstResponder();
@@ -212,6 +239,7 @@ public class MacEntryHandler : EntryHandler
         {
             EnsureGlassBackdrop();
             var tintColor = dark ? DarkGlassFieldBackground : LightGlassFieldBackground;
+            currentGlassFieldBackground = tintColor;
             Opaque = false;
             Background = TransparentFieldImage;
             DisabledBackground = TransparentFieldImage;
@@ -228,7 +256,9 @@ public class MacEntryHandler : EntryHandler
                 UpdateGlassBackdropFrame();
                 ClearNativeGlassHostBackground(this, glassBackdropView);
                 ClearNativeGlassHostLayers();
+                ClearNativeGlassWrapperBackgrounds();
             }
+            SetNeedsDisplay();
         }
 
         private void EnsureGlassBackdrop()
@@ -258,7 +288,14 @@ public class MacEntryHandler : EntryHandler
             glassBackdropView.ClipsToBounds = true;
         }
 
-        private static readonly UIImage TransparentFieldImage = new();
+        private static readonly UIImage TransparentFieldImage = CreateTransparentFieldImage();
+
+        private static UIImage CreateTransparentFieldImage()
+        {
+            var renderer = new UIGraphicsImageRenderer(new CGSize(1, 1));
+            var image = renderer.CreateImage(_ => { });
+            return image.CreateResizableImage(UIEdgeInsets.Zero);
+        }
 
         private static void ClearNativeGlassHostBackground(UIView view, UIView preservedBackdrop)
         {
@@ -311,6 +348,48 @@ public class MacEntryHandler : EntryHandler
 
                 layer.BackgroundColor = UIColor.Clear.CGColor;
                 layer.ShouldRasterize = false;
+            }
+        }
+
+        private void ClearNativeGlassWrapperBackgrounds()
+        {
+            var ancestor = Superview;
+            var depth = 0;
+            while (ancestor is not null && ancestor is not UIWindow && depth < 4)
+            {
+                if (IsLikelyNativeInputWrapper(ancestor))
+                {
+                    ancestor.Opaque = false;
+                    ancestor.BackgroundColor = UIColor.Clear;
+                    ancestor.Layer.BackgroundColor = UIColor.Clear.CGColor;
+                    ClearNativeWrapperLayers(ancestor.Layer);
+                }
+
+                ancestor = ancestor.Superview;
+                depth++;
+            }
+        }
+
+        private bool IsLikelyNativeInputWrapper(UIView view)
+        {
+            const double widthSlack = 72;
+            const double heightSlack = 18;
+            return view.Bounds.Width <= Bounds.Width + widthSlack &&
+                view.Bounds.Height <= Bounds.Height + heightSlack;
+        }
+
+        private static void ClearNativeWrapperLayers(CALayer layer)
+        {
+            var layers = layer.Sublayers;
+            if (layers is null)
+            {
+                return;
+            }
+
+            foreach (var sublayer in layers)
+            {
+                sublayer.BackgroundColor = UIColor.Clear.CGColor;
+                sublayer.ShouldRasterize = false;
             }
         }
 

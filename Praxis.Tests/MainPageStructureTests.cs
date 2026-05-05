@@ -96,8 +96,8 @@ public class MainPageStructureTests
         Assert.Contains("<Color x:Key=\"GlassPanelDark\">#00000000</Color>", xaml);
         Assert.Contains("<Color x:Key=\"GlassPopupLight\">#04FFFFFF</Color>", xaml);
         Assert.Contains("<Color x:Key=\"GlassPopupDark\">#101E2228</Color>", xaml);
-        Assert.Contains("<Color x:Key=\"GlassInputLight\">#16FFFFFF</Color>", xaml);
-        Assert.Contains("<Color x:Key=\"GlassInputDark\">#2A363B43</Color>", xaml);
+        Assert.Contains("<Color x:Key=\"GlassInputLight\">#00FFFFFF</Color>", xaml);
+        Assert.Contains("<Color x:Key=\"GlassInputDark\">#00363B43</Color>", xaml);
         Assert.Contains("<Color x:Key=\"GlassButtonLight\">#6AFFFFFF</Color>", xaml);
         Assert.Contains("<Color x:Key=\"GlassButtonDark\">#78363B43</Color>", xaml);
         Assert.Contains("x:Key=\"GlassModalActionButtonStyle\"", xaml);
@@ -106,7 +106,9 @@ public class MainPageStructureTests
         Assert.Contains("x:Name=\"MainSearchEntry\"\n                                      Placeholder=\"Search\"\n                                      Text=\"{Binding SearchText}\"\n                                      BackgroundColor=\"Transparent\"", xaml);
         Assert.Contains("x:Name=\"QuickLookPopup\"", xaml);
         Assert.Contains("x:Name=\"EditorOverlay\"", xaml);
-        Assert.True(CountOccurrences(xaml, "MacOSBackdropOpacity=\"0.24\"") >= 2);
+        Assert.True(CountOccurrences(xaml, "MacOSBackdropOpacity=\"0.62\"") >= 3);
+        Assert.DoesNotContain("MacOSBackdropOpacity=\"0.24\"", xaml);
+        Assert.DoesNotContain("MacOSBackdropOpacity=\"0.18\"", xaml);
         Assert.Contains("ModalGuidEntry\" Grid.Row=\"0\" Grid.Column=\"1\" Text=\"{Binding Editor.GuidText}\" IsReadOnly=\"{OnPlatform Default=True, MacCatalyst=False}\" HeightRequest=\"40\" BackgroundColor=\"Transparent\"", xaml);
         Assert.Contains("ModalClipWordContainer\"\n                                    Grid.Row=\"5\"\n                                    Grid.Column=\"1\"\n                                    Stroke=\"Transparent\"\n                                    StrokeThickness=\"0\"", xaml);
         Assert.Contains("ModalNoteContainer\"\n                                    Grid.Row=\"6\"\n                                    Grid.Column=\"1\"\n                                    Stroke=\"Transparent\"\n                                    StrokeThickness=\"0\"", xaml);
@@ -114,9 +116,8 @@ public class MainPageStructureTests
         Assert.Contains("x:Name=\"ModalSaveButton\"\n                                Style=\"{StaticResource GlassModalActionButtonStyle}\"", xaml);
         Assert.Equal(7, CountOccurrences(xaml, "Style=\"{StaticResource GlassCopyButtonStyle}\""));
         Assert.Equal(2, CountOccurrences(xaml, "Style=\"{StaticResource GlassModalActionButtonStyle}\""));
-        Assert.DoesNotContain("BackgroundColor=\"{AppThemeBinding Light={StaticResource GlassInputLight}, Dark={StaticResource GlassInputDark}}\"", xaml);
+        Assert.Equal(2, CountOccurrences(xaml, "BackgroundColor=\"{AppThemeBinding Light={StaticResource GlassInputLight}, Dark={StaticResource GlassInputDark}}\""));
         Assert.True(CountOccurrences(xaml, "BackgroundColor=\"Transparent\"") >= 10);
-        Assert.DoesNotContain("MacOSBackdropOpacity=\"0.18\"", xaml);
         Assert.True(CountOccurrences(xaml, "<controls:MaterialFrame ") >= 9);
     }
 

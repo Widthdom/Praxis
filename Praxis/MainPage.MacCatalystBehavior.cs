@@ -2,6 +2,7 @@ using System.Reflection;
 using Praxis.Core.Logic;
 using Praxis.Services;
 #if MACCATALYST
+using CoreAnimation;
 using CoreGraphics;
 using Foundation;
 using ObjCRuntime;
@@ -675,9 +676,7 @@ public partial class MainPage
     private void ApplyMacModalTextEditorVisualState(UITextView textView)
     {
         var dark = IsDarkThemeActive();
-        var tintColor = dark
-            ? UIColor.FromRGBA(54, 59, 67, 0.16f)
-            : UIColor.FromRGBA(255, 255, 255, 0.055f);
+        var tintColor = UIColor.Clear;
         var textColor = dark ? UIColor.White : UIColor.FromRGB(0x05, 0x05, 0x05);
         var backdropView = EnsureMacModalTextEditorGlassBackdrop(textView);
 
@@ -699,6 +698,7 @@ public partial class MainPage
         textView.SendSubviewToBack(backdropView);
         ClearMacGlassTextEditorBackgrounds(textView, backdropView);
         ClearMacGlassTextEditorLayers(textView, backdropView);
+        ClearMacGlassTextEditorWrapperBackgrounds(textView);
     }
 
     private static UIView EnsureMacModalTextEditorGlassBackdrop(UITextView textView)
@@ -773,6 +773,48 @@ public partial class MainPage
         }
     }
 
+    private static void ClearMacGlassTextEditorWrapperBackgrounds(UITextView textView)
+    {
+        var ancestor = textView.Superview;
+        var depth = 0;
+        while (ancestor is not null && ancestor is not UIWindow && depth < 4)
+        {
+            if (IsLikelyMacGlassTextEditorWrapper(textView, ancestor))
+            {
+                ancestor.Opaque = false;
+                ancestor.BackgroundColor = UIColor.Clear;
+                ancestor.Layer.BackgroundColor = UIColor.Clear.CGColor;
+                ClearMacGlassWrapperLayers(ancestor.Layer);
+            }
+
+            ancestor = ancestor.Superview;
+            depth++;
+        }
+    }
+
+    private static bool IsLikelyMacGlassTextEditorWrapper(UITextView textView, UIView view)
+    {
+        const double widthSlack = 72;
+        const double heightSlack = 18;
+        return view.Bounds.Width <= textView.Bounds.Width + widthSlack &&
+            view.Bounds.Height <= textView.Bounds.Height + heightSlack;
+    }
+
+    private static void ClearMacGlassWrapperLayers(CALayer layer)
+    {
+        var layers = layer.Sublayers;
+        if (layers is null)
+        {
+            return;
+        }
+
+        foreach (var sublayer in layers)
+        {
+            sublayer.BackgroundColor = UIColor.Clear.CGColor;
+            sublayer.ShouldRasterize = false;
+        }
+    }
+
     private void ApplyMacModalButtonVisualState()
     {
         ApplyMacGlassButtonVisual(CopyGuidButton);
@@ -803,6 +845,10 @@ public partial class MainPage
         var titleColor = dark ? UIColor.White : UIColor.FromRGB(0x05, 0x05, 0x05);
 
         nativeButton.Opaque = false;
+        if (OperatingSystem.IsMacCatalystVersionAtLeast(15, 0))
+        {
+            nativeButton.Configuration = null;
+        }
         nativeButton.BackgroundColor = backgroundColor;
         nativeButton.Layer.BackgroundColor = backgroundColor.CGColor;
         nativeButton.Layer.CornerRadius = 12;
@@ -810,17 +856,38 @@ public partial class MainPage
         nativeButton.Layer.BorderColor = borderColor;
         nativeButton.Layer.MasksToBounds = true;
         nativeButton.ClipsToBounds = true;
+        nativeButton.ContentScaleFactor = UIScreen.MainScreen.Scale;
         nativeButton.TintColor = titleColor;
         nativeButton.SetTitleColor(titleColor, UIControlState.Normal);
         nativeButton.SetTitleColor(titleColor.ColorWithAlpha(0.82f), UIControlState.Highlighted);
         if (nativeButton.TitleLabel is UILabel titleLabel)
         {
             titleLabel.Opaque = false;
+            titleLabel.ContentScaleFactor = UIScreen.MainScreen.Scale;
+            titleLabel.Layer.ContentsScale = UIScreen.MainScreen.Scale;
             titleLabel.Layer.ShouldRasterize = false;
             titleLabel.Font = UIFont.SystemFontOfSize(titleLabel.Font.PointSize, UIFontWeight.Medium);
         }
+        ClearMacGlassButtonSubviews(nativeButton);
         nativeButton.Layer.ShouldRasterize = false;
         nativeButton.SetNeedsDisplay();
+    }
+
+    private static void ClearMacGlassButtonSubviews(UIButton nativeButton)
+    {
+        foreach (var subview in nativeButton.Subviews)
+        {
+            if (ReferenceEquals(subview, nativeButton.TitleLabel) ||
+                ReferenceEquals(subview, nativeButton.ImageView))
+            {
+                continue;
+            }
+
+            subview.Opaque = false;
+            subview.BackgroundColor = UIColor.Clear;
+            subview.Layer.BackgroundColor = UIColor.Clear.CGColor;
+            subview.Layer.ShouldRasterize = false;
+        }
     }
 
     private void TryHandleMacEditorTabTextInsertion(object? sender, TextChangedEventArgs e)
