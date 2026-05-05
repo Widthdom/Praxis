@@ -12,21 +12,23 @@
              BackgroundColor="Transparent">
     <ContentPage.Resources>
         <converters:BoolToScrollBarVisibilityConverter x:Key="BoolToScrollBarVisibilityConverter" />
-        <Color x:Key="DummyRootGlassLight">#24FFFFFF</Color>
-        <Color x:Key="DummyRootGlassDark">#3021262D</Color>
+        <Color x:Key="DummyRootGlassLight">#08FFFFFF</Color>
+        <Color x:Key="DummyRootGlassDark">#1C21262D</Color>
         <Color x:Key="GlassPanelLight">#00FFFFFF</Color>
         <Color x:Key="GlassPanelDark">#00000000</Color>
         <Color x:Key="GlassSurfaceLight">#00FFFFFF</Color>
         <Color x:Key="GlassSurfaceDark">#00000000</Color>
         <Color x:Key="GlassPopupLight">#04FFFFFF</Color>
         <Color x:Key="GlassPopupDark">#101E2228</Color>
-        <Color x:Key="GlassInputLight">#24FFFFFF</Color>
-        <Color x:Key="GlassInputDark">#34363B43</Color>
-        <Color x:Key="GlassButtonLight">#6AFFFFFF</Color>
-        <Color x:Key="GlassButtonDark">#78363B43</Color>
-        <Color x:Key="GlassButtonStrokeLight">#B6FFFFFF</Color>
+        <Color x:Key="GlassInputLight">#18FFFFFF</Color>
+        <Color x:Key="GlassInputDark">#2C363B43</Color>
+        <Color x:Key="GlassModalInputLight">#2CFFFFFF</Color>
+        <Color x:Key="GlassModalInputDark">#38363B43</Color>
+        <Color x:Key="GlassButtonLight">#58FFFFFF</Color>
+        <Color x:Key="GlassButtonDark">#70363B43</Color>
+        <Color x:Key="GlassButtonStrokeLight">#98FFFFFF</Color>
         <Color x:Key="GlassButtonStrokeDark">#747C8794</Color>
-        <Color x:Key="GlassStrokeLight">#9FFFFFFF</Color>
+        <Color x:Key="GlassStrokeLight">#58FFFFFF</Color>
         <Color x:Key="GlassStrokeDark">#66717B88</Color>
         <Style x:Key="PlacementButtonTextLabelStyle"
                TargetType="Label">
@@ -66,7 +68,7 @@
                                 Grid.RowSpan="4"
                                 CornerRadius="28"
                                 MacOSBehindWindowBlur="True"
-                                MacOSBackdropOpacity="0.30"
+                                MacOSBackdropOpacity="0.08"
                                 InputTransparent="True"
                                 HorizontalOptions="Fill"
                                 VerticalOptions="Fill"
@@ -624,7 +626,7 @@
                                 VerticalOptions="Start">
                         <Grid ColumnDefinitions="140,*,44" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto" ColumnSpacing="8" RowSpacing="8">
                             <Label Grid.Row="0" Grid.Column="0" Text="GUID" VerticalTextAlignment="Center" HeightRequest="40" />
-                            <Border Grid.Row="0" Grid.Column="1" HeightRequest="40" Stroke="Transparent" StrokeThickness="0" BackgroundColor="{AppThemeBinding Light={StaticResource GlassInputLight}, Dark={StaticResource GlassInputDark}}" StrokeShape="RoundRectangle 6" InputTransparent="True" />
+                            <Border Grid.Row="0" Grid.Column="1" HeightRequest="40" Stroke="Transparent" StrokeThickness="0" BackgroundColor="{AppThemeBinding Light={StaticResource GlassModalInputLight}, Dark={StaticResource GlassModalInputDark}}" StrokeShape="RoundRectangle 6" InputTransparent="True" />
                             <Entry x:Name="ModalGuidEntry" Grid.Row="0" Grid.Column="1" Text="{Binding Editor.GuidText}" IsReadOnly="{OnPlatform Default=True, MacCatalyst=False}" HeightRequest="40" BackgroundColor="Transparent" HandlerChanged="ModalGuidEntry_HandlerChanged" />
                             <Button x:Name="CopyGuidButton" Grid.Row="0" Grid.Column="2" Style="{StaticResource GlassCopyButtonStyle}" Text="{OnPlatform WinUI='&#xE8C8;', MacCatalyst='⧉'}" FontFamily="{OnPlatform WinUI='Segoe MDL2 Assets', MacCatalyst=''}"
                                     Command="{Binding CopyFieldCommand}"
@@ -638,7 +640,7 @@
                             </Button>
 
                             <Label Grid.Row="1" Grid.Column="0" Text="Button Text" VerticalTextAlignment="Center" HeightRequest="40" />
-                            <Border Grid.Row="1" Grid.Column="1" HeightRequest="40" Stroke="Transparent" StrokeThickness="0" BackgroundColor="{AppThemeBinding Light={StaticResource GlassInputLight}, Dark={StaticResource GlassInputDark}}" StrokeShape="RoundRectangle 6" InputTransparent="True" />
+                            <Border Grid.Row="1" Grid.Column="1" HeightRequest="40" Stroke="Transparent" StrokeThickness="0" BackgroundColor="{AppThemeBinding Light={StaticResource GlassModalInputLight}, Dark={StaticResource GlassModalInputDark}}" StrokeShape="RoundRectangle 6" InputTransparent="True" />
                             <Entry x:Name="ModalButtonTextEntry" Grid.Row="1" Grid.Column="1" Text="{Binding Editor.ButtonText}" HeightRequest="40" BackgroundColor="Transparent" HandlerChanged="ModalTextInput_HandlerChanged" />
                             <Button x:Name="CopyButtonTextButton" Grid.Row="1" Grid.Column="2" Style="{StaticResource GlassCopyButtonStyle}" Text="{OnPlatform WinUI='&#xE8C8;', MacCatalyst='⧉'}" FontFamily="{OnPlatform WinUI='Segoe MDL2 Assets', MacCatalyst=''}"
                                     Command="{Binding CopyFieldCommand}"
@@ -652,7 +654,7 @@
                             </Button>
 
                             <Label Grid.Row="2" Grid.Column="0" Text="Command" VerticalTextAlignment="Center" HeightRequest="40" />
-                            <Border Grid.Row="2" Grid.Column="1" HeightRequest="40" Stroke="Transparent" StrokeThickness="0" BackgroundColor="{AppThemeBinding Light={StaticResource GlassInputLight}, Dark={StaticResource GlassInputDark}}" StrokeShape="RoundRectangle 6" InputTransparent="True" />
+                            <Border Grid.Row="2" Grid.Column="1" HeightRequest="40" Stroke="Transparent" StrokeThickness="0" BackgroundColor="{AppThemeBinding Light={StaticResource GlassModalInputLight}, Dark={StaticResource GlassModalInputDark}}" StrokeShape="RoundRectangle 6" InputTransparent="True" />
                             <controls:CommandEntry x:Name="ModalCommandEntry" Grid.Row="2" Grid.Column="1" Text="{Binding Editor.Command}" HeightRequest="40"
                                                    BackgroundColor="Transparent"
                                                    EnableCommandNavigationShortcuts="False"
@@ -673,7 +675,7 @@
                             </Button>
 
                             <Label Grid.Row="3" Grid.Column="0" Text="Tool" VerticalTextAlignment="Center" HeightRequest="40" />
-                            <Border Grid.Row="3" Grid.Column="1" HeightRequest="40" Stroke="Transparent" StrokeThickness="0" BackgroundColor="{AppThemeBinding Light={StaticResource GlassInputLight}, Dark={StaticResource GlassInputDark}}" StrokeShape="RoundRectangle 6" InputTransparent="True" />
+                            <Border Grid.Row="3" Grid.Column="1" HeightRequest="40" Stroke="Transparent" StrokeThickness="0" BackgroundColor="{AppThemeBinding Light={StaticResource GlassModalInputLight}, Dark={StaticResource GlassModalInputDark}}" StrokeShape="RoundRectangle 6" InputTransparent="True" />
                             <Entry x:Name="ModalToolEntry" Grid.Row="3" Grid.Column="1" Text="{Binding Editor.Tool}" HeightRequest="40" BackgroundColor="Transparent" HandlerChanged="ModalTextInput_HandlerChanged" />
                             <Button x:Name="CopyToolButton" Grid.Row="3" Grid.Column="2" Style="{StaticResource GlassCopyButtonStyle}" Text="{OnPlatform WinUI='&#xE8C8;', MacCatalyst='⧉'}" FontFamily="{OnPlatform WinUI='Segoe MDL2 Assets', MacCatalyst=''}"
                                     Command="{Binding CopyFieldCommand}"
@@ -687,7 +689,7 @@
                             </Button>
 
                             <Label Grid.Row="4" Grid.Column="0" Text="Arguments" VerticalTextAlignment="Center" HeightRequest="40" />
-                            <Border Grid.Row="4" Grid.Column="1" HeightRequest="40" Stroke="Transparent" StrokeThickness="0" BackgroundColor="{AppThemeBinding Light={StaticResource GlassInputLight}, Dark={StaticResource GlassInputDark}}" StrokeShape="RoundRectangle 6" InputTransparent="True" />
+                            <Border Grid.Row="4" Grid.Column="1" HeightRequest="40" Stroke="Transparent" StrokeThickness="0" BackgroundColor="{AppThemeBinding Light={StaticResource GlassModalInputLight}, Dark={StaticResource GlassModalInputDark}}" StrokeShape="RoundRectangle 6" InputTransparent="True" />
                             <Entry x:Name="ModalArgumentsEntry" Grid.Row="4" Grid.Column="1" Text="{Binding Editor.Arguments}" HeightRequest="40" BackgroundColor="Transparent" HandlerChanged="ModalTextInput_HandlerChanged" />
                             <Button x:Name="CopyArgumentsButton" Grid.Row="4" Grid.Column="2" Style="{StaticResource GlassCopyButtonStyle}" Text="{OnPlatform WinUI='&#xE8C8;', MacCatalyst='⧉'}" FontFamily="{OnPlatform WinUI='Segoe MDL2 Assets', MacCatalyst=''}"
                                     Command="{Binding CopyFieldCommand}"
@@ -706,7 +708,7 @@
                                     Grid.Column="1"
                                     Stroke="Transparent"
                                     StrokeThickness="0"
-                                    BackgroundColor="{AppThemeBinding Light={StaticResource GlassInputLight}, Dark={StaticResource GlassInputDark}}"
+                                    BackgroundColor="{AppThemeBinding Light={StaticResource GlassModalInputLight}, Dark={StaticResource GlassModalInputDark}}"
                                     StrokeShape="RoundRectangle 6"
                                     MinimumHeightRequest="40"
                                     HeightRequest="40"
@@ -750,7 +752,7 @@
                                     Grid.Column="1"
                                     Stroke="Transparent"
                                     StrokeThickness="0"
-                                    BackgroundColor="{AppThemeBinding Light={StaticResource GlassInputLight}, Dark={StaticResource GlassInputDark}}"
+                                    BackgroundColor="{AppThemeBinding Light={StaticResource GlassModalInputLight}, Dark={StaticResource GlassModalInputDark}}"
                                     StrokeShape="RoundRectangle 6"
                                     MinimumHeightRequest="40"
                                     HeightRequest="40"

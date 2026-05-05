@@ -85,7 +85,7 @@ public class MainPageStructureTests
         Assert.Contains("x:Name=\"RootPage\"", xaml);
         Assert.Contains("x:Name=\"RootGrid\"", xaml);
         Assert.Contains("x:Name=\"DummyRootGlassFrame\"", xaml);
-        Assert.Contains("MacOSBackdropOpacity=\"0.30\"", xaml);
+        Assert.Contains("MacOSBackdropOpacity=\"0.08\"", xaml);
         Assert.DoesNotContain("Margin=\"-12,0,12,0\"", xaml);
         Assert.Contains("HorizontalOptions=\"Fill\"", xaml);
         Assert.Contains("VerticalOptions=\"Fill\"", xaml);
@@ -96,10 +96,12 @@ public class MainPageStructureTests
         Assert.Contains("<Color x:Key=\"GlassPanelDark\">#00000000</Color>", xaml);
         Assert.Contains("<Color x:Key=\"GlassPopupLight\">#04FFFFFF</Color>", xaml);
         Assert.Contains("<Color x:Key=\"GlassPopupDark\">#101E2228</Color>", xaml);
-        Assert.Contains("<Color x:Key=\"GlassInputLight\">#24FFFFFF</Color>", xaml);
-        Assert.Contains("<Color x:Key=\"GlassInputDark\">#34363B43</Color>", xaml);
-        Assert.Contains("<Color x:Key=\"GlassButtonLight\">#6AFFFFFF</Color>", xaml);
-        Assert.Contains("<Color x:Key=\"GlassButtonDark\">#78363B43</Color>", xaml);
+        Assert.Contains("<Color x:Key=\"GlassInputLight\">#18FFFFFF</Color>", xaml);
+        Assert.Contains("<Color x:Key=\"GlassInputDark\">#2C363B43</Color>", xaml);
+        Assert.Contains("<Color x:Key=\"GlassModalInputLight\">#2CFFFFFF</Color>", xaml);
+        Assert.Contains("<Color x:Key=\"GlassModalInputDark\">#38363B43</Color>", xaml);
+        Assert.Contains("<Color x:Key=\"GlassButtonLight\">#58FFFFFF</Color>", xaml);
+        Assert.Contains("<Color x:Key=\"GlassButtonDark\">#70363B43</Color>", xaml);
         Assert.Contains("x:Key=\"GlassModalActionButtonStyle\"", xaml);
         Assert.Contains("x:Key=\"GlassCopyButtonStyle\"", xaml);
         Assert.Contains("x:Name=\"MainCommandEntry\"\n                                       Placeholder=\"Command\"\n                                       Text=\"{Binding CommandInput}\"\n                                       BackgroundColor=\"Transparent\"", xaml);
@@ -117,7 +119,8 @@ public class MainPageStructureTests
         Assert.Contains("x:Name=\"ModalSaveButton\"\n                                Style=\"{StaticResource GlassModalActionButtonStyle}\"", xaml);
         Assert.Equal(7, CountOccurrences(xaml, "Style=\"{StaticResource GlassCopyButtonStyle}\""));
         Assert.Equal(2, CountOccurrences(xaml, "Style=\"{StaticResource GlassModalActionButtonStyle}\""));
-        Assert.Equal(9, CountOccurrences(xaml, "BackgroundColor=\"{AppThemeBinding Light={StaticResource GlassInputLight}, Dark={StaticResource GlassInputDark}}\""));
+        Assert.Equal(2, CountOccurrences(xaml, "BackgroundColor=\"{AppThemeBinding Light={StaticResource GlassInputLight}, Dark={StaticResource GlassInputDark}}\""));
+        Assert.Equal(7, CountOccurrences(xaml, "BackgroundColor=\"{AppThemeBinding Light={StaticResource GlassModalInputLight}, Dark={StaticResource GlassModalInputDark}}\""));
         Assert.True(CountOccurrences(xaml, "BackgroundColor=\"Transparent\"") >= 10);
         Assert.True(CountOccurrences(xaml, "<controls:MaterialFrame ") >= 9);
     }

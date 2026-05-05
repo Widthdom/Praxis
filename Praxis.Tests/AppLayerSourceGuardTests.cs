@@ -300,6 +300,8 @@ public class AppLayerSourceGuardTests
         Assert.Contains("Class.GetHandle(\"NSVisualEffectView\")", appSource);
         Assert.Contains("Class.GetHandle(\"NSView\")", appSource);
         Assert.Contains("var frame = new CGRect(0d, 0d, uiBounds.Width, uiBounds.Height);", appSource);
+        Assert.Contains("MacNativeUnderWindowBackgroundMaterial = 21", appSource);
+        Assert.Contains("TrySetInt(dummyRoot, \"material\", MacNativeUnderWindowBackgroundMaterial);", appSource);
         Assert.Contains("layer.BorderWidth = 0f;", appSource);
         Assert.Contains("ObjcMsgSendCGRect(allocated, SelRegisterName(\"initWithFrame:\"), frame);", appSource);
         Assert.Contains("MacNativeSubviewBelow = -1", appSource);

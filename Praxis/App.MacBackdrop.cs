@@ -13,6 +13,7 @@ public partial class App
 {
     private const nint MacFullSizeContentViewMask = (nint)(1 << 15);
     private const nint MacNativeSubviewBelow = -1;
+    private const int MacNativeUnderWindowBackgroundMaterial = 21;
     private static readonly NSString MacNativeNsDummyRootIdentifier = new("PraxisNativeDummyRootGlass");
     private static int macBackdropDiagnosticsLogged;
 
@@ -143,14 +144,15 @@ public partial class App
             TrySetBool(dummyRoot, "wantsLayer", true);
             TrySetObject(dummyRoot, "identifier", MacNativeNsDummyRootIdentifier);
             TrySetInt(dummyRoot, "blendingMode", 0);
-            TrySetInt(dummyRoot, "material", 6);
+            TrySetInt(dummyRoot, "material", MacNativeUnderWindowBackgroundMaterial);
             TrySetInt(dummyRoot, "state", 1);
 
             if (dummyRoot.ValueForKey(new NSString("layer")) is CALayer layer)
             {
+                layer.Opaque = false;
                 layer.BackgroundColor = isDark
-                    ? UIColor.FromRGBA(25, 29, 35, 0.22f).CGColor
-                    : UIColor.FromRGBA(255, 255, 255, 0.12f).CGColor;
+                    ? UIColor.FromRGBA(25, 29, 35, 0.14f).CGColor
+                    : UIColor.FromRGBA(255, 255, 255, 0.04f).CGColor;
                 layer.CornerRadius = 18f;
                 layer.MasksToBounds = true;
                 layer.BorderWidth = 0f;
