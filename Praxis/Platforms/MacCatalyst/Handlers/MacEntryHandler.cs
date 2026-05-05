@@ -38,8 +38,8 @@ public class MacEntryHandler : EntryHandler
         private static readonly CGColor TransparentBorderColor = UIColor.Clear.CGColor;
         private static readonly UIColor LightGlassFieldBackground = UIColor.Clear;
         private static readonly UIColor DarkGlassFieldBackground = UIColor.Clear;
-        private static readonly UIColor LightPlaceholderColor = UIColor.FromRGBA(0, 0, 0, 0.82f);
-        private static readonly UIColor DarkPlaceholderColor = UIColor.FromRGBA(255, 255, 255, 0.76f);
+        private static readonly UIColor LightPlaceholderColor = UIColor.FromRGBA(0, 0, 0, 0.52f);
+        private static readonly UIColor DarkPlaceholderColor = UIColor.FromRGBA(255, 255, 255, 0.58f);
         private static readonly UIColor LightTextColor = UIColor.FromRGB(0x05, 0x05, 0x05);
         private static readonly UIColor DarkTextColor = UIColor.White;
         private static readonly nfloat CornerRadius = 4;
@@ -83,6 +83,9 @@ public class MacEntryHandler : EntryHandler
             Layer.CornerRadius = CornerRadius;
             Layer.BorderWidth = 0;
             Layer.MasksToBounds = false;
+            Layer.ShouldRasterize = false;
+            ContentScaleFactor = UIScreen.MainScreen.Scale;
+            Layer.ContentsScale = UIScreen.MainScreen.Scale;
             Opaque = false;
 
             borderLayer.FillColor = UIColor.Clear.CGColor;
@@ -217,6 +220,9 @@ public class MacEntryHandler : EntryHandler
             var borderColor = dark ? DarkBorderColor : LightBorderColor;
             var focusColor = dark ? DarkFocusUnderlineColor : LightFocusUnderlineColor;
             var textColor = dark ? DarkTextColor : LightTextColor;
+            ContentScaleFactor = UIScreen.MainScreen.Scale;
+            Layer.ContentsScale = UIScreen.MainScreen.Scale;
+            Layer.ShouldRasterize = false;
             TintColor = textColor;
             TextColor = textColor;
             BorderStyle = UITextBorderStyle.None;
@@ -414,8 +420,8 @@ public class MacEntryHandler : EntryHandler
 
             var placeholderColor = dark ? DarkPlaceholderColor : LightPlaceholderColor;
             var placeholderFont = Font is not null
-                ? UIFont.SystemFontOfSize(Font.PointSize, UIFontWeight.Medium)
-                : UIFont.SystemFontOfSize(14, UIFontWeight.Medium);
+                ? UIFont.SystemFontOfSize(Font.PointSize, UIFontWeight.Regular)
+                : UIFont.SystemFontOfSize(14, UIFontWeight.Regular);
             AttributedPlaceholder = new NSAttributedString(
                 Placeholder,
                 new UIStringAttributes

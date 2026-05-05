@@ -941,11 +941,11 @@ public partial class MainPage
 
         var dark = IsDarkThemeActive();
         var backgroundColor = dark
-            ? UIColor.FromRGBA(54, 59, 67, 0.47f)
-            : UIColor.FromRGBA(255, 255, 255, 0.42f);
+            ? UIColor.FromRGBA(54, 59, 67, 0.30f)
+            : UIColor.FromRGBA(255, 255, 255, 0.30f);
         var borderColor = dark
-            ? UIColor.FromRGBA(124, 135, 148, 0.45f).CGColor
-            : UIColor.FromRGBA(255, 255, 255, 0.72f).CGColor;
+            ? UIColor.FromRGBA(124, 135, 148, 0.34f).CGColor
+            : UIColor.FromRGBA(255, 255, 255, 0.48f).CGColor;
         var titleColor = dark ? UIColor.White : UIColor.FromRGB(0x05, 0x05, 0x05);
 
         nativeButton.Opaque = false;
@@ -973,7 +973,8 @@ public partial class MainPage
             titleLabel.ContentScaleFactor = UIScreen.MainScreen.Scale;
             titleLabel.Layer.ContentsScale = UIScreen.MainScreen.Scale;
             titleLabel.Layer.ShouldRasterize = false;
-            titleLabel.Font = UIFont.SystemFontOfSize(titleLabel.Font.PointSize, UIFontWeight.Medium);
+            titleLabel.BackgroundColor = UIColor.Clear;
+            titleLabel.Font = UIFont.SystemFontOfSize(titleLabel.Font.PointSize, UIFontWeight.Regular);
         }
         ClearMacGlassButtonSubviews(nativeButton);
         nativeButton.Layer.ShouldRasterize = false;

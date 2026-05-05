@@ -745,6 +745,10 @@ public class AppLayerSourceGuardTests
         Assert.Contains("effectView.Effect = null;", macEntrySource);
         Assert.DoesNotContain("UIBlurEffect.FromStyle", macEntrySource);
         Assert.Contains("Layer.BackgroundColor = UIColor.Clear.CGColor;", macEntrySource);
+        Assert.Contains("LightPlaceholderColor = UIColor.FromRGBA(0, 0, 0, 0.52f);", macEntrySource);
+        Assert.Contains("DarkPlaceholderColor = UIColor.FromRGBA(255, 255, 255, 0.58f);", macEntrySource);
+        Assert.Contains("ContentScaleFactor = UIScreen.MainScreen.Scale;", macEntrySource);
+        Assert.Contains("Layer.ContentsScale = UIScreen.MainScreen.Scale;", macEntrySource);
         Assert.Contains("Background = TransparentFieldImage;", macEntrySource);
         Assert.Contains("private static UIImage CreateTransparentFieldImage()", macEntrySource);
         Assert.Contains("var renderer = new UIGraphicsImageRenderer(new CGSize(1, 1));", macEntrySource);
@@ -763,8 +767,11 @@ public class AppLayerSourceGuardTests
         Assert.Contains("BorderStyle = UITextBorderStyle.None;", macEntrySource);
         Assert.Contains("AttributedPlaceholder = new NSAttributedString(", macEntrySource);
         Assert.Contains("Font = placeholderFont,", macEntrySource);
+        Assert.Contains("UIFontWeight.Regular", macEntrySource);
         Assert.Contains("public void SetGlassFieldVisual(bool enabled)", macEntrySource);
         Assert.Contains("macEntryTextField.SetGlassFieldVisual(IsGlassEntryVisual(entry));", macPageSource);
+        Assert.Contains("UIColor.FromRGBA(54, 59, 67, 0.30f)", macPageSource);
+        Assert.Contains("UIColor.FromRGBA(255, 255, 255, 0.30f)", macPageSource);
         Assert.Contains("nativeButton.SetBackgroundImage(CreateMacGlassButtonBackgroundImage(backgroundColor), UIControlState.Normal);", macPageSource);
         Assert.Contains("private static UIImage CreateMacGlassButtonBackgroundImage(UIColor color)", macPageSource);
         Assert.Contains("ScheduleMacRootTransparencyRefresh();", macPageSource);

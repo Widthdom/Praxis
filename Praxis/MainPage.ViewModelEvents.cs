@@ -19,6 +19,10 @@ public partial class MainPage
         if (e.PropertyName == nameof(MainViewModel.SelectedTheme))
         {
             ApplyNeutralStatusBackground();
+#if MACCATALYST
+            App.RefreshMacWindowBackdropForConnectedScenes();
+            ApplyMacVisualTuning();
+#endif
             return;
         }
 

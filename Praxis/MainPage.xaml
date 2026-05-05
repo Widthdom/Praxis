@@ -20,14 +20,14 @@
         <Color x:Key="GlassSurfaceDark">#00000000</Color>
         <Color x:Key="GlassPopupLight">#06FFFFFF</Color>
         <Color x:Key="GlassPopupDark">#101E2228</Color>
-        <Color x:Key="GlassInputLight">#10FFFFFF</Color>
-        <Color x:Key="GlassInputDark">#24363B43</Color>
-        <Color x:Key="GlassModalInputLight">#26FFFFFF</Color>
-        <Color x:Key="GlassModalInputDark">#32363B43</Color>
-        <Color x:Key="GlassButtonLight">#58FFFFFF</Color>
-        <Color x:Key="GlassButtonDark">#70363B43</Color>
-        <Color x:Key="GlassButtonStrokeLight">#98FFFFFF</Color>
-        <Color x:Key="GlassButtonStrokeDark">#747C8794</Color>
+        <Color x:Key="GlassInputLight">#2AFFFFFF</Color>
+        <Color x:Key="GlassInputDark">#38363B43</Color>
+        <Color x:Key="GlassModalInputLight">#40FFFFFF</Color>
+        <Color x:Key="GlassModalInputDark">#46363B43</Color>
+        <Color x:Key="GlassButtonLight">#42FFFFFF</Color>
+        <Color x:Key="GlassButtonDark">#44363B43</Color>
+        <Color x:Key="GlassButtonStrokeLight">#70FFFFFF</Color>
+        <Color x:Key="GlassButtonStrokeDark">#587C8794</Color>
         <Color x:Key="GlassStrokeLight">#58FFFFFF</Color>
         <Color x:Key="GlassStrokeDark">#66717B88</Color>
         <Style x:Key="PlacementButtonTextLabelStyle"
@@ -72,8 +72,8 @@
                                 InputTransparent="True"
                                 HorizontalOptions="Fill"
                                 VerticalOptions="Fill"
-                                Stroke="{AppThemeBinding Light={StaticResource GlassStrokeLight}, Dark={StaticResource GlassStrokeDark}}"
-                                StrokeThickness="1"
+                                Stroke="Transparent"
+                                StrokeThickness="0"
                                 BackgroundColor="{AppThemeBinding Light={StaticResource DummyRootGlassLight}, Dark={StaticResource DummyRootGlassDark}}">
             <controls:MaterialFrame.Shadow>
                 <Shadow Brush="{AppThemeBinding Light=#44000000, Dark=#B0000000}" Opacity="0.18" Offset="0,18" Radius="34" />
