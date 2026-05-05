@@ -122,6 +122,7 @@ public partial class MainPage
         UpdateModalEditorHeights();
 #if MACCATALYST
         macGuidLockedText = viewModel.Editor.GuidText ?? string.Empty;
+        ScheduleMacModalButtonVisualStateRefresh();
 #endif
         modalPrimaryFieldSelectAllPending = !viewModel.Editor.IsExistingRecord;
         Dispatcher.DispatchDelayed(UiTimingPolicy.EditorOpenFocusDelay, () =>

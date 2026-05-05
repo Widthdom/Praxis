@@ -114,7 +114,7 @@ public partial class MainPage
     private void ModalGlassButton_HandlerChanged(object? sender, EventArgs e)
     {
 #if MACCATALYST
-        ApplyMacModalButtonVisualState();
+        ScheduleMacModalButtonVisualStateRefresh();
 #endif
     }
 

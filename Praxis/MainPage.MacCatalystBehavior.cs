@@ -1,5 +1,6 @@
 using System.Reflection;
 using Praxis.Core.Logic;
+using Praxis.Core.Models;
 using Praxis.Services;
 #if MACCATALYST
 using CoreAnimation;
@@ -588,7 +589,7 @@ public partial class MainPage
         ApplyMacEntryVisualState();
         ApplyMacClipWordEditorVisualState();
         ApplyMacNoteEditorVisualState();
-        ApplyMacModalButtonVisualState();
+        ScheduleMacModalButtonVisualStateRefresh();
         ApplyMacModalPseudoFocusVisuals();
         ApplyMacCommandSuggestionKeyCommands();
         ApplyMacEditorKeyCommands();
@@ -932,27 +933,33 @@ public partial class MainPage
         ApplyMacGlassButtonVisual(ModalSaveButton);
     }
 
+    private void ScheduleMacModalButtonVisualStateRefresh()
+    {
+        ApplyMacModalButtonVisualState();
+        Dispatcher.DispatchDelayed(TimeSpan.FromMilliseconds(16), ApplyMacModalButtonVisualState);
+        Dispatcher.DispatchDelayed(TimeSpan.FromMilliseconds(120), ApplyMacModalButtonVisualState);
+    }
+
     private void ApplyMacGlassButtonVisual(Button button)
     {
+        var dark = IsMacGlassDarkThemeActive();
+        ApplyMacGlassButtonManagedVisual(button, dark);
         if (button.Handler?.PlatformView is not UIButton nativeButton)
         {
             return;
         }
 
-        var dark = IsDarkThemeActive();
         var backgroundColor = dark
-            ? UIColor.FromRGBA(54, 59, 67, 0.30f)
-            : UIColor.FromRGBA(255, 255, 255, 0.30f);
+            ? UIColor.FromRGBA(54, 59, 67, 0.47f)
+            : UIColor.FromRGBA(255, 255, 255, 0.38f);
         var borderColor = dark
-            ? UIColor.FromRGBA(124, 135, 148, 0.34f).CGColor
-            : UIColor.FromRGBA(255, 255, 255, 0.48f).CGColor;
+            ? UIColor.FromRGBA(116, 128, 140, 0.37f).CGColor
+            : UIColor.FromRGBA(255, 255, 255, 0.62f).CGColor;
         var titleColor = dark ? UIColor.White : UIColor.FromRGB(0x05, 0x05, 0x05);
 
         nativeButton.Opaque = false;
-        if (OperatingSystem.IsMacCatalystVersionAtLeast(15, 0))
-        {
-            nativeButton.Configuration = null;
-        }
+        nativeButton.Configuration = null;
+        nativeButton.ConfigurationUpdateHandler = null;
         nativeButton.BackgroundColor = backgroundColor;
         nativeButton.Layer.BackgroundColor = backgroundColor.CGColor;
         nativeButton.Layer.CornerRadius = 12;
@@ -974,11 +981,30 @@ public partial class MainPage
             titleLabel.Layer.ContentsScale = UIScreen.MainScreen.Scale;
             titleLabel.Layer.ShouldRasterize = false;
             titleLabel.BackgroundColor = UIColor.Clear;
-            titleLabel.Font = UIFont.SystemFontOfSize(titleLabel.Font.PointSize, UIFontWeight.Regular);
+            titleLabel.Font = UIFont.SystemFontOfSize(titleLabel.Font.PointSize, UIFontWeight.Medium);
         }
         ClearMacGlassButtonSubviews(nativeButton);
         nativeButton.Layer.ShouldRasterize = false;
         nativeButton.SetNeedsDisplay();
+    }
+
+    private static void ApplyMacGlassButtonManagedVisual(Button button, bool dark)
+    {
+        button.BackgroundColor = dark ? Color.FromArgb("#78363B43") : Color.FromArgb("#62FFFFFF");
+        button.BorderColor = dark ? Color.FromArgb("#5E74808C") : Color.FromArgb("#9FFFFFFF");
+        button.TextColor = dark ? Colors.White : Color.FromArgb("#050505");
+        button.BorderWidth = 1;
+        button.CornerRadius = 12;
+    }
+
+    private bool IsMacGlassDarkThemeActive()
+    {
+        return viewModel.SelectedTheme switch
+        {
+            ThemeMode.Dark => true,
+            ThemeMode.Light => false,
+            _ => IsDarkThemeActive(),
+        };
     }
 
     private static UIImage CreateMacGlassButtonBackgroundImage(UIColor color)

@@ -13,7 +13,7 @@ public partial class App
 {
     private const nint MacFullSizeContentViewMask = (nint)(1 << 15);
     private const nint MacNativeSubviewBelow = -1;
-    private const int MacNativeUnderWindowBackgroundMaterial = 21;
+    private const int MacNativeWindowBackgroundMaterial = 12;
     private const double MacNativeRootGlassLightAlpha = 1d;
     private const double MacNativeRootGlassDarkAlpha = 0.96d;
     private static readonly NSString MacNativeNsDummyRootIdentifier = new("PraxisNativeDummyRootGlass");
@@ -146,7 +146,7 @@ public partial class App
             TrySetBool(dummyRoot, "wantsLayer", true);
             TrySetObject(dummyRoot, "identifier", MacNativeNsDummyRootIdentifier);
             TrySetInt(dummyRoot, "blendingMode", 0);
-            TrySetInt(dummyRoot, "material", MacNativeUnderWindowBackgroundMaterial);
+            TrySetInt(dummyRoot, "material", MacNativeWindowBackgroundMaterial);
             TrySetInt(dummyRoot, "state", 1);
             TrySetBool(dummyRoot, "emphasized", true);
             var rootGlassAlpha = isDark ? MacNativeRootGlassDarkAlpha : MacNativeRootGlassLightAlpha;
