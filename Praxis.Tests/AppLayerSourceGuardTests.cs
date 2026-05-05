@@ -323,10 +323,12 @@ public class AppLayerSourceGuardTests
 
         Assert.Contains("App.RefreshMacWindowBackdropForConnectedScenes();", source);
         Assert.Contains("ForceTransparentRootBackground();", source);
-        Assert.Contains("DummyRootGlassFrame.MacOSBehindWindowBlur = false;", themeSource);
-        Assert.Contains("DummyRootGlassFrame.BackgroundColor = Colors.Transparent;", themeSource);
-        Assert.Contains("DummyRootGlassFrame.StrokeThickness = 0;", themeSource);
-        Assert.Contains("DummyRootGlassFrame.Shadow.Opacity = 0;", themeSource);
+        Assert.Contains("DummyRootGlassFrame.IsVisible = true;", themeSource);
+        Assert.Contains("DummyRootGlassFrame.Opacity = 1;", themeSource);
+        Assert.DoesNotContain("DummyRootGlassFrame.MacOSBehindWindowBlur = false;", themeSource);
+        Assert.DoesNotContain("DummyRootGlassFrame.BackgroundColor = Colors.Transparent;", themeSource);
+        Assert.DoesNotContain("DummyRootGlassFrame.StrokeThickness = 0;", themeSource);
+        Assert.DoesNotContain("DummyRootGlassFrame.Shadow.Opacity = 0;", themeSource);
     }
 
     [Fact]

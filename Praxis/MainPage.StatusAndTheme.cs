@@ -17,15 +17,6 @@ public partial class MainPage
         RootGrid.Opacity = 1;
         DummyRootGlassFrame.IsVisible = true;
         DummyRootGlassFrame.Opacity = 1;
-#if MACCATALYST
-        DummyRootGlassFrame.MacOSBehindWindowBlur = false;
-        DummyRootGlassFrame.BackgroundColor = Colors.Transparent;
-        DummyRootGlassFrame.StrokeThickness = 0;
-        if (DummyRootGlassFrame.Shadow is not null)
-        {
-            DummyRootGlassFrame.Shadow.Opacity = 0;
-        }
-#endif
     }
 
     private async void TriggerStatusFlash(string? message)
