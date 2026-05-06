@@ -299,6 +299,9 @@ public class AppLayerSourceGuardTests
         Assert.Contains("TrySetBool(target, \"opaque\", false);", appSource);
         Assert.Contains("layer.Opaque = false;", appSource);
         Assert.Contains("ClearNativeWindowChrome(nativeMacWindow, \"contentView\");", appSource);
+        Assert.Contains("if (key is \"contentView\" or \"frameView\")", appSource);
+        Assert.Contains("ClearNativeObjectSurface(chromeObject);", appSource);
+        Assert.Contains("MaterialFrame.MacNativeHostTag", appSource);
         Assert.Contains("EnsureNativeNsDummyRootGlass(", appSource);
         Assert.Contains("nativeWindow.TraitCollection.UserInterfaceStyle == UIUserInterfaceStyle.Dark", appSource);
         Assert.Contains("Class.GetHandle(\"NSVisualEffectView\")", appSource);
@@ -349,6 +352,8 @@ public class AppLayerSourceGuardTests
         Assert.Contains("backdropView.ContentView.BackgroundColor = ResolveBackdropTintColor();", behaviorSource);
         Assert.Contains("attachedView?.BackgroundColor?.ToPlatform() ?? UIColor.Clear", behaviorSource);
         Assert.Contains("public sealed class MaterialFrame : Border", frameSource);
+        Assert.Contains("internal const nint MacNativeHostTag = 0x50475846;", frameSource);
+        Assert.Contains("platformView.Tag = MacNativeHostTag;", frameSource);
         Assert.Contains("MacOSBehindWindowBlurProperty", frameSource);
         Assert.Contains("MacOSBackdropOpacityProperty", frameSource);
     }

@@ -19,16 +19,18 @@
         <Color x:Key="GlassSurfaceDark">#00000000</Color>
         <Color x:Key="GlassPopupLight">#06FFFFFF</Color>
         <Color x:Key="GlassPopupDark">#101E2228</Color>
-        <Color x:Key="SolidPopupLight">#FFF6F9FB</Color>
-        <Color x:Key="SolidPopupDark">#FF202830</Color>
+        <Color x:Key="SolidPopupLight">#FFE0E8EE</Color>
+        <Color x:Key="SolidPopupDark">#FF36424C</Color>
+        <Color x:Key="SolidModalLight">#FFE3E9EE</Color>
+        <Color x:Key="SolidModalDark">#FF2B333C</Color>
         <Color x:Key="GlassInputLight">#58FFFFFF</Color>
         <Color x:Key="GlassInputDark">#66363B43</Color>
-        <Color x:Key="GlassModalInputLight">#86FFFFFF</Color>
-        <Color x:Key="GlassModalInputDark">#96434A54</Color>
+        <Color x:Key="GlassModalInputLight">#A6FFFFFF</Color>
+        <Color x:Key="GlassModalInputDark">#A548535F</Color>
         <Color x:Key="GlassButtonLight">#62FFFFFF</Color>
         <Color x:Key="GlassButtonDark">#78363B43</Color>
-        <Color x:Key="GlassModalButtonLight">#8AFFFFFF</Color>
-        <Color x:Key="GlassModalButtonDark">#9A53606B</Color>
+        <Color x:Key="GlassModalButtonLight">#B8FFFFFF</Color>
+        <Color x:Key="GlassModalButtonDark">#A85A6876</Color>
         <Color x:Key="GlassButtonStrokeLight">#00FFFFFF</Color>
         <Color x:Key="GlassButtonStrokeDark">#00000000</Color>
         <Color x:Key="GlassStrokeLight">#58FFFFFF</Color>
@@ -295,7 +297,7 @@
                             <Grid.Triggers>
                                 <DataTrigger TargetType="Grid" Binding="{Binding IsSelected}" Value="True">
                                     <Setter Property="BackgroundColor"
-                                            Value="{AppThemeBinding Light=#FFDDE7EF, Dark=#FF3A4652}" />
+                                            Value="{AppThemeBinding Light=#FFCCD8E1, Dark=#FF50606D}" />
                                 </DataTrigger>
                             </Grid.Triggers>
                             <Grid.GestureRecognizers>
@@ -640,10 +642,10 @@
                                     MaximumWidthRequest="860"
                                     Padding="18"
                                     CornerRadius="18"
-                                    MacOSBehindWindowBlur="True"
-                                    MacOSBackdropOpacity="1"
-                                    Stroke="{AppThemeBinding Light={StaticResource GlassStrokeLight}, Dark={StaticResource GlassStrokeDark}}"
-                                    BackgroundColor="{AppThemeBinding Light=#44FFFFFF, Dark=#421E2228}">
+                                    MacOSBehindWindowBlur="False"
+                                    Stroke="Transparent"
+                                    StrokeThickness="0"
+                                    BackgroundColor="{AppThemeBinding Light={StaticResource SolidModalLight}, Dark={StaticResource SolidModalDark}}">
                 <controls:MaterialFrame.Shadow>
                     <Shadow Brush="{AppThemeBinding Light=#24000000, Dark=#52000000}" Opacity="0.04" Offset="0,3" Radius="8" />
                 </controls:MaterialFrame.Shadow>
@@ -963,10 +965,10 @@
                                     MaximumWidthRequest="620"
                                     Padding="18"
                                     CornerRadius="18"
-                                    MacOSBehindWindowBlur="True"
-                                    MacOSBackdropOpacity="0.82"
-                                    Stroke="{AppThemeBinding Light={StaticResource GlassStrokeLight}, Dark={StaticResource GlassStrokeDark}}"
-                                    BackgroundColor="{AppThemeBinding Light={StaticResource GlassPopupLight}, Dark={StaticResource GlassPopupDark}}">
+                                    MacOSBehindWindowBlur="False"
+                                    Stroke="Transparent"
+                                    StrokeThickness="0"
+                                    BackgroundColor="{AppThemeBinding Light={StaticResource SolidModalLight}, Dark={StaticResource SolidModalDark}}">
                 <controls:MaterialFrame.Shadow>
                     <Shadow Brush="{AppThemeBinding Light=#66000000, Dark=#AA000000}" Opacity="0.22" Offset="0,10" Radius="22" />
                 </controls:MaterialFrame.Shadow>
@@ -981,6 +983,13 @@
                         <Button x:Name="ConflictReloadButton"
                                 Text="Reload latest"
                                 WidthRequest="132"
+                                HeightRequest="38"
+                                CornerRadius="12"
+                                BackgroundColor="{AppThemeBinding Light={StaticResource GlassModalButtonLight}, Dark={StaticResource GlassModalButtonDark}}"
+                                BorderColor="Transparent"
+                                BorderWidth="0"
+                                TextColor="{AppThemeBinding Light=#050505, Dark=#FFFFFF}"
+                                FontSize="13"
                                 HandlerChanged="ConflictActionButton_HandlerChanged"
                                 Focused="ConflictActionButton_Focused"
                                 Unfocused="ConflictActionButton_Unfocused"
@@ -992,6 +1001,13 @@
                         <Button x:Name="ConflictOverwriteButton"
                                 Text="Overwrite mine"
                                 WidthRequest="132"
+                                HeightRequest="38"
+                                CornerRadius="12"
+                                BackgroundColor="{AppThemeBinding Light={StaticResource GlassModalButtonLight}, Dark={StaticResource GlassModalButtonDark}}"
+                                BorderColor="Transparent"
+                                BorderWidth="0"
+                                TextColor="{AppThemeBinding Light=#050505, Dark=#FFFFFF}"
+                                FontSize="13"
                                 HandlerChanged="ConflictActionButton_HandlerChanged"
                                 Focused="ConflictActionButton_Focused"
                                 Unfocused="ConflictActionButton_Unfocused"
@@ -1003,6 +1019,13 @@
                         <Button x:Name="ConflictCancelButton"
                                 Text="Cancel"
                                 WidthRequest="132"
+                                HeightRequest="38"
+                                CornerRadius="12"
+                                BackgroundColor="{AppThemeBinding Light={StaticResource GlassModalButtonLight}, Dark={StaticResource GlassModalButtonDark}}"
+                                BorderColor="Transparent"
+                                BorderWidth="0"
+                                TextColor="{AppThemeBinding Light=#050505, Dark=#FFFFFF}"
+                                FontSize="13"
                                 HandlerChanged="ConflictActionButton_HandlerChanged"
                                 Focused="ConflictActionButton_Focused"
                                 Unfocused="ConflictActionButton_Unfocused"
@@ -1028,10 +1051,10 @@
                                     WidthRequest="78"
                                     HeightRequest="78"
                                     CornerRadius="18"
-                                    MacOSBehindWindowBlur="True"
-                                    MacOSBackdropOpacity="0.55"
-                                    BackgroundColor="{AppThemeBinding Light=#D9FFFFFF, Dark=#D9202020}"
-                                    Stroke="{AppThemeBinding Light={StaticResource GlassStrokeLight}, Dark={StaticResource GlassStrokeDark}}">
+                                    MacOSBehindWindowBlur="False"
+                                    BackgroundColor="{AppThemeBinding Light={StaticResource SolidPopupLight}, Dark={StaticResource SolidPopupDark}}"
+                                    Stroke="Transparent"
+                                    StrokeThickness="0">
                 <Label Text="{OnPlatform WinUI='&#xE8C8;', MacCatalyst='⧉'}"
                        FontFamily="{OnPlatform WinUI='Segoe MDL2 Assets', MacCatalyst=''}"
                        FontSize="30"

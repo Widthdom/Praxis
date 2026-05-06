@@ -1,12 +1,17 @@
 using Microsoft.Maui.Controls.Shapes;
 #if MACCATALYST
 using Praxis.Behaviors;
+using UIKit;
 #endif
 
 namespace Praxis.Controls;
 
 public sealed class MaterialFrame : Border
 {
+#if MACCATALYST
+    internal const nint MacNativeHostTag = 0x50475846;
+#endif
+
     public static readonly BindableProperty CornerRadiusProperty =
         BindableProperty.Create(
             nameof(CornerRadius),
@@ -34,6 +39,9 @@ public sealed class MaterialFrame : Border
     {
         StrokeThickness = 1;
         StrokeShape = new RoundRectangle { CornerRadius = new CornerRadius(0) };
+#if MACCATALYST
+        HandlerChanged += OnMaterialFrameHandlerChanged;
+#endif
     }
 
     public double CornerRadius
@@ -73,6 +81,16 @@ public sealed class MaterialFrame : Border
 
 #if MACCATALYST
     private MacGlassBackdropBehavior? macBackdropBehavior;
+
+    private void OnMaterialFrameHandlerChanged(object? sender, EventArgs e)
+    {
+        if (Handler?.PlatformView is UIView platformView)
+        {
+            platformView.Tag = MacNativeHostTag;
+        }
+
+        UpdateMacBackdropBehavior();
+    }
 
     private void UpdateMacBackdropBehavior()
     {

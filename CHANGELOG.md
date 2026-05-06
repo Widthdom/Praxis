@@ -18,6 +18,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - Mac Catalyst renders modal copy/action controls as MAUI `Border` surfaces with label overlays instead of native `UIButton` backgrounds, so light/dark mode no longer falls back to white button fills and button text stays crisp over translucent modal glass
 - Placement-area and Dock launcher buttons no longer draw outline strokes, leaving the button fill and text to carry the glass treatment without extra border noise
 - Command suggestions and Quick Look tooltips now use solid light/dark popup surfaces instead of transparent glass, selected suggestion rows use stronger contrast, the light editor modal background is thinner, context-menu focus rings render as crisp MAUI borders, and Mac native container borders are cleared to avoid a dark outer frame
+- Editor/conflict modal surfaces and copy-complete notices now keep solid rounded surfaces above the root glass, preserve app-owned `MaterialFrame` native clips during Mac backdrop refresh, and tune popup contrast so suggestions/tooltips sit closer to the launcher background in both light and dark themes
 
 ### Tests
 - Expanded `MainPageStructureTests` and `AppLayerSourceGuardTests` to lock the transparent glass surface, `MaterialFrame` usage, platform backdrop hook wiring, Windows acrylic interop, and macOS native material blur behavior

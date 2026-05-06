@@ -5,6 +5,7 @@ using Foundation;
 using ObjCRuntime;
 using System.Runtime.InteropServices;
 using UIKit;
+using Praxis.Controls;
 using Praxis.Services;
 
 namespace Praxis;
@@ -19,6 +20,7 @@ public partial class App
     private const double MacNativeRootGlassLightAlpha = 1d;
     private const double MacNativeRootGlassDarkAlpha = 1d;
     private const double MacNativeRootGlassOverscan = 1d;
+    private const nint MacMaterialFrameBackdropTag = 0x50475842;
     private static readonly NSString MacNativeNsDummyRootIdentifier = new("PraxisNativeDummyRootGlass");
     private static int macBackdropDiagnosticsLogged;
 
@@ -619,6 +621,11 @@ public partial class App
 
     private static void ClearMacViewTree(UIView view)
     {
+        if (IsNativeMaterialFrameBackdropOrHost(view))
+        {
+            return;
+        }
+
         view.Opaque = false;
         view.BackgroundColor = UIColor.Clear;
         if (view.Layer is not null)
@@ -642,6 +649,12 @@ public partial class App
         {
             if (nativeWindow.ValueForKey(new NSString(key)) is NSObject chromeObject)
             {
+                if (key is "contentView" or "frameView")
+                {
+                    ClearNativeObjectSurface(chromeObject);
+                    return;
+                }
+
                 ClearNativeObjectTree(chromeObject);
             }
         }
@@ -661,7 +674,7 @@ public partial class App
 
             if (contentView.ValueForKey(new NSString("superview")) is NSObject frameView)
             {
-                ClearNativeObjectTree(frameView);
+                ClearNativeObjectSurface(frameView);
             }
         }
         catch
@@ -673,17 +686,12 @@ public partial class App
     {
         try
         {
-            TrySetBool(target, "wantsLayer", true);
-            TrySetBool(target, "opaque", false);
-            TrySetObject(target, "backgroundColor", CreateNativeColor("clearColor") ?? UIColor.Clear);
-            if (target.ValueForKey(new NSString("layer")) is CALayer layer)
+            if (target is UIView view && IsNativeMaterialFrameBackdropOrHost(view))
             {
-                layer.Opaque = false;
-                layer.BackgroundColor = UIColor.Clear.CGColor;
-                layer.BorderWidth = 0f;
-                layer.BorderColor = UIColor.Clear.CGColor;
-                layer.MasksToBounds = false;
+                return;
             }
+
+            ClearNativeObjectSurface(target);
 
             if (target.ValueForKey(new NSString("subviews")) is NSArray subviews)
             {
@@ -699,6 +707,46 @@ public partial class App
         catch
         {
         }
+    }
+
+    private static void ClearNativeObjectSurface(NSObject target)
+    {
+        if (target is UIView view && IsNativeMaterialFrameBackdropOrHost(view))
+        {
+            return;
+        }
+
+        TrySetBool(target, "wantsLayer", true);
+        TrySetBool(target, "opaque", false);
+        TrySetObject(target, "backgroundColor", CreateNativeColor("clearColor") ?? UIColor.Clear);
+        if (target.ValueForKey(new NSString("layer")) is CALayer layer)
+        {
+            layer.Opaque = false;
+            layer.BackgroundColor = UIColor.Clear.CGColor;
+            layer.BorderWidth = 0f;
+            layer.BorderColor = UIColor.Clear.CGColor;
+            layer.MasksToBounds = false;
+        }
+    }
+
+    private static bool IsNativeMaterialFrameBackdropOrHost(UIView view)
+    {
+        if (view.Tag == MacMaterialFrameBackdropTag ||
+            view.Tag == MaterialFrame.MacNativeHostTag)
+        {
+            return true;
+        }
+
+        foreach (var subview in view.Subviews)
+        {
+            if (subview.Tag == MacMaterialFrameBackdropTag ||
+                subview.Tag == MaterialFrame.MacNativeHostTag)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static NSObject? CreateNativeColor(string selectorName)
