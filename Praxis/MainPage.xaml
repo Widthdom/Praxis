@@ -452,7 +452,8 @@
                     </ScrollView.GestureRecognizers>
                     <HorizontalStackLayout x:Name="DockButtonsStack"
                                            Spacing="10"
-                                           Margin="0,0,0,6"
+                                           Margin="0,0,0,10"
+                                           VerticalOptions="Start"
                                            BindableLayout.ItemsSource="{Binding DockButtons}">
                         <HorizontalStackLayout.GestureRecognizers>
                             <PointerGestureRecognizer PointerEntered="DockRegion_PointerEntered"
@@ -466,6 +467,7 @@
                                         BackgroundColor="{AppThemeBinding Light=#62FFFFFF, Dark=#78363B43}"
                                         WidthRequest="{x:Static corelogic:ButtonLayoutDefaults.Width}"
                                         HeightRequest="{x:Static corelogic:ButtonLayoutDefaults.Height}"
+                                        VerticalOptions="Start"
                                         Padding="0">
                                     <Border.Triggers>
                                         <DataTrigger TargetType="Border" Binding="{Binding UseInvertedThemeColors}" Value="True">
