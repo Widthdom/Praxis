@@ -273,6 +273,7 @@ sequenceDiagram
 
 ## Current UI Notes
 - The main launcher page and root layout are explicitly transparent. Mac Catalyst draws the visible launcher base with a native `NSVisualEffectView` popover material inserted behind the MAUI content in [`App.MacBackdrop.cs`](../Praxis/App.MacBackdrop.cs); placement, Dock, and status surfaces remain transparent above it. Popup/modal glass still uses [`Controls/MaterialFrame.cs`](../Praxis/Controls/MaterialFrame.cs) plus [`Behaviors/MacGlassBackdropBehavior.cs`](../Praxis/Behaviors/MacGlassBackdropBehavior.cs), which inserts a rounded `UIVisualEffectView` and applies the frame background as a native tint so text is not blurred by parent opacity. Windows gets the blurred backdrop from [`App.WindowsBackdrop.cs`](../Praxis/App.WindowsBackdrop.cs), with semi-transparent XAML panels layered above it.
+- The Mac root `NSVisualEffectView` is sized from `NSWindow.contentView.bounds`, has width/height autoresizing enabled, and is also refreshed from `MainPage.SizeChanged` so window resize cannot leave an old-sized root-glass edge.
 - Mac Catalyst top-bar command/search placeholders are separate MAUI labels over transparent native text fields, while the native placeholders are made clear, so placeholder text stays crisp instead of being composited through the glass text-control layer.
 - Main modal copy buttons trigger a center overlay notification animation in [`MainPage.xaml`](../Praxis/MainPage.xaml)([`.cs`](../Praxis/MainPage.xaml.cs)).
 - Top-bar create action uses a custom line-art logo (outer hexagon, inscribed circle, inner hexagon, center plus) built from MAUI shapes.
@@ -712,6 +713,7 @@ sequenceDiagram
 
 ## 現在の UI 実装メモ
 - メインランチャー画面と root layout は明示的に透明化する。Mac Catalyst では [`App.MacBackdrop.cs`](../Praxis/App.MacBackdrop.cs) が MAUI content の背面に native `NSVisualEffectView` popover material を挿入し、それを見える launcher base にする。配置面、Dock 面、Status 面はその上で透明のままにする。Popup / modal のガラス面は [`Controls/MaterialFrame.cs`](../Praxis/Controls/MaterialFrame.cs) と [`Behaviors/MacGlassBackdropBehavior.cs`](../Praxis/Behaviors/MacGlassBackdropBehavior.cs) を使い、角丸 `UIVisualEffectView` と frame background tint で構成するため、親 opacity で文字をぼかさない。Windows は [`App.WindowsBackdrop.cs`](../Praxis/App.WindowsBackdrop.cs) の acrylic backdrop を使い、その上に半透明 XAML パネルを重ねる。
+- Mac root の `NSVisualEffectView` は `NSWindow.contentView.bounds` からサイズを取り、width/height の autoresizing を有効にし、`MainPage.SizeChanged` からも再適用する。これによりウィンドウ拡大時に古いサイズの root glass 境界が残らないようにする。
 - Mac Catalyst の上部 command/search placeholder は透明 native text field の上に MAUI Label として重ね、native placeholder は透明にする。これにより glass text-control layer の合成で placeholder 文字がぼけるのを避ける。
 - モーダルのコピーアイコン押下時は [`MainPage.xaml`](../Praxis/MainPage.xaml)([`.cs`](../Praxis/MainPage.xaml.cs)) で中央通知オーバーレイをアニメーション表示する。
 - 上部 Create アクションは MAUI Shapes で構成した線画ロゴ（外六角形・内接円・内六角形・中央 +）を使用する。

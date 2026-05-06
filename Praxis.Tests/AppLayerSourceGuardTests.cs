@@ -299,7 +299,11 @@ public class AppLayerSourceGuardTests
         Assert.Contains("nativeWindow.TraitCollection.UserInterfaceStyle == UIUserInterfaceStyle.Dark", appSource);
         Assert.Contains("Class.GetHandle(\"NSVisualEffectView\")", appSource);
         Assert.Contains("Class.GetHandle(\"NSView\")", appSource);
-        Assert.Contains("var frame = new CGRect(0d, 0d, uiBounds.Width, uiBounds.Height);", appSource);
+        Assert.Contains("MacNativeRootGlassAutoresizingMask = 18", appSource);
+        Assert.Contains("var frame = ResolveNativeContentBounds(contentView, uiBounds);", appSource);
+        Assert.Contains("TrySetInt(dummyRoot, \"autoresizingMask\", MacNativeRootGlassAutoresizingMask);", appSource);
+        Assert.Contains("private static CGRect ResolveNativeContentBounds(NSObject contentView, CGRect fallbackBounds)", appSource);
+        Assert.Contains("contentView.ValueForKey(new NSString(\"bounds\")) is NSValue value", appSource);
         Assert.Contains("MacNativePopoverMaterial = 6", appSource);
         Assert.Contains("MacNativeRootGlassLightAlpha = 1d", appSource);
         Assert.Contains("MacNativeRootGlassDarkAlpha = 1d", appSource);
@@ -339,6 +343,7 @@ public class AppLayerSourceGuardTests
         var themeSource = ReadRepositoryFile("Praxis", "MainPage.StatusAndTheme.cs");
 
         Assert.Contains("App.RefreshMacWindowBackdropForConnectedScenes();", source);
+        Assert.Contains("ScheduleMacRootTransparencyRefresh();", source);
         Assert.Contains("ForceTransparentRootBackground();", source);
         Assert.Contains("RootGrid.BackgroundColor = Colors.Transparent;", themeSource);
         Assert.Contains("RootGrid.Opacity = 1;", themeSource);

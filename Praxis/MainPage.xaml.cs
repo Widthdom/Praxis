@@ -80,6 +80,7 @@ public partial class MainPage : ContentPage
             UpdateCommandSuggestionPopupPlacement();
             UpdateModalEditorHeights();
 #if MACCATALYST
+            ScheduleMacRootTransparencyRefresh();
             ApplyMacContentScale();
 #endif
         };

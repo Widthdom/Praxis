@@ -14,6 +14,7 @@ public partial class App
     private const nint MacFullSizeContentViewMask = (nint)(1 << 15);
     private const nint MacNativeSubviewBelow = -1;
     private const int MacNativePopoverMaterial = 6;
+    private const int MacNativeRootGlassAutoresizingMask = 18;
     private const double MacNativeRootGlassLightAlpha = 1d;
     private const double MacNativeRootGlassDarkAlpha = 1d;
     private static readonly NSString MacNativeNsDummyRootIdentifier = new("PraxisNativeDummyRootGlass");
@@ -134,7 +135,7 @@ public partial class App
                 return;
             }
 
-            var frame = new CGRect(0d, 0d, uiBounds.Width, uiBounds.Height);
+            var frame = ResolveNativeContentBounds(contentView, uiBounds);
             var dummyRoot = FindNativeNsDummyRootGlass(contentView) ?? CreateNativeNsDummyRootGlass(frame);
             if (dummyRoot is null)
             {
@@ -145,6 +146,7 @@ public partial class App
             TrySetBool(dummyRoot, "hidden", false);
             TrySetBool(dummyRoot, "wantsLayer", true);
             TrySetObject(dummyRoot, "identifier", MacNativeNsDummyRootIdentifier);
+            TrySetInt(dummyRoot, "autoresizingMask", MacNativeRootGlassAutoresizingMask);
             TrySetInt(dummyRoot, "blendingMode", 0);
             TrySetInt(dummyRoot, "material", MacNativePopoverMaterial);
             TrySetInt(dummyRoot, "state", 1);
@@ -170,6 +172,26 @@ public partial class App
             var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);
             CrashFileLogger.WriteWarning(nameof(App), $"Failed to apply native NS dummy root glass: {safeMessage}");
         }
+    }
+
+    private static CGRect ResolveNativeContentBounds(NSObject contentView, CGRect fallbackBounds)
+    {
+        try
+        {
+            if (contentView.ValueForKey(new NSString("bounds")) is NSValue value)
+            {
+                var bounds = value.CGRectValue;
+                if (bounds.Width > 0d && bounds.Height > 0d)
+                {
+                    return new CGRect(0d, 0d, bounds.Width, bounds.Height);
+                }
+            }
+        }
+        catch
+        {
+        }
+
+        return new CGRect(0d, 0d, fallbackBounds.Width, fallbackBounds.Height);
     }
 
     private static void InsertNativeSubviewBelowContent(NSObject contentView, NSObject dummyRoot)
