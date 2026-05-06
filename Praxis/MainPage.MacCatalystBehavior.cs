@@ -951,7 +951,7 @@ public partial class MainPage
     private void ApplyMacGlassButtonVisual(Border button)
     {
         var dark = IsMacGlassDarkThemeActive();
-        button.BackgroundColor = dark ? Color.FromArgb("#78363B43") : Color.FromArgb("#62FFFFFF");
+        button.BackgroundColor = dark ? Color.FromArgb("#9A53606B") : Color.FromArgb("#8AFFFFFF");
         button.Stroke = new SolidColorBrush(Colors.Transparent);
         button.StrokeThickness = 0;
     }

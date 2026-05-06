@@ -12,6 +12,7 @@
              BackgroundColor="Transparent">
     <ContentPage.Resources>
         <converters:BoolToScrollBarVisibilityConverter x:Key="BoolToScrollBarVisibilityConverter" />
+        <converters:StringIsNullOrEmptyConverter x:Key="StringIsNullOrEmptyConverter" />
         <Color x:Key="GlassPanelLight">#00FFFFFF</Color>
         <Color x:Key="GlassPanelDark">#00000000</Color>
         <Color x:Key="GlassSurfaceLight">#00FFFFFF</Color>
@@ -20,10 +21,12 @@
         <Color x:Key="GlassPopupDark">#101E2228</Color>
         <Color x:Key="GlassInputLight">#58FFFFFF</Color>
         <Color x:Key="GlassInputDark">#66363B43</Color>
-        <Color x:Key="GlassModalInputLight">#72FFFFFF</Color>
-        <Color x:Key="GlassModalInputDark">#78363B43</Color>
+        <Color x:Key="GlassModalInputLight">#86FFFFFF</Color>
+        <Color x:Key="GlassModalInputDark">#96434A54</Color>
         <Color x:Key="GlassButtonLight">#62FFFFFF</Color>
         <Color x:Key="GlassButtonDark">#78363B43</Color>
+        <Color x:Key="GlassModalButtonLight">#8AFFFFFF</Color>
+        <Color x:Key="GlassModalButtonDark">#9A53606B</Color>
         <Color x:Key="GlassButtonStrokeLight">#00FFFFFF</Color>
         <Color x:Key="GlassButtonStrokeDark">#00000000</Color>
         <Color x:Key="GlassStrokeLight">#58FFFFFF</Color>
@@ -38,7 +41,7 @@
             <Setter Property="Stroke" Value="{AppThemeBinding Light={StaticResource GlassButtonStrokeLight}, Dark={StaticResource GlassButtonStrokeDark}}" />
             <Setter Property="StrokeThickness" Value="0" />
             <Setter Property="StrokeShape" Value="RoundRectangle 12" />
-            <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource GlassButtonLight}, Dark={StaticResource GlassButtonDark}}" />
+            <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource GlassModalButtonLight}, Dark={StaticResource GlassModalButtonDark}}" />
         </Style>
         <Style x:Key="GlassModalButtonLabelStyle"
                TargetType="Label">
@@ -78,6 +81,17 @@
                         <PointerGestureRecognizer PointerPressed="MainCommandEntry_PointerPressed" />
                     </controls:CommandEntry.GestureRecognizers>
                 </controls:CommandEntry>
+                <Label x:Name="MainCommandPlaceholderLabel"
+                       Text="Command"
+                       Margin="10,0,0,0"
+                       VerticalOptions="Center"
+                       HorizontalOptions="Start"
+                       InputTransparent="True"
+                       IsVisible="{Binding CommandInput, Converter={StaticResource StringIsNullOrEmptyConverter}}"
+                       Opacity="{OnPlatform Default=0, MacCatalyst=1}"
+                       FontSize="13"
+                       FontAutoScalingEnabled="False"
+                       TextColor="{AppThemeBinding Light=#8A111111, Dark=#86C4D4E0}" />
                 <Border HorizontalOptions="End"
                         VerticalOptions="Center"
                         Margin="0,0,6,0"
@@ -188,6 +202,17 @@
                         <PointerGestureRecognizer PointerPressed="MainSearchEntry_PointerPressed" />
                     </controls:SearchEntry.GestureRecognizers>
                 </controls:SearchEntry>
+                <Label x:Name="MainSearchPlaceholderLabel"
+                       Text="Search"
+                       Margin="10,0,0,0"
+                       VerticalOptions="Center"
+                       HorizontalOptions="Start"
+                       InputTransparent="True"
+                       IsVisible="{Binding SearchText, Converter={StaticResource StringIsNullOrEmptyConverter}}"
+                       Opacity="{OnPlatform Default=0, MacCatalyst=1}"
+                       FontSize="13"
+                       FontAutoScalingEnabled="False"
+                       TextColor="{AppThemeBinding Light=#8A111111, Dark=#86C4D4E0}" />
                 <Border HorizontalOptions="End"
                         VerticalOptions="Center"
                         Margin="0,0,6,0"
@@ -554,9 +579,10 @@
                                     Padding="10"
                                     CornerRadius="14"
                                     MacOSBehindWindowBlur="True"
-                                    MacOSBackdropOpacity="0.76"
-                                    Stroke="{AppThemeBinding Light={StaticResource GlassStrokeLight}, Dark={StaticResource GlassStrokeDark}}"
-                                    BackgroundColor="{AppThemeBinding Light={StaticResource GlassPopupLight}, Dark={StaticResource GlassPopupDark}}">
+                                    MacOSBackdropOpacity="1"
+                                    Stroke="Transparent"
+                                    StrokeThickness="0"
+                                    BackgroundColor="{AppThemeBinding Light=#52FFFFFF, Dark=#361E2228}">
                 <VerticalStackLayout Spacing="8">
                     <Button x:Name="ContextEditButton"
                             Text="Edit"

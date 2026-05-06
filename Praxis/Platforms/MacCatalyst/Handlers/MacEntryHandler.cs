@@ -39,7 +39,7 @@ public class MacEntryHandler : EntryHandler
         private static readonly UIColor LightGlassFieldBackground = UIColor.Clear;
         private static readonly UIColor DarkGlassFieldBackground = UIColor.Clear;
         private static readonly UIColor LightPlaceholderColor = UIColor.FromRGBA(0, 0, 0, 0.58f);
-        private static readonly UIColor DarkPlaceholderColor = UIColor.FromRGBA(255, 255, 255, 0.68f);
+        private static readonly UIColor DarkPlaceholderColor = UIColor.FromRGBA(196, 212, 224, 0.42f);
         private static readonly UIColor LightTextColor = UIColor.FromRGB(0x05, 0x05, 0x05);
         private static readonly UIColor DarkTextColor = UIColor.White;
         private static readonly nfloat CornerRadius = 4;
@@ -50,7 +50,6 @@ public class MacEntryHandler : EntryHandler
         private readonly CAShapeLayer focusBorderLayer = new();
         private readonly CALayer focusBorderMaskLayer = new();
         private UIView? glassBackdropView;
-        private UIColor currentGlassFieldBackground = LightGlassFieldBackground;
         private bool pseudoFocused;
         private bool glassFieldVisual;
         private UIKeyCommand? cancelCommand;
@@ -124,15 +123,6 @@ public class MacEntryHandler : EntryHandler
 
         public override void Draw(CGRect rect)
         {
-            if (!glassFieldVisual)
-            {
-                base.Draw(rect);
-                return;
-            }
-
-            UIGraphics.GetCurrentContext()?.ClearRect(rect);
-            currentGlassFieldBackground.SetFill();
-            UIBezierPath.FromRoundedRect(Bounds, CornerRadius).Fill();
             base.Draw(rect);
         }
 
@@ -246,13 +236,12 @@ public class MacEntryHandler : EntryHandler
         {
             EnsureGlassBackdrop();
             var tintColor = dark ? DarkGlassFieldBackground : LightGlassFieldBackground;
-            currentGlassFieldBackground = tintColor;
             Opaque = false;
             Background = TransparentFieldImage;
             DisabledBackground = TransparentFieldImage;
             BackgroundColor = UIColor.Clear;
             Layer.BackgroundColor = UIColor.Clear.CGColor;
-            Layer.MasksToBounds = true;
+            Layer.MasksToBounds = false;
             BorderStyle = UITextBorderStyle.None;
             if (glassBackdropView is not null)
             {
@@ -419,10 +408,10 @@ public class MacEntryHandler : EntryHandler
                 return;
             }
 
-            var placeholderColor = dark ? DarkPlaceholderColor : LightPlaceholderColor;
+            var placeholderColor = glassFieldVisual ? UIColor.Clear : dark ? DarkPlaceholderColor : LightPlaceholderColor;
             var placeholderFont = Font is not null
-                ? UIFont.SystemFontOfSize(Font.PointSize, UIFontWeight.Medium)
-                : UIFont.SystemFontOfSize(14, UIFontWeight.Medium);
+                ? UIFont.SystemFontOfSize(Font.PointSize, UIFontWeight.Regular)
+                : UIFont.SystemFontOfSize(14, UIFontWeight.Regular);
             AttributedPlaceholder = new NSAttributedString(
                 Placeholder,
                 new UIStringAttributes

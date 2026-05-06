@@ -748,17 +748,18 @@ public class AppLayerSourceGuardTests
         Assert.DoesNotContain("UIBlurEffect.FromStyle", macEntrySource);
         Assert.Contains("Layer.BackgroundColor = UIColor.Clear.CGColor;", macEntrySource);
         Assert.Contains("LightPlaceholderColor = UIColor.FromRGBA(0, 0, 0, 0.58f);", macEntrySource);
-        Assert.Contains("DarkPlaceholderColor = UIColor.FromRGBA(255, 255, 255, 0.68f);", macEntrySource);
+        Assert.Contains("DarkPlaceholderColor = UIColor.FromRGBA(196, 212, 224, 0.42f);", macEntrySource);
         Assert.Contains("ContentScaleFactor = UIScreen.MainScreen.Scale;", macEntrySource);
         Assert.Contains("Layer.ContentsScale = UIScreen.MainScreen.Scale;", macEntrySource);
         Assert.Contains("Background = TransparentFieldImage;", macEntrySource);
+        Assert.Contains("Layer.MasksToBounds = false;", macEntrySource);
         Assert.Contains("private static UIImage CreateTransparentFieldImage()", macEntrySource);
         Assert.Contains("var renderer = new UIGraphicsImageRenderer(new CGSize(1, 1));", macEntrySource);
         Assert.Contains("renderer.CreateImage(_ => { });", macEntrySource);
         Assert.Contains("public override CGRect BorderRect(CGRect forBounds)", macEntrySource);
         Assert.Contains("public override void Draw(CGRect rect)", macEntrySource);
-        Assert.Contains("UIGraphics.GetCurrentContext()?.ClearRect(rect);", macEntrySource);
-        Assert.Contains("currentGlassFieldBackground.SetFill();", macEntrySource);
+        Assert.DoesNotContain("UIGraphics.GetCurrentContext()?.ClearRect(rect);", macEntrySource);
+        Assert.DoesNotContain("currentGlassFieldBackground", macEntrySource);
         Assert.Contains("public override void MovedToSuperview()", macEntrySource);
         Assert.Contains("public override void MovedToWindow()", macEntrySource);
         Assert.Contains("ClearNativeGlassHostBackground(this, glassBackdropView);", macEntrySource);
@@ -768,6 +769,7 @@ public class AppLayerSourceGuardTests
         Assert.Contains("private bool IsLikelyNativeInputWrapper(UIView view)", macEntrySource);
         Assert.Contains("BorderStyle = UITextBorderStyle.None;", macEntrySource);
         Assert.Contains("AttributedPlaceholder = new NSAttributedString(", macEntrySource);
+        Assert.Contains("var placeholderColor = glassFieldVisual ? UIColor.Clear", macEntrySource);
         Assert.Contains("Font = placeholderFont,", macEntrySource);
         Assert.Contains("UIFontWeight.Regular", macEntrySource);
         Assert.Contains("public void SetGlassFieldVisual(bool enabled)", macEntrySource);
@@ -807,7 +809,7 @@ public class AppLayerSourceGuardTests
         Assert.Contains("ScheduleMacModalButtonVisualStateRefresh();", ReadRepositoryFile("Praxis", "MainPage.ModalEditor.cs"));
         Assert.Contains("ScheduleMacModalButtonVisualStateRefresh();", ReadRepositoryFile("Praxis", "MainPage.ViewModelEvents.cs"));
         Assert.Contains("private void ApplyMacGlassButtonVisual(Border button)", macPageSource);
-        Assert.Contains("button.BackgroundColor = dark ? Color.FromArgb(\"#78363B43\") : Color.FromArgb(\"#62FFFFFF\");", macPageSource);
+        Assert.Contains("button.BackgroundColor = dark ? Color.FromArgb(\"#9A53606B\") : Color.FromArgb(\"#8AFFFFFF\");", macPageSource);
         Assert.Contains("button.Stroke = new SolidColorBrush(Colors.Transparent);", macPageSource);
         Assert.Contains("button.StrokeThickness = 0;", macPageSource);
         Assert.DoesNotContain("nativeButton.Configuration = null;", macPageSource);
