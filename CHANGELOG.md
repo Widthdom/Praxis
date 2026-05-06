@@ -19,6 +19,10 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - Placement-area and Dock launcher buttons no longer draw outline strokes, leaving the button fill and text to carry the glass treatment without extra border noise
 - Command suggestions and Quick Look tooltips now use solid light/dark popup surfaces instead of transparent glass, selected suggestion rows use stronger contrast, the light editor modal background is thinner, context-menu focus rings render as crisp MAUI borders, and Mac native container borders are cleared to avoid a dark outer frame
 - Editor/conflict modal surfaces and copy-complete notices now keep solid rounded surfaces above the root glass, preserve app-owned `MaterialFrame` native clips during Mac backdrop refresh, and tune popup contrast so suggestions/tooltips sit closer to the launcher background in both light and dark themes
+- The Dock surface now uses a shorter bottom-biased footprint so the borderless placement area gains more vertical room while the horizontal scrollbar still has space when visible
+
+### Fixed
+- Mac Catalyst context-menu Edit/Delete actions now dispatch the selected item from a single Return/Enter key press after arrow-key navigation, including menus opened from the placement area, Dock, and command suggestions
 
 ### Tests
 - Expanded `MainPageStructureTests` and `AppLayerSourceGuardTests` to lock the transparent glass surface, `MaterialFrame` usage, platform backdrop hook wiring, Windows acrylic interop, and macOS native material blur behavior

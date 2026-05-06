@@ -282,6 +282,7 @@ sequenceDiagram
 - The top-bar create action, modal copy/action buttons, and Dock launcher buttons share [`Behaviors/HoverHandCursorBehavior.cs`](../Praxis/Behaviors/HoverHandCursorBehavior.cs), so Windows and Mac Catalyst both switch to a pointing-hand cursor on hover instead of leaving clickable surfaces on the arrow cursor.
 - Placement-area launcher buttons intentionally keep the default arrow cursor on hover and instead attach [`Behaviors/GrabHandCursorBehavior.cs`](../Praxis/Behaviors/GrabHandCursorBehavior.cs), which swaps to a closed-hand "grab" cursor while the primary pointer is pressed (macOS `NSCursor.closedHandCursor`, Windows `InputSystemCursorShape.SizeAll` substitute) so drag-to-reposition reads as a grabbed object instead of a generic clickable target.
 - Dock item visuals are intentionally matched to placement-area button visuals.
+- Dock keeps a compact minimum height and bottom-biased padding so the borderless layout gives more vertical room back to the placement area while still masking the horizontal scrollbar when it is idle.
 - Placement-area and Dock buttons support per-button inverted theme colors (`UseInvertedThemeColors`):
   - In Light theme: render with Dark-theme button colors
   - In Dark theme: render with Light-theme button colors
@@ -723,6 +724,7 @@ sequenceDiagram
 - 上部 Create アクション、モーダルのコピー/アクションボタン、Dock のランチャーボタンは [`Behaviors/HoverHandCursorBehavior.cs`](../Praxis/Behaviors/HoverHandCursorBehavior.cs) を共有し、Windows / Mac Catalyst の両方で hover 時に矢印ではなく hand cursor へ切り替える。
 - 配置領域のランチャーボタンは意図的に hover では既定の矢印カーソルのままにし、代わりに [`Behaviors/GrabHandCursorBehavior.cs`](../Praxis/Behaviors/GrabHandCursorBehavior.cs) を貼って、主ポインタが押下されている間だけ「掴んだ手」のカーソル（macOS は `NSCursor.closedHandCursor`、Windows は代替として `InputSystemCursorShape.SizeAll`）へ切り替える。これによりボタンのドラッグ移動が「掴んで動かす」操作として読み取れるようにしている。
 - Dock ボタンの見た目は、配置領域のボタンと意図的に揃えている。
+- Dock は最小高と下寄せの余白をコンパクトにし、横スクロールバーの非表示マスクを維持しつつ、枠線なしレイアウトで浮いた縦方向の余白を配置領域へ戻している。
 - 配置領域/Dock の各ボタンは `UseInvertedThemeColors` で個別に反転配色できる。
   - ライトテーマ時はダークテーマ配色
   - ダークテーマ時はライトテーマ配色

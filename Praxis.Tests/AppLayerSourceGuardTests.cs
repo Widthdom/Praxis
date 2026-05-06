@@ -214,6 +214,19 @@ public class AppLayerSourceGuardTests
     }
 
     [Fact]
+    public void MainPage_DockRegion_UsesCompactBorderlessGlassFootprint()
+    {
+        var xaml = ReadRepositoryFile("Praxis", "MainPage.xaml");
+
+        Assert.Contains("x:Name=\"DockRegionBorder\"", xaml);
+        Assert.Contains("StrokeThickness=\"0\"", xaml);
+        Assert.Contains("Margin=\"{OnPlatform Default='0,0,0,-8', WinUI='0,0,0,-8', MacCatalyst='0,0,0,-8'}\"", xaml);
+        Assert.Contains("Padding=\"12,6,12,12\"", xaml);
+        Assert.Contains("MinimumHeightRequest=\"{OnPlatform Default=76, WinUI=80, MacCatalyst=80}\"", xaml);
+        Assert.Contains("x:Name=\"DockScrollBarMask\"", xaml);
+    }
+
+    [Fact]
     public void SqliteAppRepository_Initialization_AssignsSharedConnectionOnlyAfterSuccessfulLoad()
     {
         var source = ReadRepositoryFile("Praxis", "Services", "SqliteAppRepository.cs");
@@ -616,6 +629,10 @@ public class AppLayerSourceGuardTests
         Assert.Contains("\"Non-Exception object thrown (IsTerminating={e.IsTerminating}, Type={payloadType}): {safePayload}\"", source);
         Assert.Contains("CrashFileLogger.WriteWarning(nameof(AppDelegate), $\"Failed to hook MarshalManagedException: {safeMessage}\");", source);
         Assert.Contains("CrashFileLogger.WriteWarning(nameof(AppDelegate), $\"Failed to prioritize key command '{selectorName}': {safeMessage}\");", source);
+        Assert.Contains("public override UIKeyCommand[] KeyCommands => App.IsContextMenuOpen ? ContextMenuKeyCommands : BaseKeyCommands;", source);
+        Assert.Contains("private static readonly UIKeyCommand ContextMenuPrimaryActionCommand", source);
+        Assert.Contains("[Export(\"handleContextMenuPrimaryAction:\")]", source);
+        Assert.Contains("App.RaiseEditorShortcut(\"PrimaryAction\")", source);
     }
 
     [Fact]

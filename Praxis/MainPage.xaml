@@ -433,9 +433,9 @@
                                 Stroke="Transparent"
                                 StrokeThickness="0"
                                 BackgroundColor="{AppThemeBinding Light={StaticResource GlassPanelLight}, Dark={StaticResource GlassPanelDark}}"
-                                Margin="{OnPlatform Default='0', WinUI='0,-4,0,-4', MacCatalyst='0,-4,0,-4'}"
-                                Padding="12"
-                                MinimumHeightRequest="{OnPlatform Default=92, WinUI=100, MacCatalyst=100}">
+                                Margin="{OnPlatform Default='0,0,0,-8', WinUI='0,0,0,-8', MacCatalyst='0,0,0,-8'}"
+                                Padding="12,6,12,12"
+                                MinimumHeightRequest="{OnPlatform Default=76, WinUI=80, MacCatalyst=80}">
             <controls:MaterialFrame.GestureRecognizers>
                 <PointerGestureRecognizer PointerEntered="DockRegion_PointerEntered"
                                           PointerExited="DockRegion_PointerExited" />
