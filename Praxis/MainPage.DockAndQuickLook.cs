@@ -106,7 +106,7 @@ public partial class MainPage
         if (TryResolveMacDockScrollView() is UIScrollView scrollView)
         {
             scrollView.ShowsHorizontalScrollIndicator = showHorizontalScrollBar;
-            scrollView.ClipsToBounds = false;
+            scrollView.ClipsToBounds = true;
             scrollView.ScrollIndicatorInsets = new UIEdgeInsets(0, 0, (nfloat)(-MacDockScrollIndicatorBottomOffset), 0);
             scrollView.SetNeedsLayout();
             scrollView.LayoutIfNeeded();

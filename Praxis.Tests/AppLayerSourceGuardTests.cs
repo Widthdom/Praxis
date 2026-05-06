@@ -229,7 +229,7 @@ public class AppLayerSourceGuardTests
         Assert.Contains("VerticalOptions=\"Start\"\n                                        Padding=\"0\"", xaml);
         Assert.Contains("x:Name=\"DockScrollBarMask\"", xaml);
         Assert.Contains("private const double MacDockScrollIndicatorBottomOffset = 8;", dockSource);
-        Assert.Contains("scrollView.ClipsToBounds = false;", dockSource);
+        Assert.Contains("scrollView.ClipsToBounds = true;", dockSource);
         Assert.Contains("scrollView.ScrollIndicatorInsets = new UIEdgeInsets(0, 0, (nfloat)(-MacDockScrollIndicatorBottomOffset), 0);", dockSource);
     }
 
