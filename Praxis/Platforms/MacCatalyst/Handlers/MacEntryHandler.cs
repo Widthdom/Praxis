@@ -38,8 +38,8 @@ public class MacEntryHandler : EntryHandler
         private static readonly CGColor TransparentBorderColor = UIColor.Clear.CGColor;
         private static readonly UIColor LightGlassFieldBackground = UIColor.Clear;
         private static readonly UIColor DarkGlassFieldBackground = UIColor.Clear;
-        private static readonly UIColor LightPlaceholderColor = UIColor.FromRGBA(0, 0, 0, 0.34f);
-        private static readonly UIColor DarkPlaceholderColor = UIColor.FromRGBA(255, 255, 255, 0.38f);
+        private static readonly UIColor LightPlaceholderColor = UIColor.FromRGBA(0, 0, 0, 0.58f);
+        private static readonly UIColor DarkPlaceholderColor = UIColor.FromRGBA(255, 255, 255, 0.68f);
         private static readonly UIColor LightTextColor = UIColor.FromRGB(0x05, 0x05, 0x05);
         private static readonly UIColor DarkTextColor = UIColor.White;
         private static readonly nfloat CornerRadius = 4;
@@ -421,8 +421,8 @@ public class MacEntryHandler : EntryHandler
 
             var placeholderColor = dark ? DarkPlaceholderColor : LightPlaceholderColor;
             var placeholderFont = Font is not null
-                ? UIFont.SystemFontOfSize(Font.PointSize, UIFontWeight.Regular)
-                : UIFont.SystemFontOfSize(14, UIFontWeight.Regular);
+                ? UIFont.SystemFontOfSize(Font.PointSize, UIFontWeight.Medium)
+                : UIFont.SystemFontOfSize(14, UIFontWeight.Medium);
             AttributedPlaceholder = new NSAttributedString(
                 Placeholder,
                 new UIStringAttributes

@@ -493,4 +493,9 @@ public partial class MainPage : ContentPage
         }
     }
 
+    private void CopyIconButton_Tapped(object? sender, TappedEventArgs e)
+    {
+        CopyIconButton_Clicked(sender, e);
+    }
+
 }

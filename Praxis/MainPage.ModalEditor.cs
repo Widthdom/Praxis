@@ -179,7 +179,7 @@ public partial class MainPage
         EditorOverlay.InvalidateMeasure();
     }
 
-    private static void UpdateEditorHeight(Editor editor, Border container, Button? copyButton, double targetHeight)
+    private static void UpdateEditorHeight(Editor editor, Border container, Border? copyButton, double targetHeight)
     {
         editor.HeightRequest = targetHeight;
         container.HeightRequest = targetHeight;

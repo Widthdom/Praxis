@@ -1,4 +1,5 @@
 #if MACCATALYST
+using Microsoft.Maui.Platform;
 using UIKit;
 #endif
 
@@ -47,7 +48,7 @@ public sealed class MacGlassBackdropBehavior : Behavior<View>
 
     private void OnPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
     {
-        if (e.PropertyName is nameof(VisualElement.IsVisible) or nameof(MaterialFrame.CornerRadius) or nameof(MaterialFrame.MacOSBackdropOpacity))
+        if (e.PropertyName is nameof(VisualElement.IsVisible) or nameof(VisualElement.BackgroundColor) or nameof(MaterialFrame.CornerRadius) or nameof(MaterialFrame.MacOSBackdropOpacity))
         {
             ApplyBackdrop();
         }
@@ -75,17 +76,18 @@ public sealed class MacGlassBackdropBehavior : Behavior<View>
             platformView.InsertSubview(backdropView, 0);
         }
 
+        backdropView.Effect = UIBlurEffect.FromStyle(ResolveBackdropStyle());
         backdropView.Alpha = GetBackdropOpacity();
         backdropView.Opaque = false;
         backdropView.BackgroundColor = UIColor.Clear;
         backdropView.ContentView.Opaque = false;
-        backdropView.ContentView.BackgroundColor = UIColor.Clear;
+        backdropView.ContentView.BackgroundColor = ResolveBackdropTintColor();
         UpdateBackdropFrame();
     }
 
     private static UIVisualEffectView CreateBackdrop()
     {
-        return new UIVisualEffectView(UIBlurEffect.FromStyle(UIBlurEffectStyle.SystemChromeMaterial))
+        return new UIVisualEffectView(UIBlurEffect.FromStyle(UIBlurEffectStyle.SystemMaterial))
         {
             Tag = BackdropTag,
             UserInteractionEnabled = false,
@@ -145,6 +147,21 @@ public sealed class MacGlassBackdropBehavior : Behavior<View>
             : 1d;
 
         return (nfloat)Math.Clamp(opacity, 0d, 1d);
+    }
+
+    private UIBlurEffectStyle ResolveBackdropStyle()
+    {
+        if (attachedView is MaterialFrame frame && frame.MacOSBackdropOpacity >= 0.98d)
+        {
+            return UIBlurEffectStyle.SystemChromeMaterial;
+        }
+
+        return UIBlurEffectStyle.SystemMaterial;
+    }
+
+    private UIColor ResolveBackdropTintColor()
+    {
+        return attachedView?.BackgroundColor?.ToPlatform() ?? UIColor.Clear;
     }
 
     private void RemoveBackdrop()

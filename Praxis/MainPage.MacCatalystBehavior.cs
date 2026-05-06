@@ -458,21 +458,21 @@ public partial class MainPage
         var dark = IsDarkThemeActive();
         var focusedBorderColor = dark ? Color.FromArgb("#F2F2F2") : Color.FromArgb("#1A1A1A");
 
-        ApplyMacPseudoFocusVisual(ModalCancelButton, macPseudoFocusedModalTarget == ModalFocusTarget.CancelButton, focusedBorderColor);
-        ApplyMacPseudoFocusVisual(ModalSaveButton, macPseudoFocusedModalTarget == ModalFocusTarget.SaveButton, focusedBorderColor);
+        ApplyMacPseudoFocusVisual(ModalCancelButton, macPseudoFocusedModalTarget == ModalFocusTarget.CancelButton, focusedBorderColor, dark);
+        ApplyMacPseudoFocusVisual(ModalSaveButton, macPseudoFocusedModalTarget == ModalFocusTarget.SaveButton, focusedBorderColor, dark);
     }
 
-    private static void ApplyMacPseudoFocusVisual(Button button, bool focused, Color focusedBorderColor)
+    private static void ApplyMacPseudoFocusVisual(Border button, bool focused, Color focusedBorderColor, bool dark)
     {
         if (focused)
         {
-            button.BorderColor = focusedBorderColor;
-            button.BorderWidth = 1.5;
+            button.Stroke = new SolidColorBrush(focusedBorderColor);
+            button.StrokeThickness = 1.5;
             return;
         }
 
-        button.BorderColor = Colors.Transparent;
-        button.BorderWidth = 0;
+        button.Stroke = new SolidColorBrush(Colors.Transparent);
+        button.StrokeThickness = 0;
     }
 
     private void RebuildCommandSuggestionStack()
@@ -597,9 +597,17 @@ public partial class MainPage
 
     private void ScheduleMacRootTransparencyRefresh()
     {
+        App.RefreshMacWindowBackdropForConnectedScenes();
         ApplyMacRootTransparency();
-        Dispatcher.DispatchDelayed(TimeSpan.FromMilliseconds(60), ApplyMacRootTransparency);
-        Dispatcher.DispatchDelayed(TimeSpan.FromMilliseconds(240), ApplyMacRootTransparency);
+        Dispatcher.DispatchDelayed(TimeSpan.FromMilliseconds(60), RefreshMacWindowBackdropAndRootTransparency);
+        Dispatcher.DispatchDelayed(TimeSpan.FromMilliseconds(240), RefreshMacWindowBackdropAndRootTransparency);
+        Dispatcher.DispatchDelayed(TimeSpan.FromMilliseconds(700), RefreshMacWindowBackdropAndRootTransparency);
+    }
+
+    private void RefreshMacWindowBackdropAndRootTransparency()
+    {
+        App.RefreshMacWindowBackdropForConnectedScenes();
+        ApplyMacRootTransparency();
     }
 
     private void ApplyMacRootTransparency()
@@ -940,61 +948,12 @@ public partial class MainPage
         Dispatcher.DispatchDelayed(TimeSpan.FromMilliseconds(120), ApplyMacModalButtonVisualState);
     }
 
-    private void ApplyMacGlassButtonVisual(Button button)
+    private void ApplyMacGlassButtonVisual(Border button)
     {
         var dark = IsMacGlassDarkThemeActive();
-        ApplyMacGlassButtonManagedVisual(button, dark);
-        if (button.Handler?.PlatformView is not UIButton nativeButton)
-        {
-            return;
-        }
-
-        var backgroundColor = dark
-            ? UIColor.FromRGBA(54, 59, 67, 0.47f)
-            : UIColor.FromRGBA(255, 255, 255, 0.38f);
-        var borderColor = dark
-            ? UIColor.FromRGBA(116, 128, 140, 0.37f).CGColor
-            : UIColor.FromRGBA(255, 255, 255, 0.62f).CGColor;
-        var titleColor = dark ? UIColor.White : UIColor.FromRGB(0x05, 0x05, 0x05);
-
-        nativeButton.Opaque = false;
-        nativeButton.Configuration = null;
-        nativeButton.ConfigurationUpdateHandler = null;
-        nativeButton.BackgroundColor = backgroundColor;
-        nativeButton.Layer.BackgroundColor = backgroundColor.CGColor;
-        nativeButton.Layer.CornerRadius = 12;
-        nativeButton.Layer.BorderWidth = 1;
-        nativeButton.Layer.BorderColor = borderColor;
-        nativeButton.Layer.MasksToBounds = true;
-        nativeButton.ClipsToBounds = true;
-        nativeButton.ContentScaleFactor = UIScreen.MainScreen.Scale;
-        nativeButton.TintColor = titleColor;
-        nativeButton.SetTitleColor(titleColor, UIControlState.Normal);
-        nativeButton.SetTitleColor(titleColor.ColorWithAlpha(0.82f), UIControlState.Highlighted);
-        nativeButton.SetBackgroundImage(CreateMacGlassButtonBackgroundImage(backgroundColor), UIControlState.Normal);
-        nativeButton.SetBackgroundImage(CreateMacGlassButtonBackgroundImage(backgroundColor.ColorWithAlpha(0.66f)), UIControlState.Highlighted);
-        nativeButton.SetBackgroundImage(CreateMacGlassButtonBackgroundImage(backgroundColor.ColorWithAlpha(0.48f)), UIControlState.Disabled);
-        if (nativeButton.TitleLabel is UILabel titleLabel)
-        {
-            titleLabel.Opaque = false;
-            titleLabel.ContentScaleFactor = UIScreen.MainScreen.Scale;
-            titleLabel.Layer.ContentsScale = UIScreen.MainScreen.Scale;
-            titleLabel.Layer.ShouldRasterize = false;
-            titleLabel.BackgroundColor = UIColor.Clear;
-            titleLabel.Font = UIFont.SystemFontOfSize(titleLabel.Font.PointSize, UIFontWeight.Medium);
-        }
-        ClearMacGlassButtonSubviews(nativeButton);
-        nativeButton.Layer.ShouldRasterize = false;
-        nativeButton.SetNeedsDisplay();
-    }
-
-    private static void ApplyMacGlassButtonManagedVisual(Button button, bool dark)
-    {
         button.BackgroundColor = dark ? Color.FromArgb("#78363B43") : Color.FromArgb("#62FFFFFF");
-        button.BorderColor = dark ? Color.FromArgb("#5E74808C") : Color.FromArgb("#9FFFFFFF");
-        button.TextColor = dark ? Colors.White : Color.FromArgb("#050505");
-        button.BorderWidth = 1;
-        button.CornerRadius = 12;
+        button.Stroke = new SolidColorBrush(Colors.Transparent);
+        button.StrokeThickness = 0;
     }
 
     private bool IsMacGlassDarkThemeActive()
@@ -1005,34 +964,6 @@ public partial class MainPage
             ThemeMode.Light => false,
             _ => IsDarkThemeActive(),
         };
-    }
-
-    private static UIImage CreateMacGlassButtonBackgroundImage(UIColor color)
-    {
-        var renderer = new UIGraphicsImageRenderer(new CGSize(2, 2));
-        var image = renderer.CreateImage(_ =>
-        {
-            color.SetFill();
-            UIBezierPath.FromRoundedRect(new CGRect(0, 0, 2, 2), 1).Fill();
-        });
-        return image.CreateResizableImage(new UIEdgeInsets(1, 1, 1, 1));
-    }
-
-    private static void ClearMacGlassButtonSubviews(UIButton nativeButton)
-    {
-        foreach (var subview in nativeButton.Subviews)
-        {
-            if (ReferenceEquals(subview, nativeButton.TitleLabel) ||
-                ReferenceEquals(subview, nativeButton.ImageView))
-            {
-                continue;
-            }
-
-            subview.Opaque = false;
-            subview.BackgroundColor = UIColor.Clear;
-            subview.Layer.BackgroundColor = UIColor.Clear.CGColor;
-            subview.Layer.ShouldRasterize = false;
-        }
     }
 
     private void TryHandleMacEditorTabTextInsertion(object? sender, TextChangedEventArgs e)

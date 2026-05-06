@@ -84,10 +84,10 @@ public class AppLayerSourceGuardTests
         Assert.Contains("<behaviors:HoverHandCursorBehavior />\n                                        <behaviors:MiddleClickBehavior", xaml);
         Assert.Contains("<Button x:Name=\"ContextEditButton\"", xaml);
         Assert.Contains("<Button x:Name=\"ContextDeleteButton\"", xaml);
-        Assert.Contains("<Button x:Name=\"CopyClipWordButton\"", xaml);
-        Assert.Contains("<Button x:Name=\"CopyNoteButton\"", xaml);
-        Assert.Contains("<Button x:Name=\"ModalCancelButton\"", xaml);
-        Assert.Contains("<Button x:Name=\"ModalSaveButton\"", xaml);
+        Assert.Contains("<Border x:Name=\"CopyClipWordButton\"", xaml);
+        Assert.Contains("<Border x:Name=\"CopyNoteButton\"", xaml);
+        Assert.Contains("<Border x:Name=\"ModalCancelButton\"", xaml);
+        Assert.Contains("<Border x:Name=\"ModalSaveButton\"", xaml);
         Assert.Contains("<Button x:Name=\"ConflictReloadButton\"", xaml);
         Assert.Contains("<Button x:Name=\"ConflictOverwriteButton\"", xaml);
         Assert.Contains("<Button x:Name=\"ConflictCancelButton\"", xaml);
@@ -300,10 +300,10 @@ public class AppLayerSourceGuardTests
         Assert.Contains("Class.GetHandle(\"NSVisualEffectView\")", appSource);
         Assert.Contains("Class.GetHandle(\"NSView\")", appSource);
         Assert.Contains("var frame = new CGRect(0d, 0d, uiBounds.Width, uiBounds.Height);", appSource);
-        Assert.Contains("MacNativeWindowBackgroundMaterial = 12", appSource);
+        Assert.Contains("MacNativePopoverMaterial = 6", appSource);
         Assert.Contains("MacNativeRootGlassLightAlpha = 1d", appSource);
-        Assert.Contains("MacNativeRootGlassDarkAlpha = 0.96d", appSource);
-        Assert.Contains("TrySetInt(dummyRoot, \"material\", MacNativeWindowBackgroundMaterial);", appSource);
+        Assert.Contains("MacNativeRootGlassDarkAlpha = 1d", appSource);
+        Assert.Contains("TrySetInt(dummyRoot, \"material\", MacNativePopoverMaterial);", appSource);
         Assert.Contains("TrySetBool(dummyRoot, \"emphasized\", true);", appSource);
         Assert.Contains("var rootGlassAlpha = isDark ? MacNativeRootGlassDarkAlpha : MacNativeRootGlassLightAlpha;", appSource);
         Assert.Contains("TrySetDouble(dummyRoot, \"alphaValue\", rootGlassAlpha);", appSource);
@@ -311,6 +311,8 @@ public class AppLayerSourceGuardTests
         Assert.Contains("private static void TrySetDouble(NSObject target, string key, double value)", appSource);
         Assert.Contains("private static void TrySendDouble(NSObject target, string selectorName, double value)", appSource);
         Assert.Contains("private static extern void ObjcMsgSendDouble(IntPtr receiver, IntPtr selector, double value);", appSource);
+        Assert.Contains("layer.CornerRadius = 0f;", appSource);
+        Assert.Contains("layer.MasksToBounds = false;", appSource);
         Assert.Contains("layer.BorderWidth = 0f;", appSource);
         Assert.Contains("ObjcMsgSendCGRect(allocated, SelRegisterName(\"initWithFrame:\"), frame);", appSource);
         Assert.Contains("MacNativeSubviewBelow = -1", appSource);
@@ -318,10 +320,13 @@ public class AppLayerSourceGuardTests
         Assert.Contains("SelRegisterName(\"addSubview:positioned:relativeTo:\")", appSource);
         Assert.Contains("ObjcMsgSendAddSubviewPositioned(", appSource);
         Assert.DoesNotContain("nativeWindow.BringSubviewToFront(dummyRoot);", appSource);
-        Assert.Contains("new UIVisualEffectView(UIBlurEffect.FromStyle(UIBlurEffectStyle.SystemChromeMaterial))", behaviorSource);
+        Assert.Contains("new UIVisualEffectView(UIBlurEffect.FromStyle(UIBlurEffectStyle.SystemMaterial))", behaviorSource);
+        Assert.Contains("backdropView.Effect = UIBlurEffect.FromStyle(ResolveBackdropStyle());", behaviorSource);
+        Assert.Contains("return UIBlurEffectStyle.SystemChromeMaterial;", behaviorSource);
         Assert.Contains("platformView.Layer.CornerRadius = (nfloat)cornerRadius;", behaviorSource);
         Assert.Contains("backdropView.Alpha = GetBackdropOpacity();", behaviorSource);
-        Assert.Contains("backdropView.ContentView.BackgroundColor = UIColor.Clear;", behaviorSource);
+        Assert.Contains("backdropView.ContentView.BackgroundColor = ResolveBackdropTintColor();", behaviorSource);
+        Assert.Contains("attachedView?.BackgroundColor?.ToPlatform() ?? UIColor.Clear", behaviorSource);
         Assert.Contains("public sealed class MaterialFrame : Border", frameSource);
         Assert.Contains("MacOSBehindWindowBlurProperty", frameSource);
         Assert.Contains("MacOSBackdropOpacityProperty", frameSource);
@@ -335,12 +340,9 @@ public class AppLayerSourceGuardTests
 
         Assert.Contains("App.RefreshMacWindowBackdropForConnectedScenes();", source);
         Assert.Contains("ForceTransparentRootBackground();", source);
-        Assert.Contains("DummyRootGlassFrame.IsVisible = true;", themeSource);
-        Assert.Contains("DummyRootGlassFrame.Opacity = 1;", themeSource);
-        Assert.DoesNotContain("DummyRootGlassFrame.MacOSBehindWindowBlur = false;", themeSource);
-        Assert.DoesNotContain("DummyRootGlassFrame.BackgroundColor = Colors.Transparent;", themeSource);
-        Assert.DoesNotContain("DummyRootGlassFrame.StrokeThickness = 0;", themeSource);
-        Assert.DoesNotContain("DummyRootGlassFrame.Shadow.Opacity = 0;", themeSource);
+        Assert.Contains("RootGrid.BackgroundColor = Colors.Transparent;", themeSource);
+        Assert.Contains("RootGrid.Opacity = 1;", themeSource);
+        Assert.DoesNotContain("DummyRootGlassFrame", themeSource);
     }
 
     [Fact]
@@ -745,8 +747,8 @@ public class AppLayerSourceGuardTests
         Assert.Contains("effectView.Effect = null;", macEntrySource);
         Assert.DoesNotContain("UIBlurEffect.FromStyle", macEntrySource);
         Assert.Contains("Layer.BackgroundColor = UIColor.Clear.CGColor;", macEntrySource);
-        Assert.Contains("LightPlaceholderColor = UIColor.FromRGBA(0, 0, 0, 0.34f);", macEntrySource);
-        Assert.Contains("DarkPlaceholderColor = UIColor.FromRGBA(255, 255, 255, 0.38f);", macEntrySource);
+        Assert.Contains("LightPlaceholderColor = UIColor.FromRGBA(0, 0, 0, 0.58f);", macEntrySource);
+        Assert.Contains("DarkPlaceholderColor = UIColor.FromRGBA(255, 255, 255, 0.68f);", macEntrySource);
         Assert.Contains("ContentScaleFactor = UIScreen.MainScreen.Scale;", macEntrySource);
         Assert.Contains("Layer.ContentsScale = UIScreen.MainScreen.Scale;", macEntrySource);
         Assert.Contains("Background = TransparentFieldImage;", macEntrySource);
@@ -773,12 +775,10 @@ public class AppLayerSourceGuardTests
         Assert.Contains("var dark = IsMacGlassDarkThemeActive();", macPageSource);
         Assert.Contains("ThemeMode.Dark => true,", macPageSource);
         Assert.Contains("ThemeMode.Light => false,", macPageSource);
-        Assert.Contains("UIColor.FromRGBA(54, 59, 67, 0.47f)", macPageSource);
-        Assert.Contains("UIColor.FromRGBA(255, 255, 255, 0.38f)", macPageSource);
-        Assert.Contains("nativeButton.SetBackgroundImage(CreateMacGlassButtonBackgroundImage(backgroundColor), UIControlState.Normal);", macPageSource);
-        Assert.Contains("private static UIImage CreateMacGlassButtonBackgroundImage(UIColor color)", macPageSource);
         Assert.Contains("ScheduleMacRootTransparencyRefresh();", macPageSource);
         Assert.Contains("private void ApplyMacRootTransparency()", macPageSource);
+        Assert.Contains("App.RefreshMacWindowBackdropForConnectedScenes();", macPageSource);
+        Assert.Contains("private void RefreshMacWindowBackdropAndRootTransparency()", macPageSource);
         Assert.Contains("ClearMacLargeContainerBackgrounds(pageView, rootSize, 0);", macPageSource);
         Assert.Contains("private const nint MacMaterialFrameBackdropTag = 0x50475842;", macPageSource);
         Assert.Contains("if (view is UIVisualEffectView effectView)", macPageSource);
@@ -806,14 +806,12 @@ public class AppLayerSourceGuardTests
         Assert.Contains("ApplyMacGlassButtonVisual(ModalSaveButton);", macPageSource);
         Assert.Contains("ScheduleMacModalButtonVisualStateRefresh();", ReadRepositoryFile("Praxis", "MainPage.ModalEditor.cs"));
         Assert.Contains("ScheduleMacModalButtonVisualStateRefresh();", ReadRepositoryFile("Praxis", "MainPage.ViewModelEvents.cs"));
-        Assert.Contains("ApplyMacGlassButtonManagedVisual(button, dark);", macPageSource);
+        Assert.Contains("private void ApplyMacGlassButtonVisual(Border button)", macPageSource);
         Assert.Contains("button.BackgroundColor = dark ? Color.FromArgb(\"#78363B43\") : Color.FromArgb(\"#62FFFFFF\");", macPageSource);
-        Assert.Contains("button.BorderColor = dark ? Color.FromArgb(\"#5E74808C\") : Color.FromArgb(\"#9FFFFFFF\");", macPageSource);
-        Assert.Contains("nativeButton.Configuration = null;", macPageSource);
-        Assert.Contains("nativeButton.ConfigurationUpdateHandler = null;", macPageSource);
-        Assert.Contains("nativeButton.Layer.BackgroundColor = backgroundColor.CGColor;", macPageSource);
-        Assert.Contains("ClearMacGlassButtonSubviews(nativeButton);", macPageSource);
-        Assert.Contains("private static void ClearMacGlassButtonSubviews(UIButton nativeButton)", macPageSource);
+        Assert.Contains("button.Stroke = new SolidColorBrush(Colors.Transparent);", macPageSource);
+        Assert.Contains("button.StrokeThickness = 0;", macPageSource);
+        Assert.DoesNotContain("nativeButton.Configuration = null;", macPageSource);
+        Assert.DoesNotContain("ClearMacGlassButtonSubviews(nativeButton);", macPageSource);
         Assert.Contains("titleLabel.Font = UIFont.SystemFontOfSize(titleLabel.Font.PointSize, UIFontWeight.Medium);", macPageSource);
         Assert.Contains("private bool IsGlassEntryVisual(Entry entry)", macPageSource);
         Assert.Contains("ReferenceEquals(entry, MainCommandEntry) ||", macPageSource);
