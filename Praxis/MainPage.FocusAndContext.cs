@@ -308,8 +308,37 @@ public partial class MainPage
     private void ApplyButtonFocusVisual(Button button, bool focused)
     {
         var dark = IsDarkThemeActive();
+        if (TryApplyContextActionFocusRing(button, focused, dark))
+        {
+            return;
+        }
+
         button.BorderColor = Color.FromArgb(ButtonFocusVisualPolicy.ResolveBorderColorHex(focused, dark));
         button.BorderWidth = ButtonFocusVisualPolicy.ResolveBorderWidth();
+    }
+
+    private bool TryApplyContextActionFocusRing(Button button, bool focused, bool dark)
+    {
+        Border? ring = null;
+        if (ReferenceEquals(button, ContextEditButton))
+        {
+            ring = ContextEditFocusRing;
+        }
+        else if (ReferenceEquals(button, ContextDeleteButton))
+        {
+            ring = ContextDeleteFocusRing;
+        }
+
+        if (ring is null)
+        {
+            return false;
+        }
+
+        button.BorderColor = Colors.Transparent;
+        button.BorderWidth = 0;
+        ring.Stroke = new SolidColorBrush(focused ? Color.FromArgb(dark ? "#EAF2F7" : "#1A1A1A") : Colors.Transparent);
+        ring.StrokeThickness = focused ? 1 : 0;
+        return true;
     }
 
     private static bool IsButtonFocused(Button button)

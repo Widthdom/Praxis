@@ -19,6 +19,8 @@
         <Color x:Key="GlassSurfaceDark">#00000000</Color>
         <Color x:Key="GlassPopupLight">#06FFFFFF</Color>
         <Color x:Key="GlassPopupDark">#101E2228</Color>
+        <Color x:Key="SolidPopupLight">#FFF6F9FB</Color>
+        <Color x:Key="SolidPopupDark">#FF202830</Color>
         <Color x:Key="GlassInputLight">#58FFFFFF</Color>
         <Color x:Key="GlassInputDark">#66363B43</Color>
         <Color x:Key="GlassModalInputLight">#86FFFFFF</Color>
@@ -265,10 +267,10 @@
                                 Grid.RowSpan="4"
                                 IsVisible="{Binding IsCommandSuggestionOpen}"
                                 CornerRadius="10"
-                                MacOSBehindWindowBlur="True"
-                                MacOSBackdropOpacity="0.78"
-                                Stroke="{AppThemeBinding Light={StaticResource GlassStrokeLight}, Dark={StaticResource GlassStrokeDark}}"
-                                BackgroundColor="{AppThemeBinding Light={StaticResource GlassPopupLight}, Dark={StaticResource GlassPopupDark}}"
+                                MacOSBehindWindowBlur="False"
+                                Stroke="Transparent"
+                                StrokeThickness="0"
+                                BackgroundColor="{AppThemeBinding Light={StaticResource SolidPopupLight}, Dark={StaticResource SolidPopupDark}}"
                                 Padding="6"
                                 HeightRequest="{Binding CommandSuggestionPopupHeight}"
                                 MinimumHeightRequest="44"
@@ -293,7 +295,7 @@
                             <Grid.Triggers>
                                 <DataTrigger TargetType="Grid" Binding="{Binding IsSelected}" Value="True">
                                     <Setter Property="BackgroundColor"
-                                            Value="{AppThemeBinding Light=#70F2F5F8, Dark=#70434851}" />
+                                            Value="{AppThemeBinding Light=#FFDDE7EF, Dark=#FF3A4652}" />
                                 </DataTrigger>
                             </Grid.Triggers>
                             <Grid.GestureRecognizers>
@@ -523,10 +525,10 @@
                                 Grid.RowSpan="4"
                                 IsVisible="False"
                                 CornerRadius="12"
-                                MacOSBehindWindowBlur="True"
-                                MacOSBackdropOpacity="0.82"
-                                Stroke="{AppThemeBinding Light={StaticResource GlassStrokeLight}, Dark={StaticResource GlassStrokeDark}}"
-                                BackgroundColor="{AppThemeBinding Light={StaticResource GlassPopupLight}, Dark={StaticResource GlassPopupDark}}"
+                                MacOSBehindWindowBlur="False"
+                                Stroke="Transparent"
+                                StrokeThickness="0"
+                                BackgroundColor="{AppThemeBinding Light={StaticResource SolidPopupLight}, Dark={StaticResource SolidPopupDark}}"
                                 Padding="10,9"
                                 WidthRequest="420"
                                 MaximumWidthRequest="460"
@@ -584,26 +586,46 @@
                                     StrokeThickness="0"
                                     BackgroundColor="{AppThemeBinding Light=#52FFFFFF, Dark=#361E2228}">
                 <VerticalStackLayout Spacing="8">
-                    <Button x:Name="ContextEditButton"
-                            Text="Edit"
-                            HandlerChanged="ContextActionButton_HandlerChanged"
-                            Focused="ContextActionButton_Focused"
-                            Unfocused="ContextActionButton_Unfocused"
-                            Command="{Binding ContextEditCommand}">
-                        <Button.Behaviors>
-                            <behaviors:HoverHandCursorBehavior />
-                        </Button.Behaviors>
-                    </Button>
-                    <Button x:Name="ContextDeleteButton"
-                            Text="Delete"
-                            HandlerChanged="ContextActionButton_HandlerChanged"
-                            Focused="ContextActionButton_Focused"
-                            Unfocused="ContextActionButton_Unfocused"
-                            Command="{Binding ContextDeleteCommand}">
-                        <Button.Behaviors>
-                            <behaviors:HoverHandCursorBehavior />
-                        </Button.Behaviors>
-                    </Button>
+                    <Grid>
+                        <Border x:Name="ContextEditFocusRing"
+                                Stroke="Transparent"
+                                StrokeThickness="0"
+                                StrokeShape="RoundRectangle 8"
+                                InputTransparent="True" />
+                        <Button x:Name="ContextEditButton"
+                                Text="Edit"
+                                BackgroundColor="Transparent"
+                                BorderColor="Transparent"
+                                BorderWidth="0"
+                                HandlerChanged="ContextActionButton_HandlerChanged"
+                                Focused="ContextActionButton_Focused"
+                                Unfocused="ContextActionButton_Unfocused"
+                                Command="{Binding ContextEditCommand}">
+                            <Button.Behaviors>
+                                <behaviors:HoverHandCursorBehavior />
+                            </Button.Behaviors>
+                        </Button>
+                    </Grid>
+                    <Grid>
+                        <Border x:Name="ContextDeleteFocusRing"
+                                Stroke="Transparent"
+                                StrokeThickness="0"
+                                StrokeShape="RoundRectangle 8"
+                                InputTransparent="True" />
+                        <Button x:Name="ContextDeleteButton"
+                                Text="Delete"
+                                BackgroundColor="Transparent"
+                                BorderColor="Transparent"
+                                BorderWidth="0"
+                                HandlerChanged="ContextActionButton_HandlerChanged"
+                                Focused="ContextActionButton_Focused"
+                                Unfocused="ContextActionButton_Unfocused"
+                                Command="{Binding ContextDeleteCommand}">
+                            <Button.Behaviors>
+                                <behaviors:HoverHandCursorBehavior />
+                            </Button.Behaviors>
+                        </Button>
+                    </Grid>
                 </VerticalStackLayout>
             </controls:MaterialFrame>
         </Grid>
@@ -621,7 +643,7 @@
                                     MacOSBehindWindowBlur="True"
                                     MacOSBackdropOpacity="1"
                                     Stroke="{AppThemeBinding Light={StaticResource GlassStrokeLight}, Dark={StaticResource GlassStrokeDark}}"
-                                    BackgroundColor="{AppThemeBinding Light=#5CFFFFFF, Dark=#421E2228}">
+                                    BackgroundColor="{AppThemeBinding Light=#44FFFFFF, Dark=#421E2228}">
                 <controls:MaterialFrame.Shadow>
                     <Shadow Brush="{AppThemeBinding Light=#24000000, Dark=#52000000}" Opacity="0.04" Offset="0,3" Radius="8" />
                 </controls:MaterialFrame.Shadow>

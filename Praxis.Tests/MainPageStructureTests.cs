@@ -95,6 +95,8 @@ public class MainPageStructureTests
         Assert.Contains("<Color x:Key=\"GlassPanelDark\">#00000000</Color>", xaml);
         Assert.Contains("<Color x:Key=\"GlassPopupLight\">#06FFFFFF</Color>", xaml);
         Assert.Contains("<Color x:Key=\"GlassPopupDark\">#101E2228</Color>", xaml);
+        Assert.Contains("<Color x:Key=\"SolidPopupLight\">#FFF6F9FB</Color>", xaml);
+        Assert.Contains("<Color x:Key=\"SolidPopupDark\">#FF202830</Color>", xaml);
         Assert.Contains("<Color x:Key=\"GlassInputLight\">#58FFFFFF</Color>", xaml);
         Assert.Contains("<Color x:Key=\"GlassInputDark\">#66363B43</Color>", xaml);
         Assert.Contains("<Color x:Key=\"GlassModalInputLight\">#86FFFFFF</Color>", xaml);
@@ -115,13 +117,16 @@ public class MainPageStructureTests
         Assert.Contains("IsVisible=\"{Binding CommandInput, Converter={StaticResource StringIsNullOrEmptyConverter}}\"", xaml);
         Assert.Contains("IsVisible=\"{Binding SearchText, Converter={StaticResource StringIsNullOrEmptyConverter}}\"", xaml);
         Assert.Contains("BackgroundColor=\"{AppThemeBinding Light=#52FFFFFF, Dark=#361E2228}\"", xaml);
+        Assert.Contains("x:Name=\"ContextEditFocusRing\"", xaml);
+        Assert.Contains("x:Name=\"ContextDeleteFocusRing\"", xaml);
         Assert.Contains("x:Name=\"MainCommandEntry\"\n                                       Placeholder=\"Command\"\n                                       Text=\"{Binding CommandInput}\"\n                                       BackgroundColor=\"Transparent\"", xaml);
         Assert.Contains("x:Name=\"MainSearchEntry\"\n                                      Placeholder=\"Search\"\n                                      Text=\"{Binding SearchText}\"\n                                      BackgroundColor=\"Transparent\"", xaml);
         Assert.Contains("<Border HeightRequest=\"40\"\n                        Stroke=\"Transparent\"\n                        StrokeThickness=\"0\"\n                        BackgroundColor=\"{AppThemeBinding Light={StaticResource GlassInputLight}, Dark={StaticResource GlassInputDark}}\"", xaml);
         Assert.Contains("x:Name=\"QuickLookPopup\"", xaml);
         Assert.Contains("x:Name=\"EditorOverlay\"", xaml);
-        Assert.True(CountOccurrences(xaml, "MacOSBackdropOpacity=\"0.82\"") >= 2);
-        Assert.Contains("BackgroundColor=\"{AppThemeBinding Light=#5CFFFFFF, Dark=#421E2228}\"", xaml);
+        Assert.Equal(1, CountOccurrences(xaml, "MacOSBackdropOpacity=\"0.82\""));
+        Assert.Contains("BackgroundColor=\"{AppThemeBinding Light=#44FFFFFF, Dark=#421E2228}\"", xaml);
+        Assert.Equal(2, CountOccurrences(xaml, "BackgroundColor=\"{AppThemeBinding Light={StaticResource SolidPopupLight}, Dark={StaticResource SolidPopupDark}}\""));
         Assert.DoesNotContain("MacOSBackdropOpacity=\"0.24\"", xaml);
         Assert.DoesNotContain("MacOSBackdropOpacity=\"0.18\"", xaml);
         Assert.Contains("ModalGuidEntry\" Grid.Row=\"0\" Grid.Column=\"1\" Text=\"{Binding Editor.GuidText}\" IsReadOnly=\"{OnPlatform Default=True, MacCatalyst=False}\" HeightRequest=\"40\" BackgroundColor=\"Transparent\"", xaml);

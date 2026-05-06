@@ -12,11 +12,13 @@ namespace Praxis;
 public partial class App
 {
     private const nint MacFullSizeContentViewMask = (nint)(1 << 15);
+    private const nint MacTexturedBackgroundMask = (nint)(1 << 8);
     private const nint MacNativeSubviewBelow = -1;
     private const int MacNativePopoverMaterial = 6;
     private const int MacNativeRootGlassAutoresizingMask = 18;
     private const double MacNativeRootGlassLightAlpha = 1d;
     private const double MacNativeRootGlassDarkAlpha = 1d;
+    private const double MacNativeRootGlassOverscan = 1d;
     private static readonly NSString MacNativeNsDummyRootIdentifier = new("PraxisNativeDummyRootGlass");
     private static int macBackdropDiagnosticsLogged;
 
@@ -82,6 +84,9 @@ public partial class App
             {
                 nativeWindow.Layer.Opaque = false;
                 nativeWindow.Layer.BackgroundColor = UIColor.Clear.CGColor;
+                nativeWindow.Layer.BorderWidth = 0f;
+                nativeWindow.Layer.BorderColor = UIColor.Clear.CGColor;
+                nativeWindow.Layer.MasksToBounds = false;
             }
             ClearMacViewTree(nativeWindow);
 
@@ -113,6 +118,8 @@ public partial class App
                 ClearNativeWindowChrome(nativeMacWindow, "toolbarView");
                 ClearNativeWindowChrome(nativeMacWindow, "titlebarContainerView");
                 ClearNativeWindowChrome(nativeMacWindow, "toolbarContainerView");
+                ClearNativeWindowChrome(nativeMacWindow, "frameView");
+                ClearNativeFrameChrome(nativeMacWindow);
                 EnsureNativeNsDummyRootGlass(
                     nativeMacWindow,
                     nativeWindow.Bounds,
@@ -135,8 +142,11 @@ public partial class App
                 return;
             }
 
-            var frame = ResolveNativeContentBounds(contentView, uiBounds);
-            var dummyRoot = FindNativeNsDummyRootGlass(contentView) ?? CreateNativeNsDummyRootGlass(frame);
+            var hostView = ResolveNativeRootGlassHostView(contentView);
+            RemoveStaleNativeRootGlass(contentView, hostView);
+
+            var frame = ExpandNativeRootGlassFrame(ResolveNativeContentBounds(hostView, uiBounds));
+            var dummyRoot = FindNativeNsDummyRootGlass(hostView) ?? CreateNativeNsDummyRootGlass(frame);
             if (dummyRoot is null)
             {
                 return;
@@ -165,12 +175,41 @@ public partial class App
                 layer.BorderColor = UIColor.Clear.CGColor;
             }
 
-            InsertNativeSubviewBelowContent(contentView, dummyRoot);
+            InsertNativeSubviewBelowContent(hostView, dummyRoot, contentView);
         }
         catch (Exception ex)
         {
             var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);
             CrashFileLogger.WriteWarning(nameof(App), $"Failed to apply native NS dummy root glass: {safeMessage}");
+        }
+    }
+
+    private static NSObject ResolveNativeRootGlassHostView(NSObject contentView)
+    {
+        try
+        {
+            if (contentView.ValueForKey(new NSString("superview")) is NSObject frameView)
+            {
+                return frameView;
+            }
+        }
+        catch
+        {
+        }
+
+        return contentView;
+    }
+
+    private static void RemoveStaleNativeRootGlass(NSObject contentView, NSObject hostView)
+    {
+        if (contentView.Handle == hostView.Handle)
+        {
+            return;
+        }
+
+        if (FindNativeNsDummyRootGlass(contentView) is NSObject staleRoot)
+        {
+            RemoveNativeSubview(staleRoot);
         }
     }
 
@@ -194,19 +233,33 @@ public partial class App
         return new CGRect(0d, 0d, fallbackBounds.Width, fallbackBounds.Height);
     }
 
-    private static void InsertNativeSubviewBelowContent(NSObject contentView, NSObject dummyRoot)
+    private static CGRect ExpandNativeRootGlassFrame(CGRect frame)
+    {
+        return new CGRect(
+            frame.X - MacNativeRootGlassOverscan,
+            frame.Y - MacNativeRootGlassOverscan,
+            frame.Width + (MacNativeRootGlassOverscan * 2d),
+            frame.Height + (MacNativeRootGlassOverscan * 2d));
+    }
+
+    private static void InsertNativeSubviewBelowContent(NSObject hostView, NSObject dummyRoot, NSObject? relativeTo)
     {
         if (dummyRoot.ValueForKey(new NSString("superview")) is not null)
         {
-            ObjcMsgSendVoid(dummyRoot.Handle, SelRegisterName("removeFromSuperview"));
+            RemoveNativeSubview(dummyRoot);
         }
 
         ObjcMsgSendAddSubviewPositioned(
-            contentView.Handle,
+            hostView.Handle,
             SelRegisterName("addSubview:positioned:relativeTo:"),
             dummyRoot.Handle,
             MacNativeSubviewBelow,
-            IntPtr.Zero);
+            relativeTo?.Handle ?? IntPtr.Zero);
+    }
+
+    private static void RemoveNativeSubview(NSObject view)
+    {
+        ObjcMsgSendVoid(view.Handle, SelRegisterName("removeFromSuperview"));
     }
 
     private static NSObject? CreateNativeNsDummyRootGlass(CGRect frame)
@@ -292,6 +345,9 @@ public partial class App
 
     [DllImport("/usr/lib/libobjc.A.dylib", EntryPoint = "objc_msgSend")]
     private static extern void ObjcMsgSendDouble(IntPtr receiver, IntPtr selector, double value);
+
+    [DllImport("/usr/lib/libobjc.A.dylib", EntryPoint = "objc_msgSend")]
+    private static extern void ObjcMsgSendNInt(IntPtr receiver, IntPtr selector, nint value);
 
     [DllImport("/usr/lib/libobjc.A.dylib", EntryPoint = "objc_msgSend")]
     private static extern void ObjcMsgSendAddSubviewPositioned(IntPtr receiver, IntPtr selector, IntPtr subview, nint positioned, IntPtr relativeTo);
@@ -552,8 +608,9 @@ public partial class App
                 return;
             }
 
-            var updated = styleMaskValue.Int64Value | MacFullSizeContentViewMask;
+            var updated = styleMaskValue.Int64Value | MacFullSizeContentViewMask | MacTexturedBackgroundMask;
             nativeWindow.SetValueForKey(NSNumber.FromInt64(updated), new NSString("styleMask"));
+            ObjcMsgSendNInt(nativeWindow.Handle, SelRegisterName("setStyleMask:"), (nint)updated);
         }
         catch
         {
@@ -568,6 +625,9 @@ public partial class App
         {
             view.Layer.Opaque = false;
             view.Layer.BackgroundColor = UIColor.Clear.CGColor;
+            view.Layer.BorderWidth = 0f;
+            view.Layer.BorderColor = UIColor.Clear.CGColor;
+            view.Layer.MasksToBounds = false;
         }
 
         foreach (var child in view.Subviews)
@@ -590,6 +650,25 @@ public partial class App
         }
     }
 
+    private static void ClearNativeFrameChrome(NSObject nativeWindow)
+    {
+        try
+        {
+            if (nativeWindow.ValueForKey(new NSString("contentView")) is not NSObject contentView)
+            {
+                return;
+            }
+
+            if (contentView.ValueForKey(new NSString("superview")) is NSObject frameView)
+            {
+                ClearNativeObjectTree(frameView);
+            }
+        }
+        catch
+        {
+        }
+    }
+
     private static void ClearNativeObjectTree(NSObject target)
     {
         try
@@ -601,6 +680,9 @@ public partial class App
             {
                 layer.Opaque = false;
                 layer.BackgroundColor = UIColor.Clear.CGColor;
+                layer.BorderWidth = 0f;
+                layer.BorderColor = UIColor.Clear.CGColor;
+                layer.MasksToBounds = false;
             }
 
             if (target.ValueForKey(new NSString("subviews")) is NSArray subviews)
