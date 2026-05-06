@@ -450,7 +450,10 @@
                         <PointerGestureRecognizer PointerEntered="DockRegion_PointerEntered"
                                                   PointerExited="DockRegion_PointerExited" />
                     </ScrollView.GestureRecognizers>
-                    <HorizontalStackLayout x:Name="DockButtonsStack" Spacing="10" BindableLayout.ItemsSource="{Binding DockButtons}">
+                    <HorizontalStackLayout x:Name="DockButtonsStack"
+                                           Spacing="10"
+                                           Margin="0,0,0,6"
+                                           BindableLayout.ItemsSource="{Binding DockButtons}">
                         <HorizontalStackLayout.GestureRecognizers>
                             <PointerGestureRecognizer PointerEntered="DockRegion_PointerEntered"
                                                       PointerExited="DockRegion_PointerExited" />
@@ -575,17 +578,6 @@
         <Grid Grid.RowSpan="4"
               IsVisible="{Binding IsContextMenuOpen}"
               BackgroundColor="Transparent">
-            <controls:CommandEntry x:Name="ContextMenuKeyCaptureEntry"
-                                   WidthRequest="1"
-                                   HeightRequest="1"
-                                   Opacity="0.01"
-                                   TextColor="Transparent"
-                                   BackgroundColor="Transparent"
-                                   IsReadOnly="True"
-                                   EnableNativeActivationFocus="False"
-                                   EnableCommandNavigationShortcuts="True"
-                                   HorizontalOptions="Start"
-                                   VerticalOptions="Start" />
             <Grid.GestureRecognizers>
                 <TapGestureRecognizer Command="{Binding CloseContextMenuCommand}" />
             </Grid.GestureRecognizers>

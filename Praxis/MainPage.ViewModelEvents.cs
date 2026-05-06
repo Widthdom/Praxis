@@ -57,6 +57,7 @@ public partial class MainPage
             {
 #if MACCATALYST
                 SetMacContextMenuPseudoFocus(ContextMenuFocusTarget.Edit);
+                FocusMacContextMenuKeyCaptureView();
 #endif
                 Dispatcher.DispatchDelayed(UiTimingPolicy.ContextMenuFocusInitialDelay, () =>
                 {
@@ -85,7 +86,7 @@ public partial class MainPage
             else
             {
 #if MACCATALYST
-                ResignMacContextMenuKeyCaptureEntry();
+                RemoveMacContextMenuKeyCaptureView();
                 ClearMacContextMenuPseudoFocus();
 #endif
             }
