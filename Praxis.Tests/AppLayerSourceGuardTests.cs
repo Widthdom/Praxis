@@ -220,10 +220,27 @@ public class AppLayerSourceGuardTests
 
         Assert.Contains("x:Name=\"DockRegionBorder\"", xaml);
         Assert.Contains("StrokeThickness=\"0\"", xaml);
-        Assert.Contains("Margin=\"{OnPlatform Default='0,0,0,-8', WinUI='0,0,0,-8', MacCatalyst='0,0,0,-8'}\"", xaml);
-        Assert.Contains("Padding=\"12,6,12,12\"", xaml);
-        Assert.Contains("MinimumHeightRequest=\"{OnPlatform Default=76, WinUI=80, MacCatalyst=80}\"", xaml);
+        Assert.Contains("Margin=\"{OnPlatform Default='0,-16,0,-14', WinUI='0,-16,0,-14', MacCatalyst='0,-16,0,-14'}\"", xaml);
+        Assert.Contains("Padding=\"12,0,12,4\"", xaml);
+        Assert.Contains("MinimumHeightRequest=\"{OnPlatform Default=78, WinUI=82, MacCatalyst=82}\"", xaml);
+        Assert.Contains("Margin=\"0,0,0,18\"", xaml);
         Assert.Contains("x:Name=\"DockScrollBarMask\"", xaml);
+    }
+
+    [Fact]
+    public void MainPage_ContextMenu_UsesHiddenCommandEntryForMacKeyCapture()
+    {
+        var xaml = ReadRepositoryFile("Praxis", "MainPage.xaml");
+        var focusSource = ReadRepositoryFile("Praxis", "MainPage.FocusAndContext.cs");
+        var eventSource = ReadRepositoryFile("Praxis", "MainPage.ViewModelEvents.cs");
+
+        Assert.Contains("x:Name=\"ContextMenuKeyCaptureEntry\"", xaml);
+        Assert.Contains("IsReadOnly=\"True\"", xaml);
+        Assert.Contains("EnableNativeActivationFocus=\"False\"", xaml);
+        Assert.Contains("EnableCommandNavigationShortcuts=\"True\"", xaml);
+        Assert.Contains("FocusMacContextMenuKeyCaptureEntry();", focusSource);
+        Assert.Contains("ResignMacContextMenuKeyCaptureEntry();", eventSource);
+        Assert.DoesNotContain("responder.BecomeFirstResponder();\n        }\n        SyncMacContextMenuPseudoFocusFromButton(button);", focusSource, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -629,10 +646,6 @@ public class AppLayerSourceGuardTests
         Assert.Contains("\"Non-Exception object thrown (IsTerminating={e.IsTerminating}, Type={payloadType}): {safePayload}\"", source);
         Assert.Contains("CrashFileLogger.WriteWarning(nameof(AppDelegate), $\"Failed to hook MarshalManagedException: {safeMessage}\");", source);
         Assert.Contains("CrashFileLogger.WriteWarning(nameof(AppDelegate), $\"Failed to prioritize key command '{selectorName}': {safeMessage}\");", source);
-        Assert.Contains("public override UIKeyCommand[] KeyCommands => App.IsContextMenuOpen ? ContextMenuKeyCommands : BaseKeyCommands;", source);
-        Assert.Contains("private static readonly UIKeyCommand ContextMenuPrimaryActionCommand", source);
-        Assert.Contains("[Export(\"handleContextMenuPrimaryAction:\")]", source);
-        Assert.Contains("App.RaiseEditorShortcut(\"PrimaryAction\")", source);
     }
 
     [Fact]

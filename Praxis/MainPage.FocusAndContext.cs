@@ -44,17 +44,10 @@ public partial class MainPage
     private void FocusContextActionButton(Button button)
     {
 #if MACCATALYST
-        ResignMainInputFirstResponder();
-#endif
-        button.Focus();
-#if MACCATALYST
-        if (button.Handler?.PlatformView is UIResponder responder &&
-            responder.CanBecomeFirstResponder &&
-            !responder.IsFirstResponder)
-        {
-            responder.BecomeFirstResponder();
-        }
         SyncMacContextMenuPseudoFocusFromButton(button);
+        FocusMacContextMenuKeyCaptureEntry();
+#else
+        button.Focus();
 #endif
     }
 
@@ -161,6 +154,32 @@ public partial class MainPage
     private void ClearMacContextMenuPseudoFocus()
     {
         macPseudoFocusedContextMenuTarget = null;
+    }
+
+    private void FocusMacContextMenuKeyCaptureEntry()
+    {
+        if (!viewModel.IsContextMenuOpen)
+        {
+            return;
+        }
+
+        ContextMenuKeyCaptureEntry.Focus();
+        if (ContextMenuKeyCaptureEntry.Handler?.PlatformView is UIResponder responder &&
+            responder.CanBecomeFirstResponder &&
+            !responder.IsFirstResponder)
+        {
+            responder.BecomeFirstResponder();
+        }
+    }
+
+    private void ResignMacContextMenuKeyCaptureEntry()
+    {
+        ContextMenuKeyCaptureEntry.Unfocus();
+        if (ContextMenuKeyCaptureEntry.Handler?.PlatformView is UIResponder responder &&
+            responder.IsFirstResponder)
+        {
+            responder.ResignFirstResponder();
+        }
     }
 #endif
 

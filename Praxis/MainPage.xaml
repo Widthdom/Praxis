@@ -58,7 +58,7 @@
         </Style>
     </ContentPage.Resources>
 
-    <Grid x:Name="RootGrid" Padding="18" RowDefinitions="Auto,*,Auto,Auto" RowSpacing="14" BackgroundColor="Transparent">
+    <Grid x:Name="RootGrid" Padding="18" RowDefinitions="Auto,*,Auto,Auto" RowSpacing="8" BackgroundColor="Transparent">
         <Grid.GestureRecognizers>
             <PointerGestureRecognizer PointerPressed="RootGrid_PointerPressed"
                                       PointerMoved="RootGrid_PointerMoved"
@@ -433,9 +433,9 @@
                                 Stroke="Transparent"
                                 StrokeThickness="0"
                                 BackgroundColor="{AppThemeBinding Light={StaticResource GlassPanelLight}, Dark={StaticResource GlassPanelDark}}"
-                                Margin="{OnPlatform Default='0,0,0,-8', WinUI='0,0,0,-8', MacCatalyst='0,0,0,-8'}"
-                                Padding="12,6,12,12"
-                                MinimumHeightRequest="{OnPlatform Default=76, WinUI=80, MacCatalyst=80}">
+                                Margin="{OnPlatform Default='0,-16,0,-14', WinUI='0,-16,0,-14', MacCatalyst='0,-16,0,-14'}"
+                                Padding="12,0,12,4"
+                                MinimumHeightRequest="{OnPlatform Default=78, WinUI=82, MacCatalyst=82}">
             <controls:MaterialFrame.GestureRecognizers>
                 <PointerGestureRecognizer PointerEntered="DockRegion_PointerEntered"
                                           PointerExited="DockRegion_PointerExited" />
@@ -444,7 +444,8 @@
                 <ScrollView x:Name="DockScroll"
                             Orientation="Horizontal"
                             HandlerChanged="DockScroll_HandlerChanged"
-                            HorizontalScrollBarVisibility="Never">
+                            HorizontalScrollBarVisibility="Never"
+                            Margin="0,0,0,18">
                     <ScrollView.GestureRecognizers>
                         <PointerGestureRecognizer PointerEntered="DockRegion_PointerEntered"
                                                   PointerExited="DockRegion_PointerExited" />
@@ -504,7 +505,7 @@
                 <Border x:Name="DockScrollBarMask"
                         HeightRequest="12"
                         VerticalOptions="End"
-                        Margin="0,0,0,2"
+                        Margin="0"
                         InputTransparent="True"
                         BackgroundColor="{AppThemeBinding Light={StaticResource GlassPanelLight}, Dark={StaticResource GlassPanelDark}}"
                         StrokeThickness="0"
@@ -574,6 +575,17 @@
         <Grid Grid.RowSpan="4"
               IsVisible="{Binding IsContextMenuOpen}"
               BackgroundColor="Transparent">
+            <controls:CommandEntry x:Name="ContextMenuKeyCaptureEntry"
+                                   WidthRequest="1"
+                                   HeightRequest="1"
+                                   Opacity="0.01"
+                                   TextColor="Transparent"
+                                   BackgroundColor="Transparent"
+                                   IsReadOnly="True"
+                                   EnableNativeActivationFocus="False"
+                                   EnableCommandNavigationShortcuts="True"
+                                   HorizontalOptions="Start"
+                                   VerticalOptions="Start" />
             <Grid.GestureRecognizers>
                 <TapGestureRecognizer Command="{Binding CloseContextMenuCommand}" />
             </Grid.GestureRecognizers>

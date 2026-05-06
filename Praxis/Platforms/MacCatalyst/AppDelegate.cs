@@ -15,22 +15,6 @@ public class AppDelegate : MauiUIApplicationDelegate
     private static readonly UIKeyCommand ThemeSystemCommand = CreateThemeKeyCommand("h", "handleThemeSystem:");
     private static readonly UIKeyCommand UndoHistoryCommand = CreateHistoryKeyCommand("z", UIKeyModifierFlags.Command, "handleHistoryUndo:");
     private static readonly UIKeyCommand RedoHistoryCommand = CreateHistoryKeyCommand("z", UIKeyModifierFlags.Command | UIKeyModifierFlags.Shift, "handleHistoryRedo:");
-    private static readonly string ReturnKeyInput = ResolveKeyInput("InputReturn", "\r");
-    private static readonly string? EnterKeyInput = TryResolveKeyInput("InputEnter");
-    private static readonly UIKeyCommand ContextMenuPrimaryActionCommand = CreateContextMenuKeyCommand(ReturnKeyInput, "handleContextMenuPrimaryAction:");
-    private static readonly UIKeyCommand? ContextMenuPrimaryActionAlternateCommand =
-        string.IsNullOrEmpty(EnterKeyInput)
-            ? null
-            : CreateContextMenuKeyCommand(EnterKeyInput!, "handleContextMenuPrimaryActionAlternate:");
-    private static readonly UIKeyCommand[] BaseKeyCommands =
-    [
-        ThemeLightCommand,
-        ThemeDarkCommand,
-        ThemeSystemCommand,
-        UndoHistoryCommand,
-        RedoHistoryCommand,
-    ];
-    private static readonly UIKeyCommand[] ContextMenuKeyCommands = BuildContextMenuKeyCommands();
     private static bool globalExceptionLoggingHooked;
     private NSObject? didBecomeActiveObserver;
     private NSObject? willEnterForegroundObserver;
@@ -90,7 +74,7 @@ public class AppDelegate : MauiUIApplicationDelegate
 
     public override bool CanBecomeFirstResponder => true;
 
-    public override UIKeyCommand[] KeyCommands => App.IsContextMenuOpen ? ContextMenuKeyCommands : BaseKeyCommands;
+    public override UIKeyCommand[] KeyCommands => [ThemeLightCommand, ThemeDarkCommand, ThemeSystemCommand, UndoHistoryCommand, RedoHistoryCommand];
 
     public override bool FinishedLaunching(UIApplication application, NSDictionary? launchOptions)
     {
@@ -152,28 +136,6 @@ public class AppDelegate : MauiUIApplicationDelegate
         MainThread.BeginInvokeOnMainThread(() => App.RaiseHistoryShortcut("Redo"));
     }
 
-    [Export("handleContextMenuPrimaryAction:")]
-    private static void HandleContextMenuPrimaryAction(UIKeyCommand command)
-    {
-        DispatchContextMenuPrimaryAction();
-    }
-
-    [Export("handleContextMenuPrimaryActionAlternate:")]
-    private static void HandleContextMenuPrimaryActionAlternate(UIKeyCommand command)
-    {
-        DispatchContextMenuPrimaryAction();
-    }
-
-    private static void DispatchContextMenuPrimaryAction()
-    {
-        if (!App.IsContextMenuOpen)
-        {
-            return;
-        }
-
-        MainThread.BeginInvokeOnMainThread(() => App.RaiseEditorShortcut("PrimaryAction"));
-    }
-
     private static UIKeyCommand CreateThemeKeyCommand(string keyInput, string selectorName)
     {
         var command = UIKeyCommand.Create(new NSString(keyInput), UIKeyModifierFlags.Command | UIKeyModifierFlags.Shift, new Selector(selectorName));
@@ -186,73 +148,6 @@ public class AppDelegate : MauiUIApplicationDelegate
         var command = UIKeyCommand.Create(new NSString(keyInput), modifierFlags, new Selector(selectorName));
         TrySetKeyCommandPriorityOverSystem(command, selectorName);
         return command;
-    }
-
-    private static UIKeyCommand CreateContextMenuKeyCommand(string keyInput, string selectorName)
-    {
-        var command = UIKeyCommand.Create(new NSString(keyInput), 0, new Selector(selectorName));
-        TrySetKeyCommandPriorityOverSystem(command, selectorName);
-        return command;
-    }
-
-    private static UIKeyCommand[] BuildContextMenuKeyCommands()
-    {
-        if (ContextMenuPrimaryActionAlternateCommand is null)
-        {
-            return
-            [
-                ThemeLightCommand,
-                ThemeDarkCommand,
-                ThemeSystemCommand,
-                UndoHistoryCommand,
-                RedoHistoryCommand,
-                ContextMenuPrimaryActionCommand,
-            ];
-        }
-
-        return
-        [
-            ThemeLightCommand,
-            ThemeDarkCommand,
-            ThemeSystemCommand,
-            UndoHistoryCommand,
-            RedoHistoryCommand,
-            ContextMenuPrimaryActionCommand,
-            ContextMenuPrimaryActionAlternateCommand,
-        ];
-    }
-
-    private static string ResolveKeyInput(string inputName, string fallback)
-    {
-        return TryResolveKeyInput(inputName) ?? fallback;
-    }
-
-    private static string? TryResolveKeyInput(string inputName)
-    {
-        const System.Reflection.BindingFlags flags = System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static;
-        var keyInputProperty = typeof(UIKeyCommand).GetProperty(inputName, flags);
-        if (keyInputProperty?.GetValue(null) is NSString nsInput)
-        {
-            return nsInput.ToString();
-        }
-
-        if (keyInputProperty?.GetValue(null) is string inputText && !string.IsNullOrEmpty(inputText))
-        {
-            return inputText;
-        }
-
-        var keyInputField = typeof(UIKeyCommand).GetField(inputName, flags);
-        if (keyInputField?.GetValue(null) is NSString nsInputField)
-        {
-            return nsInputField.ToString();
-        }
-
-        if (keyInputField?.GetValue(null) is string inputFieldText && !string.IsNullOrEmpty(inputFieldText))
-        {
-            return inputFieldText;
-        }
-
-        return null;
     }
 
     private static void RaiseThemeShortcutByMacKeyInput(string keyInput)

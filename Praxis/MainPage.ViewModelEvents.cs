@@ -85,6 +85,7 @@ public partial class MainPage
             else
             {
 #if MACCATALYST
+                ResignMacContextMenuKeyCaptureEntry();
                 ClearMacContextMenuPseudoFocus();
 #endif
             }
