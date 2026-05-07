@@ -507,22 +507,22 @@ public partial class MainPage
         return true;
     }
 
-    private static bool IsButtonFocused(Button button)
+    private static bool IsButtonFocused(VisualElement element)
     {
-        if (button.IsFocused)
+        if (element.IsFocused)
         {
             return true;
         }
 
 #if WINDOWS
-        if (button.Handler?.PlatformView is Microsoft.UI.Xaml.Controls.Control control)
+        if (element.Handler?.PlatformView is Microsoft.UI.Xaml.Controls.Control control)
         {
             return control.FocusState != Microsoft.UI.Xaml.FocusState.Unfocused;
         }
 #endif
 
 #if MACCATALYST
-        if (button.Handler?.PlatformView is UIResponder responder)
+        if (element.Handler?.PlatformView is UIResponder responder)
         {
             return responder.IsFirstResponder;
         }

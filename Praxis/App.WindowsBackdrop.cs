@@ -1,6 +1,5 @@
 #if WINDOWS
 using System.Runtime.InteropServices;
-using Microsoft.UI.Xaml.Media;
 using WinRT.Interop;
 using Praxis.Services;
 
@@ -42,7 +41,7 @@ public partial class App
 
     private static void ApplyWindowsRootTransparency(Microsoft.UI.Xaml.Window nativeWindow)
     {
-        var transparentBrush = new SolidColorBrush(global::Windows.UI.Color.FromArgb(0, 0, 0, 0));
+        var transparentBrush = new global::Microsoft.UI.Xaml.Media.SolidColorBrush(global::Windows.UI.Color.FromArgb(0, 0, 0, 0));
 
         if (nativeWindow.Content is Microsoft.UI.Xaml.Controls.Panel panel)
         {
