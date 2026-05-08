@@ -32,6 +32,8 @@
         <Color x:Key="GlassModalInputDark">#A548535F</Color>
         <Color x:Key="GlassButtonLight">#62FFFFFF</Color>
         <Color x:Key="GlassButtonDark">#78363B43</Color>
+        <Color x:Key="PlacementSelectedTextOnLightSurface">#FF5F2DA0</Color>
+        <Color x:Key="PlacementSelectedTextOnDarkSurface">#FFC77DFF</Color>
         <Color x:Key="GlassModalButtonLight">#B8FFFFFF</Color>
         <Color x:Key="GlassModalButtonDark">#A85A6876</Color>
         <Color x:Key="GlassButtonStrokeLight">#00FFFFFF</Color>
@@ -418,9 +420,19 @@
                                                HorizontalTextAlignment="Center"
                                                VerticalTextAlignment="Center">
                                             <Label.Triggers>
+                                                <DataTrigger TargetType="Label" Binding="{Binding IsSelected}" Value="True">
+                                                    <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource PlacementSelectedTextOnLightSurface}, Dark={StaticResource PlacementSelectedTextOnDarkSurface}}" />
+                                                </DataTrigger>
                                                 <DataTrigger TargetType="Label" Binding="{Binding UseInvertedThemeColors}" Value="True">
                                                     <Setter Property="TextColor" Value="{AppThemeBinding Light=#FFFFFF, Dark=#050505}" />
                                                 </DataTrigger>
+                                                <MultiTrigger TargetType="Label">
+                                                    <MultiTrigger.Conditions>
+                                                        <BindingCondition Binding="{Binding IsSelected}" Value="True" />
+                                                        <BindingCondition Binding="{Binding UseInvertedThemeColors}" Value="True" />
+                                                    </MultiTrigger.Conditions>
+                                                    <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource PlacementSelectedTextOnDarkSurface}, Dark={StaticResource PlacementSelectedTextOnLightSurface}}" />
+                                                </MultiTrigger>
                                             </Label.Triggers>
                                         </Label>
                                     </Grid>
@@ -438,7 +450,7 @@
                         WidthRequest="0"
                         HeightRequest="0"
                         Stroke="{AppThemeBinding Light=#7A7A7A, Dark=#A8A8A8}"
-                        StrokeThickness="2"
+                        StrokeThickness="1"
                         BackgroundColor="{AppThemeBinding Light=#40B0B0B0, Dark=#40686868}"
                         StrokeShape="RoundRectangle 2" />
             </Grid>

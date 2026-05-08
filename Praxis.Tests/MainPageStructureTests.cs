@@ -73,6 +73,20 @@ public class MainPageStructureTests
     }
 
     [Fact]
+    public void MainPage_PlacementSelectionRectangle_UsesThinStroke()
+    {
+        var root = ResolveRepositoryRoot();
+        var xaml = File.ReadAllText(Path.Combine(root, "Praxis", "MainPage.xaml"));
+
+        var selectionRectIndex = xaml.IndexOf("x:Name=\"SelectionRect\"", StringComparison.Ordinal);
+        Assert.True(selectionRectIndex >= 0, "SelectionRect should exist in MainPage.xaml.");
+
+        var selectionRectRegion = xaml.Substring(selectionRectIndex, 700);
+        Assert.Contains("StrokeThickness=\"1\"", selectionRectRegion);
+        Assert.DoesNotContain("StrokeThickness=\"2\"", selectionRectRegion);
+    }
+
+    [Fact]
     public void MainPage_GlassmorphismSurface_IsTransparentAndUsesMaterialFrames()
     {
         var root = ResolveRepositoryRoot();
@@ -109,6 +123,8 @@ public class MainPageStructureTests
         Assert.Contains("<Color x:Key=\"GlassModalInputDark\">#A548535F</Color>", xaml);
         Assert.Contains("<Color x:Key=\"GlassButtonLight\">#62FFFFFF</Color>", xaml);
         Assert.Contains("<Color x:Key=\"GlassButtonDark\">#78363B43</Color>", xaml);
+        Assert.Contains("<Color x:Key=\"PlacementSelectedTextOnLightSurface\">#FF5F2DA0</Color>", xaml);
+        Assert.Contains("<Color x:Key=\"PlacementSelectedTextOnDarkSurface\">#FFC77DFF</Color>", xaml);
         Assert.Contains("<Color x:Key=\"GlassModalButtonLight\">#B8FFFFFF</Color>", xaml);
         Assert.Contains("<Color x:Key=\"GlassModalButtonDark\">#A85A6876</Color>", xaml);
         Assert.Contains("<Color x:Key=\"GlassButtonStrokeLight\">#00FFFFFF</Color>", xaml);
@@ -291,6 +307,9 @@ public class MainPageStructureTests
         Assert.Contains("Binding=\"{Binding UseInvertedThemeColors}\"", xaml);
         Assert.Contains("Text=\"Invert Theme\"", xaml);
         Assert.Contains("IsChecked=\"{Binding Editor.UseInvertedThemeColors}\"", xaml);
+        Assert.Contains("Binding=\"{Binding IsSelected}\"", xaml);
+        Assert.Contains("PlacementSelectedTextOnLightSurface", xaml);
+        Assert.Contains("PlacementSelectedTextOnDarkSurface", xaml);
         Assert.Contains("Opacity=\"0\"", xaml);
         Assert.Contains("Color=\"{AppThemeBinding Light=#54FFFFFF, Dark=#68282D34}\"", xaml);
         Assert.Contains("Color=\"{AppThemeBinding Light=#CECECE, Dark=#4E4E4E}\"", xaml);
