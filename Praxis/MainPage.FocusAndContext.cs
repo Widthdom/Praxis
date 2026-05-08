@@ -502,9 +502,28 @@ public partial class MainPage
 
         button.BorderColor = Colors.Transparent;
         button.BorderWidth = 0;
-        ring.Stroke = new SolidColorBrush(focused ? Color.FromArgb(dark ? "#EAF2F7" : "#1A1A1A") : Colors.Transparent);
-        ring.StrokeThickness = focused ? 1 : 0;
+        ring.Stroke = Brush.Transparent;
+        ring.StrokeThickness = 0;
+        ring.BackgroundColor = focused
+            ? ResolveContextActionFocusFillColor(dark)
+            : Colors.Transparent;
+        button.TextColor = ResolveContextActionTextColor(focused, dark);
         return true;
+    }
+
+    private static Color ResolveContextActionFocusFillColor(bool dark)
+    {
+        return Color.FromArgb(dark ? "#4F5964" : "#B5BEC7");
+    }
+
+    private static Color ResolveContextActionTextColor(bool focused, bool dark)
+    {
+        if (focused)
+        {
+            return Color.FromArgb(dark ? "#FFFFFF" : "#0A0C10");
+        }
+
+        return Color.FromArgb(dark ? "#F5F7FA" : "#111111");
     }
 
     private static bool IsButtonFocused(VisualElement element)
@@ -618,7 +637,7 @@ public partial class MainPage
         SetTabStop(ModalArgumentsEntry, editorEnabled);
         SetTabStop(ModalClipWordEditor, editorEnabled);
         SetTabStop(ModalNoteEditor, editorEnabled);
-        SetTabStop(ModalInvertThemeCheckBox, editorEnabled);
+        SetTabStop(ModalInvertThemeCheckBox, false);
         SetTabStop(ModalCancelButton, editorEnabled);
         SetTabStop(ModalSaveButton, editorEnabled);
 

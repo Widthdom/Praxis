@@ -122,8 +122,21 @@ public partial class MainPage
     {
         var dark = IsDarkThemeActive();
         var textColor = Color.FromArgb(ThemeTextColorPolicy.ResolveTextColorHex(dark));
+        ModalGuidEntry.TextColor = textColor;
+        ModalButtonTextEntry.TextColor = textColor;
+        ModalCommandEntry.TextColor = textColor;
+        ModalToolEntry.TextColor = textColor;
+        ModalArgumentsEntry.TextColor = textColor;
         ModalClipWordEditor.TextColor = textColor;
         ModalNoteEditor.TextColor = textColor;
+#if WINDOWS
+        EnsureWindowsTextBoxHooks();
+#endif
+#if MACCATALYST
+        ApplyMacEntryVisualState();
+        ApplyMacClipWordEditorVisualState();
+        ApplyMacNoteEditorVisualState();
+#endif
     }
 
     private void ModalEditorField_Focused(object? sender, FocusEventArgs e)

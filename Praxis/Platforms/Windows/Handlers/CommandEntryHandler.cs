@@ -19,15 +19,18 @@ public class CommandEntryHandler : EntryHandler
     protected override void ConnectHandler(TextBox platformView)
     {
         base.ConnectHandler(platformView);
+        WindowsTextBoxVisualPolicy.ApplyInputCaretContrast(platformView);
         TryApplyAlphanumericInputScope(platformView);
         platformView.GotFocus += PlatformView_GotFocus;
         platformView.LostFocus += PlatformView_LostFocus;
+        platformView.SelectionChanged += PlatformView_SelectionChanged;
     }
 
     protected override void DisconnectHandler(TextBox platformView)
     {
         platformView.GotFocus -= PlatformView_GotFocus;
         platformView.LostFocus -= PlatformView_LostFocus;
+        platformView.SelectionChanged -= PlatformView_SelectionChanged;
         StopFocusedAsciiImeReassert();
         base.DisconnectHandler(platformView);
     }
@@ -85,6 +88,7 @@ public class CommandEntryHandler : EntryHandler
         }
 
         _ = TryApplyAlphanumericInputScope(textBox);
+        WindowsTextBoxVisualPolicy.ApplyInputCaretContrast(textBox);
         ApplyAsciiImeModeForFocus(textBox);
         TryStartFocusedAsciiImeReassert(textBox);
     }
@@ -92,6 +96,18 @@ public class CommandEntryHandler : EntryHandler
     private void PlatformView_LostFocus(object sender, RoutedEventArgs e)
     {
         StopFocusedAsciiImeReassert();
+        if (sender is TextBox textBox)
+        {
+            WindowsTextBoxVisualPolicy.ApplyInputCaretContrast(textBox);
+        }
+    }
+
+    private static void PlatformView_SelectionChanged(object sender, RoutedEventArgs e)
+    {
+        if (sender is TextBox textBox)
+        {
+            WindowsTextBoxVisualPolicy.ApplyInputCaretContrast(textBox);
+        }
     }
 
     private void ApplyAsciiImeModeForFocus(TextBox textBox)
@@ -326,5 +342,121 @@ public class CommandEntryHandler : EntryHandler
     [DllImport("imm32.dll")]
     [return: MarshalAs(UnmanagedType.Bool)]
     private static extern bool ImmSetConversionStatus(IntPtr hIMC, uint conversionMode, uint sentenceMode);
+}
+
+internal static class WindowsTextBoxVisualPolicy
+{
+    public static void ApplyInputCaretContrast(TextBox textBox)
+    {
+        Praxis.App.RefreshWindowsTextSelectionResources();
+        var foreground = new Microsoft.UI.Xaml.Media.SolidColorBrush(ResolveInputForegroundColor());
+        var selection = new Microsoft.UI.Xaml.Media.SolidColorBrush(ResolveSelectionColor());
+        var selectionForegroundColor = ResolveSelectionForegroundColor();
+        var selectionForeground = new Microsoft.UI.Xaml.Media.SolidColorBrush(selectionForegroundColor);
+        var caret = new Microsoft.UI.Xaml.Media.SolidColorBrush(ResolveCaretColor());
+        var chrome = new Microsoft.UI.Xaml.Media.SolidColorBrush(global::Windows.UI.Color.FromArgb(0, 0, 0, 0));
+        textBox.RequestedTheme = IsInputDarkThemeActive()
+            ? ElementTheme.Dark
+            : ElementTheme.Light;
+        textBox.Background = chrome;
+        textBox.BorderBrush = chrome;
+        textBox.BorderThickness = new Microsoft.UI.Xaml.Thickness(0);
+        textBox.Foreground = foreground;
+        textBox.SelectionHighlightColor = selection;
+        textBox.SelectionHighlightColorWhenNotFocused = selection;
+        ApplyTextControlResources(textBox, foreground, selection, selectionForegroundColor, selectionForeground, caret, chrome);
+
+        _ = textBox.DispatcherQueue.TryEnqueue(() =>
+        {
+            textBox.RequestedTheme = IsInputDarkThemeActive()
+                ? ElementTheme.Dark
+                : ElementTheme.Light;
+            textBox.Background = chrome;
+            textBox.BorderBrush = chrome;
+            textBox.BorderThickness = new Microsoft.UI.Xaml.Thickness(0);
+            var refreshedForeground = new Microsoft.UI.Xaml.Media.SolidColorBrush(ResolveInputForegroundColor());
+            var refreshedSelection = new Microsoft.UI.Xaml.Media.SolidColorBrush(ResolveSelectionColor());
+            textBox.Foreground = refreshedForeground;
+            textBox.SelectionHighlightColor = refreshedSelection;
+            textBox.SelectionHighlightColorWhenNotFocused = refreshedSelection;
+            ApplyTextControlResources(textBox, refreshedForeground, refreshedSelection, selectionForegroundColor, selectionForeground, caret, chrome);
+        });
+    }
+
+    private static void ApplyTextControlResources(
+        TextBox textBox,
+        Microsoft.UI.Xaml.Media.Brush foreground,
+        Microsoft.UI.Xaml.Media.Brush selection,
+        global::Windows.UI.Color selectionForegroundColor,
+        Microsoft.UI.Xaml.Media.Brush selectionForeground,
+        Microsoft.UI.Xaml.Media.Brush caret,
+        Microsoft.UI.Xaml.Media.Brush chrome)
+    {
+        TrySetTextControlResource(textBox, "TextControlBackground", chrome);
+        TrySetTextControlResource(textBox, "TextControlBackgroundPointerOver", chrome);
+        TrySetTextControlResource(textBox, "TextControlBackgroundFocused", chrome);
+        TrySetTextControlResource(textBox, "TextControlBorderBrush", chrome);
+        TrySetTextControlResource(textBox, "TextControlBorderBrushPointerOver", chrome);
+        TrySetTextControlResource(textBox, "TextControlBorderBrushFocused", chrome);
+        TrySetTextControlResource(textBox, "TextControlForeground", foreground);
+        TrySetTextControlResource(textBox, "TextControlForegroundPointerOver", foreground);
+        TrySetTextControlResource(textBox, "TextControlForegroundFocused", foreground);
+        TrySetTextControlResource(textBox, "TextControlSelectionHighlightColor", selection);
+        TrySetTextControlResource(textBox, "TextControlSelectionHighlightForeground", selectionForeground);
+        TrySetTextControlResource(textBox, "TextSelectionHighlightColorThemeBrush", selection);
+        TrySetTextControlResource(textBox, "AccentFillColorSelectedTextBackgroundBrush", selection);
+        TrySetTextControlResource(textBox, "TextOnAccentFillColorSelectedText", selectionForegroundColor);
+        TrySetTextControlResource(textBox, "TextOnAccentFillColorSelectedTextBrush", selectionForeground);
+        TrySetTextControlResource(textBox, "SystemColorHighlightTextColor", selectionForegroundColor);
+        TrySetTextControlResource(textBox, "SystemColorHighlightTextColorBrush", selectionForeground);
+        TrySetTextControlResource(textBox, "TextControlCaretBrush", caret);
+        TrySetTextControlResource(textBox, "TextControlCaretBrushFocused", caret);
+    }
+
+    private static void TrySetTextControlResource(TextBox textBox, string key, object value)
+    {
+        try
+        {
+            textBox.Resources[key] = value;
+        }
+        catch (Exception ex)
+        {
+            var safeResourceMessage = CrashFileLogger.SafeExceptionMessage(ex);
+            CrashFileLogger.WriteWarning(nameof(WindowsTextBoxVisualPolicy), $"Failed to set {key}: {safeResourceMessage}");
+        }
+    }
+
+    private static global::Windows.UI.Color ResolveInputForegroundColor()
+    {
+        return IsInputDarkThemeActive()
+            ? global::Windows.UI.Color.FromArgb(255, 245, 247, 250)
+            : global::Windows.UI.Color.FromArgb(255, 0, 0, 0);
+    }
+
+    private static global::Windows.UI.Color ResolveSelectionColor()
+    {
+        return IsInputDarkThemeActive()
+            ? global::Windows.UI.Color.FromArgb(255, 82, 58, 124)
+            : global::Windows.UI.Color.FromArgb(255, 107, 75, 176);
+    }
+
+    private static global::Windows.UI.Color ResolveSelectionForegroundColor()
+    {
+        return global::Windows.UI.Color.FromArgb(255, 245, 247, 250);
+    }
+
+    private static global::Windows.UI.Color ResolveCaretColor()
+    {
+        return IsInputDarkThemeActive()
+            ? global::Windows.UI.Color.FromArgb(255, 245, 247, 250)
+            : global::Windows.UI.Color.FromArgb(255, 0, 0, 0);
+    }
+
+    private static bool IsInputDarkThemeActive()
+    {
+        return Microsoft.Maui.Controls.Application.Current?.UserAppTheme == Microsoft.Maui.ApplicationModel.AppTheme.Dark ||
+            Microsoft.Maui.Controls.Application.Current?.UserAppTheme == Microsoft.Maui.ApplicationModel.AppTheme.Unspecified &&
+            Microsoft.Maui.Controls.Application.Current?.RequestedTheme == Microsoft.Maui.ApplicationModel.AppTheme.Dark;
+    }
 }
 #endif

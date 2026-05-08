@@ -19,6 +19,11 @@ public partial class MainPage
         if (e.PropertyName == nameof(MainViewModel.SelectedTheme))
         {
             ApplyNeutralStatusBackground();
+            ApplyModalEditorThemeTextColors();
+#if WINDOWS
+            EnsureWindowsTextBoxHooks();
+            App.RefreshPlatformWindowBackdrops();
+#endif
 #if MACCATALYST
             App.RefreshMacWindowBackdropForConnectedScenes();
             ApplyMacVisualTuning();

@@ -79,7 +79,7 @@ public class AppLayerSourceGuardTests
     {
         var xaml = ReadRepositoryFile("Praxis", "MainPage.xaml");
 
-        Assert.Equal(16, CountOccurrences(xaml, "<behaviors:HoverHandCursorBehavior />"));
+        Assert.Equal(18, CountOccurrences(xaml, "<behaviors:HoverHandCursorBehavior />"));
         Assert.Contains("<Border x:Name=\"CreateButton\"", xaml);
         Assert.Contains("<behaviors:HoverHandCursorBehavior />\n                                        <behaviors:MiddleClickBehavior", xaml);
         Assert.Contains("<Button x:Name=\"ContextEditButton\"", xaml);
@@ -90,6 +90,8 @@ public class AppLayerSourceGuardTests
         Assert.Contains("<Border x:Name=\"CopyNoteButton\"", xaml);
         Assert.Contains("<Border x:Name=\"ModalCancelButton\"", xaml);
         Assert.Contains("<Border x:Name=\"ModalSaveButton\"", xaml);
+        Assert.Contains("<CheckBox x:Name=\"ModalInvertThemeCheckBox\"", xaml);
+        Assert.Contains("<Label Text=\"Use opposite theme colors for this button\"", xaml);
         Assert.Contains("<Button x:Name=\"ConflictReloadButton\"", xaml);
         Assert.Contains("<Button x:Name=\"ConflictOverwriteButton\"", xaml);
         Assert.Contains("<Button x:Name=\"ConflictCancelButton\"", xaml);
@@ -214,6 +216,42 @@ public class AppLayerSourceGuardTests
     }
 
     [Fact]
+    public void MainPage_CommandAndSearchInputs_UseExplicitFocusedUnderline()
+    {
+        var xaml = ReadRepositoryFile("Praxis", "MainPage.xaml");
+        var source = ReadRepositoryFile("Praxis", "MainPage.EditorAndInput.cs");
+
+        Assert.Contains("Focused=\"MainCommandEntry_Focused\"", xaml);
+        Assert.Contains("Unfocused=\"MainCommandEntry_Unfocused\"", xaml);
+        Assert.Contains("Focused=\"MainSearchEntry_Focused\"", xaml);
+        Assert.Contains("Unfocused=\"MainSearchEntry_Unfocused\"", xaml);
+        Assert.Contains("x:Name=\"MainCommandFocusUnderline\"", xaml);
+        Assert.Contains("x:Name=\"MainSearchFocusUnderline\"", xaml);
+        Assert.Contains("SetMainInputFocusUnderline(MainCommandFocusUnderline, focused: true);", source);
+        Assert.Contains("SetMainInputFocusUnderline(MainCommandFocusUnderline, focused: false);", source);
+        Assert.Contains("SetMainInputFocusUnderline(MainSearchFocusUnderline, focused: true);", source);
+        Assert.Contains("SetMainInputFocusUnderline(MainSearchFocusUnderline, focused: false);", source);
+        Assert.Contains("underline.Opacity = focused ? 1 : 0;", source);
+    }
+
+    [Fact]
+    public void WindowsDefaultTextStyles_UseYuGothicUiWithoutChangingIconFonts()
+    {
+        var styles = ReadRepositoryFile("Praxis", "Resources", "Styles", "Styles.xaml");
+        var mainPage = ReadRepositoryFile("Praxis", "MainPage.xaml");
+
+        Assert.Equal(4, CountOccurrences(styles, "FontFamily\" Value=\"{OnPlatform WinUI='Yu Gothic UI'}\""));
+        Assert.Contains("<Style TargetType=\"Label\">", styles);
+        Assert.Contains("<Style TargetType=\"Entry\" ApplyToDerivedTypes=\"True\">", styles);
+        Assert.Contains("<Style TargetType=\"Editor\">", styles);
+        Assert.Contains("<Style TargetType=\"Button\">", styles);
+        Assert.DoesNotContain("Noto Sans JP", styles);
+        Assert.DoesNotContain("WinUI=OpenSansRegular", styles);
+        Assert.DoesNotContain("WinUI=OpenSansSemibold", styles);
+        Assert.Contains("FontFamily=\"{OnPlatform WinUI='Segoe MDL2 Assets', MacCatalyst=''}\"", mainPage);
+    }
+
+    [Fact]
     public void MainPage_DockRegion_UsesCompactBorderlessGlassFootprint()
     {
         var xaml = ReadRepositoryFile("Praxis", "MainPage.xaml");
@@ -251,6 +289,114 @@ public class AppLayerSourceGuardTests
         Assert.Contains("FocusMacContextMenuKeyCaptureView();", eventSource);
         Assert.Contains("RemoveMacContextMenuKeyCaptureView();", eventSource);
         Assert.DoesNotContain("responder.BecomeFirstResponder();\n        }\n        SyncMacContextMenuPseudoFocusFromButton(button);", focusSource, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void MainPage_ContextMenu_UsesMutedOpaquePopupSurface()
+    {
+        var xaml = ReadRepositoryFile("Praxis", "MainPage.xaml");
+
+        Assert.Contains("x:Name=\"CommandSuggestionPopup\"", xaml);
+        Assert.Contains("<Color x:Key=\"MutedPopupLight\">#FFD4DADF</Color>", xaml);
+        Assert.Contains("<Color x:Key=\"MutedPopupDark\">#FF303842</Color>", xaml);
+        Assert.Contains("BackgroundColor=\"{AppThemeBinding Light={StaticResource MutedPopupLight}, Dark={StaticResource MutedPopupDark}}\"", xaml);
+        Assert.Contains("TextColor=\"{AppThemeBinding Light=#111111, Dark=#F5F7FA}\"", xaml);
+        Assert.Contains("WidthRequest=\"220\"", xaml);
+        Assert.Contains("CornerRadius=\"14\"", xaml);
+        Assert.Contains("MacOSBehindWindowBlur=\"False\"", xaml);
+        Assert.DoesNotContain("BackgroundColor=\"{AppThemeBinding Light=#52FFFFFF, Dark=#361E2228}\"", xaml);
+
+        var focusSource = ReadRepositoryFile("Praxis", "MainPage.FocusAndContext.cs");
+        Assert.Contains("ring.BackgroundColor = focused", focusSource);
+        Assert.Contains("ResolveContextActionFocusFillColor(dark)", focusSource);
+        Assert.Contains("ResolveContextActionTextColor(focused, dark)", focusSource);
+        Assert.Contains("Color.FromArgb(dark ? \"#4F5964\" : \"#B5BEC7\")", focusSource);
+        Assert.Contains("Color.FromArgb(dark ? \"#FFFFFF\" : \"#0A0C10\")", focusSource);
+    }
+
+    [Fact]
+    public void MainPage_WindowsModalTabOrder_LeavesNoteForActionsThenWrapsToGuid()
+    {
+        var focusSource = ReadRepositoryFile("Praxis", "MainPage.FocusAndContext.cs");
+        var modalSource = ReadRepositoryFile("Praxis", "MainPage.ModalEditor.cs");
+        var macSource = ReadRepositoryFile("Praxis", "MainPage.MacCatalystBehavior.cs");
+        var pageSource = ReadRepositoryFile("Praxis", "MainPage.xaml.cs");
+        var windowsSource = ReadRepositoryFile("Praxis", "MainPage.WindowsInput.cs");
+        var eventsSource = ReadRepositoryFile("Praxis", "MainPage.ViewModelEvents.cs");
+
+        Assert.Contains("SetTabStop(ModalInvertThemeCheckBox, false);", focusSource);
+        Assert.Contains("ApplyModalEditorThemeTextColors();", pageSource);
+        Assert.Contains("ApplyModalEditorThemeTextColors();", eventsSource);
+        Assert.Contains("ModalGuidEntry.TextColor = textColor;", modalSource);
+        Assert.Contains("ModalButtonTextEntry.TextColor = textColor;", modalSource);
+        Assert.Contains("ModalCommandEntry.TextColor = textColor;", modalSource);
+        Assert.Contains("ApplyMacEntryVisualState();", modalSource);
+        Assert.Contains("textField.TextColor = textColor;", macSource);
+        Assert.Contains("textField.TintColor = textColor;", macSource);
+        Assert.Contains("dark ? UIColor.FromRGB(0xF5, 0xF7, 0xFA) : UIColor.Black", macSource);
+        Assert.Contains("EnsureWindowsTextBoxHooks();", pageSource);
+        Assert.Contains("EnsureWindowsTextBoxHooks();", eventsSource);
+        Assert.Contains("App.RefreshPlatformWindowBackdrops();", eventsSource);
+        Assert.Contains("TryMoveWindowsModalEditorFocusFromTextBox(sender, forward: !IsWindowsShiftDown())", windowsSource);
+        Assert.Contains("ReferenceEquals(textBox, modalNoteTextBox)", windowsSource);
+        Assert.Contains("FocusWindowsModalActionButton(ModalCancelButton);", windowsSource);
+        Assert.Contains("FocusWindowsModalActionButton(ModalSaveButton);", windowsSource);
+        Assert.Contains("FocusWindowsModalTextBox(modalGuidTextBox, ModalGuidEntry);", windowsSource);
+        Assert.Contains("private WindowsModalActionFocusTarget? windowsModalActionFocusTarget;", windowsSource);
+        Assert.Contains("windowsModalActionFocusTarget is not null", windowsSource);
+        Assert.Contains("TryInvokeWindowsModalAction()", windowsSource);
+        Assert.Contains("ApplyWindowsModalActionFocusVisuals();", windowsSource);
+        Assert.Contains("button.StrokeThickness = focused ? 2 : 0;", windowsSource);
+        Assert.Contains("ResolveWindowsModalActionFocusStrokeColor()", windowsSource);
+        Assert.Contains("Color.FromArgb(\"#FF5F6974\")", windowsSource);
+        Assert.Contains("Color.FromArgb(\"#FFD5D9DF\")", windowsSource);
+        Assert.Contains("ClearWindowsTextSelection(sender);", windowsSource);
+        Assert.Contains("textBox.SelectionLength = 0;", windowsSource);
+        Assert.Contains("ConfigureWindowsTextSelectionAndCaret(focusedTextBox);", windowsSource);
+        Assert.Contains("Praxis.Controls.WindowsTextBoxVisualPolicy.ApplyInputCaretContrast(focusedTextBox);", windowsSource);
+        Assert.Contains("slot.SelectionChanged += WindowsTextBox_SelectionChanged;", windowsSource);
+        Assert.Contains("slot.SelectionChanged -= WindowsTextBox_SelectionChanged;", windowsSource);
+        Assert.Contains("private void WindowsTextBox_SelectionChanged(object sender, Microsoft.UI.Xaml.RoutedEventArgs e)", windowsSource);
+        Assert.Contains("textBox.RequestedTheme = IsWindowsTextDarkThemeActive()", windowsSource);
+        Assert.Contains("IsWindowsTextDarkThemeActive()", windowsSource);
+        Assert.Contains("textBox.Foreground = foregroundBrush;", windowsSource);
+        Assert.Contains("textBox.SelectionHighlightColor = selectionBrush;", windowsSource);
+        Assert.Contains("textBox.SelectionHighlightColorWhenNotFocused = selectionBrush;", windowsSource);
+        Assert.Contains("textBox.Background = chromeBrush;", windowsSource);
+        Assert.Contains("textBox.BorderBrush = chromeBrush;", windowsSource);
+        Assert.Contains("textBox.BorderThickness = new Microsoft.UI.Xaml.Thickness(0);", windowsSource);
+        Assert.Contains("TrySetWindowsTextControlResource(textBox, \"TextControlBackground\", chromeBrush);", windowsSource);
+        Assert.Contains("TrySetWindowsTextControlResource(textBox, \"TextControlBackgroundPointerOver\", chromeBrush);", windowsSource);
+        Assert.Contains("TrySetWindowsTextControlResource(textBox, \"TextControlBackgroundFocused\", chromeBrush);", windowsSource);
+        Assert.Contains("TrySetWindowsTextControlResource(textBox, \"TextControlBorderBrush\", chromeBrush);", windowsSource);
+        Assert.Contains("TrySetWindowsTextControlResource(textBox, \"TextControlBorderBrushPointerOver\", chromeBrush);", windowsSource);
+        Assert.Contains("TrySetWindowsTextControlResource(textBox, \"TextControlBorderBrushFocused\", chromeBrush);", windowsSource);
+        Assert.Contains("TrySetWindowsTextControlResource(textBox, \"TextControlCaretBrush\", caretBrush);", windowsSource);
+        Assert.Contains("TrySetWindowsTextControlResource(textBox, \"TextControlCaretBrushFocused\", caretBrush);", windowsSource);
+        Assert.Contains("TrySetWindowsTextControlResource(textBox, \"TextControlSelectionHighlightColor\", selectionBrush);", windowsSource);
+        Assert.Contains("TrySetWindowsTextControlResource(textBox, \"TextControlSelectionHighlightForeground\", selectionForegroundBrush);", windowsSource);
+        Assert.Contains("TrySetWindowsTextControlResource(textBox, \"TextSelectionHighlightColorThemeBrush\", selectionBrush);", windowsSource);
+        Assert.Contains("TrySetWindowsTextControlResource(textBox, \"AccentFillColorSelectedTextBackgroundBrush\", selectionBrush);", windowsSource);
+        Assert.Contains("TrySetWindowsTextControlResource(textBox, \"TextOnAccentFillColorSelectedText\", selectionForegroundColor);", windowsSource);
+        Assert.Contains("TrySetWindowsTextControlResource(textBox, \"TextOnAccentFillColorSelectedTextBrush\", selectionForegroundBrush);", windowsSource);
+        Assert.Contains("TrySetWindowsTextControlResource(textBox, \"SystemColorHighlightTextColor\", selectionForegroundColor);", windowsSource);
+        Assert.Contains("TrySetWindowsTextControlResource(textBox, \"SystemColorHighlightTextColorBrush\", selectionForegroundBrush);", windowsSource);
+        Assert.Contains("App.RefreshWindowsTextSelectionResources();", windowsSource);
+        Assert.Contains("global::Windows.UI.Color.FromArgb(255, 107, 75, 176)", windowsSource);
+        Assert.Contains("global::Windows.UI.Color.FromArgb(255, 82, 58, 124)", windowsSource);
+        Assert.Contains("global::Windows.UI.Color.FromArgb(255, 0, 0, 0)", windowsSource);
+        Assert.Contains("global::Windows.UI.Color.FromArgb(255, 245, 247, 250)", windowsSource);
+        Assert.DoesNotContain("global::Windows.UI.Color.FromArgb(255, 208, 213, 220)", windowsSource);
+        Assert.DoesNotContain("global::Windows.UI.Color.FromArgb(255, 76, 86, 96)", windowsSource);
+    }
+
+    [Fact]
+    public void MauiThemeService_RefreshesWindowsBackdropAfterApplyingUserTheme()
+    {
+        var source = ReadRepositoryFile("Praxis", "Services", "MauiThemeService.cs");
+
+        Assert.Contains("Application.Current.UserAppTheme = appTheme;", source);
+        Assert.Contains("App.RefreshPlatformWindowBackdrops();", source);
     }
 
     [Fact]
@@ -300,10 +446,26 @@ public class AppLayerSourceGuardTests
     {
         var source = ReadRepositoryFile("Praxis", "App.xaml.cs");
 
-        Assert.Contains("RequestedThemeChanged += (_, _) => RefreshWindowBackdrops();", source);
+        Assert.Contains("RequestedThemeChanged += (_, _) =>", source);
+        Assert.Contains("RefreshWindowsTextSelectionResources();", source);
+        Assert.Contains("RefreshWindowBackdrops();", source);
+        Assert.Contains("public static void RefreshWindowsTextSelectionResources()", source);
+        Assert.Contains("Microsoft.UI.Xaml.Application.Current?.Resources", source);
+        Assert.Contains("SetWindowsAppResource(resources, \"TextOnAccentFillColorSelectedText\", selectionForegroundColor);", source);
+        Assert.Contains("SetWindowsAppResource(resources, \"TextOnAccentFillColorSelectedTextBrush\", selectionForegroundBrush);", source);
+        Assert.Contains("SetWindowsAppResource(resources, \"TextControlSelectionHighlightColor\", selectionBackgroundBrush);", source);
+        Assert.Contains("SetWindowsAppResource(resources, \"TextSelectionHighlightColorThemeBrush\", selectionBackgroundBrush);", source);
+        Assert.Contains("SetWindowsAppResource(resources, \"AccentFillColorSelectedTextBackgroundBrush\", selectionBackgroundBrush);", source);
+        var windowsXaml = ReadRepositoryFile("Praxis", "Platforms", "Windows", "App.xaml");
+        Assert.Contains("<Color x:Key=\"TextOnAccentFillColorSelectedText\">#FFF5F7FA</Color>", windowsXaml);
+        Assert.Contains("<SolidColorBrush x:Key=\"TextControlSelectionHighlightColor\" Color=\"#FF6B4BB0\" />", windowsXaml);
+        Assert.Contains("<SolidColorBrush x:Key=\"TextControlSelectionHighlightColor\" Color=\"#FF523A7C\" />", windowsXaml);
         Assert.Contains("page.BackgroundColor = Colors.Transparent;", source);
+        Assert.Contains("#if WINDOWS", source);
+        Assert.Contains("Title = string.Empty,", source);
         Assert.Contains("window.HandlerChanged += (_, _) => ApplyPlatformWindowBackdrop(window);", source);
         Assert.Contains("private static void RefreshWindowBackdrops()", source);
+        Assert.Contains("public static void RefreshPlatformWindowBackdrops()", source);
         Assert.Contains("foreach (var window in windows)", source);
         Assert.Contains("static partial void ApplyPlatformWindowBackdrop(Window window);", source);
     }
@@ -314,10 +476,124 @@ public class AppLayerSourceGuardTests
         var source = ReadRepositoryFile("Praxis", "App.WindowsBackdrop.cs");
 
         Assert.Contains("static partial void ApplyPlatformWindowBackdrop(Microsoft.Maui.Controls.Window window)", source);
+        Assert.Contains("ApplyWindowsDesktopAcrylicController(nativeWindow)", source);
+        Assert.Contains("DesktopAcrylicController.IsSupported()", source);
+        Assert.Contains("WindowsDesktopAcrylicStates.GetValue(nativeWindow, CreateWindowsDesktopAcrylicState)", source);
+        Assert.Contains("nativeWindow.As<Microsoft.UI.Composition.ICompositionSupportsSystemBackdrop>()", source);
+        Assert.Contains("state.Configuration.IsInputActive = true;", source);
+        Assert.Contains("state.Controller.TintOpacity = isDark ? 0.04f : 0.02f;", source);
+        Assert.Contains("state.Controller.LuminosityOpacity = isDark ? 0.18f : 0.12f;", source);
+        Assert.DoesNotContain("RemoveSystemBackdropTarget", source);
+        Assert.Contains("QueueWindowsBackdropRefresh(nativeWindow);", source);
+        Assert.Contains("TryRefreshWindowsBackdrop(nativeWindow, \"queued activation/resize refresh\")", source);
+        Assert.DoesNotContain("DesktopAcrylicBackdrop", source);
         Assert.Contains("ApplyWindowsRootTransparency(nativeWindow);", source);
+        Assert.Contains("ApplyWindowsContentChrome(nativeWindow);", source);
+        Assert.Contains("ApplyWindowsChromeTint(nativeWindow);", source);
+        Assert.Contains("EnsureWindowsCustomChrome(nativeWindow);", source);
+        Assert.Contains("PraxisWindowsCustomChromeRoot", source);
+        Assert.Contains("CreateWindowsCustomTitleBar(nativeWindow)", source);
+        Assert.Contains("AttachWindowsBackdropActivationRefresh(nativeWindow);", source);
+        Assert.Contains("AttachWindowsBackdropSizeRefresh(nativeWindow);", source);
+        Assert.Contains("WindowsWindowOnSizeChanged", source);
+        Assert.Contains("Failed to refresh Windows backdrop after resize", source);
+        Assert.Contains("RefreshWindowsBackdropAfterActivation(nativeWindow);", source);
+        Assert.Contains("RefreshWindowsBackdropAfterResize(nativeWindow);", source);
+        Assert.Contains("Failed to refresh Windows backdrop after activation", source);
+        Assert.Contains("ResolveWindowsChromeTintColor()", source);
+        Assert.Contains("chromeRoot.Background = tintBrush;", source);
+        Assert.Contains("ResolveWindowsAcrylicGradientColor()", source);
+        Assert.Contains("global::Windows.UI.Color.FromArgb(96, 255, 255, 255)", source);
+        Assert.Contains("global::Windows.UI.Color.FromArgb(96, 0, 0, 0)", source);
+        Assert.Contains("return (color.A << 24) | (color.R << 16) | (color.G << 8) | color.B;", source);
+        Assert.Contains("nativeWindow.Title = string.Empty;", source);
+        Assert.Contains("nativeWindow.AppWindow.Title = string.Empty;", source);
+        Assert.Contains("var color = global::Windows.UI.Color.FromArgb(0, 0, 0, 0);", source);
+        Assert.Contains("Height = 36,", source);
+        Assert.Contains("titleBar.BackgroundColor = transparent;", source);
+        Assert.Contains("titleBar.Background = transparentBrush;", source);
+        Assert.Contains("ResolveWindowsCaptionForegroundColor()", source);
+        Assert.Contains("global::Windows.UI.Color.FromArgb(238, 245, 247, 250)", source);
+        Assert.Contains("ResolveWindowsCaptionHoverBackgroundColor()", source);
+        Assert.Contains("global::Windows.UI.Color.FromArgb(30, 0, 0, 0)", source);
+        Assert.Contains("global::Windows.UI.Color.FromArgb(48, 0, 0, 0)", source);
+        Assert.Contains("titleBar.ButtonHoverBackgroundColor = captionHoverBackground;", source);
+        Assert.Contains("titleBar.ButtonPressedBackgroundColor = captionPressedBackground;", source);
+        Assert.Contains("titleBar.ButtonPressedForegroundColor = captionPressedForeground;", source);
+        Assert.DoesNotContain("Text = \"Praxis\",", source);
+        Assert.Contains("CreateWindowsCaptionButton", source);
+        Assert.Contains("windowsMaximizeRestoreIcon", source);
+        Assert.Contains("UseSystemFocusVisuals = false,", source);
+        Assert.Contains("IsTabStop = false,", source);
+        Assert.Contains("Foreground = foregroundBrush", source);
+        Assert.Contains("icon.Foreground = foregroundBrush;", source);
+        Assert.Contains("PointerEntered", source);
+        Assert.Contains("PointerPressed", source);
+        Assert.Contains("PointerReleased", source);
+        Assert.Contains("PointerExited", source);
+        Assert.Contains("PointerCanceled", source);
+        Assert.Contains("PointerCaptureLost", source);
+        Assert.Contains("ApplyWindowsCaptionButtonResources(button);", source);
+        Assert.Contains("button.Resources[\"ButtonBackgroundPointerOver\"] = hoverBackground;", source);
+        Assert.Contains("button.Resources[\"ButtonForegroundPressed\"] = pressedForeground;", source);
+        Assert.Contains("UpdateWindowsMaximizeRestoreIcon(nativeWindow);", source);
+        Assert.Contains("titleBar.ForegroundColor = captionForeground;", source);
+        Assert.Contains("titleBar.ButtonForegroundColor = captionForeground;", source);
+        Assert.Contains("UpdateWindowsCaptionButtonForegrounds(titleBar);", source);
+        Assert.Contains("element is Microsoft.UI.Xaml.Controls.Grid { Name: WindowsCustomChromeRootName }", source);
+        Assert.Contains("nativeWindow.ExtendsContentIntoTitleBar = true;", source);
+        Assert.Contains("nativeWindow.SetTitleBar(titleBar);", source);
+        Assert.Contains("presenter.SetBorderAndTitleBar(hasBorder: true, hasTitleBar: false);", source);
         Assert.Contains("ApplyWindowsTitleBarTransparency(nativeWindow);", source);
+        Assert.Contains("EnableWindowsQuickAccessCaptionStyle(hwnd);", source);
+        Assert.Contains("style.ToInt64() | WS_CAPTION", source);
+        Assert.DoesNotContain("& ~WS_CAPTION", source);
+        Assert.DoesNotContain("WS_THICKFRAME", source);
+        Assert.DoesNotContain("ExtendWindowsFrameIntoClientArea(hwnd);", source);
+        Assert.DoesNotContain("EnableWindowsDwmBlurBehind(hwnd);", source);
+        Assert.Contains("LogWindowsBackdropDiagnostics(rootElement);", source);
+        Assert.Contains("AttachWindowsRootTransparencyRefresh(nativeWindow, rootElement);", source);
+        Assert.Contains("EnsureWindowsResizeEraseSuppression(nativeWindow, hwnd);", source);
+        Assert.Contains("SetWindowSubclass(hwnd, WindowsBackdropSubclassProc, WindowsBackdropSubclassId, UIntPtr.Zero)", source);
+        Assert.Contains("message == WM_ERASEBKGND", source);
+        Assert.Contains("FillWindowsResizeFallbackBackground(hwnd, wParam);", source);
+        Assert.Contains("return new IntPtr(1);", source);
+        Assert.Contains("message is WM_SIZE or WM_SIZING or WM_WINDOWPOSCHANGING or WM_WINDOWPOSCHANGED", source);
+        Assert.Contains("ApplyWindowsAcrylicBackdrop(hwnd);", source);
+        Assert.Contains("InvalidateRect(hwnd, IntPtr.Zero, false);", source);
+        Assert.Contains("ResolveWindowsResizeFallbackColor()", source);
+        Assert.Contains("GetClientRect(hwnd, out var rect)", source);
+        Assert.Contains("CreateSolidBrush(ToColorRef(ResolveWindowsResizeFallbackColor()))", source);
+        Assert.Contains("FillRect(hdc, ref rect, brush);", source);
+        Assert.Contains("DeleteObject(brush);", source);
+        Assert.Contains("RemoveWindowSubclass(hwnd, WindowsBackdropSubclassProc, subclassId);", source);
+        Assert.Contains("DefSubclassProc(hwnd, message, wParam, lParam);", source);
+        Assert.Contains("ResizeEraseSuppressionHwnd", source);
+        Assert.Contains("frameworkElement.Loaded += WindowsRootElementOnLoaded;", source);
+        Assert.Contains("frameworkElement.SizeChanged += WindowsRootElementOnSizeChanged;", source);
+        Assert.Contains("RefreshWindowsRootTransparency(rootElement);", source);
+        Assert.Contains("ClearWindowsOpaqueWrapperBackgrounds(rootElement)", source);
+        Assert.Contains("nativeWindow.DispatcherQueue.TryEnqueue(() => RefreshWindowsRootTransparency(rootElement))", source);
+        Assert.Contains("var coversRoot = CoversMostOfWindowsRoot(element, rootWidth, rootHeight);", source);
+        Assert.Contains("(coversRoot || IsWindowsBackdropBlockingBrush", source);
+        Assert.Contains("IsWindowsBackdropBlockingBrush", source);
+        Assert.Contains("CoversMostOfWindowsRoot(element, rootWidth, rootHeight)", source);
+        Assert.Contains("color.A >= 240 && max - min <= 36 && min >= 218;", source);
+        Assert.Contains("WindowsBackdrop visual tree:", source);
         Assert.Contains("AccentState.ACCENT_ENABLE_ACRYLICBLURBEHIND", source);
-        Assert.Contains("SetWindowCompositionAttribute(hwnd, ref data);", source);
+        Assert.Contains("AccentFlags = 0,", source);
+        Assert.Contains("GradientColor = gradientColor,", source);
+        Assert.Contains("var result = SetWindowCompositionAttribute(hwnd, ref data);", source);
+        Assert.Contains("\"SetWindowCompositionAttribute did not apply Windows acrylic blur.\"", source);
+        Assert.DoesNotContain("SetLayeredWindowAttributes", source);
+        Assert.DoesNotContain("WS_EX_LAYERED", source);
+        Assert.DoesNotContain("ApplyWindowsDwmSystemBackdrop(hwnd);", source);
+        Assert.DoesNotContain("DWM_SYSTEMBACKDROP_TYPE", source);
+        Assert.DoesNotContain("DwmEnableBlurBehindWindow", source);
+        Assert.DoesNotContain("DWM_BB_ENABLE", source);
+        Assert.Contains("GetWindowLongPtr(hwnd, GWL_STYLE)", source);
+        Assert.Contains("SetWindowLongPtr(hwnd, GWL_STYLE, updatedStyle);", source);
+        Assert.DoesNotContain("DwmExtendFrameIntoClientArea", source);
         Assert.Contains("DwmSetWindowAttribute(hwnd, DWMWINDOWATTRIBUTE.DWMWA_WINDOW_CORNER_PREFERENCE", source);
     }
 
@@ -570,7 +846,54 @@ public class AppLayerSourceGuardTests
     public void WindowsCommandEntryHandler_DisablesInputScopeAfterCompatibilityException()
     {
         var source = ReadRepositoryFile("Praxis", "Platforms", "Windows", "Handlers", "CommandEntryHandler.cs");
+        var searchSource = ReadRepositoryFile("Praxis", "Platforms", "Windows", "Handlers", "SearchEntryHandler.cs");
+        var mauiProgramSource = ReadRepositoryFile("Praxis", "MauiProgram.cs");
 
+        Assert.Contains("WindowsTextBoxVisualPolicy.ApplyInputCaretContrast(platformView);", source);
+        Assert.Contains("WindowsTextBoxVisualPolicy.ApplyInputCaretContrast(textBox);", source);
+        Assert.Contains("private void PlatformView_LostFocus(object sender, RoutedEventArgs e)", source);
+        Assert.Contains("platformView.SelectionChanged += PlatformView_SelectionChanged;", source);
+        Assert.Contains("platformView.SelectionChanged -= PlatformView_SelectionChanged;", source);
+        Assert.Contains("private static void PlatformView_SelectionChanged(object sender, RoutedEventArgs e)", source);
+        Assert.Contains("textBox.RequestedTheme = IsInputDarkThemeActive()", source);
+        Assert.Contains("Application.Current?.UserAppTheme == Microsoft.Maui.ApplicationModel.AppTheme.Dark", source);
+        Assert.Contains("global::Windows.UI.Color.FromArgb(255, 0, 0, 0)", source);
+        Assert.Contains("global::Windows.UI.Color.FromArgb(255, 107, 75, 176)", source);
+        Assert.Contains("global::Windows.UI.Color.FromArgb(255, 82, 58, 124)", source);
+        Assert.DoesNotContain("global::Windows.UI.Color.FromArgb(255, 76, 86, 96)", source);
+        Assert.Contains("Praxis.App.RefreshWindowsTextSelectionResources();", source);
+        Assert.Contains("TextControlForegroundFocused", source);
+        Assert.Contains("TextControlForegroundPointerOver", source);
+        Assert.Contains("textBox.Background = chrome;", source);
+        Assert.Contains("textBox.BorderBrush = chrome;", source);
+        Assert.Contains("textBox.BorderThickness = new Microsoft.UI.Xaml.Thickness(0);", source);
+        Assert.Contains("TrySetTextControlResource(textBox, \"TextControlBackground\", chrome);", source);
+        Assert.Contains("TrySetTextControlResource(textBox, \"TextControlBackgroundPointerOver\", chrome);", source);
+        Assert.Contains("TrySetTextControlResource(textBox, \"TextControlBackgroundFocused\", chrome);", source);
+        Assert.Contains("TrySetTextControlResource(textBox, \"TextControlBorderBrush\", chrome);", source);
+        Assert.Contains("TrySetTextControlResource(textBox, \"TextControlBorderBrushPointerOver\", chrome);", source);
+        Assert.Contains("TrySetTextControlResource(textBox, \"TextControlBorderBrushFocused\", chrome);", source);
+        Assert.Contains("TrySetTextControlResource(textBox, \"TextControlSelectionHighlightColor\", selection);", source);
+        Assert.Contains("TrySetTextControlResource(textBox, \"TextControlSelectionHighlightForeground\", selectionForeground);", source);
+        Assert.Contains("TrySetTextControlResource(textBox, \"TextSelectionHighlightColorThemeBrush\", selection);", source);
+        Assert.Contains("TrySetTextControlResource(textBox, \"AccentFillColorSelectedTextBackgroundBrush\", selection);", source);
+        Assert.Contains("TrySetTextControlResource(textBox, \"TextOnAccentFillColorSelectedText\", selectionForegroundColor);", source);
+        Assert.Contains("TrySetTextControlResource(textBox, \"TextOnAccentFillColorSelectedTextBrush\", selectionForeground);", source);
+        Assert.Contains("TrySetTextControlResource(textBox, \"SystemColorHighlightTextColor\", selectionForegroundColor);", source);
+        Assert.Contains("TrySetTextControlResource(textBox, \"SystemColorHighlightTextColorBrush\", selectionForeground);", source);
+        Assert.Contains("TrySetTextControlResource(textBox, \"TextControlCaretBrush\", caret);", source);
+        Assert.Contains("TrySetTextControlResource(textBox, \"TextControlCaretBrushFocused\", caret);", source);
+        Assert.Contains("return global::Windows.UI.Color.FromArgb(255, 245, 247, 250);", source);
+        Assert.Contains("public class SearchEntryHandler : EntryHandler", searchSource);
+        Assert.Contains("WindowsTextBoxVisualPolicy.ApplyInputCaretContrast(platformView);", searchSource);
+        Assert.Contains("WindowsTextBoxVisualPolicy.ApplyInputCaretContrast(textBox);", searchSource);
+        Assert.Contains("platformView.LostFocus += PlatformView_LostFocus;", searchSource);
+        Assert.Contains("platformView.LostFocus -= PlatformView_LostFocus;", searchSource);
+        Assert.Contains("platformView.SelectionChanged += PlatformView_SelectionChanged;", searchSource);
+        Assert.Contains("platformView.SelectionChanged -= PlatformView_SelectionChanged;", searchSource);
+        Assert.Contains("private static void PlatformView_LostFocus(object sender, RoutedEventArgs e)", searchSource);
+        Assert.Contains("private static void PlatformView_SelectionChanged(object sender, RoutedEventArgs e)", searchSource);
+        Assert.Contains("handlers.AddHandler(typeof(SearchEntry), typeof(SearchEntryHandler));", mauiProgramSource);
         Assert.Contains("catch (Exception ex) when (WindowsInputScopeCompatibilityPolicy.ShouldDisableInputScopeOnException(ex))", source);
         Assert.Contains("catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)", source);
         Assert.Contains("inputScopeUnsupported = true;", source);

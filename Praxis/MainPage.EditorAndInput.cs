@@ -147,7 +147,13 @@ public partial class MainPage
 
     private void MainCommandEntry_Focused(object? sender, FocusEventArgs e)
     {
+        SetMainInputFocusUnderline(MainCommandFocusUnderline, focused: true);
         ReopenCommandSuggestionsFromEntry();
+    }
+
+    private void MainCommandEntry_Unfocused(object? sender, FocusEventArgs e)
+    {
+        SetMainInputFocusUnderline(MainCommandFocusUnderline, focused: false);
     }
 
     private void MainCommandEntry_PointerPressed(object? sender, PointerEventArgs e)
@@ -162,7 +168,18 @@ public partial class MainPage
 
     private void MainSearchEntry_Focused(object? sender, FocusEventArgs e)
     {
+        SetMainInputFocusUnderline(MainSearchFocusUnderline, focused: true);
         CloseCommandSuggestionPopup();
+    }
+
+    private void MainSearchEntry_Unfocused(object? sender, FocusEventArgs e)
+    {
+        SetMainInputFocusUnderline(MainSearchFocusUnderline, focused: false);
+    }
+
+    private static void SetMainInputFocusUnderline(VisualElement underline, bool focused)
+    {
+        underline.Opacity = focused ? 1 : 0;
     }
 
     private void MainSearchEntry_PointerPressed(object? sender, PointerEventArgs e)

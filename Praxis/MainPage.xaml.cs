@@ -97,6 +97,9 @@ public partial class MainPage : ContentPage
                 ApplyContextActionButtonFocusVisuals();
                 ApplyModalEditorThemeTextColors();
                 RebuildCommandSuggestionStack();
+#if WINDOWS
+                EnsureWindowsTextBoxHooks();
+#endif
 #if MACCATALYST
                 ApplyMacVisualTuning();
                 ApplyMacNoteEditorVisualState();

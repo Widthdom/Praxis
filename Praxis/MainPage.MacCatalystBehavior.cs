@@ -728,6 +728,10 @@ public partial class MainPage
             macEntryTextField.SetGlassFieldVisual(IsGlassEntryVisual(entry));
         }
 
+        var dark = IsDarkThemeActive();
+        var textColor = dark ? UIColor.FromRGB(0xF5, 0xF7, 0xFA) : UIColor.Black;
+        textField.TextColor = textColor;
+        textField.TintColor = textColor;
         textField.SetNeedsLayout();
         textField.LayoutIfNeeded();
     }
