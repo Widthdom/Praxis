@@ -554,8 +554,17 @@ public class AppLayerSourceGuardTests
         Assert.Contains("LogWindowsBackdropDiagnostics(rootElement);", source);
         Assert.Contains("AttachWindowsRootTransparencyRefresh(nativeWindow, rootElement);", source);
         Assert.Contains("EnsureWindowsResizeEraseSuppression(nativeWindow, hwnd);", source);
+        Assert.Contains("WindowsBackdropWindowsByHwnd[hwnd] = new WeakReference<Microsoft.UI.Xaml.Window>(nativeWindow);", source);
         Assert.Contains("SetWindowSubclass(hwnd, WindowsBackdropSubclassProc, WindowsBackdropSubclassId, UIntPtr.Zero)", source);
         Assert.Contains("message == WM_ERASEBKGND", source);
+        Assert.Contains("ResizeWindowsChromeRootToClient(hwnd);", source);
+        Assert.Contains("GetClientRect(hwnd, out var rect)", source);
+        Assert.Contains("SetWindowsElementSize(rootElement, width, height);", source);
+        Assert.Contains("SetWindowsElementSize(originalContent, width, height);", source);
+        Assert.Contains("rootElement.Measure(new global::Windows.Foundation.Size(width, height));", source);
+        Assert.Contains("rootElement.Arrange(new global::Windows.Foundation.Rect(0, 0, width, height));", source);
+        Assert.Contains("rootElement.UpdateLayout();", source);
+        Assert.Contains("GetDpiForWindow(hwnd)", source);
         Assert.Contains("FillWindowsResizeFallbackBackground(hwnd, wParam);", source);
         Assert.Contains("return new IntPtr(1);", source);
         Assert.Contains("message is WM_SIZE or WM_SIZING or WM_WINDOWPOSCHANGING or WM_WINDOWPOSCHANGED", source);
@@ -566,6 +575,7 @@ public class AppLayerSourceGuardTests
         Assert.Contains("CreateSolidBrush(ToColorRef(ResolveWindowsResizeFallbackColor()))", source);
         Assert.Contains("FillRect(hdc, ref rect, brush);", source);
         Assert.Contains("DeleteObject(brush);", source);
+        Assert.Contains("WindowsBackdropWindowsByHwnd.TryRemove(hwnd, out _);", source);
         Assert.Contains("RemoveWindowSubclass(hwnd, WindowsBackdropSubclassProc, subclassId);", source);
         Assert.Contains("DefSubclassProc(hwnd, message, wParam, lParam);", source);
         Assert.Contains("ResizeEraseSuppressionHwnd", source);

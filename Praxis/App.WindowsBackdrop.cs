@@ -1,4 +1,5 @@
 #if WINDOWS
+using System.Collections.Concurrent;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -19,6 +20,7 @@ public partial class App
     private static int windowsBackdropDiagnosticsLogged;
     private static Microsoft.UI.Xaml.Controls.FontIcon? windowsMaximizeRestoreIcon;
     private static readonly ConditionalWeakTable<Microsoft.UI.Xaml.Window, WindowsDesktopAcrylicState> WindowsDesktopAcrylicStates = new();
+    private static readonly ConcurrentDictionary<IntPtr, WeakReference<Microsoft.UI.Xaml.Window>> WindowsBackdropWindowsByHwnd = new();
     private static readonly WindowSubclassProc WindowsBackdropSubclassProc = WindowsBackdropWindowSubclassProc;
     private static readonly UIntPtr WindowsBackdropSubclassId = new(0x50725853u);
     private const string WindowsCustomChromeRootName = "PraxisWindowsCustomChromeRoot";
@@ -757,6 +759,8 @@ public partial class App
 
     private static void EnsureWindowsResizeEraseSuppression(Microsoft.UI.Xaml.Window nativeWindow, IntPtr hwnd)
     {
+        WindowsBackdropWindowsByHwnd[hwnd] = new WeakReference<Microsoft.UI.Xaml.Window>(nativeWindow);
+
         var state = WindowsDesktopAcrylicStates.GetValue(nativeWindow, CreateWindowsDesktopAcrylicState);
         if (state.ResizeEraseSuppressionHwnd == hwnd)
         {
@@ -784,22 +788,88 @@ public partial class App
         _ = refData;
         if (message == WM_ERASEBKGND)
         {
+            ResizeWindowsChromeRootToClient(hwnd);
             FillWindowsResizeFallbackBackground(hwnd, wParam);
             return new IntPtr(1);
         }
 
         if (message is WM_SIZE or WM_SIZING or WM_WINDOWPOSCHANGING or WM_WINDOWPOSCHANGED)
         {
+            ResizeWindowsChromeRootToClient(hwnd);
             ApplyWindowsAcrylicBackdrop(hwnd);
             InvalidateRect(hwnd, IntPtr.Zero, false);
         }
 
         if (message == WM_NCDESTROY)
         {
+            WindowsBackdropWindowsByHwnd.TryRemove(hwnd, out _);
             RemoveWindowSubclass(hwnd, WindowsBackdropSubclassProc, subclassId);
         }
 
         return DefSubclassProc(hwnd, message, wParam, lParam);
+    }
+
+    private static void ResizeWindowsChromeRootToClient(IntPtr hwnd)
+    {
+        try
+        {
+            if (!WindowsBackdropWindowsByHwnd.TryGetValue(hwnd, out var weakWindow) ||
+                !weakWindow.TryGetTarget(out var nativeWindow) ||
+                nativeWindow.Content is not Microsoft.UI.Xaml.FrameworkElement rootElement ||
+                !GetClientRect(hwnd, out var rect))
+            {
+                return;
+            }
+
+            var widthPixels = rect.Right - rect.Left;
+            var heightPixels = rect.Bottom - rect.Top;
+            if (widthPixels <= 0 || heightPixels <= 0)
+            {
+                return;
+            }
+
+            var scale = ResolveWindowsRasterizationScale(hwnd, rootElement);
+            var width = widthPixels / scale;
+            var height = heightPixels / scale;
+            if (width <= 0d || height <= 0d)
+            {
+                return;
+            }
+
+            SetWindowsElementSize(rootElement, width, height);
+            if (rootElement is Microsoft.UI.Xaml.Controls.Grid { Name: WindowsCustomChromeRootName } chromeRoot &&
+                chromeRoot.Children.Count > 0 &&
+                chromeRoot.Children[0] is Microsoft.UI.Xaml.FrameworkElement originalContent)
+            {
+                SetWindowsElementSize(originalContent, width, height);
+            }
+
+            rootElement.Measure(new global::Windows.Foundation.Size(width, height));
+            rootElement.Arrange(new global::Windows.Foundation.Rect(0, 0, width, height));
+            rootElement.UpdateLayout();
+        }
+        catch
+        {
+            // Resize messages are too hot for persistent logging; failing open only leaves normal WinUI layout timing.
+        }
+    }
+
+    private static void SetWindowsElementSize(Microsoft.UI.Xaml.FrameworkElement element, double width, double height)
+    {
+        element.Width = width;
+        element.Height = height;
+    }
+
+    private static double ResolveWindowsRasterizationScale(IntPtr hwnd, Microsoft.UI.Xaml.FrameworkElement element)
+    {
+        var scale = element.XamlRoot?.RasterizationScale ?? 0d;
+        if (scale > 0d)
+        {
+            return scale;
+        }
+
+        var dpi = GetDpiForWindow(hwnd);
+        return dpi > 0 ? dpi / 96d : 1d;
     }
 
     private static bool ApplyWindowsDesktopAcrylicController(Microsoft.UI.Xaml.Window nativeWindow)
@@ -1073,5 +1143,8 @@ public partial class App
 
     [DllImport("user32.dll")]
     private static extern bool InvalidateRect(IntPtr hWnd, IntPtr lpRect, bool bErase);
+
+    [DllImport("user32.dll")]
+    private static extern uint GetDpiForWindow(IntPtr hwnd);
 }
 #endif

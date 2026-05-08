@@ -38,6 +38,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - Mac Catalyst context-menu Edit/Delete actions now dispatch the selected item from a single Return/Enter key press after arrow-key navigation, including menus opened from the placement area, Dock, and command suggestions
 - Windows acrylic keeps a stable `DesktopAcrylicController` target through focus changes, reducing the momentary opaque flash when switching to or from Praxis, and the custom chrome keeps the QuickAccess-style caption resize path with an empty native title
 - Windows resize now suppresses native background erasing on the HWND, fills erase passes with a theme-matched neutral background, invalidates after resize/window-position messages, and reapplies the acrylic fallback so rapid window enlargement does not reveal a temporary white client-area stretch before acrylic and XAML catch up
+- Windows resize now synchronizes the custom chrome root and MAUI content to the current HWND client size during resize messages, reducing the delayed right/bottom growth area that appeared before the glass surface caught up
 - Windows Command/Search inputs now clear WinUI native TextBox background and border resources so unfocused fields do not retain a stray bottom underline, while a dedicated MAUI underline appears only while the field is focused
 
 ### Tests
