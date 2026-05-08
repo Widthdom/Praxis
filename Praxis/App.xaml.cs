@@ -115,7 +115,7 @@ public partial class App : Application
 
     private static global::Windows.UI.Color ResolveWindowsSelectedTextColor()
     {
-        return global::Windows.UI.Color.FromArgb(255, 245, 247, 250);
+        return global::Windows.UI.Color.FromArgb(255, 255, 255, 255);
     }
 
     private static global::Windows.UI.Color ResolveWindowsTextSelectionColor()

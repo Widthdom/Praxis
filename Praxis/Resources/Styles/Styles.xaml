@@ -14,7 +14,7 @@
     <Style TargetType="Entry" ApplyToDerivedTypes="True">
         <Setter Property="FontFamily" Value="{OnPlatform WinUI='Yu Gothic UI'}" />
         <Setter Property="BackgroundColor" Value="{AppThemeBinding Light=#54FFFFFF, Dark=#68282D34}" />
-        <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource TextLight}, Dark={StaticResource TextDark}}" />
+        <Setter Property="TextColor" Value="{AppThemeBinding Light=#000000, Dark=#FFFFFF}" />
         <Setter Property="PlaceholderColor" Value="{AppThemeBinding Light=#8A8A8A, Dark=#909090}" />
         <Setter Property="HeightRequest" Value="40" />
     </Style>
@@ -22,7 +22,7 @@
     <Style TargetType="Editor">
         <Setter Property="FontFamily" Value="{OnPlatform WinUI='Yu Gothic UI'}" />
         <Setter Property="BackgroundColor" Value="{AppThemeBinding Light=#54FFFFFF, Dark=#68282D34}" />
-        <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource TextLight}, Dark={StaticResource TextDark}}" />
+        <Setter Property="TextColor" Value="{AppThemeBinding Light=#000000, Dark=#FFFFFF}" />
     </Style>
 
     <Style TargetType="Button">

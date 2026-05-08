@@ -73,6 +73,9 @@ public partial class MainPage
         if (suppressTapExecuteForItemId == item.Id)
         {
             suppressTapExecuteForItemId = null;
+#if MACCATALYST
+            macPlacementPollingCommandSelectionItemId = null;
+#endif
             return;
         }
 

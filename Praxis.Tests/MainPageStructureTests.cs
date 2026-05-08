@@ -141,8 +141,8 @@ public class MainPageStructureTests
         Assert.DoesNotContain("BackgroundColor=\"{AppThemeBinding Light=#52FFFFFF, Dark=#361E2228}\"", xaml);
         Assert.Contains("x:Name=\"ContextEditFocusRing\"", xaml);
         Assert.Contains("x:Name=\"ContextDeleteFocusRing\"", xaml);
-        Assert.Contains("x:Name=\"MainCommandEntry\"\n                                       Placeholder=\"Command\"\n                                       Text=\"{Binding CommandInput}\"\n                                       TextColor=\"{AppThemeBinding Light=#000000, Dark=#F5F7FA}\"\n                                       BackgroundColor=\"Transparent\"", xaml);
-        Assert.Contains("x:Name=\"MainSearchEntry\"\n                                      Placeholder=\"Search\"\n                                      Text=\"{Binding SearchText}\"\n                                      TextColor=\"{AppThemeBinding Light=#000000, Dark=#F5F7FA}\"\n                                      BackgroundColor=\"Transparent\"", xaml);
+        Assert.Contains("x:Name=\"MainCommandEntry\"\n                                       Placeholder=\"Command\"\n                                       Text=\"{Binding CommandInput}\"\n                                       TextColor=\"{AppThemeBinding Light=#000000, Dark=#FFFFFF}\"\n                                       BackgroundColor=\"Transparent\"", xaml);
+        Assert.Contains("x:Name=\"MainSearchEntry\"\n                                      Placeholder=\"Search\"\n                                      Text=\"{Binding SearchText}\"\n                                      TextColor=\"{AppThemeBinding Light=#000000, Dark=#FFFFFF}\"\n                                      BackgroundColor=\"Transparent\"", xaml);
         Assert.Contains("Unfocused=\"MainCommandEntry_Unfocused\"", xaml);
         Assert.Contains("Unfocused=\"MainSearchEntry_Unfocused\"", xaml);
         Assert.Contains("x:Name=\"MainCommandFocusUnderline\"", xaml);
@@ -153,6 +153,9 @@ public class MainPageStructureTests
         Assert.Contains("x:Name=\"EditorOverlay\"", xaml);
         Assert.DoesNotContain("<controls:MaterialFrame Grid.Row=\"1\"", xaml);
         Assert.Contains("<Grid Grid.Row=\"1\"\n              Padding=\"14\"\n              SizeChanged=\"PlacementArea_SizeChanged\">", xaml);
+        Assert.Contains("x:Name=\"PlacementCanvas\"\n                                    WidthRequest=\"{Binding CanvasWidth}\"\n                                    HeightRequest=\"{Binding CanvasHeight}\"\n                                    BackgroundColor=\"{OnPlatform Default=Transparent, MacCatalyst=#01000000}\"", xaml);
+        Assert.Contains("<PointerGestureRecognizer PointerPressed=\"Selection_PointerPressed\"\n                                                      PointerMoved=\"Selection_PointerMoved\"\n                                                      PointerReleased=\"Selection_PointerReleased\" />", xaml);
+        Assert.Contains("<TapGestureRecognizer Buttons=\"Secondary\"\n                                                  Tapped=\"PlacementCanvas_SecondaryTapped\" />", xaml);
         Assert.DoesNotContain("MacOSBackdropOpacity=\"0.82\"", xaml);
         Assert.Equal(2, CountOccurrences(xaml, "BackgroundColor=\"{AppThemeBinding Light={StaticResource SolidModalLight}, Dark={StaticResource SolidModalDark}}\""));
         Assert.Equal(2, CountOccurrences(xaml, "BackgroundColor=\"{AppThemeBinding Light={StaticResource SolidPopupLight}, Dark={StaticResource SolidPopupDark}}\""));
@@ -160,7 +163,7 @@ public class MainPageStructureTests
         Assert.Contains("Value=\"{AppThemeBinding Light={StaticResource SelectionAccentLight}, Dark={StaticResource SelectionAccentDark}}\"", xaml);
         Assert.DoesNotContain("MacOSBackdropOpacity=\"0.24\"", xaml);
         Assert.DoesNotContain("MacOSBackdropOpacity=\"0.18\"", xaml);
-        Assert.Contains("ModalGuidEntry\" Grid.Row=\"0\" Grid.Column=\"1\" Text=\"{Binding Editor.GuidText}\" IsReadOnly=\"{OnPlatform Default=True, MacCatalyst=False}\" HeightRequest=\"40\" BackgroundColor=\"Transparent\" TextColor=\"{AppThemeBinding Light=#050505, Dark=#F5F7FA}\"", xaml);
+        Assert.Contains("ModalGuidEntry\" Grid.Row=\"0\" Grid.Column=\"1\" Text=\"{Binding Editor.GuidText}\" IsReadOnly=\"{OnPlatform Default=True, MacCatalyst=False}\" HeightRequest=\"40\" BackgroundColor=\"Transparent\" TextColor=\"{AppThemeBinding Light=#000000, Dark=#FFFFFF}\"", xaml);
         Assert.Contains("Text=\"{Binding StatusText}\"\n                   FontSize=\"13\"\n                   HorizontalOptions=\"Fill\"\n                   HorizontalTextAlignment=\"Center\"", xaml);
         Assert.Contains("<Grid.Behaviors>\n                                        <behaviors:HoverHandCursorBehavior />\n                                    </Grid.Behaviors>\n                                    <CheckBox x:Name=\"ModalInvertThemeCheckBox\"", xaml);
         Assert.Contains("ModalClipWordContainer\"\n                                    Grid.Row=\"5\"\n                                    Grid.Column=\"1\"\n                                    Stroke=\"Transparent\"\n                                    StrokeThickness=\"0\"", xaml);

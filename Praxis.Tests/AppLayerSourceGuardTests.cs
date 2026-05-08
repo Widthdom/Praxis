@@ -332,8 +332,14 @@ public class AppLayerSourceGuardTests
         Assert.Contains("ModalCommandEntry.TextColor = textColor;", modalSource);
         Assert.Contains("ApplyMacEntryVisualState();", modalSource);
         Assert.Contains("textField.TextColor = textColor;", macSource);
-        Assert.Contains("textField.TintColor = textColor;", macSource);
-        Assert.Contains("dark ? UIColor.FromRGB(0xF5, 0xF7, 0xFA) : UIColor.Black", macSource);
+        Assert.Contains("textField.TintColor = ResolveMacTextSelectionColor(dark);", macSource);
+        Assert.Contains("private static readonly UIColor LightMacTextSelectionColor = UIColor.FromRGB(0x4B, 0x00, 0xD9);", macSource);
+        Assert.Contains("private static readonly UIColor DarkMacTextSelectionColor = UIColor.FromRGB(0x35, 0x00, 0xA8);", macSource);
+        Assert.Contains("private static UIColor ResolveMacTextInputForeground(bool dark)", macSource);
+        Assert.Contains("private static UIColor ResolveMacTextSelectionColor(bool dark)", macSource);
+        Assert.Contains("=> dark ? UIColor.White : UIColor.Black;", macSource);
+        Assert.Contains("=> dark ? DarkMacTextSelectionColor : LightMacTextSelectionColor;", macSource);
+        Assert.Contains("textView.TintColor = ResolveMacTextSelectionColor(dark);", macSource);
         Assert.Contains("EnsureWindowsTextBoxHooks();", pageSource);
         Assert.Contains("EnsureWindowsTextBoxHooks();", eventsSource);
         Assert.Contains("App.RefreshPlatformWindowBackdrops();", eventsSource);
@@ -385,7 +391,8 @@ public class AppLayerSourceGuardTests
         Assert.Contains("global::Windows.UI.Color.FromArgb(255, 107, 75, 176)", windowsSource);
         Assert.Contains("global::Windows.UI.Color.FromArgb(255, 82, 58, 124)", windowsSource);
         Assert.Contains("global::Windows.UI.Color.FromArgb(255, 0, 0, 0)", windowsSource);
-        Assert.Contains("global::Windows.UI.Color.FromArgb(255, 245, 247, 250)", windowsSource);
+        Assert.Contains("global::Windows.UI.Color.FromArgb(255, 255, 255, 255)", windowsSource);
+        Assert.DoesNotContain("global::Windows.UI.Color.FromArgb(255, 245, 247, 250)", windowsSource);
         Assert.DoesNotContain("global::Windows.UI.Color.FromArgb(255, 208, 213, 220)", windowsSource);
         Assert.DoesNotContain("global::Windows.UI.Color.FromArgb(255, 76, 86, 96)", windowsSource);
     }
@@ -457,7 +464,7 @@ public class AppLayerSourceGuardTests
         Assert.Contains("SetWindowsAppResource(resources, \"TextSelectionHighlightColorThemeBrush\", selectionBackgroundBrush);", source);
         Assert.Contains("SetWindowsAppResource(resources, \"AccentFillColorSelectedTextBackgroundBrush\", selectionBackgroundBrush);", source);
         var windowsXaml = ReadRepositoryFile("Praxis", "Platforms", "Windows", "App.xaml");
-        Assert.Contains("<Color x:Key=\"TextOnAccentFillColorSelectedText\">#FFF5F7FA</Color>", windowsXaml);
+        Assert.Contains("<Color x:Key=\"TextOnAccentFillColorSelectedText\">#FFFFFFFF</Color>", windowsXaml);
         Assert.Contains("<SolidColorBrush x:Key=\"TextControlSelectionHighlightColor\" Color=\"#FF6B4BB0\" />", windowsXaml);
         Assert.Contains("<SolidColorBrush x:Key=\"TextControlSelectionHighlightColor\" Color=\"#FF523A7C\" />", windowsXaml);
         Assert.Contains("page.BackgroundColor = Colors.Transparent;", source);
@@ -893,7 +900,7 @@ public class AppLayerSourceGuardTests
         Assert.Contains("TrySetTextControlResource(textBox, \"SystemColorHighlightTextColorBrush\", selectionForeground);", source);
         Assert.Contains("TrySetTextControlResource(textBox, \"TextControlCaretBrush\", caret);", source);
         Assert.Contains("TrySetTextControlResource(textBox, \"TextControlCaretBrushFocused\", caret);", source);
-        Assert.Contains("return global::Windows.UI.Color.FromArgb(255, 245, 247, 250);", source);
+        Assert.Contains("return global::Windows.UI.Color.FromArgb(255, 255, 255, 255);", source);
         Assert.Contains("public class SearchEntryHandler : EntryHandler", searchSource);
         Assert.Contains("WindowsTextBoxVisualPolicy.ApplyInputCaretContrast(platformView);", searchSource);
         Assert.Contains("WindowsTextBoxVisualPolicy.ApplyInputCaretContrast(textBox);", searchSource);
@@ -1136,6 +1143,7 @@ public class AppLayerSourceGuardTests
     public void MacGlassEntries_KeepOnlyFocusedUnderlineForGlassChrome()
     {
         var macEntrySource = ReadRepositoryFile("Praxis", "Platforms", "MacCatalyst", "Handlers", "MacEntryHandler.cs");
+        var commandEntrySource = ReadRepositoryFile("Praxis", "Platforms", "MacCatalyst", "Handlers", "CommandEntryHandler.cs");
         var macPageSource = ReadRepositoryFile("Praxis", "MainPage.MacCatalystBehavior.cs");
 
         Assert.Contains("private bool glassFieldVisual;", macEntrySource);
@@ -1149,6 +1157,12 @@ public class AppLayerSourceGuardTests
         Assert.Contains("Layer.BackgroundColor = UIColor.Clear.CGColor;", macEntrySource);
         Assert.Contains("LightPlaceholderColor = UIColor.FromRGBA(0, 0, 0, 0.58f);", macEntrySource);
         Assert.Contains("DarkPlaceholderColor = UIColor.FromRGBA(196, 212, 224, 0.42f);", macEntrySource);
+        Assert.Contains("LightTextColor = UIColor.Black;", macEntrySource);
+        Assert.Contains("DarkTextColor = UIColor.White;", macEntrySource);
+        Assert.Contains("LightTextSelectionColor = UIColor.FromRGB(0x4B, 0x00, 0xD9);", macEntrySource);
+        Assert.Contains("DarkTextSelectionColor = UIColor.FromRGB(0x35, 0x00, 0xA8);", macEntrySource);
+        Assert.Contains("var selectionColor = dark ? DarkTextSelectionColor : LightTextSelectionColor;", macEntrySource);
+        Assert.Contains("TintColor = selectionColor;", macEntrySource);
         Assert.Contains("ContentScaleFactor = UIScreen.MainScreen.Scale;", macEntrySource);
         Assert.Contains("Layer.ContentsScale = UIScreen.MainScreen.Scale;", macEntrySource);
         Assert.Contains("Background = TransparentFieldImage;", macEntrySource);
@@ -1173,6 +1187,11 @@ public class AppLayerSourceGuardTests
         Assert.Contains("Font = placeholderFont,", macEntrySource);
         Assert.Contains("UIFontWeight.Regular", macEntrySource);
         Assert.Contains("public void SetGlassFieldVisual(bool enabled)", macEntrySource);
+        AssertMethodContainsInOrder(commandEntrySource,
+            "internal void TryApplyNativeActivationFocus()",
+            "SelectAllText();",
+            "ApplyFocusVisualState();",
+            "RefreshInputSourceEnforcementState();");
         Assert.Contains("macEntryTextField.SetGlassFieldVisual(IsGlassEntryVisual(entry));", macPageSource);
         Assert.Contains("var dark = IsMacGlassDarkThemeActive();", macPageSource);
         Assert.Contains("ThemeMode.Dark => true,", macPageSource);
@@ -1237,13 +1256,89 @@ public class AppLayerSourceGuardTests
         Assert.Contains("var hasCommand = Command is not null;", behaviorSource);
         Assert.Contains("var associatedObjectType = attachedView?.GetType().Name ?? \"(null)\";", behaviorSource);
         Assert.Contains("CrashFileLogger.WriteWarning(nameof(MiddleClickBehavior), $\"Deferred middle-click execution failed while contextMenuOpen={isContextMenuOpen} hasCommand={hasCommand} associatedObjectType={associatedObjectType}: {safeMessage}\");", behaviorSource);
-        Assert.Equal(2, CountOccurrences(macSource, "var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);"));
+        Assert.Equal(3, CountOccurrences(macSource, "var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);"));
         Assert.Contains("CrashFileLogger.WriteWarning(nameof(TryCreateMacEditorKeyCommand), $\"Failed to create Mac editor key command '{selectorName}' for input '{keyInput}': {safeMessage}\");", macSource);
+        Assert.Contains("CrashFileLogger.WriteWarning(nameof(TrySetMacPlacementButtonMaskRequired), $\"Failed to set placement buttonMaskRequired={mask}: {safeMessage}\");", macSource);
         Assert.Contains("var isActive = App.IsMacApplicationActive();", macSource);
         Assert.Contains("var activationSuppressed = App.IsActivationSuppressionActive();", macSource);
         Assert.Contains("var pointerKnown = macLastActivePage is not null &&", macSource);
         Assert.Contains("page.lastPointerOnRoot is not null;", macSource);
-        Assert.Contains("CrashFileLogger.WriteWarning(nameof(IsMacMiddleButtonCurrentlyDown), $\"Failed to query middle button state from CoreGraphics while isActive={isActive} activationSuppressed={activationSuppressed} pointerKnown={pointerKnown}: {safeMessage}\");", macSource);
+        Assert.Contains("CrashFileLogger.WriteWarning(nameof(IsMacMouseButtonCurrentlyDown), $\"Failed to query mouse button state from CoreGraphics for button={button} while isActive={isActive} activationSuppressed={activationSuppressed} pointerKnown={pointerKnown}: {safeMessage}\");", macSource);
+    }
+
+    [Fact]
+    public void MainPage_MacPlacementScroll_UsesNativeRecognizersForEmptySpaceActions()
+    {
+        var fieldsSource = ReadRepositoryFile("Praxis", "MainPage.Fields.MacCatalyst.cs");
+        var macSource = ReadRepositoryFile("Praxis", "MainPage.MacCatalystBehavior.cs");
+        var mainPageSource = ReadRepositoryFile("Praxis", "MainPage.xaml.cs");
+        var pointerSource = ReadRepositoryFile("Praxis", "MainPage.PointerAndSelection.cs");
+        var editorSource = ReadRepositoryFile("Praxis", "MainPage.EditorAndInput.cs");
+
+        Assert.Contains("private UIView? macPlacementGestureNativeView;", fieldsSource);
+        Assert.Contains("private UILongPressGestureRecognizer? macPlacementPrimarySelectionRecognizer;", fieldsSource);
+        Assert.Contains("private UILongPressGestureRecognizer? macPlacementSecondaryCreateRecognizer;", fieldsSource);
+        Assert.Contains("private bool macPlacementNativeSelectionActive;", fieldsSource);
+        Assert.Contains("private bool macPlacementNativeSelectionIgnored;", fieldsSource);
+        Assert.Contains("private bool macPlacementPollingSelectionActive;", fieldsSource);
+        Assert.Contains("private Guid? macPlacementPollingCommandSelectionItemId;", fieldsSource);
+        Assert.Contains("private static readonly bool MacPlacementPrimarySelectionUsesPolling = true;", macSource);
+        Assert.Contains("EnsureMacPlacementCanvasNativeGestures();", macSource);
+        Assert.Contains("PlacementScroll.HandlerChanged += (_, _) => EnsureMacPlacementCanvasNativeGestures();", mainPageSource);
+        Assert.Contains("DetachMacPlacementCanvasNativeGestures();", mainPageSource);
+        Assert.Contains("PlacementScroll.Handler?.PlatformView is not UIView nativeView", macSource);
+        Assert.Contains("nativeView.UserInteractionEnabled = true;", macSource);
+        Assert.Contains("var primaryDown = IsMacMouseButtonCurrentlyDown(CGMouseButton.Left);", macSource);
+        Assert.Contains("var secondaryDown = IsMacMouseButtonCurrentlyDown(CGMouseButton.Right);", macSource);
+        Assert.Contains("var middleDown = IsMacMouseButtonCurrentlyDown(CGMouseButton.Center);", macSource);
+        Assert.Contains("TryBeginMacPlacementPollingSelection();", macSource);
+        Assert.Contains("ContinueMacPlacementPollingSelection();", macSource);
+        Assert.Contains("CompleteMacPlacementPollingSelection();", macSource);
+        Assert.Contains("TryHandleMacPlacementPollingSecondaryCreate();", macSource);
+        Assert.Contains("TryHandleMacPlacementPollingButtonPress(rootPoint)", macSource);
+        Assert.Contains("TryGetPlacementButtonAtRootPoint(rootPoint)", macSource);
+        Assert.Contains("IsMacSelectionModifierCurrentlyDown()", macSource);
+        Assert.Contains("CGEventSource.GetFlagsState(CGEventSourceStateID.HidSystem)", macSource);
+        Assert.Contains("viewModel.ToggleSelection(hit);", macSource);
+        Assert.Contains("suppressTapExecuteForItemId = hit.Id;", macSource);
+        Assert.Contains("TryGetMacCurrentRootPointer(out var rootPoint)", macSource);
+        Assert.Contains("lastPointerOnRoot is Point cachedRootPoint && IsMacRootPointInsideRoot(cachedRootPoint)", macSource);
+        Assert.Contains("TryGetMacCurrentRootPointerFromCoreGraphics(out rootPoint)", macSource);
+        Assert.Contains("Point? bestRootPoint = null;", macSource);
+        Assert.Contains("using var currentEvent = new CGEvent((CGEventSource?)null);", macSource);
+        Assert.Contains("var windowPoint = nativeWindow.ConvertPointFromWindow(screenPoint, null);", macSource);
+        Assert.Contains("var localPoint = rootView.ConvertPointFromView(windowPoint, nativeWindow);", macSource);
+        Assert.Contains("var distance = Math.Pow(candidate.X - cachedRootPoint.X, 2) + Math.Pow(candidate.Y - cachedRootPoint.Y, 2);", macSource);
+        Assert.Contains("private bool IsMacRootPointInsideRoot(Point rootPoint)", macSource);
+        Assert.Contains("TryGetMacPlacementRootCanvasPoint(rootPoint, allowOutside: false", macSource);
+        Assert.Contains("TryGetMacPlacementRootCanvasPoint(rootPoint, allowOutside: true", macSource);
+        Assert.Contains("TryGetMacCurrentRootPointer(out var rootPoint, preferCached: false)", macSource);
+        Assert.Contains("macPlacementPollingSelectionActive = true;", macSource);
+        Assert.Contains("macPlacementPollingSelectionActive = false;", macSource);
+        Assert.Contains("macPlacementNativeSelectionIgnored = false;\n            return;", macSource);
+        Assert.Contains("macPlacementNativeSelectionActive = true;", macSource);
+        Assert.Contains("macPlacementNativeSelectionActive = false;", macSource);
+        Assert.Contains("var bounds = macPlacementGestureNativeView.Bounds;", macSource);
+        Assert.Contains("var rawViewportPoint = new Point(location.X - bounds.X, location.Y - bounds.Y);", macSource);
+        Assert.Contains("viewportPoint.X + PlacementScroll.ScrollX", macSource);
+        Assert.Contains("viewportPoint.Y + PlacementScroll.ScrollY", macSource);
+        Assert.DoesNotContain("nativeView.AddGestureRecognizer(macPlacementPrimarySelectionRecognizer);", macSource);
+        Assert.Contains("TrySetMacPlacementButtonMaskRequired(recognizer, 0x2);", macSource);
+        Assert.Contains("case UIGestureRecognizerState.Began:", macSource);
+        Assert.Contains("if (MacPlacementPrimarySelectionUsesPolling)", macSource);
+        Assert.Contains("selectionStartViewport.X + e.TotalX", pointerSource);
+        Assert.Contains("selectionStartViewport.Y + e.TotalY", pointerSource);
+        Assert.Contains("case UIGestureRecognizerState.Changed:", macSource);
+        Assert.Contains("case UIGestureRecognizerState.Ended:", macSource);
+        Assert.Contains("case UIGestureRecognizerState.Cancelled:", macSource);
+        Assert.Contains("new SelectionPayload(selectionStartCanvas.X, selectionStartCanvas.Y, selectionStartCanvas.X, selectionStartCanvas.Y, GestureStatus.Started)", macSource);
+        Assert.Contains("new SelectionPayload(selectionStartCanvas.X, selectionStartCanvas.Y, canvasPoint.X, canvasPoint.Y, GestureStatus.Running)", macSource);
+        Assert.Contains("new SelectionPayload(selectionStartCanvas.X, selectionStartCanvas.Y, selectionLastCanvas.X, selectionLastCanvas.Y, GestureStatus.Completed)", macSource);
+        Assert.Contains("if (macPlacementNativeSelectionActive)", pointerSource);
+        Assert.Contains("_ = OpenCreateEditorFromCanvasPointWithWarningAsync(canvasPoint, nameof(HandleMacPlacementSecondaryCreateRecognizer));", macSource);
+        Assert.Contains("private async Task OpenCreateEditorFromCanvasPointWithWarningAsync(Point canvasPoint, string source)", pointerSource);
+        Assert.Contains("macPlacementPollingCommandSelectionItemId == item.Id", pointerSource);
+        Assert.Contains("macPlacementPollingCommandSelectionItemId = null;", editorSource);
     }
 
     [Fact]
@@ -1309,7 +1404,9 @@ public class AppLayerSourceGuardTests
     {
         var source = ReadRepositoryFile("Praxis", "MainPage.PointerAndSelection.cs");
         Assert.Equal(2, CountOccurrences(source, "var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);"));
-        Assert.Contains("CrashFileLogger.WriteWarning(nameof(PlacementCanvas_SecondaryTapped), $\"Secondary-tap create flow failed at ({canvasPoint.X:0.##}, {canvasPoint.Y:0.##}): {safeMessage}\");", source);
+        Assert.Contains("await OpenCreateEditorFromCanvasPointWithWarningAsync(canvasPoint, nameof(PlacementCanvas_SecondaryTapped));", source);
+        Assert.Contains("_ = OpenCreateEditorFromCanvasPointWithWarningAsync(point.Value, nameof(Selection_PointerPressed));", source);
+        Assert.Contains("CrashFileLogger.WriteWarning(source, $\"Placement-canvas create flow failed at ({canvasPoint.X:0.##}, {canvasPoint.Y:0.##}): {safeMessage}\");", source);
         Assert.Contains("var modalVisible = EditorOverlay.IsVisible;", source);
         Assert.Contains("CrashFileLogger.WriteWarning(nameof(FocusModalPrimaryEditorField), $\"Failed to focus modal ButtonText entry while shouldSelectAll={shouldSelectAll} modalVisible={modalVisible}: {safeMessage}\");", source);
     }

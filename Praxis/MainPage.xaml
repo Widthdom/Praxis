@@ -80,7 +80,7 @@
                 <controls:CommandEntry x:Name="MainCommandEntry"
                                        Placeholder="Command"
                                        Text="{Binding CommandInput}"
-                                       TextColor="{AppThemeBinding Light=#000000, Dark=#F5F7FA}"
+                                       TextColor="{AppThemeBinding Light=#000000, Dark=#FFFFFF}"
                                        BackgroundColor="Transparent"
                                        ReturnType="Go"
                                        ReturnCommand="{Binding ExecuteCommandInputCommand}"
@@ -213,7 +213,7 @@
                 <controls:SearchEntry x:Name="MainSearchEntry"
                                       Placeholder="Search"
                                       Text="{Binding SearchText}"
-                                      TextColor="{AppThemeBinding Light=#000000, Dark=#F5F7FA}"
+                                      TextColor="{AppThemeBinding Light=#000000, Dark=#FFFFFF}"
                                       BackgroundColor="Transparent"
                                       Focused="MainSearchEntry_Focused"
                                       Unfocused="MainSearchEntry_Unfocused"
@@ -364,6 +364,7 @@
                     <AbsoluteLayout x:Name="PlacementCanvas"
                                     WidthRequest="{Binding CanvasWidth}"
                                     HeightRequest="{Binding CanvasHeight}"
+                                    BackgroundColor="{OnPlatform Default=Transparent, MacCatalyst=#01000000}"
                                     BindableLayout.ItemsSource="{Binding VisibleButtons}">
                         <AbsoluteLayout.GestureRecognizers>
                             <PanGestureRecognizer PanUpdated="Selection_PanUpdated" />
@@ -698,7 +699,7 @@
                         <Grid ColumnDefinitions="140,*,44" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto" ColumnSpacing="8" RowSpacing="8">
                             <Label Grid.Row="0" Grid.Column="0" Text="GUID" VerticalTextAlignment="Center" HeightRequest="40" />
                             <Border Grid.Row="0" Grid.Column="1" HeightRequest="40" Stroke="Transparent" StrokeThickness="0" BackgroundColor="{AppThemeBinding Light={StaticResource GlassModalInputLight}, Dark={StaticResource GlassModalInputDark}}" StrokeShape="RoundRectangle 6" InputTransparent="True" />
-                            <Entry x:Name="ModalGuidEntry" Grid.Row="0" Grid.Column="1" Text="{Binding Editor.GuidText}" IsReadOnly="{OnPlatform Default=True, MacCatalyst=False}" HeightRequest="40" BackgroundColor="Transparent" TextColor="{AppThemeBinding Light=#050505, Dark=#F5F7FA}" HandlerChanged="ModalGuidEntry_HandlerChanged" />
+                            <Entry x:Name="ModalGuidEntry" Grid.Row="0" Grid.Column="1" Text="{Binding Editor.GuidText}" IsReadOnly="{OnPlatform Default=True, MacCatalyst=False}" HeightRequest="40" BackgroundColor="Transparent" TextColor="{AppThemeBinding Light=#000000, Dark=#FFFFFF}" HandlerChanged="ModalGuidEntry_HandlerChanged" />
                             <Grid Grid.Row="0" Grid.Column="2" HeightRequest="40" WidthRequest="40" VerticalOptions="Center">
                                 <Border x:Name="CopyGuidButton"
                                         Style="{StaticResource GlassModalButtonSurfaceStyle}">
@@ -718,7 +719,7 @@
 
                             <Label Grid.Row="1" Grid.Column="0" Text="Button Text" VerticalTextAlignment="Center" HeightRequest="40" />
                             <Border Grid.Row="1" Grid.Column="1" HeightRequest="40" Stroke="Transparent" StrokeThickness="0" BackgroundColor="{AppThemeBinding Light={StaticResource GlassModalInputLight}, Dark={StaticResource GlassModalInputDark}}" StrokeShape="RoundRectangle 6" InputTransparent="True" />
-                            <Entry x:Name="ModalButtonTextEntry" Grid.Row="1" Grid.Column="1" Text="{Binding Editor.ButtonText}" HeightRequest="40" BackgroundColor="Transparent" TextColor="{AppThemeBinding Light=#050505, Dark=#F5F7FA}" HandlerChanged="ModalTextInput_HandlerChanged" />
+                            <Entry x:Name="ModalButtonTextEntry" Grid.Row="1" Grid.Column="1" Text="{Binding Editor.ButtonText}" HeightRequest="40" BackgroundColor="Transparent" TextColor="{AppThemeBinding Light=#000000, Dark=#FFFFFF}" HandlerChanged="ModalTextInput_HandlerChanged" />
                             <Grid Grid.Row="1" Grid.Column="2" HeightRequest="40" WidthRequest="40" VerticalOptions="Center">
                                 <Border x:Name="CopyButtonTextButton"
                                         Style="{StaticResource GlassModalButtonSurfaceStyle}">
@@ -740,7 +741,7 @@
                             <Border Grid.Row="2" Grid.Column="1" HeightRequest="40" Stroke="Transparent" StrokeThickness="0" BackgroundColor="{AppThemeBinding Light={StaticResource GlassModalInputLight}, Dark={StaticResource GlassModalInputDark}}" StrokeShape="RoundRectangle 6" InputTransparent="True" />
                             <controls:CommandEntry x:Name="ModalCommandEntry" Grid.Row="2" Grid.Column="1" Text="{Binding Editor.Command}" HeightRequest="40"
                                                    BackgroundColor="Transparent"
-                                                   TextColor="{AppThemeBinding Light=#050505, Dark=#F5F7FA}"
+                                                   TextColor="{AppThemeBinding Light=#000000, Dark=#FFFFFF}"
                                                    EnableCommandNavigationShortcuts="False"
                                                    EnableNativeActivationFocus="False"
                                                    EnforceAsciiInput="True"
@@ -765,7 +766,7 @@
 
                             <Label Grid.Row="3" Grid.Column="0" Text="Tool" VerticalTextAlignment="Center" HeightRequest="40" />
                             <Border Grid.Row="3" Grid.Column="1" HeightRequest="40" Stroke="Transparent" StrokeThickness="0" BackgroundColor="{AppThemeBinding Light={StaticResource GlassModalInputLight}, Dark={StaticResource GlassModalInputDark}}" StrokeShape="RoundRectangle 6" InputTransparent="True" />
-                            <Entry x:Name="ModalToolEntry" Grid.Row="3" Grid.Column="1" Text="{Binding Editor.Tool}" HeightRequest="40" BackgroundColor="Transparent" TextColor="{AppThemeBinding Light=#050505, Dark=#F5F7FA}" HandlerChanged="ModalTextInput_HandlerChanged" />
+                            <Entry x:Name="ModalToolEntry" Grid.Row="3" Grid.Column="1" Text="{Binding Editor.Tool}" HeightRequest="40" BackgroundColor="Transparent" TextColor="{AppThemeBinding Light=#000000, Dark=#FFFFFF}" HandlerChanged="ModalTextInput_HandlerChanged" />
                             <Grid Grid.Row="3" Grid.Column="2" HeightRequest="40" WidthRequest="40" VerticalOptions="Center">
                                 <Border x:Name="CopyToolButton"
                                         Style="{StaticResource GlassModalButtonSurfaceStyle}">
@@ -785,7 +786,7 @@
 
                             <Label Grid.Row="4" Grid.Column="0" Text="Arguments" VerticalTextAlignment="Center" HeightRequest="40" />
                             <Border Grid.Row="4" Grid.Column="1" HeightRequest="40" Stroke="Transparent" StrokeThickness="0" BackgroundColor="{AppThemeBinding Light={StaticResource GlassModalInputLight}, Dark={StaticResource GlassModalInputDark}}" StrokeShape="RoundRectangle 6" InputTransparent="True" />
-                            <Entry x:Name="ModalArgumentsEntry" Grid.Row="4" Grid.Column="1" Text="{Binding Editor.Arguments}" HeightRequest="40" BackgroundColor="Transparent" TextColor="{AppThemeBinding Light=#050505, Dark=#F5F7FA}" HandlerChanged="ModalTextInput_HandlerChanged" />
+                            <Entry x:Name="ModalArgumentsEntry" Grid.Row="4" Grid.Column="1" Text="{Binding Editor.Arguments}" HeightRequest="40" BackgroundColor="Transparent" TextColor="{AppThemeBinding Light=#000000, Dark=#FFFFFF}" HandlerChanged="ModalTextInput_HandlerChanged" />
                             <Grid Grid.Row="4" Grid.Column="2" HeightRequest="40" WidthRequest="40" VerticalOptions="Center">
                                 <Border x:Name="CopyArgumentsButton"
                                         Style="{StaticResource GlassModalButtonSurfaceStyle}">
@@ -821,7 +822,7 @@
                                                                   MinimumHeightRequest="40"
                                                                   HeightRequest="40"
                                                                   BackgroundColor="Transparent"
-                                                                  TextColor="{AppThemeBinding Light=#111111, Dark=#F2F2F2}"
+                                                                  TextColor="{AppThemeBinding Light=#000000, Dark=#FFFFFF}"
                                                                   TextChanged="ModalClipWordEditor_TextChanged"
                                                                   HandlerChanged="ModalClipWordEditor_HandlerChanged"
                                                                   Focused="ModalClipWordEditor_Focused"
@@ -872,7 +873,7 @@
                                                                   MinimumHeightRequest="40"
                                                                   HeightRequest="40"
                                                                   BackgroundColor="Transparent"
-                                                                  TextColor="{AppThemeBinding Light=#111111, Dark=#F2F2F2}"
+                                                                  TextColor="{AppThemeBinding Light=#000000, Dark=#FFFFFF}"
                                                                   TextChanged="ModalNoteEditor_TextChanged"
                                                                   HandlerChanged="ModalNoteEditor_HandlerChanged"
                                                                   Focused="ModalNoteEditor_Focused"

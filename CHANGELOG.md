@@ -8,6 +8,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 
 ### Changed
 - Windows dark-mode glass now follows the QuickAccess-style black translucent acrylic model through the titlebar instead of a gray tint, removes the Windows title text, clears large semi-transparent WinUI/MAUI wrapper backgrounds, removes the transparent placement-area `MaterialFrame` wrapper that could create a separate body-only rounded surface, preserves the root tint during wrapper transparency cleanup, refreshes the native acrylic during window resize to avoid white growth gaps, excludes custom caption buttons from tab focus, moves modal Tab navigation from Note to Cancel, Save, then GUID with visible action focus and Enter activation, strengthens modal text selection contrast, and makes the right-click Edit/Delete menu an opaque popup surface
+- Entry and editor text now use black in light mode and white in dark mode, while selected text stays white over dark-purple selection highlights on both Windows and Mac Catalyst; Mac Catalyst feeds UIKit a high-saturation deep purple in both themes so its semi-transparent selection rendering keeps visible chroma, and the Mac Command field reapplies the shared Entry visual state after native activation focus so its caret color stays aligned with Search
 - Command suggestions and the right-click Edit/Delete menu now use a muted opaque gray popup surface, light in light mode and dark in dark mode, so their rounded backgrounds keep separation without the earlier high contrast
 - Windows text selection highlights now use dark purple contrast blocks with white selected text, including light mode where WinUI selected text follows the system-selected foreground rather than the normal black input text
 - Windows modal action focus now uses a neutral gray ring and clears modal text selection on focus loss so Tab navigation does not leave stale selection blocks in previous fields
@@ -35,6 +36,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - The Dock surface now uses a shorter bottom-biased footprint so the borderless placement area gains more vertical room while the horizontal scrollbar still has space when visible
 
 ### Fixed
+- Mac Catalyst placement-area empty space now has native secondary-button recognizer support plus CoreGraphics mouse-button polling on the placement scroll view so rectangle selection, empty-space selection clearing, and empty-space right-click create match Windows behavior even when MAUI gestures do not hit transparent canvas areas; primary rectangle selection is owned by the polling path using current pointer updates while the primary native recognizer is left unattached so launcher-button drag pans are not stolen, and the polling path preserves Command/Control-click button selection toggles while suppressing the follow-up launch tap
 - Mac Catalyst context-menu Edit/Delete actions now dispatch the selected item from a single Return/Enter key press after arrow-key navigation, including menus opened from the placement area, Dock, and command suggestions
 - Windows acrylic keeps a stable `DesktopAcrylicController` target through focus changes, reducing the momentary opaque flash when switching to or from Praxis, and the custom chrome keeps the QuickAccess-style caption resize path with an empty native title
 - Windows resize now suppresses native background erasing on the HWND, fills erase passes with a theme-matched neutral background, invalidates after resize/window-position messages, and reapplies the acrylic fallback so rapid window enlargement does not reveal a temporary white client-area stretch before acrylic and XAML catch up
@@ -42,7 +44,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - Windows Command/Search inputs now clear WinUI native TextBox background and border resources so unfocused fields do not retain a stray bottom underline, while a dedicated MAUI underline appears only while the field is focused
 
 ### Tests
-- Expanded `MainPageStructureTests` and `AppLayerSourceGuardTests` to lock the transparent glass surface, `MaterialFrame` usage, platform backdrop hook wiring, Windows acrylic interop, and macOS native material blur behavior
+- Expanded `MainPageStructureTests` and `AppLayerSourceGuardTests` to lock the transparent glass surface, `MaterialFrame` usage, platform backdrop hook wiring, Windows acrylic interop, macOS native material blur behavior, and Mac Catalyst placement-canvas empty-space recognizer wiring
 
 ### [1.1.13] - 2026-04-30
 
@@ -98,7 +100,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - `MiddleClickBehavior` now includes current `contextMenuOpen` / `hasCommand` state plus the attached view type in deferred middle-click warning breadcrumbs, so delayed command-path failures show whether the fallback ran against an open menu, detached command binding, or unexpected host view
 - `MainPage.FocusModalPrimaryEditorField` now includes current `shouldSelectAll` state in modal `ButtonText` focus warning breadcrumbs, so editor-open focus failures distinguish create-flow select-all from normal focus retry paths
 - `MainPage.SetTabStop` now includes the native target control type in `IsTabStop` warning breadcrumbs, so Windows reflection failures identify which view rejected the write
-- `MainPage.IsMacMiddleButtonCurrentlyDown` now includes current `isActive` / `activationSuppressed` state plus whether a root-pointer position was known in CoreGraphics warning breadcrumbs, so degraded middle-click polling shows both app eligibility and stale-pointer risk
+- `MainPage.IsMacMouseButtonCurrentlyDown` now includes current `isActive` / `activationSuppressed` state plus whether a root-pointer position was known in CoreGraphics warning breadcrumbs, so degraded mouse-button polling shows both app eligibility and stale-pointer risk
 - `MainPage.CopyIconButton_Clicked` now includes current token-cancellation state in copy-notice animation warning breadcrumbs, so expected teardown cancellation is easier to distinguish from unexpected animation faults
 - `MainPage.ShowQuickLookAfterDelayAsync` now includes current popup visibility in Quick Look show warning breadcrumbs, so delayed preview failures show whether the popup had already become visible
 - `MainPage.Draggable_Tapped` now includes `item.Id` in button-tap execution warning breadcrumbs, so failed launch commands can be mapped back to a concrete launcher record even when labels are duplicated

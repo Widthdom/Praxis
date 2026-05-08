@@ -114,6 +114,7 @@ public partial class MainPage : ContentPage
         ModalToolEntry.Focused += ModalEditorField_Focused;
         ModalArgumentsEntry.Focused += ModalEditorField_Focused;
         ModalClipWordEditor.Focused += ModalEditorField_Focused;
+        PlacementScroll.HandlerChanged += (_, _) => EnsureMacPlacementCanvasNativeGestures();
 #endif
     }
 
@@ -204,6 +205,7 @@ public partial class MainPage : ContentPage
         UpdateConflictDialogModalState(isOpen: false);
         HideQuickLookPopup();
 #if MACCATALYST
+        DetachMacPlacementCanvasNativeGestures();
         DetachMacGuidEntryReadOnlyBehavior();
         macGuidLockedText = string.Empty;
         StopMacMiddleButtonPolling();

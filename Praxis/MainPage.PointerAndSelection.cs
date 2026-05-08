@@ -64,6 +64,16 @@ public partial class MainPage
 
         if (bindable.BindingContext is LauncherButtonItemViewModel item && IsSelectionModifierPressed(e))
         {
+#if MACCATALYST
+            if (macPlacementPollingCommandSelectionItemId == item.Id)
+            {
+                macPlacementPollingCommandSelectionItemId = null;
+                suppressTapExecuteForItemId = item.Id;
+                pointerDragging = false;
+                ReleaseCapturedPointer();
+                return;
+            }
+#endif
             viewModel.ToggleSelection(item);
             suppressTapExecuteForItemId = item.Id;
             pointerDragging = false;
@@ -283,12 +293,17 @@ public partial class MainPage
         {
             if (!IsOnAnyVisibleButton(point.Value))
             {
-                _ = OpenCreateEditorFromCanvasPointAsync(point.Value);
+                _ = OpenCreateEditorFromCanvasPointWithWarningAsync(point.Value, nameof(Selection_PointerPressed));
             }
             return;
         }
 
 #if MACCATALYST
+        if (selectionDragging)
+        {
+            return;
+        }
+
         if (!IsPrimaryPointerPressed(e) || IsOnAnyVisibleButton(point.Value))
         {
             selectionPanPrimed = false;
@@ -331,6 +346,13 @@ public partial class MainPage
         {
             return;
         }
+
+#if MACCATALYST
+        if (macPlacementNativeSelectionActive)
+        {
+            return;
+        }
+#endif
 
         switch (e.StatusType)
         {
@@ -404,15 +426,7 @@ public partial class MainPage
             return;
         }
 
-        try
-        {
-            await OpenCreateEditorFromCanvasPointAsync(canvasPoint);
-        }
-        catch (Exception ex)
-        {
-            var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);
-            CrashFileLogger.WriteWarning(nameof(PlacementCanvas_SecondaryTapped), $"Secondary-tap create flow failed at ({canvasPoint.X:0.##}, {canvasPoint.Y:0.##}): {safeMessage}");
-        }
+        await OpenCreateEditorFromCanvasPointWithWarningAsync(canvasPoint, nameof(PlacementCanvas_SecondaryTapped));
     }
 
     private void Selection_PointerMoved(object? sender, PointerEventArgs e)
@@ -1085,6 +1099,19 @@ public partial class MainPage
     {
         await viewModel.OpenCreateEditorAtAsync(canvasPoint.X, canvasPoint.Y, useClipboardForArguments: true);
         Dispatcher.DispatchDelayed(UiTimingPolicy.ModalOpenInitialFocusDelay, FocusModalPrimaryEditorField);
+    }
+
+    private async Task OpenCreateEditorFromCanvasPointWithWarningAsync(Point canvasPoint, string source)
+    {
+        try
+        {
+            await OpenCreateEditorFromCanvasPointAsync(canvasPoint);
+        }
+        catch (Exception ex)
+        {
+            var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);
+            CrashFileLogger.WriteWarning(source, $"Placement-canvas create flow failed at ({canvasPoint.X:0.##}, {canvasPoint.Y:0.##}): {safeMessage}");
+        }
     }
 
     private void FocusModalPrimaryEditorField()

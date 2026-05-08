@@ -429,7 +429,7 @@ internal static class WindowsTextBoxVisualPolicy
     private static global::Windows.UI.Color ResolveInputForegroundColor()
     {
         return IsInputDarkThemeActive()
-            ? global::Windows.UI.Color.FromArgb(255, 245, 247, 250)
+            ? global::Windows.UI.Color.FromArgb(255, 255, 255, 255)
             : global::Windows.UI.Color.FromArgb(255, 0, 0, 0);
     }
 
@@ -442,13 +442,13 @@ internal static class WindowsTextBoxVisualPolicy
 
     private static global::Windows.UI.Color ResolveSelectionForegroundColor()
     {
-        return global::Windows.UI.Color.FromArgb(255, 245, 247, 250);
+        return global::Windows.UI.Color.FromArgb(255, 255, 255, 255);
     }
 
     private static global::Windows.UI.Color ResolveCaretColor()
     {
         return IsInputDarkThemeActive()
-            ? global::Windows.UI.Color.FromArgb(255, 245, 247, 250)
+            ? global::Windows.UI.Color.FromArgb(255, 255, 255, 255)
             : global::Windows.UI.Color.FromArgb(255, 0, 0, 0);
     }
 

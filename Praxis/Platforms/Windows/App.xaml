@@ -8,7 +8,7 @@
         <ResourceDictionary>
             <ResourceDictionary.ThemeDictionaries>
                 <ResourceDictionary x:Key="Default">
-                    <Color x:Key="TextOnAccentFillColorSelectedText">#FFF5F7FA</Color>
+                    <Color x:Key="TextOnAccentFillColorSelectedText">#FFFFFFFF</Color>
                     <SolidColorBrush x:Key="TextOnAccentFillColorSelectedTextBrush" Color="{StaticResource TextOnAccentFillColorSelectedText}" />
                     <SolidColorBrush x:Key="TextControlSelectionHighlightForeground" Color="{StaticResource TextOnAccentFillColorSelectedText}" />
                     <SolidColorBrush x:Key="TextControlSelectionHighlightColor" Color="#FF6B4BB0" />
@@ -16,7 +16,7 @@
                     <SolidColorBrush x:Key="AccentFillColorSelectedTextBackgroundBrush" Color="#FF6B4BB0" />
                 </ResourceDictionary>
                 <ResourceDictionary x:Key="Light">
-                    <Color x:Key="TextOnAccentFillColorSelectedText">#FFF5F7FA</Color>
+                    <Color x:Key="TextOnAccentFillColorSelectedText">#FFFFFFFF</Color>
                     <SolidColorBrush x:Key="TextOnAccentFillColorSelectedTextBrush" Color="{StaticResource TextOnAccentFillColorSelectedText}" />
                     <SolidColorBrush x:Key="TextControlSelectionHighlightForeground" Color="{StaticResource TextOnAccentFillColorSelectedText}" />
                     <SolidColorBrush x:Key="TextControlSelectionHighlightColor" Color="#FF6B4BB0" />
@@ -24,7 +24,7 @@
                     <SolidColorBrush x:Key="AccentFillColorSelectedTextBackgroundBrush" Color="#FF6B4BB0" />
                 </ResourceDictionary>
                 <ResourceDictionary x:Key="Dark">
-                    <Color x:Key="TextOnAccentFillColorSelectedText">#FFF5F7FA</Color>
+                    <Color x:Key="TextOnAccentFillColorSelectedText">#FFFFFFFF</Color>
                     <SolidColorBrush x:Key="TextOnAccentFillColorSelectedTextBrush" Color="{StaticResource TextOnAccentFillColorSelectedText}" />
                     <SolidColorBrush x:Key="TextControlSelectionHighlightForeground" Color="{StaticResource TextOnAccentFillColorSelectedText}" />
                     <SolidColorBrush x:Key="TextControlSelectionHighlightColor" Color="#FF523A7C" />

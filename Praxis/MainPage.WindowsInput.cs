@@ -919,20 +919,20 @@ public partial class MainPage
     private static global::Windows.UI.Color ResolveWindowsTextCaretAccentColor()
     {
         return IsWindowsTextDarkThemeActive()
-            ? global::Windows.UI.Color.FromArgb(255, 245, 247, 250)
+            ? global::Windows.UI.Color.FromArgb(255, 255, 255, 255)
             : global::Windows.UI.Color.FromArgb(255, 0, 0, 0);
     }
 
     private static global::Windows.UI.Color ResolveWindowsTextForegroundColor()
     {
         return IsWindowsTextDarkThemeActive()
-            ? global::Windows.UI.Color.FromArgb(255, 245, 247, 250)
+            ? global::Windows.UI.Color.FromArgb(255, 255, 255, 255)
             : global::Windows.UI.Color.FromArgb(255, 0, 0, 0);
     }
 
     private static global::Windows.UI.Color ResolveWindowsTextSelectionForegroundColor()
     {
-        return global::Windows.UI.Color.FromArgb(255, 245, 247, 250);
+        return global::Windows.UI.Color.FromArgb(255, 255, 255, 255);
     }
 
     private static bool IsWindowsTextDarkThemeActive()

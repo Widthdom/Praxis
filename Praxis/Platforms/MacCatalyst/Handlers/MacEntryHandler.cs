@@ -40,8 +40,10 @@ public class MacEntryHandler : EntryHandler
         private static readonly UIColor DarkGlassFieldBackground = UIColor.Clear;
         private static readonly UIColor LightPlaceholderColor = UIColor.FromRGBA(0, 0, 0, 0.58f);
         private static readonly UIColor DarkPlaceholderColor = UIColor.FromRGBA(196, 212, 224, 0.42f);
-        private static readonly UIColor LightTextColor = UIColor.FromRGB(0x05, 0x05, 0x05);
+        private static readonly UIColor LightTextColor = UIColor.Black;
         private static readonly UIColor DarkTextColor = UIColor.White;
+        private static readonly UIColor LightTextSelectionColor = UIColor.FromRGB(0x4B, 0x00, 0xD9);
+        private static readonly UIColor DarkTextSelectionColor = UIColor.FromRGB(0x35, 0x00, 0xA8);
         private static readonly nfloat CornerRadius = 4;
         private static readonly nfloat BorderWidth = 1;
         private static readonly nfloat FocusBorderWidth = 1.5f;
@@ -210,10 +212,11 @@ public class MacEntryHandler : EntryHandler
             var borderColor = dark ? DarkBorderColor : LightBorderColor;
             var focusColor = dark ? DarkFocusUnderlineColor : LightFocusUnderlineColor;
             var textColor = dark ? DarkTextColor : LightTextColor;
+            var selectionColor = dark ? DarkTextSelectionColor : LightTextSelectionColor;
             ContentScaleFactor = UIScreen.MainScreen.Scale;
             Layer.ContentsScale = UIScreen.MainScreen.Scale;
             Layer.ShouldRasterize = false;
-            TintColor = textColor;
+            TintColor = selectionColor;
             TextColor = textColor;
             BorderStyle = UITextBorderStyle.None;
             var textWeight = glassFieldVisual ? UIFontWeight.Regular : UIFontWeight.Medium;

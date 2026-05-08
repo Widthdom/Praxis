@@ -59,7 +59,11 @@ public partial class MainPage
     private UIKeyCommand? commandSuggestionUpKeyCommand;
     private UIKeyCommand? commandSuggestionDownKeyCommand;
     private Microsoft.Maui.Dispatching.IDispatcherTimer? macMiddleButtonPollTimer;
+    private bool macPrimaryButtonWasDown;
+    private bool macSecondaryButtonWasDown;
     private bool macMiddleButtonWasDown;
+    private bool macPlacementPollingSelectionActive;
+    private Guid? macPlacementPollingCommandSelectionItemId;
     private bool macInitialCommandFocusApplied;
     private ModalFocusTarget? macPseudoFocusedModalTarget;
     private ContextMenuFocusTarget? macPseudoFocusedContextMenuTarget;
@@ -70,6 +74,11 @@ public partial class MainPage
     private string macGuidLockedText = string.Empty;
     private bool macApplyingGuidTextLock;
     private bool macSuppressEditorTabFallback;
+    private UIView? macPlacementGestureNativeView;
+    private UILongPressGestureRecognizer? macPlacementPrimarySelectionRecognizer;
+    private UILongPressGestureRecognizer? macPlacementSecondaryCreateRecognizer;
+    private bool macPlacementNativeSelectionActive;
+    private bool macPlacementNativeSelectionIgnored;
 
     private enum ModalFocusTarget
     {
