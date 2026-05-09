@@ -81,6 +81,7 @@ public partial class MainPage : ContentPage
             UpdateModalEditorHeights();
 #if MACCATALYST
             ScheduleMacRootTransparencyRefresh();
+            ScheduleMacPlacementCanvasNativeGesturesRefresh();
             ApplyMacContentScale();
 #endif
         };
@@ -114,6 +115,8 @@ public partial class MainPage : ContentPage
         ModalToolEntry.Focused += ModalEditorField_Focused;
         ModalArgumentsEntry.Focused += ModalEditorField_Focused;
         ModalClipWordEditor.Focused += ModalEditorField_Focused;
+        RootGrid.HandlerChanged += (_, _) => ScheduleMacPlacementCanvasNativeGesturesRefresh();
+        PlacementSurface.HandlerChanged += (_, _) => EnsureMacPlacementCanvasNativeGestures();
         PlacementScroll.HandlerChanged += (_, _) => EnsureMacPlacementCanvasNativeGestures();
 #endif
     }
@@ -140,6 +143,8 @@ public partial class MainPage : ContentPage
         if (initialized)
         {
 #if MACCATALYST
+            ApplyMacVisualTuning();
+            StartMacMiddleButtonPolling();
             ScheduleMainCommandFocusAfterActivation("MainPage.OnAppearing");
 #else
             Dispatcher.Dispatch(RequestMainCommandFocusAfterActivation);
@@ -299,6 +304,9 @@ public partial class MainPage : ContentPage
         }
 
         SyncViewportToViewModel();
+#if MACCATALYST
+        ScheduleMacPlacementCanvasNativeGesturesRefresh();
+#endif
     }
 
     private void AttachWindowActivationHook()

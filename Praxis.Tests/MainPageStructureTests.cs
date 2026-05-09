@@ -152,7 +152,7 @@ public class MainPageStructureTests
         Assert.Contains("x:Name=\"QuickLookPopup\"", xaml);
         Assert.Contains("x:Name=\"EditorOverlay\"", xaml);
         Assert.DoesNotContain("<controls:MaterialFrame Grid.Row=\"1\"", xaml);
-        Assert.Contains("<Grid Grid.Row=\"1\"\n              Padding=\"14\"\n              SizeChanged=\"PlacementArea_SizeChanged\">", xaml);
+        Assert.Contains("<Grid x:Name=\"PlacementSurface\"\n              Grid.Row=\"1\"\n              Padding=\"14\"\n              BackgroundColor=\"{OnPlatform Default=Transparent, MacCatalyst=#01000000}\"\n              SizeChanged=\"PlacementArea_SizeChanged\">", xaml);
         Assert.Contains("x:Name=\"PlacementCanvas\"\n                                    WidthRequest=\"{Binding CanvasWidth}\"\n                                    HeightRequest=\"{Binding CanvasHeight}\"\n                                    BackgroundColor=\"{OnPlatform Default=Transparent, MacCatalyst=#01000000}\"", xaml);
         Assert.Contains("<PointerGestureRecognizer PointerPressed=\"Selection_PointerPressed\"\n                                                      PointerMoved=\"Selection_PointerMoved\"\n                                                      PointerReleased=\"Selection_PointerReleased\" />", xaml);
         Assert.Contains("<TapGestureRecognizer Buttons=\"Secondary\"\n                                                  Tapped=\"PlacementCanvas_SecondaryTapped\" />", xaml);

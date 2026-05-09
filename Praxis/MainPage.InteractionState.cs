@@ -19,6 +19,7 @@ public partial class MainPage
     private Point selectionLastCanvas;
     private Point selectionLastViewport;
     private Point? lastPointerOnRoot;
+    private bool placementCreateEditorOpening;
     private bool isDockPointerHovering;
 #if MACCATALYST
     private bool selectionPanPrimed;

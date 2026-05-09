@@ -352,8 +352,10 @@
             </ScrollView>
         </controls:MaterialFrame>
 
-        <Grid Grid.Row="1"
+        <Grid x:Name="PlacementSurface"
+              Grid.Row="1"
               Padding="14"
+              BackgroundColor="{OnPlatform Default=Transparent, MacCatalyst=#01000000}"
               SizeChanged="PlacementArea_SizeChanged">
             <Grid>
                 <ScrollView Orientation="{Binding PlacementScrollOrientation}"

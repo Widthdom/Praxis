@@ -17,6 +17,7 @@ public partial class MainPage
     private static readonly TimeSpan macActivationFocusWindow = UiTimingPolicy.MacActivationFocusWindow;
     private static readonly TimeSpan macActivationFocusRequestCoalesceDelay = UiTimingPolicy.MacActivationFocusRequestCoalesceDelay;
     private static readonly TimeSpan macSearchFocusUserIntentWindow = UiTimingPolicy.MacSearchFocusUserIntentWindow;
+    private readonly UIGestureRecognizerDelegate macPlacementGestureDelegate = new MacPlacementGestureDelegate();
 
     private long macActivationFocusRequestId;
     private DateTimeOffset macActivationFocusSessionUntilUtc;
@@ -75,10 +76,18 @@ public partial class MainPage
     private bool macApplyingGuidTextLock;
     private bool macSuppressEditorTabFallback;
     private UIView? macPlacementGestureNativeView;
+    private Point? macPlacementHoverRootPoint;
+    private UIHoverGestureRecognizer? macPlacementHoverRecognizer;
     private UILongPressGestureRecognizer? macPlacementPrimarySelectionRecognizer;
     private UILongPressGestureRecognizer? macPlacementSecondaryCreateRecognizer;
     private bool macPlacementNativeSelectionActive;
     private bool macPlacementNativeSelectionIgnored;
+    private int macPlacementAttachDiagnosticCount;
+    private int macPlacementDetachDiagnosticCount;
+    private int macPlacementHoverDiagnosticCount;
+    private int macPlacementPrimaryRecognizerDiagnosticCount;
+    private int macPlacementSecondaryRecognizerDiagnosticCount;
+    private int macPlacementPollTickDiagnosticCount;
 
     private enum ModalFocusTarget
     {

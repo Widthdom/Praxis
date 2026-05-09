@@ -1,4 +1,6 @@
+using System.Diagnostics;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using Praxis.Behaviors;
 using Praxis.Core.Logic;
 using Praxis.Core.Models;
@@ -18,7 +20,7 @@ public partial class MainPage
 #if MACCATALYST
     private const nint MacMaterialFrameBackdropTag = 0x50475842;
     private const nint MacModalTextEditorGlassBackdropTag = 0x50544542;
-    private static readonly bool MacPlacementPrimarySelectionUsesPolling = true;
+    private static readonly bool MacPlacementPrimarySelectionUsesPolling = false;
     private static readonly UIColor LightMacTextSelectionColor = UIColor.FromRGB(0x4B, 0x00, 0xD9);
     private static readonly UIColor DarkMacTextSelectionColor = UIColor.FromRGB(0x35, 0x00, 0xA8);
 
@@ -597,18 +599,36 @@ public partial class MainPage
         ApplyMacModalPseudoFocusVisuals();
         ApplyMacCommandSuggestionKeyCommands();
         ApplyMacEditorKeyCommands();
-        EnsureMacPlacementCanvasNativeGestures();
+        ScheduleMacPlacementCanvasNativeGesturesRefresh();
     }
 
     private void EnsureMacPlacementCanvasNativeGestures()
     {
-        if (PlacementScroll.Handler?.PlatformView is not UIView nativeView)
+        if (ResolveMacPlacementGestureNativeView() is not UIView nativeView)
         {
-            DetachMacPlacementCanvasNativeGestures();
+            if (ShouldLogMacPlacementInputDiagnostic(ref macPlacementAttachDiagnosticCount, limit: 8, every: 120))
+            {
+                LogMacPlacementInputDiagnostic("attach-wait", "native view unavailable");
+            }
+            return;
+        }
+
+        if (nativeView.Bounds.Width <= 0 ||
+            nativeView.Bounds.Height <= 0 ||
+            PlacementScroll.Width <= 0 ||
+            PlacementScroll.Height <= 0)
+        {
+            if (ShouldLogMacPlacementInputDiagnostic(ref macPlacementAttachDiagnosticCount, limit: 8, every: 120))
+            {
+                LogMacPlacementInputDiagnostic(
+                    "attach-wait",
+                    $"view={nativeView.GetType().Name} bounds={nativeView.Bounds} root={RootGrid.Width:0.##}x{RootGrid.Height:0.##} scroll={PlacementScroll.Width:0.##}x{PlacementScroll.Height:0.##}");
+            }
             return;
         }
 
         if (ReferenceEquals(macPlacementGestureNativeView, nativeView) &&
+            macPlacementPrimarySelectionRecognizer is not null &&
             macPlacementSecondaryCreateRecognizer is not null)
         {
             return;
@@ -618,14 +638,68 @@ public partial class MainPage
         macPlacementGestureNativeView = nativeView;
         nativeView.UserInteractionEnabled = true;
 
+        macPlacementHoverRecognizer = CreateMacPlacementHoverRecognizer();
+        nativeView.AddGestureRecognizer(macPlacementHoverRecognizer);
+        macPlacementPrimarySelectionRecognizer = CreateMacPlacementPrimarySelectionRecognizer();
+        nativeView.AddGestureRecognizer(macPlacementPrimarySelectionRecognizer);
         macPlacementSecondaryCreateRecognizer = CreateMacPlacementSecondaryCreateRecognizer();
         nativeView.AddGestureRecognizer(macPlacementSecondaryCreateRecognizer);
+        if (ShouldLogMacPlacementInputDiagnostic(ref macPlacementAttachDiagnosticCount, limit: 8, every: 0))
+        {
+            LogMacPlacementInputDiagnostic(
+                "attach",
+                $"view={nativeView.GetType().Name} bounds={nativeView.Bounds} root={RootGrid.Width:0.##}x{RootGrid.Height:0.##} scroll={PlacementScroll.Width:0.##}x{PlacementScroll.Height:0.##}");
+        }
+    }
+
+    private void ScheduleMacPlacementCanvasNativeGesturesRefresh()
+    {
+        EnsureMacPlacementCanvasNativeGestures();
+        Dispatcher.DispatchDelayed(TimeSpan.FromMilliseconds(16), EnsureMacPlacementCanvasNativeGestures);
+        Dispatcher.DispatchDelayed(TimeSpan.FromMilliseconds(120), EnsureMacPlacementCanvasNativeGestures);
+        Dispatcher.DispatchDelayed(TimeSpan.FromMilliseconds(500), EnsureMacPlacementCanvasNativeGestures);
+    }
+
+    private UIView? ResolveMacPlacementGestureNativeView()
+    {
+        if (RootGrid.Handler?.PlatformView is UIView rootView &&
+            rootView.Window is not null &&
+            rootView.Bounds.Width > 0 &&
+            rootView.Bounds.Height > 0)
+        {
+            return rootView;
+        }
+
+        if (Handler?.PlatformView is UIView pageView &&
+            pageView.Window is not null &&
+            pageView.Bounds.Width > 0 &&
+            pageView.Bounds.Height > 0)
+        {
+            return pageView;
+        }
+
+        if (Handler?.PlatformView is UIView pageWindowView && pageWindowView.Window is UIWindow pageWindow)
+        {
+            return pageWindow;
+        }
+
+        if (RootGrid.Handler?.PlatformView is UIView fallbackRootView)
+        {
+            return fallbackRootView;
+        }
+
+        return null;
     }
 
     private void DetachMacPlacementCanvasNativeGestures()
     {
         if (macPlacementGestureNativeView is not null)
         {
+            if (macPlacementHoverRecognizer is not null)
+            {
+                macPlacementGestureNativeView.RemoveGestureRecognizer(macPlacementHoverRecognizer);
+            }
+
             if (macPlacementPrimarySelectionRecognizer is not null)
             {
                 macPlacementGestureNativeView.RemoveGestureRecognizer(macPlacementPrimarySelectionRecognizer);
@@ -638,9 +712,56 @@ public partial class MainPage
         }
 
         macPlacementGestureNativeView = null;
+        macPlacementHoverRootPoint = null;
+        macPlacementHoverRecognizer = null;
         macPlacementPrimarySelectionRecognizer = null;
         macPlacementSecondaryCreateRecognizer = null;
         macPlacementNativeSelectionIgnored = false;
+        if (ShouldLogMacPlacementInputDiagnostic(ref macPlacementDetachDiagnosticCount, limit: 8, every: 0))
+        {
+            LogMacPlacementInputDiagnostic("detach", "placement native recognizers detached");
+        }
+    }
+
+    private UIHoverGestureRecognizer CreateMacPlacementHoverRecognizer()
+    {
+        var recognizer = new UIHoverGestureRecognizer(HandleMacPlacementHoverRecognizer)
+        {
+            CancelsTouchesInView = false,
+            Delegate = macPlacementGestureDelegate,
+        };
+        return recognizer;
+    }
+
+    private void HandleMacPlacementHoverRecognizer()
+    {
+        if (macPlacementHoverRecognizer is null || macPlacementGestureNativeView is null)
+        {
+            return;
+        }
+
+        switch (macPlacementHoverRecognizer.State)
+        {
+            case UIGestureRecognizerState.Began:
+            case UIGestureRecognizerState.Changed:
+                var location = macPlacementHoverRecognizer.LocationInView(macPlacementGestureNativeView);
+                macPlacementHoverRootPoint = new Point(location.X, location.Y);
+                lastPointerOnRoot = macPlacementHoverRootPoint;
+                SyncDockScrollBarVisibility(macPlacementHoverRootPoint.Value);
+                if (ShouldLogMacPlacementInputDiagnostic(ref macPlacementHoverDiagnosticCount, limit: 12, every: 240))
+                {
+                    LogMacPlacementInputDiagnostic(
+                        "hover",
+                        $"state={macPlacementHoverRecognizer.State} root=({macPlacementHoverRootPoint.Value.X:0.##},{macPlacementHoverRootPoint.Value.Y:0.##})");
+                }
+                return;
+            case UIGestureRecognizerState.Ended:
+            case UIGestureRecognizerState.Cancelled:
+            case UIGestureRecognizerState.Failed:
+                return;
+            default:
+                return;
+        }
     }
 
     private UILongPressGestureRecognizer CreateMacPlacementPrimarySelectionRecognizer()
@@ -653,6 +774,7 @@ public partial class MainPage
             NumberOfTouchesRequired = 1,
             MinimumPressDuration = 0,
             AllowableMovement = nfloat.MaxValue,
+            Delegate = macPlacementGestureDelegate,
         };
         TrySetMacPlacementButtonMaskRequired(recognizer, 0x1);
         return recognizer;
@@ -668,6 +790,7 @@ public partial class MainPage
             NumberOfTouchesRequired = 1,
             MinimumPressDuration = 0.01,
             AllowableMovement = nfloat.MaxValue,
+            Delegate = macPlacementGestureDelegate,
         };
         TrySetMacPlacementButtonMaskRequired(recognizer, 0x2);
         return recognizer;
@@ -678,6 +801,11 @@ public partial class MainPage
         if (macPlacementPrimarySelectionRecognizer is null)
         {
             return;
+        }
+
+        if (ShouldLogMacPlacementInputDiagnostic(ref macPlacementPrimaryRecognizerDiagnosticCount, limit: 12, every: 120))
+        {
+            LogMacPlacementInputDiagnostic("primary-recognizer", $"state={macPlacementPrimarySelectionRecognizer.State}");
         }
 
         if (MacPlacementPrimarySelectionUsesPolling)
@@ -808,6 +936,12 @@ public partial class MainPage
 
     private void HandleMacPlacementSecondaryCreateRecognizer()
     {
+        if (macPlacementSecondaryCreateRecognizer is not null &&
+            ShouldLogMacPlacementInputDiagnostic(ref macPlacementSecondaryRecognizerDiagnosticCount, limit: 12, every: 120))
+        {
+            LogMacPlacementInputDiagnostic("secondary-recognizer", $"state={macPlacementSecondaryCreateRecognizer.State}");
+        }
+
         if (macPlacementSecondaryCreateRecognizer?.State != UIGestureRecognizerState.Began ||
             viewModel.IsEditorOpen ||
             viewModel.IsContextMenuOpen)
@@ -830,14 +964,15 @@ public partial class MainPage
         canvasPoint = default;
         viewportPoint = default;
 
-        if (recognizer is null || macPlacementGestureNativeView is null)
+        if (recognizer is null ||
+            macPlacementGestureNativeView is null ||
+            PlacementScroll.Handler?.PlatformView is not UIView placementScrollView)
         {
             return false;
         }
 
-        var location = recognizer.LocationInView(macPlacementGestureNativeView);
-        var bounds = macPlacementGestureNativeView.Bounds;
-        var rawViewportPoint = new Point(location.X - bounds.X, location.Y - bounds.Y);
+        var location = recognizer.LocationInView(placementScrollView);
+        var rawViewportPoint = new Point(location.X, location.Y);
         if (!allowOutside &&
             (rawViewportPoint.X < 0 ||
              rawViewportPoint.Y < 0 ||
@@ -865,6 +1000,12 @@ public partial class MainPage
             var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);
             CrashFileLogger.WriteWarning(nameof(TrySetMacPlacementButtonMaskRequired), $"Failed to set placement buttonMaskRequired={mask}: {safeMessage}");
         }
+    }
+
+    private sealed class MacPlacementGestureDelegate : UIGestureRecognizerDelegate
+    {
+        public override bool ShouldRecognizeSimultaneously(UIGestureRecognizer gestureRecognizer, UIGestureRecognizer otherGestureRecognizer)
+            => true;
     }
 
     private void ScheduleMacRootTransparencyRefresh()
@@ -1686,9 +1827,17 @@ public partial class MainPage
         var primaryDown = IsMacMouseButtonCurrentlyDown(CGMouseButton.Left);
         var secondaryDown = IsMacMouseButtonCurrentlyDown(CGMouseButton.Right);
         var middleDown = IsMacMouseButtonCurrentlyDown(CGMouseButton.Center);
+        if (ShouldLogMacPlacementInputDiagnostic(ref macPlacementPollTickDiagnosticCount, limit: 8, every: 600))
+        {
+            var pointerText = FormatMacPlacementPointerDiagnostic();
+            LogMacPlacementInputDiagnostic(
+                "poll",
+                $"primary={primaryDown} secondary={secondaryDown} middle={middleDown} wasPrimary={macPrimaryButtonWasDown} wasSecondary={macSecondaryButtonWasDown} pointer={pointerText}");
+        }
 
         if (primaryDown && !macPrimaryButtonWasDown)
         {
+            LogMacPlacementInputDiagnostic("poll-primary-down", "transition detected");
             TryBeginMacPlacementPollingSelection();
         }
         else if (primaryDown && macPlacementPollingSelectionActive)
@@ -1702,11 +1851,13 @@ public partial class MainPage
 
         if (secondaryDown && !macSecondaryButtonWasDown)
         {
+            LogMacPlacementInputDiagnostic("poll-secondary-down", "transition detected");
             TryHandleMacPlacementPollingSecondaryCreate();
         }
 
         if (middleDown && !macMiddleButtonWasDown)
         {
+            LogMacPlacementInputDiagnostic("poll-middle-down", "transition detected");
             if (TryGetMacCurrentRootPointer(out var pointer))
             {
                 HandleMacMiddleClick(pointer);
@@ -1723,19 +1874,26 @@ public partial class MainPage
         if (selectionDragging ||
             viewModel.IsEditorOpen ||
             viewModel.IsContextMenuOpen ||
-            !TryGetMacCurrentRootPointer(out var rootPoint))
+            !TryGetMacCurrentPlacementRootPointer(out var rootPoint))
         {
+            LogMacPlacementInputDiagnostic(
+                "poll-selection-reject",
+                $"dragging={selectionDragging} editor={viewModel.IsEditorOpen} context={viewModel.IsContextMenuOpen} pointer={FormatMacPlacementPointerDiagnostic()}");
             return;
         }
 
         if (TryHandleMacPlacementPollingButtonPress(rootPoint))
         {
+            LogMacPlacementInputDiagnostic("poll-selection-button-hit", $"root=({rootPoint.X:0.##},{rootPoint.Y:0.##})");
             return;
         }
 
         if (!TryGetMacPlacementRootCanvasPoint(rootPoint, allowOutside: false, out var canvasPoint, out var viewportPoint) ||
             IsOnAnyVisibleButton(canvasPoint))
         {
+            LogMacPlacementInputDiagnostic(
+                "poll-selection-hit-reject",
+                $"root=({rootPoint.X:0.##},{rootPoint.Y:0.##}) canvas=({canvasPoint.X:0.##},{canvasPoint.Y:0.##}) scroll={PlacementScroll.Width:0.##}x{PlacementScroll.Height:0.##}");
             return;
         }
 
@@ -1749,6 +1907,9 @@ public partial class MainPage
         selectionLastViewport = selectionStartViewport;
         UpdateSelectionRect(selectionStartViewport, selectionStartViewport);
         ExecuteSelectionPayload(new SelectionPayload(selectionStartCanvas.X, selectionStartCanvas.Y, selectionStartCanvas.X, selectionStartCanvas.Y, GestureStatus.Started));
+        LogMacPlacementInputDiagnostic(
+            "poll-selection-started",
+            $"root=({rootPoint.X:0.##},{rootPoint.Y:0.##}) viewport=({viewportPoint.X:0.##},{viewportPoint.Y:0.##}) canvas=({canvasPoint.X:0.##},{canvasPoint.Y:0.##})");
     }
 
     private bool TryHandleMacPlacementPollingButtonPress(Point rootPoint)
@@ -1790,7 +1951,7 @@ public partial class MainPage
             return;
         }
 
-        if (!TryGetMacCurrentRootPointer(out var rootPoint, preferCached: false) ||
+        if (!TryGetMacCurrentPlacementRootPointer(out var rootPoint, preferCached: false) ||
             !TryGetMacPlacementRootCanvasPoint(rootPoint, allowOutside: true, out var canvasPoint, out var viewportPoint))
         {
             return;
@@ -1810,7 +1971,7 @@ public partial class MainPage
             return;
         }
 
-        if (TryGetMacCurrentRootPointer(out var rootPoint, preferCached: false) &&
+        if (TryGetMacCurrentPlacementRootPointer(out var rootPoint, preferCached: false) &&
             TryGetMacPlacementRootCanvasPoint(rootPoint, allowOutside: true, out var canvasPoint, out var viewportPoint))
         {
             selectionLastCanvas = canvasPoint;
@@ -1828,19 +1989,26 @@ public partial class MainPage
     {
         if (viewModel.IsEditorOpen ||
             viewModel.IsContextMenuOpen ||
-            !TryGetMacCurrentRootPointer(out var rootPoint))
+            !TryGetMacCurrentPlacementRootPointer(out var rootPoint))
         {
+            LogMacPlacementInputDiagnostic(
+                "poll-secondary-reject",
+                $"editor={viewModel.IsEditorOpen} context={viewModel.IsContextMenuOpen} pointer={FormatMacPlacementPointerDiagnostic()}");
             return;
         }
 
         if (!TryGetMacPlacementRootCanvasPoint(rootPoint, allowOutside: false, out var canvasPoint, out _) ||
             IsOnAnyVisibleButton(canvasPoint))
         {
+            LogMacPlacementInputDiagnostic(
+                "poll-secondary-hit-reject",
+                $"root=({rootPoint.X:0.##},{rootPoint.Y:0.##}) canvas=({canvasPoint.X:0.##},{canvasPoint.Y:0.##})");
             return;
         }
 
         CloseCommandSuggestionPopup();
         _ = OpenCreateEditorFromCanvasPointWithWarningAsync(canvasPoint, nameof(TryHandleMacPlacementPollingSecondaryCreate));
+        LogMacPlacementInputDiagnostic("poll-secondary-create", $"canvas=({canvasPoint.X:0.##},{canvasPoint.Y:0.##})");
     }
 
     private bool TryGetMacPlacementRootCanvasPoint(Point rootPoint, bool allowOutside, out Point canvasPoint, out Point viewportPoint)
@@ -1868,6 +2036,80 @@ public partial class MainPage
         return true;
     }
 
+    private bool TryGetMacCurrentPlacementRootPointer(out Point rootPoint, bool preferCached = true)
+    {
+        if (TryGetMacCurrentRootPointerFromAppKit(out rootPoint))
+        {
+            lastPointerOnRoot = rootPoint;
+            return true;
+        }
+
+        if (TryGetMacCurrentRootPointerFromCoreGraphics(out rootPoint))
+        {
+            lastPointerOnRoot = rootPoint;
+            return true;
+        }
+
+        if (TryGetMacPlacementHoverRootPoint(out rootPoint))
+        {
+            lastPointerOnRoot = rootPoint;
+            return true;
+        }
+
+        if (preferCached && lastPointerOnRoot is Point fallbackRootPoint)
+        {
+            rootPoint = fallbackRootPoint;
+            return true;
+        }
+
+        if (!preferCached && lastPointerOnRoot is Point uncachedFallbackRootPoint)
+        {
+            rootPoint = uncachedFallbackRootPoint;
+            return true;
+        }
+
+        rootPoint = default;
+        return false;
+    }
+
+    private bool TryGetMacPlacementHoverRootPoint(out Point rootPoint)
+    {
+        if (macPlacementHoverRootPoint is Point cachedHoverPoint && IsMacRootPointInsideRoot(cachedHoverPoint))
+        {
+            rootPoint = cachedHoverPoint;
+            return true;
+        }
+
+        if (macPlacementHoverRecognizer is not null &&
+            macPlacementGestureNativeView is not null &&
+            (macPlacementHoverRecognizer.State == UIGestureRecognizerState.Began ||
+             macPlacementHoverRecognizer.State == UIGestureRecognizerState.Changed))
+        {
+            var location = macPlacementHoverRecognizer.LocationInView(macPlacementGestureNativeView);
+            var liveHoverPoint = new Point(location.X, location.Y);
+            if (IsMacRootPointInsideRoot(liveHoverPoint))
+            {
+                macPlacementHoverRootPoint = liveHoverPoint;
+                rootPoint = liveHoverPoint;
+                return true;
+            }
+        }
+
+        rootPoint = default;
+        return false;
+    }
+
+    private string FormatMacPlacementPointerDiagnostic()
+    {
+        var pointerText = lastPointerOnRoot is Point pointer
+            ? $"last=({pointer.X:0.##},{pointer.Y:0.##})"
+            : "last=(null)";
+        var hoverText = macPlacementHoverRootPoint is Point hover
+            ? $"hover=({hover.X:0.##},{hover.Y:0.##})"
+            : "hover=(null)";
+        return $"{pointerText} {hoverText}";
+    }
+
     private bool TryGetMacCurrentRootPointer(out Point rootPoint, bool preferCached = true)
     {
         if (preferCached && lastPointerOnRoot is Point cachedRootPoint && IsMacRootPointInsideRoot(cachedRootPoint))
@@ -1877,6 +2119,12 @@ public partial class MainPage
         }
 
         if (TryGetMacCurrentRootPointerFromCoreGraphics(out rootPoint))
+        {
+            lastPointerOnRoot = rootPoint;
+            return true;
+        }
+
+        if (TryGetMacCurrentRootPointerFromAppKit(out rootPoint))
         {
             lastPointerOnRoot = rootPoint;
             return true;
@@ -1966,6 +2214,183 @@ public partial class MainPage
         }
     }
 
+    private bool TryGetMacCurrentRootPointerFromAppKit(out Point rootPoint)
+    {
+        rootPoint = default;
+
+        if (RootGrid.Handler?.PlatformView is not UIView rootView ||
+            rootView.Window is not UIWindow nativeWindow)
+        {
+            return false;
+        }
+
+        try
+        {
+            var nsEventClass = ObjcGetClass("NSEvent");
+            if (nsEventClass == IntPtr.Zero ||
+                TryGetMacPlacementNativeWindow(nativeWindow) is not NSObject nsWindow)
+            {
+                return false;
+            }
+
+            var screenPoint = ObjcMsgSendCGPoint(nsEventClass, SelRegisterName("mouseLocation"));
+            var windowPoint = ObjcMsgSendCGPointCGPoint(nsWindow.Handle, SelRegisterName("convertPointFromScreen:"), screenPoint);
+
+            var contentFrame = GetMacNativeFrame(nsWindow.Handle, "contentView", fallbackHeight: RootGrid.Height);
+            var rootFrame = rootView.Frame;
+            var nativeWindowHeight = nativeWindow.Bounds.Height > 0 ? nativeWindow.Bounds.Height : RootGrid.Height;
+
+            Point? bestRootPoint = null;
+            var bestDistance = double.MaxValue;
+            var hasCachedRootPoint = TryGetMacCachedRootPointForDistance(out var cachedRootPoint);
+
+            foreach (var candidate in EnumerateMacAppKitRootPointCandidates(windowPoint, contentFrame, rootFrame, nativeWindowHeight))
+            {
+                if (!IsMacRootPointInsideRoot(candidate))
+                {
+                    continue;
+                }
+
+                if (!hasCachedRootPoint)
+                {
+                    rootPoint = candidate;
+                    return true;
+                }
+
+                var distance = Math.Pow(candidate.X - cachedRootPoint.X, 2) + Math.Pow(candidate.Y - cachedRootPoint.Y, 2);
+                if (distance < bestDistance)
+                {
+                    bestDistance = distance;
+                    bestRootPoint = candidate;
+                }
+            }
+
+            if (bestRootPoint is Point nearestRootPoint)
+            {
+                rootPoint = nearestRootPoint;
+                return true;
+            }
+
+            return false;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    private static IEnumerable<Point> EnumerateMacAppKitRootPointCandidates(CGPoint windowPoint, CGRect contentFrame, CGRect rootFrame, double nativeWindowHeight)
+    {
+        var contentHeight = contentFrame.Height > 0 ? contentFrame.Height : nativeWindowHeight;
+        var rootHeight = rootFrame.Height > 0 ? rootFrame.Height : contentHeight;
+
+        yield return new Point(
+            windowPoint.X - contentFrame.X,
+            contentHeight - (windowPoint.Y - contentFrame.Y));
+
+        yield return new Point(
+            windowPoint.X - rootFrame.X,
+            rootHeight - (windowPoint.Y - rootFrame.Y));
+
+        yield return new Point(windowPoint.X, nativeWindowHeight - windowPoint.Y);
+        yield return new Point(windowPoint.X, contentHeight - windowPoint.Y);
+        yield return new Point(windowPoint.X, windowPoint.Y);
+    }
+
+    private bool TryGetMacCachedRootPointForDistance(out Point rootPoint)
+    {
+        if (lastPointerOnRoot is Point cachedRootPoint && IsMacRootPointInsideRoot(cachedRootPoint))
+        {
+            rootPoint = cachedRootPoint;
+            return true;
+        }
+
+        if (macPlacementHoverRootPoint is Point cachedHoverPoint && IsMacRootPointInsideRoot(cachedHoverPoint))
+        {
+            rootPoint = cachedHoverPoint;
+            return true;
+        }
+
+        rootPoint = default;
+        return false;
+    }
+
+    private static CGRect GetMacNativeFrame(IntPtr receiver, string nestedSelectorName, double fallbackHeight)
+    {
+        try
+        {
+            var nested = ObjcMsgSendIntPtr(receiver, SelRegisterName(nestedSelectorName));
+            if (nested != IntPtr.Zero)
+            {
+                var frame = ObjcMsgSendCGRect(nested, SelRegisterName("frame"));
+                if (frame.Height > 0)
+                {
+                    return frame;
+                }
+            }
+        }
+        catch
+        {
+        }
+
+        return new CGRect(0, 0, 0, fallbackHeight);
+    }
+
+    private static NSObject? TryGetMacPlacementNativeWindow(UIWindow nativeWindow)
+    {
+        try
+        {
+            var applicationClass = Runtime.GetNSObject(Class.GetHandle("NSApplication"));
+            if (applicationClass is null)
+            {
+                return null;
+            }
+
+            if (applicationClass.ValueForKeyPath(new NSString("sharedApplication.windows")) is not NSArray nsWindows)
+            {
+                return null;
+            }
+
+            foreach (var candidate in nsWindows)
+            {
+                if (candidate is NSObject nsWindow && MacPlacementWindowMatchesUiWindow(nsWindow, nativeWindow))
+                {
+                    return nsWindow;
+                }
+            }
+
+            return null;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private static bool MacPlacementWindowMatchesUiWindow(NSObject nsWindow, UIWindow nativeWindow)
+    {
+        try
+        {
+            if (nsWindow.ValueForKey(new NSString("uiWindows")) is not NSArray uiWindows)
+            {
+                return false;
+            }
+
+            foreach (var candidate in uiWindows)
+            {
+                if (candidate is UIWindow uiWindow && ReferenceEquals(uiWindow, nativeWindow))
+                {
+                    return true;
+                }
+            }
+        }
+        catch
+        {
+        }
+
+        return false;
+    }
+
     private static bool IsMacSelectionModifierCurrentlyDown()
     {
         try
@@ -2041,11 +2466,32 @@ public partial class MainPage
                 var activationSuppressed = App.IsActivationSuppressionActive();
                 var pointerKnown = macLastActivePage is not null &&
                     macLastActivePage.TryGetTarget(out var page) &&
-                    page.lastPointerOnRoot is not null;
+                    (page.lastPointerOnRoot is not null || page.macPlacementHoverRootPoint is not null);
                 CrashFileLogger.WriteWarning(nameof(IsMacMouseButtonCurrentlyDown), $"Failed to query mouse button state from CoreGraphics for button={button} while isActive={isActive} activationSuppressed={activationSuppressed} pointerKnown={pointerKnown}: {safeMessage}");
                 return false;
             }
         }
+    }
+
+    [DllImport("/usr/lib/libobjc.A.dylib", EntryPoint = "objc_msgSend")]
+    private static extern CGPoint ObjcMsgSendCGPoint(IntPtr receiver, IntPtr selector);
+
+    [DllImport("/usr/lib/libobjc.A.dylib", EntryPoint = "objc_msgSend")]
+    private static extern CGPoint ObjcMsgSendCGPointCGPoint(IntPtr receiver, IntPtr selector, CGPoint point);
+
+    [DllImport("/usr/lib/libobjc.A.dylib", EntryPoint = "objc_msgSend")]
+    private static extern CGRect ObjcMsgSendCGRect(IntPtr receiver, IntPtr selector);
+
+    private static bool ShouldLogMacPlacementInputDiagnostic(ref int counter, int limit, int every)
+    {
+        counter++;
+        return counter <= limit || (every > 0 && counter % every == 0);
+    }
+
+    [Conditional("DEBUG")]
+    private static void LogMacPlacementInputDiagnostic(string stage, string detail)
+    {
+        CrashFileLogger.WriteInfo("MacPlacementInput", $"{stage}: {detail}");
     }
 
     private void EnsureMacGuidEntryReadOnlyBehavior()

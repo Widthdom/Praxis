@@ -1103,6 +1103,12 @@ public partial class MainPage
 
     private async Task OpenCreateEditorFromCanvasPointWithWarningAsync(Point canvasPoint, string source)
     {
+        if (placementCreateEditorOpening)
+        {
+            return;
+        }
+
+        placementCreateEditorOpening = true;
         try
         {
             await OpenCreateEditorFromCanvasPointAsync(canvasPoint);
@@ -1111,6 +1117,10 @@ public partial class MainPage
         {
             var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);
             CrashFileLogger.WriteWarning(source, $"Placement-canvas create flow failed at ({canvasPoint.X:0.##}, {canvasPoint.Y:0.##}): {safeMessage}");
+        }
+        finally
+        {
+            placementCreateEditorOpening = false;
         }
     }
 
