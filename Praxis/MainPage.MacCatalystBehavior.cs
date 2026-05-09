@@ -2002,18 +2002,18 @@ public partial class MainPage
             return true;
         }
 
+        if (TryGetRecentMacPlacementHoverRootPoint(out rootPoint))
+        {
+            lastPointerOnRoot = rootPoint;
+            return true;
+        }
+
         if (TryGetMacCurrentPlacementRootPointer(
             out rootPoint,
             preferCached: false,
             allowCachedFallback: false,
             useCachedDistance: false))
         {
-            return true;
-        }
-
-        if (TryGetRecentMacPlacementHoverRootPoint(out rootPoint))
-        {
-            lastPointerOnRoot = rootPoint;
             return true;
         }
 
@@ -2040,12 +2040,6 @@ public partial class MainPage
 
     private bool TryGetMacPlacementPollingRunningPoint(out Point canvasPoint, out Point viewportPoint)
     {
-        if (TryGetMacPlacementPrimaryRecognizerRootPoint(out var recognizerRootPoint) &&
-            TryGetMacPlacementRootCanvasPoint(recognizerRootPoint, allowOutside: true, out canvasPoint, out viewportPoint))
-        {
-            return true;
-        }
-
         if (macPlacementPollingRawStartScreen is Point rawStartScreen &&
             macPlacementPollingAnchorViewport is Point anchorViewport &&
             TryGetMacCurrentScreenPointer(out var rawScreenPoint))
@@ -2059,14 +2053,39 @@ public partial class MainPage
             return true;
         }
 
-        if (TryGetMacPlacementPollingRootPoint(out var rootPoint) &&
+        if (TryGetMacPlacementPollingCurrentRootPoint(out var rootPoint) &&
             TryGetMacPlacementRootCanvasPoint(rootPoint, allowOutside: true, out canvasPoint, out viewportPoint))
+        {
+            return true;
+        }
+
+        if (TryGetMacPlacementPrimaryRecognizerRootPoint(out var recognizerRootPoint) &&
+            TryGetMacPlacementRootCanvasPoint(recognizerRootPoint, allowOutside: true, out canvasPoint, out viewportPoint))
+        {
+            return true;
+        }
+
+        if (TryGetRecentMacPlacementHoverRootPoint(out var recentHoverRootPoint) &&
+            TryGetMacPlacementRootCanvasPoint(recentHoverRootPoint, allowOutside: true, out canvasPoint, out viewportPoint))
         {
             return true;
         }
 
         canvasPoint = default;
         viewportPoint = default;
+        return false;
+    }
+
+    private bool TryGetMacPlacementPollingCurrentRootPoint(out Point rootPoint)
+    {
+        if (TryGetMacCurrentRootPointerFromAppKit(out rootPoint, useCachedDistance: true) ||
+            TryGetMacCurrentRootPointerFromCoreGraphics(out rootPoint, useCachedDistance: true))
+        {
+            lastPointerOnRoot = rootPoint;
+            return true;
+        }
+
+        rootPoint = default;
         return false;
     }
 

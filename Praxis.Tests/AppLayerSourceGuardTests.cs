@@ -1357,6 +1357,9 @@ public class AppLayerSourceGuardTests
         Assert.Contains("DateTimeOffset.UtcNow - macPlacementHoverRootPointUpdatedAtUtc <= MacPlacementRecentHoverWindow", macSource);
         Assert.Contains("ClearMacPlacementHoverRootPoint();", macSource);
         Assert.Contains("TryGetMacPlacementPollingRunningPoint(out var canvasPoint, out var viewportPoint)", macSource);
+        Assert.Contains("TryGetMacPlacementPollingCurrentRootPoint(out var rootPoint)", macSource);
+        Assert.Contains("TryGetMacCurrentRootPointerFromAppKit(out rootPoint, useCachedDistance: true)", macSource);
+        Assert.Contains("TryGetMacCurrentRootPointerFromCoreGraphics(out rootPoint, useCachedDistance: true)", macSource);
         Assert.Contains("TryGetMacPlacementPrimaryRecognizerRootPoint(out var recognizerRootPoint)", macSource);
         Assert.Contains("new UILongPressGestureRecognizer(HandleMacPlacementPrimarySelectionRecognizer)", macSource);
         Assert.Contains("NumberOfTouchesRequired = 1,", macSource);
