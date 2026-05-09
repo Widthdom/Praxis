@@ -1264,6 +1264,9 @@ public class AppLayerSourceGuardTests
         Assert.Contains("var activationSuppressed = App.IsActivationSuppressionActive();", macSource);
         Assert.Contains("var pointerKnown = macLastActivePage is not null &&", macSource);
         Assert.Contains("(page.lastPointerOnRoot is not null || page.macPlacementHoverRootPoint is not null);", macSource);
+        Assert.Contains("if (CGEventSource.GetButtonState(CGEventSourceStateID.HidSystem, button))", macSource);
+        Assert.Contains("if (CGEventSource.GetButtonState(CGEventSourceStateID.CombinedSession, button))", macSource);
+        Assert.Contains("return true;", macSource);
         Assert.Contains("CrashFileLogger.WriteWarning(nameof(IsMacMouseButtonCurrentlyDown), $\"Failed to query mouse button state from CoreGraphics for button={button} while isActive={isActive} activationSuppressed={activationSuppressed} pointerKnown={pointerKnown}: {safeMessage}\");", macSource);
     }
 
@@ -1275,6 +1278,7 @@ public class AppLayerSourceGuardTests
         var mainPageSource = ReadRepositoryFile("Praxis", "MainPage.xaml.cs");
         var pointerSource = ReadRepositoryFile("Praxis", "MainPage.PointerAndSelection.cs");
         var editorSource = ReadRepositoryFile("Praxis", "MainPage.EditorAndInput.cs");
+        var interactionSource = ReadRepositoryFile("Praxis", "MainPage.InteractionState.cs");
 
         Assert.Contains("private UIView? macPlacementGestureNativeView;", fieldsSource);
         Assert.Contains("private UIHoverGestureRecognizer? macPlacementHoverRecognizer;", fieldsSource);
@@ -1282,16 +1286,24 @@ public class AppLayerSourceGuardTests
         Assert.Contains("private UILongPressGestureRecognizer? macPlacementSecondaryCreateRecognizer;", fieldsSource);
         Assert.Contains("private bool macPlacementNativeSelectionActive;", fieldsSource);
         Assert.Contains("private bool macPlacementNativeSelectionIgnored;", fieldsSource);
+        Assert.Contains("private Point? macPlacementNativeSelectionStartRootPoint;", fieldsSource);
         Assert.Contains("private bool macPlacementPollingSelectionActive;", fieldsSource);
         Assert.Contains("private long macPlacementDeferredPrimaryDownId;", fieldsSource);
+        Assert.Contains("private DateTimeOffset? macPlacementPrimaryReleaseStartedAtUtc;", fieldsSource);
+        Assert.Contains("private MacAppKitRootPointKind? macPlacementPollingAppKitRootPointKind;", fieldsSource);
+        Assert.Contains("private Point? macPlacementPollingStartRootPoint;", fieldsSource);
         Assert.Contains("private Point? macPlacementPollingRawStartScreen;", fieldsSource);
+        Assert.Contains("private MacPointerScreenPointKind? macPlacementPollingScreenPointKind;", fieldsSource);
         Assert.Contains("private Point? macPlacementPollingAnchorViewport;", fieldsSource);
+        Assert.Contains("private UIView? macPlacementSelectionOverlayView;", fieldsSource);
+        Assert.Contains("private int macPlacementSelectionOverlayFadeRevision;", fieldsSource);
         Assert.Contains("private Guid? macPlacementPollingCommandSelectionItemId;", fieldsSource);
         Assert.Contains("private Point? macPlacementHoverRootPoint;", fieldsSource);
         Assert.Contains("private DateTimeOffset macPlacementHoverRootPointUpdatedAtUtc;", fieldsSource);
         Assert.Contains("private readonly UIGestureRecognizerDelegate macPlacementGestureDelegate = new MacPlacementGestureDelegate();", fieldsSource);
         Assert.Contains("private static readonly bool MacPlacementPrimarySelectionUsesPolling = false;", macSource);
         Assert.Contains("private static readonly TimeSpan MacPlacementRecentHoverWindow = TimeSpan.FromMilliseconds(250);", macSource);
+        Assert.Contains("private static readonly TimeSpan MacPlacementPrimaryReleaseGraceWindow = TimeSpan.FromMilliseconds(80);", macSource);
         Assert.Contains("ScheduleMacPlacementCanvasNativeGesturesRefresh();", macSource);
         Assert.Contains("RootGrid.HandlerChanged += (_, _) => ScheduleMacPlacementCanvasNativeGesturesRefresh();", mainPageSource);
         Assert.Contains("PlacementSurface.HandlerChanged += (_, _) => EnsureMacPlacementCanvasNativeGestures();", mainPageSource);
@@ -1311,7 +1323,10 @@ public class AppLayerSourceGuardTests
         Assert.Contains("macPlacementHoverRootPointUpdatedAtUtc = DateTimeOffset.UtcNow;", macSource);
         Assert.Contains("lastPointerOnRoot = macPlacementHoverRootPoint;", macSource);
         Assert.Contains("SyncDockScrollBarVisibility(macPlacementHoverRootPoint.Value);", macSource);
-        Assert.Contains("var primaryDown = IsMacMouseButtonCurrentlyDown(CGMouseButton.Left);", macSource);
+        Assert.Contains("var rawPrimaryDown = IsMacMouseButtonCurrentlyDown(CGMouseButton.Left);", macSource);
+        Assert.Contains("var primaryDown = rawPrimaryDown;", macSource);
+        Assert.Contains("macPlacementPrimaryReleaseStartedAtUtc ??= now;", macSource);
+        Assert.Contains("now - macPlacementPrimaryReleaseStartedAtUtc.Value < MacPlacementPrimaryReleaseGraceWindow", macSource);
         Assert.Contains("var secondaryDown = IsMacMouseButtonCurrentlyDown(CGMouseButton.Right);", macSource);
         Assert.Contains("var middleDown = IsMacMouseButtonCurrentlyDown(CGMouseButton.Center);", macSource);
         Assert.Contains("ScheduleMacPlacementPollingSelectionStart();", macSource);
@@ -1341,39 +1356,80 @@ public class AppLayerSourceGuardTests
         Assert.Contains("using var currentEvent = new CGEvent((CGEventSource?)null);", macSource);
         Assert.Contains("var windowPoint = nativeWindow.ConvertPointFromWindow(screenPoint, null);", macSource);
         Assert.Contains("var localPoint = rootView.ConvertPointFromView(windowPoint, nativeWindow);", macSource);
-        Assert.Contains("var distance = Math.Pow(candidate.X - cachedRootPoint.X, 2) + Math.Pow(candidate.Y - cachedRootPoint.Y, 2);", macSource);
+        Assert.Contains("var distance = Math.Pow(candidate.Point.X - cachedRootPoint.X, 2) + Math.Pow(candidate.Point.Y - cachedRootPoint.Y, 2);", macSource);
         Assert.Contains("ObjcGetClass(\"NSEvent\")", macSource);
         Assert.Contains("SelRegisterName(\"mouseLocation\")", macSource);
         Assert.Contains("SelRegisterName(\"convertPointFromScreen:\")", macSource);
+        Assert.Contains("SelRegisterName(\"frame\")", macSource);
         Assert.Contains("MacPlacementWindowMatchesUiWindow(nsWindow, nativeWindow)", macSource);
-        Assert.Contains("EnumerateMacAppKitRootPointCandidates(windowPoint, contentFrame, rootFrame, nativeWindowHeight)", macSource);
+        Assert.Contains("TryIsMacCurrentPointerInsidePlacementWindow(out var pointerInsidePlacementWindow)", macSource);
+        Assert.Contains("!pointerInsidePlacementWindow", macSource);
+        Assert.Contains("MacAppKitWindowContainsScreenPoint(nsWindow, screenPoint)", macSource);
+        Assert.Contains("private static bool MacAppKitWindowContainsScreenPoint(NSObject nsWindow, CGPoint screenPoint)", macSource);
+        Assert.Contains("EnumerateMacAppKitRootPointCandidatesWithKinds(windowPoint, contentFrame, rootFrame, nativeWindowHeight)", macSource);
         Assert.Contains("private bool IsMacRootPointInsideRoot(Point rootPoint)", macSource);
         Assert.Contains("TryGetMacPlacementRootCanvasPoint(rootPoint, allowOutside: false", macSource);
-        Assert.Contains("TryGetMacPlacementRootCanvasPoint(rootPoint, allowOutside: true", macSource);
+        Assert.Contains("TryGetMacPlacementRootCanvasPoint(rootPoint, allowOutside, out canvasPoint, out viewportPoint)", macSource);
         Assert.Contains("allowCachedFallback: false", macSource);
         Assert.Contains("useCachedDistance: false", macSource);
         Assert.Contains("TryGetMacPlacementPollingRootPoint(out var rootPoint)", macSource);
         Assert.Contains("TryGetRecentMacPlacementHoverRootPoint(out rootPoint)", macSource);
         Assert.Contains("DateTimeOffset.UtcNow - macPlacementHoverRootPointUpdatedAtUtc <= MacPlacementRecentHoverWindow", macSource);
         Assert.Contains("ClearMacPlacementHoverRootPoint();", macSource);
-        Assert.Contains("TryGetMacPlacementPollingRunningPoint(out var canvasPoint, out var viewportPoint)", macSource);
-        Assert.Contains("TryGetMacPlacementPollingCurrentRootPoint(out var rootPoint)", macSource);
+        Assert.Contains("TryGetMacPlacementPollingRunningPoint(out var canvasPoint, out var viewportPoint, out var rootPoint)", macSource);
+        Assert.Contains("TryGetMacPlacementPollingCurrentRootPoint(out var currentRootPoint)", macSource);
         Assert.Contains("TryGetMacCurrentRootPointerFromAppKit(out rootPoint, useCachedDistance: true)", macSource);
         Assert.Contains("TryGetMacCurrentRootPointerFromCoreGraphics(out rootPoint, useCachedDistance: true)", macSource);
-        Assert.Contains("TryGetMacPlacementPrimaryRecognizerRootPoint(out var recognizerRootPoint)", macSource);
+        Assert.Contains("TryGetMacPlacementPrimaryRecognizerRootPoint(out var rootPoint)", macSource);
         Assert.Contains("new UILongPressGestureRecognizer(HandleMacPlacementPrimarySelectionRecognizer)", macSource);
         Assert.Contains("NumberOfTouchesRequired = 1,", macSource);
         Assert.Contains("MinimumPressDuration = 0,", macSource);
         Assert.Contains("AllowableMovement = nfloat.MaxValue,", macSource);
+        Assert.Contains("private enum MacAppKitRootPointKind", macSource);
+        Assert.Contains("private enum MacPointerScreenPointKind", macSource);
+        Assert.Contains("TryGetMacCurrentRootPointerFromAppKit(rootPoint, out _, out var appKitRootPointKind)", macSource);
+        Assert.Contains("macPlacementPollingAppKitRootPointKind = hasAppKitStartRoot ? appKitRootPointKind : null;", macSource);
+        Assert.Contains("macPlacementPollingStartRootPoint = rootPoint;", macSource);
+        Assert.Contains("SelectionRect.IsVisible = false;", macSource);
+        Assert.Contains("UpdateMacPlacementNativeSelectionOverlay(rootPoint, rootPoint);", macSource);
+        Assert.Contains("TryGetMacPlacementPrimaryRecognizerRunningRootPoint(out var rootPoint)", macSource);
+        Assert.Contains("macPlacementPollingAppKitRootPointKind is MacAppKitRootPointKind appKitRootPointKind", macSource);
+        Assert.Contains("TryGetMacCurrentRootPointerFromAppKit(appKitRootPointKind, allowOutsideRoot: true, out var lockedAppKitRootPoint)", macSource);
+        Assert.Contains("TryGetMacPlacementRootCanvasPoint(lockedAppKitRootPoint, allowOutside: true", macSource);
+        Assert.Contains("TryGetMacCurrentAppKitWindowPoint(nativeWindow, rootView", macSource);
+        Assert.Contains("TryGetMacCurrentScreenPointer(rootPoint, out var rawStartScreen, out var rawStartScreenPointKind)", macSource);
         Assert.Contains("macPlacementPollingRawStartScreen = hasRawStartScreen ? rawStartScreen : null;", macSource);
+        Assert.Contains("macPlacementPollingScreenPointKind = hasRawStartScreen ? rawStartScreenPointKind : null;", macSource);
+        Assert.Contains("macPlacementPollingScreenPointKind is MacPointerScreenPointKind screenPointKind", macSource);
+        Assert.Contains("TryGetMacCurrentRootPointer(screenPointKind, allowOutsideRoot: true, out var lockedRootPoint)", macSource);
+        Assert.Contains("TryGetMacPlacementRootCanvasPoint(lockedRootPoint, allowOutside: true", macSource);
+        Assert.Contains("UpdateMacPlacementNativeSelectionOverlay(macPlacementPollingStartRootPoint ?? rootPoint, rootPoint);", macSource);
+        Assert.Contains("private void UpdateMacPlacementNativeSelectionOverlay(Point startRootPoint, Point currentRootPoint, bool hide = false)", macSource);
+        Assert.Contains("private UIView? EnsureMacPlacementNativeSelectionOverlay(UIView rootView)", macSource);
+        Assert.Contains("private void HideMacPlacementNativeSelectionOverlay(bool fade = false)", macSource);
+        Assert.Contains("UIView.AnimateNotify(", macSource);
+        Assert.Contains("UiTimingPolicy.SelectionRectFadeOutDurationMs / 1000d", macSource);
+        Assert.Contains("HideMacPlacementNativeSelectionOverlay(fade: true);", macSource);
+        Assert.Contains("rootView.AddSubview(overlay);", macSource);
+        Assert.Contains("rootView.BringSubviewToFront(overlay);", macSource);
+        Assert.Contains("macPlacementSelectionOverlayView.RemoveFromSuperview();", macSource);
+        Assert.Contains("macPlacementSelectionOverlayView = overlay;", macSource);
         Assert.Contains("anchorViewport.X + rawScreenPoint.X - rawStartScreen.X", macSource);
+        Assert.Contains("EnumerateMacPointerScreenPointCandidatesWithKinds(currentEvent)", macSource);
+        Assert.Contains("TryGetMacPointerScreenPointCandidate(currentEvent, screenPointKind, out var point)", macSource);
         Assert.Contains("private static bool TryGetMacCurrentScreenPointer(out Point screenPoint)", macSource);
+        Assert.Contains("macPlacementPollingAppKitRootPointKind = null;", macSource);
+        Assert.Contains("macPlacementPollingStartRootPoint = null;", macSource);
+        Assert.Contains("macPlacementPollingScreenPointKind = null;", macSource);
         Assert.Contains("ResetMacPlacementPollingSelectionTracking();", macSource);
         Assert.Contains("macPlacementPollingSelectionActive = true;", macSource);
         Assert.Contains("macPlacementPollingSelectionActive = false;", macSource);
-        Assert.Contains("macPlacementNativeSelectionIgnored = false;\n            return;", macSource);
+        Assert.Contains("macPlacementNativeSelectionIgnored = false;\n            macPlacementNativeSelectionStartRootPoint = null;", macSource);
         Assert.Contains("macPlacementNativeSelectionActive = true;", macSource);
         Assert.Contains("macPlacementNativeSelectionActive = false;", macSource);
+        Assert.Contains("macPlacementNativeSelectionStartRootPoint = rootPoint;", macSource);
+        Assert.Contains("UpdateMacPlacementNativeSelectionOverlay(macPlacementNativeSelectionStartRootPoint ?? rootPoint, rootPoint);", macSource);
+        Assert.Contains("macPlacementNativeSelectionStartRootPoint = null;", macSource);
         Assert.Contains("RootGrid.Handler?.PlatformView is not UIView rootView", macSource);
         Assert.Contains("var nativeLocation = recognizer.LocationInView(macPlacementGestureNativeView);", macSource);
         Assert.Contains("rootView.ConvertPointFromView(nativeLocation, macPlacementGestureNativeView)", macSource);
@@ -1399,6 +1455,43 @@ public class AppLayerSourceGuardTests
         Assert.Contains("private async Task OpenCreateEditorFromCanvasPointWithWarningAsync(Point canvasPoint, string source)", pointerSource);
         Assert.Contains("macPlacementPollingCommandSelectionItemId == item.Id", pointerSource);
         Assert.Contains("macPlacementPollingCommandSelectionItemId = null;", editorSource);
+        Assert.Contains("private int selectionRectFadeRevision;", interactionSource);
+        Assert.Contains("FadeOutSelectionRect();", pointerSource);
+        Assert.Contains("SelectionRect.FadeToAsync(0, UiTimingPolicy.SelectionRectFadeOutDurationMs, Easing.CubicOut)", pointerSource);
+        Assert.Contains("SelectionRect.CancelAnimations();", pointerSource);
+
+        var pollingRootIndex = macSource.IndexOf("private bool TryGetMacPlacementPollingRootPoint(out Point rootPoint)", StringComparison.Ordinal);
+        var recentHoverIndex = macSource.IndexOf("private bool TryGetRecentMacPlacementHoverRootPoint(out Point rootPoint)", StringComparison.Ordinal);
+        Assert.True(pollingRootIndex >= 0 && recentHoverIndex > pollingRootIndex, "Polling root helper should be present.");
+        var pollingRootBody = macSource[pollingRootIndex..recentHoverIndex];
+        Assert.DoesNotContain("TryGetMacPlacementPrimaryRecognizerRootPoint", pollingRootBody);
+
+        var pollingRunningIndex = macSource.IndexOf("private bool TryGetMacPlacementPollingRunningPoint(out Point canvasPoint, out Point viewportPoint, out Point rootPoint)", StringComparison.Ordinal);
+        var overlayUpdateIndex = macSource.IndexOf("private void UpdateMacPlacementNativeSelectionOverlay(Point startRootPoint, Point currentRootPoint, bool hide = false)", StringComparison.Ordinal);
+        Assert.True(pollingRunningIndex >= 0 && overlayUpdateIndex > pollingRunningIndex, "Polling running helper should be present.");
+        var pollingRunningBody = macSource[pollingRunningIndex..overlayUpdateIndex];
+        Assert.DoesNotContain("TryGetMacPlacementPrimaryRecognizerRunningRootPoint", pollingRunningBody);
+        var pollingRunningRawDeltaIndex = pollingRunningBody.IndexOf("anchorViewport.X + rawScreenPoint.X - rawStartScreen.X", StringComparison.Ordinal);
+        var pollingRunningAppKitIndex = pollingRunningBody.IndexOf("TryGetMacCurrentRootPointerFromAppKit(appKitRootPointKind, allowOutsideRoot: true, out var lockedAppKitRootPoint)", StringComparison.Ordinal);
+        var pollingRunningCoreGraphicsIndex = pollingRunningBody.IndexOf("TryGetMacCurrentRootPointer(screenPointKind, allowOutsideRoot: true, out var lockedRootPoint)", StringComparison.Ordinal);
+        Assert.True(pollingRunningRawDeltaIndex >= 0 && pollingRunningAppKitIndex > pollingRunningRawDeltaIndex, "Polling rectangle updates should prefer locked raw-screen deltas over absolute AppKit root-coordinate fallback.");
+        Assert.True(pollingRunningAppKitIndex >= 0 && pollingRunningCoreGraphicsIndex > pollingRunningAppKitIndex, "Polling rectangle updates should keep the accepted AppKit root-coordinate candidate ahead of CoreGraphics fallback.");
+
+        var pollingCurrentRootIndex = macSource.IndexOf("private bool TryGetMacPlacementPollingCurrentRootPoint(out Point rootPoint)", StringComparison.Ordinal);
+        var continuePollingIndex = macSource.IndexOf("private void ContinueMacPlacementPollingSelection()", StringComparison.Ordinal);
+        Assert.True(pollingCurrentRootIndex >= 0 && continuePollingIndex > pollingCurrentRootIndex, "Polling current-root helper should be present.");
+        var pollingCurrentRootBody = macSource[pollingCurrentRootIndex..continuePollingIndex];
+        var currentRootAppKitIndex = pollingCurrentRootBody.IndexOf("TryGetMacCurrentRootPointerFromAppKit(out rootPoint, useCachedDistance: true)", StringComparison.Ordinal);
+        var currentRootCoreGraphicsIndex = pollingCurrentRootBody.IndexOf("TryGetMacCurrentRootPointerFromCoreGraphics(out rootPoint, useCachedDistance: true)", StringComparison.Ordinal);
+        Assert.True(currentRootAppKitIndex >= 0 && currentRootCoreGraphicsIndex > currentRootAppKitIndex, "Polling current-root fallback should prefer AppKit root coordinates before CoreGraphics candidates.");
+
+        var currentPlacementRootIndex = macSource.IndexOf("private bool TryGetMacCurrentPlacementRootPointer(", StringComparison.Ordinal);
+        var rootInsideIndex = macSource.IndexOf("private bool IsMacRootPointInsideRoot(Point rootPoint)", StringComparison.Ordinal);
+        Assert.True(currentPlacementRootIndex >= 0 && rootInsideIndex > currentPlacementRootIndex, "Placement root pointer helper should be present.");
+        var currentPlacementRootBody = macSource[currentPlacementRootIndex..rootInsideIndex];
+        var placementRootAppKitIndex = currentPlacementRootBody.IndexOf("TryGetMacCurrentRootPointerFromAppKit(out rootPoint, useCachedDistance)", StringComparison.Ordinal);
+        var placementRootCoreGraphicsIndex = currentPlacementRootBody.IndexOf("TryGetMacCurrentRootPointerFromCoreGraphics(out rootPoint, useCachedDistance)", StringComparison.Ordinal);
+        Assert.True(placementRootAppKitIndex >= 0 && placementRootCoreGraphicsIndex > placementRootAppKitIndex, "Placement root pointer lookup should prefer AppKit root coordinates before CoreGraphics candidates.");
     }
 
     [Fact]
@@ -1463,7 +1556,7 @@ public class AppLayerSourceGuardTests
     public void MainPage_SecondaryTapCreateFailures_AreWarningLogged()
     {
         var source = ReadRepositoryFile("Praxis", "MainPage.PointerAndSelection.cs");
-        Assert.Equal(2, CountOccurrences(source, "var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);"));
+        Assert.Equal(3, CountOccurrences(source, "var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);"));
         Assert.Contains("await OpenCreateEditorFromCanvasPointWithWarningAsync(canvasPoint, nameof(PlacementCanvas_SecondaryTapped));", source);
         Assert.Contains("_ = OpenCreateEditorFromCanvasPointWithWarningAsync(point.Value, nameof(Selection_PointerPressed));", source);
         Assert.Contains("CrashFileLogger.WriteWarning(source, $\"Placement-canvas create flow failed at ({canvasPoint.X:0.##}, {canvasPoint.Y:0.##}): {safeMessage}\");", source);

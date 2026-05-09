@@ -22,8 +22,26 @@ public partial class MainPage
     private const nint MacModalTextEditorGlassBackdropTag = 0x50544542;
     private static readonly bool MacPlacementPrimarySelectionUsesPolling = false;
     private static readonly TimeSpan MacPlacementRecentHoverWindow = TimeSpan.FromMilliseconds(250);
+    private static readonly TimeSpan MacPlacementPrimaryReleaseGraceWindow = TimeSpan.FromMilliseconds(80);
     private static readonly UIColor LightMacTextSelectionColor = UIColor.FromRGB(0x4B, 0x00, 0xD9);
     private static readonly UIColor DarkMacTextSelectionColor = UIColor.FromRGB(0x35, 0x00, 0xA8);
+
+    private enum MacPointerScreenPointKind
+    {
+        Location,
+        UnflippedLocation,
+        ScaledLocation,
+        ScaledUnflippedLocation,
+    }
+
+    private enum MacAppKitRootPointKind
+    {
+        ContentViewFlipped,
+        RootFrameFlipped,
+        NativeWindowFlipped,
+        ContentHeightFlipped,
+        Window,
+    }
 
     private void MoveModalFocus(bool forward)
     {
@@ -694,6 +712,12 @@ public partial class MainPage
 
     private void DetachMacPlacementCanvasNativeGestures()
     {
+        if (macPlacementSelectionOverlayView is not null)
+        {
+            macPlacementSelectionOverlayView.RemoveFromSuperview();
+            macPlacementSelectionOverlayView = null;
+        }
+
         if (macPlacementGestureNativeView is not null)
         {
             if (macPlacementHoverRecognizer is not null)
@@ -847,7 +871,8 @@ public partial class MainPage
             return;
         }
 
-        if (!TryGetMacPlacementCanvasPoint(macPlacementPrimarySelectionRecognizer, allowOutside: false, out var canvasPoint, out var viewportPoint) ||
+        if (!TryGetMacPlacementPrimaryRecognizerRootPoint(out var rootPoint) ||
+            !TryGetMacPlacementRootCanvasPoint(rootPoint, allowOutside: false, out var canvasPoint, out var viewportPoint) ||
             IsOnAnyVisibleButton(canvasPoint))
         {
             return;
@@ -862,7 +887,9 @@ public partial class MainPage
         selectionStartViewport = viewportPoint;
         selectionLastCanvas = selectionStartCanvas;
         selectionLastViewport = selectionStartViewport;
-        UpdateSelectionRect(selectionStartViewport, selectionStartViewport);
+        macPlacementNativeSelectionStartRootPoint = rootPoint;
+        SelectionRect.IsVisible = false;
+        UpdateMacPlacementNativeSelectionOverlay(rootPoint, rootPoint);
         ExecuteSelectionPayload(new SelectionPayload(selectionStartCanvas.X, selectionStartCanvas.Y, selectionStartCanvas.X, selectionStartCanvas.Y, GestureStatus.Started));
         LogMacPlacementInputDiagnostic(
             "native-selection-started",
@@ -882,14 +909,15 @@ public partial class MainPage
             return;
         }
 
-        if (!TryGetMacPlacementCanvasPoint(macPlacementPrimarySelectionRecognizer, allowOutside: true, out var canvasPoint, out var viewportPoint))
+        if (!TryGetMacPlacementPrimaryRecognizerRunningRootPoint(out var rootPoint) ||
+            !TryGetMacPlacementRootCanvasPoint(rootPoint, allowOutside: true, out var canvasPoint, out var viewportPoint))
         {
             return;
         }
 
         selectionLastCanvas = canvasPoint;
         selectionLastViewport = viewportPoint;
-        UpdateSelectionRect(selectionStartViewport, selectionLastViewport);
+        UpdateMacPlacementNativeSelectionOverlay(macPlacementNativeSelectionStartRootPoint ?? rootPoint, rootPoint);
         ExecuteSelectionPayload(new SelectionPayload(selectionStartCanvas.X, selectionStartCanvas.Y, canvasPoint.X, canvasPoint.Y, GestureStatus.Running));
     }
 
@@ -898,6 +926,8 @@ public partial class MainPage
         if (macPlacementNativeSelectionIgnored)
         {
             macPlacementNativeSelectionIgnored = false;
+            macPlacementNativeSelectionStartRootPoint = null;
+            HideMacPlacementNativeSelectionOverlay();
             return;
         }
 
@@ -917,8 +947,10 @@ public partial class MainPage
         selectionPanPrimed = false;
         macPlacementNativeSelectionActive = false;
         UpdateSelectionRect(selectionStartViewport, selectionLastViewport, hide: true);
+        HideMacPlacementNativeSelectionOverlay(fade: true);
         ExecuteSelectionPayload(new SelectionPayload(selectionStartCanvas.X, selectionStartCanvas.Y, selectionLastCanvas.X, selectionLastCanvas.Y, GestureStatus.Completed));
         macPlacementNativeSelectionIgnored = false;
+        macPlacementNativeSelectionStartRootPoint = null;
     }
 
     private void CancelMacPlacementNativeSelection()
@@ -926,6 +958,7 @@ public partial class MainPage
         if (selectionDragging)
         {
             UpdateSelectionRect(selectionStartViewport, selectionLastViewport, hide: true);
+            HideMacPlacementNativeSelectionOverlay();
         }
 
         ResetMacPlacementNativeSelectionState();
@@ -937,6 +970,8 @@ public partial class MainPage
         selectionPanPrimed = false;
         macPlacementNativeSelectionActive = false;
         macPlacementNativeSelectionIgnored = false;
+        macPlacementNativeSelectionStartRootPoint = null;
+        HideMacPlacementNativeSelectionOverlay();
     }
 
     private void HandleMacPlacementSecondaryCreateRecognizer()
@@ -988,6 +1023,17 @@ public partial class MainPage
         if (macPlacementPrimarySelectionRecognizer is null ||
             (macPlacementPrimarySelectionRecognizer.State != UIGestureRecognizerState.Began &&
              macPlacementPrimarySelectionRecognizer.State != UIGestureRecognizerState.Changed))
+        {
+            rootPoint = default;
+            return false;
+        }
+
+        return TryGetMacPlacementRecognizerRootPoint(macPlacementPrimarySelectionRecognizer, out rootPoint);
+    }
+
+    private bool TryGetMacPlacementPrimaryRecognizerRunningRootPoint(out Point rootPoint)
+    {
+        if (macPlacementPrimarySelectionRecognizer?.State != UIGestureRecognizerState.Changed)
         {
             rootPoint = default;
             return false;
@@ -1856,7 +1902,8 @@ public partial class MainPage
 
     private void OnMacMiddleButtonPollTick(object? sender, EventArgs e)
     {
-        var primaryDown = IsMacMouseButtonCurrentlyDown(CGMouseButton.Left);
+        var rawPrimaryDown = IsMacMouseButtonCurrentlyDown(CGMouseButton.Left);
+        var primaryDown = rawPrimaryDown;
         var secondaryDown = IsMacMouseButtonCurrentlyDown(CGMouseButton.Right);
         var middleDown = IsMacMouseButtonCurrentlyDown(CGMouseButton.Center);
         if (ShouldLogMacPlacementInputDiagnostic(ref macPlacementPollTickDiagnosticCount, limit: 8, every: 600))
@@ -1864,21 +1911,40 @@ public partial class MainPage
             var pointerText = FormatMacPlacementPointerDiagnostic();
             LogMacPlacementInputDiagnostic(
                 "poll",
-                $"primary={primaryDown} secondary={secondaryDown} middle={middleDown} wasPrimary={macPrimaryButtonWasDown} wasSecondary={macSecondaryButtonWasDown} pointer={pointerText}");
+                $"primary={rawPrimaryDown} effectivePrimary={primaryDown} secondary={secondaryDown} middle={middleDown} wasPrimary={macPrimaryButtonWasDown} wasSecondary={macSecondaryButtonWasDown} pointer={pointerText}");
         }
 
-        if (primaryDown && !macPrimaryButtonWasDown)
+        if (rawPrimaryDown)
+        {
+            macPlacementPrimaryReleaseStartedAtUtc = null;
+        }
+
+        if (rawPrimaryDown && !macPrimaryButtonWasDown)
         {
             LogMacPlacementInputDiagnostic("poll-primary-down", "transition detected");
             ScheduleMacPlacementPollingSelectionStart();
         }
-        else if (primaryDown && macPlacementPollingSelectionActive)
+        else if (rawPrimaryDown && macPlacementPollingSelectionActive)
         {
             ContinueMacPlacementPollingSelection();
         }
-        else if (!primaryDown && macPrimaryButtonWasDown && macPlacementPollingSelectionActive)
+        else if (!rawPrimaryDown && macPlacementPollingSelectionActive)
         {
-            CompleteMacPlacementPollingSelection();
+            var now = DateTimeOffset.UtcNow;
+            macPlacementPrimaryReleaseStartedAtUtc ??= now;
+            if (now - macPlacementPrimaryReleaseStartedAtUtc.Value < MacPlacementPrimaryReleaseGraceWindow)
+            {
+                primaryDown = true;
+                ContinueMacPlacementPollingSelection();
+            }
+            else if (macPrimaryButtonWasDown)
+            {
+                CompleteMacPlacementPollingSelection();
+            }
+        }
+        else if (!rawPrimaryDown)
+        {
+            macPlacementPrimaryReleaseStartedAtUtc = null;
         }
 
         if (secondaryDown && !macSecondaryButtonWasDown)
@@ -1951,19 +2017,25 @@ public partial class MainPage
             return;
         }
 
-        var hasRawStartScreen = TryGetMacCurrentScreenPointer(out var rawStartScreen);
+        var hasRawStartScreen = TryGetMacCurrentScreenPointer(rootPoint, out var rawStartScreen, out var rawStartScreenPointKind);
+        var hasAppKitStartRoot = TryGetMacCurrentRootPointerFromAppKit(rootPoint, out _, out var appKitRootPointKind);
 
         CloseCommandSuggestionPopup();
         macPlacementPollingSelectionActive = true;
         selectionDragging = true;
         selectionPanPrimed = true;
+        macPlacementPrimaryReleaseStartedAtUtc = null;
+        macPlacementPollingAppKitRootPointKind = hasAppKitStartRoot ? appKitRootPointKind : null;
+        macPlacementPollingStartRootPoint = rootPoint;
         macPlacementPollingRawStartScreen = hasRawStartScreen ? rawStartScreen : null;
+        macPlacementPollingScreenPointKind = hasRawStartScreen ? rawStartScreenPointKind : null;
         macPlacementPollingAnchorViewport = viewportPoint;
         selectionStartCanvas = canvasPoint;
         selectionStartViewport = viewportPoint;
         selectionLastCanvas = selectionStartCanvas;
         selectionLastViewport = selectionStartViewport;
-        UpdateSelectionRect(selectionStartViewport, selectionStartViewport);
+        SelectionRect.IsVisible = false;
+        UpdateMacPlacementNativeSelectionOverlay(rootPoint, rootPoint);
         ExecuteSelectionPayload(new SelectionPayload(selectionStartCanvas.X, selectionStartCanvas.Y, selectionStartCanvas.X, selectionStartCanvas.Y, GestureStatus.Started));
         LogMacPlacementInputDiagnostic(
             "poll-selection-started",
@@ -1996,16 +2068,11 @@ public partial class MainPage
 
     private bool TryGetMacPlacementPollingRootPoint(out Point rootPoint)
     {
-        if (TryGetMacPlacementPrimaryRecognizerRootPoint(out rootPoint))
+        if (TryIsMacCurrentPointerInsidePlacementWindow(out var pointerInsidePlacementWindow) &&
+            !pointerInsidePlacementWindow)
         {
-            lastPointerOnRoot = rootPoint;
-            return true;
-        }
-
-        if (TryGetRecentMacPlacementHoverRootPoint(out rootPoint))
-        {
-            lastPointerOnRoot = rootPoint;
-            return true;
+            rootPoint = default;
+            return false;
         }
 
         if (TryGetMacCurrentPlacementRootPointer(
@@ -2014,6 +2081,12 @@ public partial class MainPage
             allowCachedFallback: false,
             useCachedDistance: false))
         {
+            return true;
+        }
+
+        if (TryGetRecentMacPlacementHoverRootPoint(out rootPoint))
+        {
+            lastPointerOnRoot = rootPoint;
             return true;
         }
 
@@ -2038,11 +2111,14 @@ public partial class MainPage
         macPlacementHoverRootPointUpdatedAtUtc = default;
     }
 
-    private bool TryGetMacPlacementPollingRunningPoint(out Point canvasPoint, out Point viewportPoint)
+    private bool TryGetMacPlacementPollingRunningPoint(out Point canvasPoint, out Point viewportPoint, out Point rootPoint)
     {
+        rootPoint = default;
+
         if (macPlacementPollingRawStartScreen is Point rawStartScreen &&
+            macPlacementPollingScreenPointKind is MacPointerScreenPointKind fallbackScreenPointKind &&
             macPlacementPollingAnchorViewport is Point anchorViewport &&
-            TryGetMacCurrentScreenPointer(out var rawScreenPoint))
+            TryGetMacCurrentScreenPointer(fallbackScreenPointKind, out var rawScreenPoint))
         {
             viewportPoint = ClampToPlacementViewport(new Point(
                 anchorViewport.X + rawScreenPoint.X - rawStartScreen.X,
@@ -2050,30 +2126,180 @@ public partial class MainPage
             canvasPoint = new Point(
                 viewportPoint.X + PlacementScroll.ScrollX,
                 viewportPoint.Y + PlacementScroll.ScrollY);
+            var scrollOffset = GetPositionRelativeToAncestor(PlacementScroll, RootGrid);
+            rootPoint = new Point(viewportPoint.X + scrollOffset.X, viewportPoint.Y + scrollOffset.Y);
             return true;
         }
 
-        if (TryGetMacPlacementPollingCurrentRootPoint(out var rootPoint) &&
-            TryGetMacPlacementRootCanvasPoint(rootPoint, allowOutside: true, out canvasPoint, out viewportPoint))
+        if (macPlacementPollingAppKitRootPointKind is MacAppKitRootPointKind appKitRootPointKind &&
+            TryGetMacCurrentRootPointerFromAppKit(appKitRootPointKind, allowOutsideRoot: true, out var lockedAppKitRootPoint) &&
+            TryGetMacPlacementRootCanvasPoint(lockedAppKitRootPoint, allowOutside: true, out canvasPoint, out viewportPoint))
         {
+            rootPoint = lockedAppKitRootPoint;
             return true;
         }
 
-        if (TryGetMacPlacementPrimaryRecognizerRootPoint(out var recognizerRootPoint) &&
-            TryGetMacPlacementRootCanvasPoint(recognizerRootPoint, allowOutside: true, out canvasPoint, out viewportPoint))
+        if (macPlacementPollingScreenPointKind is MacPointerScreenPointKind screenPointKind &&
+            TryGetMacCurrentRootPointer(screenPointKind, allowOutsideRoot: true, out var lockedRootPoint) &&
+            TryGetMacPlacementRootCanvasPoint(lockedRootPoint, allowOutside: true, out canvasPoint, out viewportPoint))
         {
+            rootPoint = lockedRootPoint;
+            return true;
+        }
+
+        if (TryGetMacPlacementPollingCurrentRootPoint(out var currentRootPoint) &&
+            TryGetMacPlacementRootCanvasPoint(currentRootPoint, allowOutside: true, out canvasPoint, out viewportPoint))
+        {
+            rootPoint = currentRootPoint;
             return true;
         }
 
         if (TryGetRecentMacPlacementHoverRootPoint(out var recentHoverRootPoint) &&
             TryGetMacPlacementRootCanvasPoint(recentHoverRootPoint, allowOutside: true, out canvasPoint, out viewportPoint))
         {
+            rootPoint = recentHoverRootPoint;
             return true;
         }
 
         canvasPoint = default;
         viewportPoint = default;
+        rootPoint = default;
         return false;
+    }
+
+    private void UpdateMacPlacementNativeSelectionOverlay(Point startRootPoint, Point currentRootPoint, bool hide = false)
+    {
+        if (hide)
+        {
+            HideMacPlacementNativeSelectionOverlay();
+            return;
+        }
+
+        if (RootGrid.Handler?.PlatformView is not UIView rootView)
+        {
+            return;
+        }
+
+        var overlay = EnsureMacPlacementNativeSelectionOverlay(rootView);
+        if (overlay is null)
+        {
+            return;
+        }
+
+        macPlacementSelectionOverlayFadeRevision++;
+        overlay.Layer.RemoveAllAnimations();
+        overlay.Alpha = 1;
+        var x = Math.Min(startRootPoint.X, currentRootPoint.X);
+        var y = Math.Min(startRootPoint.Y, currentRootPoint.Y);
+        var w = Math.Abs(currentRootPoint.X - startRootPoint.X);
+        var h = Math.Abs(currentRootPoint.Y - startRootPoint.Y);
+        overlay.Hidden = w <= 2 || h <= 2;
+        overlay.Frame = new CGRect(x, y, w, h);
+        rootView.BringSubviewToFront(overlay);
+    }
+
+    private UIView? EnsureMacPlacementNativeSelectionOverlay(UIView rootView)
+    {
+        if (macPlacementSelectionOverlayView is UIView existingOverlay)
+        {
+            if (ReferenceEquals(existingOverlay.Superview, rootView))
+            {
+                return existingOverlay;
+            }
+
+            existingOverlay.RemoveFromSuperview();
+            macPlacementSelectionOverlayView = null;
+        }
+
+        var overlay = new UIView(CGRect.Empty)
+        {
+            UserInteractionEnabled = false,
+            Opaque = false,
+            BackgroundColor = UIColor.FromWhiteAlpha(0.4f, 0.18f),
+            Hidden = true,
+        };
+        overlay.Layer.BorderWidth = 1;
+        overlay.Layer.BorderColor = UIColor.FromWhiteAlpha(0.45f, 0.85f).CGColor;
+        rootView.AddSubview(overlay);
+        macPlacementSelectionOverlayView = overlay;
+        return overlay;
+    }
+
+    private void HideMacPlacementNativeSelectionOverlay(bool fade = false)
+    {
+        if (macPlacementSelectionOverlayView is UIView overlay)
+        {
+            var fadeRevision = ++macPlacementSelectionOverlayFadeRevision;
+            overlay.Layer.RemoveAllAnimations();
+            if (fade && !overlay.Hidden && overlay.Frame.Width > 0 && overlay.Frame.Height > 0)
+            {
+                UIView.AnimateNotify(
+                    UiTimingPolicy.SelectionRectFadeOutDurationMs / 1000d,
+                    0,
+                    UIViewAnimationOptions.BeginFromCurrentState | UIViewAnimationOptions.CurveEaseOut,
+                    () => overlay.Alpha = 0,
+                    _ =>
+                    {
+                        if (macPlacementSelectionOverlayFadeRevision == fadeRevision)
+                        {
+                            overlay.Hidden = true;
+                            overlay.Frame = CGRect.Empty;
+                            overlay.Alpha = 1;
+                        }
+                    });
+                return;
+            }
+
+            overlay.Hidden = true;
+            overlay.Frame = CGRect.Empty;
+            overlay.Alpha = 1;
+        }
+    }
+
+    private bool TryGetMacCurrentRootPointer(MacPointerScreenPointKind screenPointKind, out Point rootPoint)
+        => TryGetMacCurrentRootPointer(screenPointKind, allowOutsideRoot: false, out rootPoint);
+
+    private bool TryGetMacCurrentRootPointer(
+        MacPointerScreenPointKind screenPointKind,
+        bool allowOutsideRoot,
+        out Point rootPoint)
+    {
+        rootPoint = default;
+
+        if (RootGrid.Handler?.PlatformView is not UIView rootView ||
+            rootView.Window is not UIWindow nativeWindow)
+        {
+            return false;
+        }
+
+        try
+        {
+            using var currentEvent = new CGEvent((CGEventSource?)null);
+            if (!TryGetMacPointerScreenPointCandidate(currentEvent, screenPointKind, out var screenPoint))
+            {
+                return false;
+            }
+
+            var windowPoint = nativeWindow.ConvertPointFromWindow(screenPoint, null);
+            var localPoint = rootView.ConvertPointFromView(windowPoint, nativeWindow);
+            var candidate = new Point(localPoint.X, localPoint.Y);
+            if (!allowOutsideRoot && !IsMacRootPointInsideRoot(candidate))
+            {
+                return false;
+            }
+
+            rootPoint = candidate;
+            if (IsMacRootPointInsideRoot(rootPoint))
+            {
+                lastPointerOnRoot = rootPoint;
+            }
+
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
     }
 
     private bool TryGetMacPlacementPollingCurrentRootPoint(out Point rootPoint)
@@ -2094,6 +2320,8 @@ public partial class MainPage
         if (!selectionDragging)
         {
             macPlacementPollingSelectionActive = false;
+            macPlacementPrimaryReleaseStartedAtUtc = null;
+            HideMacPlacementNativeSelectionOverlay();
             return;
         }
 
@@ -2101,18 +2329,21 @@ public partial class MainPage
         {
             CancelMacPlacementNativeSelection();
             macPlacementPollingSelectionActive = false;
+            macPlacementPrimaryReleaseStartedAtUtc = null;
+            HideMacPlacementNativeSelectionOverlay();
             ResetMacPlacementPollingSelectionTracking();
             return;
         }
 
-        if (!TryGetMacPlacementPollingRunningPoint(out var canvasPoint, out var viewportPoint))
+        if (!TryGetMacPlacementPollingRunningPoint(out var canvasPoint, out var viewportPoint, out var rootPoint))
         {
             return;
         }
 
         selectionLastCanvas = canvasPoint;
         selectionLastViewport = viewportPoint;
-        UpdateSelectionRect(selectionStartViewport, selectionLastViewport);
+        UpdateMacPlacementNativeSelectionOverlay(macPlacementPollingStartRootPoint ?? rootPoint, rootPoint);
+
         ExecuteSelectionPayload(new SelectionPayload(selectionStartCanvas.X, selectionStartCanvas.Y, canvasPoint.X, canvasPoint.Y, GestureStatus.Running));
     }
 
@@ -2121,11 +2352,13 @@ public partial class MainPage
         if (!selectionDragging)
         {
             macPlacementPollingSelectionActive = false;
+            macPlacementPrimaryReleaseStartedAtUtc = null;
+            HideMacPlacementNativeSelectionOverlay();
             ResetMacPlacementPollingSelectionTracking();
             return;
         }
 
-        if (TryGetMacPlacementPollingRunningPoint(out var canvasPoint, out var viewportPoint))
+        if (TryGetMacPlacementPollingRunningPoint(out var canvasPoint, out var viewportPoint, out _))
         {
             selectionLastCanvas = canvasPoint;
             selectionLastViewport = viewportPoint;
@@ -2134,14 +2367,19 @@ public partial class MainPage
         selectionDragging = false;
         selectionPanPrimed = false;
         macPlacementPollingSelectionActive = false;
+        macPlacementPrimaryReleaseStartedAtUtc = null;
         ResetMacPlacementPollingSelectionTracking();
         UpdateSelectionRect(selectionStartViewport, selectionLastViewport, hide: true);
+        HideMacPlacementNativeSelectionOverlay(fade: true);
         ExecuteSelectionPayload(new SelectionPayload(selectionStartCanvas.X, selectionStartCanvas.Y, selectionLastCanvas.X, selectionLastCanvas.Y, GestureStatus.Completed));
     }
 
     private void ResetMacPlacementPollingSelectionTracking()
     {
+        macPlacementPollingAppKitRootPointKind = null;
+        macPlacementPollingStartRootPoint = null;
         macPlacementPollingRawStartScreen = null;
+        macPlacementPollingScreenPointKind = null;
         macPlacementPollingAnchorViewport = null;
     }
 
@@ -2203,6 +2441,13 @@ public partial class MainPage
         bool allowCachedFallback = true,
         bool useCachedDistance = true)
     {
+        if (TryIsMacCurrentPointerInsidePlacementWindow(out var pointerInsidePlacementWindow) &&
+            !pointerInsidePlacementWindow)
+        {
+            rootPoint = default;
+            return false;
+        }
+
         if (TryGetMacCurrentRootPointerFromAppKit(out rootPoint, useCachedDistance))
         {
             lastPointerOnRoot = rootPoint;
@@ -2319,6 +2564,12 @@ public partial class MainPage
     {
         rootPoint = default;
 
+        if (TryIsMacCurrentPointerInsidePlacementWindow(out var pointerInsidePlacementWindow) &&
+            !pointerInsidePlacementWindow)
+        {
+            return false;
+        }
+
         if (RootGrid.Handler?.PlatformView is not UIView rootView ||
             rootView.Window is not UIWindow nativeWindow)
         {
@@ -2401,6 +2652,11 @@ public partial class MainPage
             }
 
             var screenPoint = ObjcMsgSendCGPoint(nsEventClass, SelRegisterName("mouseLocation"));
+            if (!MacAppKitWindowContainsScreenPoint(nsWindow, screenPoint))
+            {
+                return false;
+            }
+
             var windowPoint = ObjcMsgSendCGPointCGPoint(nsWindow.Handle, SelRegisterName("convertPointFromScreen:"), screenPoint);
 
             var contentFrame = GetMacNativeFrame(nsWindow.Handle, "contentView", fallbackHeight: RootGrid.Height);
@@ -2412,24 +2668,24 @@ public partial class MainPage
             var cachedRootPoint = default(Point);
             var hasCachedRootPoint = useCachedDistance && TryGetMacCachedRootPointForDistance(out cachedRootPoint);
 
-            foreach (var candidate in EnumerateMacAppKitRootPointCandidates(windowPoint, contentFrame, rootFrame, nativeWindowHeight))
+            foreach (var candidate in EnumerateMacAppKitRootPointCandidatesWithKinds(windowPoint, contentFrame, rootFrame, nativeWindowHeight))
             {
-                if (!IsMacRootPointInsideRoot(candidate))
+                if (!IsMacRootPointInsideRoot(candidate.Point))
                 {
                     continue;
                 }
 
                 if (!hasCachedRootPoint)
                 {
-                    rootPoint = candidate;
+                    rootPoint = candidate.Point;
                     return true;
                 }
 
-                var distance = Math.Pow(candidate.X - cachedRootPoint.X, 2) + Math.Pow(candidate.Y - cachedRootPoint.Y, 2);
+                var distance = Math.Pow(candidate.Point.X - cachedRootPoint.X, 2) + Math.Pow(candidate.Point.Y - cachedRootPoint.Y, 2);
                 if (distance < bestDistance)
                 {
                     bestDistance = distance;
-                    bestRootPoint = candidate;
+                    bestRootPoint = candidate.Point;
                 }
             }
 
@@ -2447,22 +2703,204 @@ public partial class MainPage
         }
     }
 
-    private static IEnumerable<Point> EnumerateMacAppKitRootPointCandidates(CGPoint windowPoint, CGRect contentFrame, CGRect rootFrame, double nativeWindowHeight)
+    private bool TryGetMacCurrentRootPointerFromAppKit(
+        Point referenceRootPoint,
+        out Point rootPoint,
+        out MacAppKitRootPointKind rootPointKind)
+    {
+        rootPoint = default;
+        rootPointKind = default;
+
+        if (RootGrid.Handler?.PlatformView is not UIView rootView ||
+            rootView.Window is not UIWindow nativeWindow)
+        {
+            return false;
+        }
+
+        try
+        {
+            if (!TryGetMacCurrentAppKitWindowPoint(nativeWindow, rootView, out var windowPoint, out var contentFrame, out var rootFrame, out var nativeWindowHeight))
+            {
+                return false;
+            }
+
+            var hasBest = false;
+            var bestDistance = double.MaxValue;
+            var bestRootPoint = default(Point);
+            var bestRootPointKind = default(MacAppKitRootPointKind);
+            foreach (var candidate in EnumerateMacAppKitRootPointCandidatesWithKinds(windowPoint, contentFrame, rootFrame, nativeWindowHeight))
+            {
+                if (!IsMacRootPointInsideRoot(candidate.Point))
+                {
+                    continue;
+                }
+
+                var distance = Math.Pow(candidate.Point.X - referenceRootPoint.X, 2) + Math.Pow(candidate.Point.Y - referenceRootPoint.Y, 2);
+                if (distance < bestDistance)
+                {
+                    hasBest = true;
+                    bestDistance = distance;
+                    bestRootPoint = candidate.Point;
+                    bestRootPointKind = candidate.Kind;
+                }
+            }
+
+            if (!hasBest)
+            {
+                return false;
+            }
+
+            rootPoint = bestRootPoint;
+            rootPointKind = bestRootPointKind;
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    private bool TryGetMacCurrentRootPointerFromAppKit(
+        MacAppKitRootPointKind rootPointKind,
+        bool allowOutsideRoot,
+        out Point rootPoint)
+    {
+        rootPoint = default;
+
+        if (RootGrid.Handler?.PlatformView is not UIView rootView ||
+            rootView.Window is not UIWindow nativeWindow)
+        {
+            return false;
+        }
+
+        try
+        {
+            if (!TryGetMacCurrentAppKitWindowPoint(nativeWindow, rootView, out var windowPoint, out var contentFrame, out var rootFrame, out var nativeWindowHeight))
+            {
+                return false;
+            }
+
+            foreach (var candidate in EnumerateMacAppKitRootPointCandidatesWithKinds(windowPoint, contentFrame, rootFrame, nativeWindowHeight))
+            {
+                if (candidate.Kind != rootPointKind ||
+                    (!allowOutsideRoot && !IsMacRootPointInsideRoot(candidate.Point)))
+                {
+                    continue;
+                }
+
+                rootPoint = candidate.Point;
+                if (IsMacRootPointInsideRoot(rootPoint))
+                {
+                    lastPointerOnRoot = rootPoint;
+                }
+
+                return true;
+            }
+
+            return false;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    private bool TryGetMacCurrentAppKitWindowPoint(
+        UIWindow nativeWindow,
+        UIView rootView,
+        out CGPoint windowPoint,
+        out CGRect contentFrame,
+        out CGRect rootFrame,
+        out double nativeWindowHeight)
+    {
+        windowPoint = default;
+        contentFrame = default;
+        rootFrame = default;
+        nativeWindowHeight = default;
+
+        var nsEventClass = ObjcGetClass("NSEvent");
+        if (nsEventClass == IntPtr.Zero ||
+            TryGetMacPlacementNativeWindow(nativeWindow) is not NSObject nsWindow)
+        {
+            return false;
+        }
+
+        var screenPoint = ObjcMsgSendCGPoint(nsEventClass, SelRegisterName("mouseLocation"));
+        if (!MacAppKitWindowContainsScreenPoint(nsWindow, screenPoint))
+        {
+            return false;
+        }
+
+        windowPoint = ObjcMsgSendCGPointCGPoint(nsWindow.Handle, SelRegisterName("convertPointFromScreen:"), screenPoint);
+        contentFrame = GetMacNativeFrame(nsWindow.Handle, "contentView", fallbackHeight: RootGrid.Height);
+        rootFrame = rootView.Frame;
+        nativeWindowHeight = nativeWindow.Bounds.Height > 0 ? nativeWindow.Bounds.Height : RootGrid.Height;
+        return true;
+    }
+
+    private bool TryIsMacCurrentPointerInsidePlacementWindow(out bool isInside)
+    {
+        isInside = false;
+
+        if (RootGrid.Handler?.PlatformView is not UIView rootView ||
+            rootView.Window is not UIWindow nativeWindow)
+        {
+            return false;
+        }
+
+        try
+        {
+            var nsEventClass = ObjcGetClass("NSEvent");
+            if (nsEventClass == IntPtr.Zero ||
+                TryGetMacPlacementNativeWindow(nativeWindow) is not NSObject nsWindow)
+            {
+                return false;
+            }
+
+            var screenPoint = ObjcMsgSendCGPoint(nsEventClass, SelRegisterName("mouseLocation"));
+            isInside = MacAppKitWindowContainsScreenPoint(nsWindow, screenPoint);
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    private static bool MacAppKitWindowContainsScreenPoint(NSObject nsWindow, CGPoint screenPoint)
+    {
+        try
+        {
+            var frame = ObjcMsgSendCGRect(nsWindow.Handle, SelRegisterName("frame"));
+            return frame.Width > 0 &&
+                frame.Height > 0 &&
+                screenPoint.X >= frame.X &&
+                screenPoint.X <= frame.X + frame.Width &&
+                screenPoint.Y >= frame.Y &&
+                screenPoint.Y <= frame.Y + frame.Height;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    private static IEnumerable<(MacAppKitRootPointKind Kind, Point Point)> EnumerateMacAppKitRootPointCandidatesWithKinds(CGPoint windowPoint, CGRect contentFrame, CGRect rootFrame, double nativeWindowHeight)
     {
         var contentHeight = contentFrame.Height > 0 ? contentFrame.Height : nativeWindowHeight;
         var rootHeight = rootFrame.Height > 0 ? rootFrame.Height : contentHeight;
 
-        yield return new Point(
+        yield return (MacAppKitRootPointKind.ContentViewFlipped, new Point(
             windowPoint.X - contentFrame.X,
-            contentHeight - (windowPoint.Y - contentFrame.Y));
+            contentHeight - (windowPoint.Y - contentFrame.Y)));
 
-        yield return new Point(
+        yield return (MacAppKitRootPointKind.RootFrameFlipped, new Point(
             windowPoint.X - rootFrame.X,
-            rootHeight - (windowPoint.Y - rootFrame.Y));
+            rootHeight - (windowPoint.Y - rootFrame.Y)));
 
-        yield return new Point(windowPoint.X, nativeWindowHeight - windowPoint.Y);
-        yield return new Point(windowPoint.X, contentHeight - windowPoint.Y);
-        yield return new Point(windowPoint.X, windowPoint.Y);
+        yield return (MacAppKitRootPointKind.NativeWindowFlipped, new Point(windowPoint.X, nativeWindowHeight - windowPoint.Y));
+        yield return (MacAppKitRootPointKind.ContentHeightFlipped, new Point(windowPoint.X, contentHeight - windowPoint.Y));
+        yield return (MacAppKitRootPointKind.Window, new Point(windowPoint.X, windowPoint.Y));
     }
 
     private bool TryGetMacCachedRootPointForDistance(out Point rootPoint)
@@ -2575,6 +3013,92 @@ public partial class MainPage
         }
     }
 
+    private bool TryGetMacCurrentScreenPointer(
+        Point rootPoint,
+        out Point screenPoint,
+        out MacPointerScreenPointKind screenPointKind)
+    {
+        screenPoint = default;
+        screenPointKind = default;
+
+        if (RootGrid.Handler?.PlatformView is not UIView rootView ||
+            rootView.Window is not UIWindow nativeWindow)
+        {
+            return TryGetFallbackMacCurrentScreenPointer(out screenPoint, out screenPointKind);
+        }
+
+        try
+        {
+            var hasBest = false;
+            var bestDistance = double.MaxValue;
+            var bestPoint = default(CGPoint);
+            var bestKind = default(MacPointerScreenPointKind);
+            using var currentEvent = new CGEvent((CGEventSource?)null);
+            foreach (var candidate in EnumerateMacPointerScreenPointCandidatesWithKinds(currentEvent))
+            {
+                var windowPoint = nativeWindow.ConvertPointFromWindow(candidate.Point, null);
+                var localPoint = rootView.ConvertPointFromView(windowPoint, nativeWindow);
+                var candidateRoot = new Point(localPoint.X, localPoint.Y);
+                if (!IsMacRootPointInsideRoot(candidateRoot))
+                {
+                    continue;
+                }
+
+                var distance = Math.Pow(candidateRoot.X - rootPoint.X, 2) + Math.Pow(candidateRoot.Y - rootPoint.Y, 2);
+                if (distance < bestDistance)
+                {
+                    hasBest = true;
+                    bestDistance = distance;
+                    bestPoint = candidate.Point;
+                    bestKind = candidate.Kind;
+                }
+            }
+
+            if (hasBest)
+            {
+                screenPoint = new Point(bestPoint.X, bestPoint.Y);
+                screenPointKind = bestKind;
+                return true;
+            }
+        }
+        catch
+        {
+        }
+
+        return TryGetFallbackMacCurrentScreenPointer(out screenPoint, out screenPointKind);
+    }
+
+    private static bool TryGetMacCurrentScreenPointer(MacPointerScreenPointKind screenPointKind, out Point screenPoint)
+    {
+        try
+        {
+            using var currentEvent = new CGEvent((CGEventSource?)null);
+            if (TryGetMacPointerScreenPointCandidate(currentEvent, screenPointKind, out var point))
+            {
+                screenPoint = new Point(point.X, point.Y);
+                return true;
+            }
+        }
+        catch
+        {
+        }
+
+        screenPoint = default;
+        return false;
+    }
+
+    private static bool TryGetFallbackMacCurrentScreenPointer(out Point screenPoint, out MacPointerScreenPointKind screenPointKind)
+    {
+        if (TryGetMacCurrentScreenPointer(out screenPoint))
+        {
+            screenPointKind = MacPointerScreenPointKind.Location;
+            return true;
+        }
+
+        screenPointKind = default;
+        return false;
+    }
+
     private static bool IsMacSelectionModifierCurrentlyDown()
     {
         try
@@ -2608,23 +3132,59 @@ public partial class MainPage
 
     private static IEnumerable<CGPoint> EnumerateMacPointerScreenPointCandidates(CGEvent currentEvent)
     {
+        foreach (var candidate in EnumerateMacPointerScreenPointCandidatesWithKinds(currentEvent))
+        {
+            yield return candidate.Point;
+        }
+    }
+
+    private static IEnumerable<(MacPointerScreenPointKind Kind, CGPoint Point)> EnumerateMacPointerScreenPointCandidatesWithKinds(CGEvent currentEvent)
+    {
         var location = currentEvent.Location;
-        yield return location;
+        yield return (MacPointerScreenPointKind.Location, location);
 
         var unflipped = currentEvent.UnflippedLocation;
         if (!MacPointEquals(unflipped, location))
         {
-            yield return unflipped;
+            yield return (MacPointerScreenPointKind.UnflippedLocation, unflipped);
         }
 
         var scale = UIScreen.MainScreen.Scale;
         if (scale > 1)
         {
-            yield return new CGPoint(location.X / scale, location.Y / scale);
+            yield return (MacPointerScreenPointKind.ScaledLocation, new CGPoint(location.X / scale, location.Y / scale));
             if (!MacPointEquals(unflipped, location))
             {
-                yield return new CGPoint(unflipped.X / scale, unflipped.Y / scale);
+                yield return (MacPointerScreenPointKind.ScaledUnflippedLocation, new CGPoint(unflipped.X / scale, unflipped.Y / scale));
             }
+        }
+    }
+
+    private static bool TryGetMacPointerScreenPointCandidate(
+        CGEvent currentEvent,
+        MacPointerScreenPointKind screenPointKind,
+        out CGPoint point)
+    {
+        var location = currentEvent.Location;
+        var unflipped = currentEvent.UnflippedLocation;
+        var scale = UIScreen.MainScreen.Scale;
+        switch (screenPointKind)
+        {
+            case MacPointerScreenPointKind.Location:
+                point = location;
+                return true;
+            case MacPointerScreenPointKind.UnflippedLocation:
+                point = unflipped;
+                return true;
+            case MacPointerScreenPointKind.ScaledLocation when scale > 0:
+                point = new CGPoint(location.X / scale, location.Y / scale);
+                return true;
+            case MacPointerScreenPointKind.ScaledUnflippedLocation when scale > 0:
+                point = new CGPoint(unflipped.X / scale, unflipped.Y / scale);
+                return true;
+            default:
+                point = default;
+                return false;
         }
     }
 
@@ -2633,28 +3193,49 @@ public partial class MainPage
 
     private static bool IsMacMouseButtonCurrentlyDown(CGMouseButton button)
     {
+        Exception? hidFailure = null;
         try
         {
-            return CGEventSource.GetButtonState(CGEventSourceStateID.HidSystem, button);
+            if (CGEventSource.GetButtonState(CGEventSourceStateID.HidSystem, button))
+            {
+                return true;
+            }
         }
-        catch
+        catch (Exception ex)
         {
-            try
+            hidFailure = ex;
+        }
+
+        try
+        {
+            if (CGEventSource.GetButtonState(CGEventSourceStateID.CombinedSession, button))
             {
-                return CGEventSource.GetButtonState(CGEventSourceStateID.CombinedSession, button);
-            }
-            catch (Exception ex)
-            {
-                var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);
-                var isActive = App.IsMacApplicationActive();
-                var activationSuppressed = App.IsActivationSuppressionActive();
-                var pointerKnown = macLastActivePage is not null &&
-                    macLastActivePage.TryGetTarget(out var page) &&
-                    (page.lastPointerOnRoot is not null || page.macPlacementHoverRootPoint is not null);
-                CrashFileLogger.WriteWarning(nameof(IsMacMouseButtonCurrentlyDown), $"Failed to query mouse button state from CoreGraphics for button={button} while isActive={isActive} activationSuppressed={activationSuppressed} pointerKnown={pointerKnown}: {safeMessage}");
-                return false;
+                return true;
             }
         }
+        catch (Exception ex)
+        {
+            LogMacMouseButtonQueryFailure(button, ex);
+            return false;
+        }
+
+        if (hidFailure is not null)
+        {
+            LogMacMouseButtonQueryFailure(button, hidFailure);
+        }
+
+        return false;
+    }
+
+    private static void LogMacMouseButtonQueryFailure(CGMouseButton button, Exception ex)
+    {
+        var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);
+        var isActive = App.IsMacApplicationActive();
+        var activationSuppressed = App.IsActivationSuppressionActive();
+        var pointerKnown = macLastActivePage is not null &&
+            macLastActivePage.TryGetTarget(out var page) &&
+            (page.lastPointerOnRoot is not null || page.macPlacementHoverRootPoint is not null);
+        CrashFileLogger.WriteWarning(nameof(IsMacMouseButtonCurrentlyDown), $"Failed to query mouse button state from CoreGraphics for button={button} while isActive={isActive} activationSuppressed={activationSuppressed} pointerKnown={pointerKnown}: {safeMessage}");
     }
 
     [DllImport("/usr/lib/libobjc.A.dylib", EntryPoint = "objc_msgSend")]

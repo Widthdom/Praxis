@@ -65,8 +65,14 @@ public partial class MainPage
     private bool macMiddleButtonWasDown;
     private bool macPlacementPollingSelectionActive;
     private long macPlacementDeferredPrimaryDownId;
+    private DateTimeOffset? macPlacementPrimaryReleaseStartedAtUtc;
+    private MacAppKitRootPointKind? macPlacementPollingAppKitRootPointKind;
+    private Point? macPlacementPollingStartRootPoint;
     private Point? macPlacementPollingRawStartScreen;
+    private MacPointerScreenPointKind? macPlacementPollingScreenPointKind;
     private Point? macPlacementPollingAnchorViewport;
+    private UIView? macPlacementSelectionOverlayView;
+    private int macPlacementSelectionOverlayFadeRevision;
     private Guid? macPlacementPollingCommandSelectionItemId;
     private bool macInitialCommandFocusApplied;
     private ModalFocusTarget? macPseudoFocusedModalTarget;
@@ -86,6 +92,7 @@ public partial class MainPage
     private UILongPressGestureRecognizer? macPlacementSecondaryCreateRecognizer;
     private bool macPlacementNativeSelectionActive;
     private bool macPlacementNativeSelectionIgnored;
+    private Point? macPlacementNativeSelectionStartRootPoint;
     private int macPlacementAttachDiagnosticCount;
     private int macPlacementDetachDiagnosticCount;
     private int macPlacementHoverDiagnosticCount;
