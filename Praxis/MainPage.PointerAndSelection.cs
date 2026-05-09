@@ -1079,15 +1079,31 @@ public partial class MainPage
             return;
         }
 
-        var x = Math.Min(start.X, current.X);
-        var y = Math.Min(start.Y, current.Y);
-        var w = Math.Abs(current.X - start.X);
-        var h = Math.Abs(current.Y - start.Y);
+        var startDisplay = ConvertPlacementViewportPointToSelectionRectParent(start);
+        var currentDisplay = ConvertPlacementViewportPointToSelectionRectParent(current);
+        var x = Math.Min(startDisplay.X, currentDisplay.X);
+        var y = Math.Min(startDisplay.Y, currentDisplay.Y);
+        var w = Math.Abs(currentDisplay.X - startDisplay.X);
+        var h = Math.Abs(currentDisplay.Y - startDisplay.Y);
         SelectionRect.IsVisible = w > 2 && h > 2;
         SelectionRect.TranslationX = x;
         SelectionRect.TranslationY = y;
         SelectionRect.WidthRequest = w;
         SelectionRect.HeightRequest = h;
+    }
+
+    private Point ConvertPlacementViewportPointToSelectionRectParent(Point point)
+    {
+        if (SelectionRect.Parent is not VisualElement selectionParent)
+        {
+            return point;
+        }
+
+        var scrollOffset = GetPositionRelativeToAncestor(PlacementScroll, RootGrid);
+        var parentOffset = GetPositionRelativeToAncestor(selectionParent, RootGrid);
+        return new Point(
+            point.X + scrollOffset.X - parentOffset.X,
+            point.Y + scrollOffset.Y - parentOffset.Y);
     }
 
     private void ExecuteSelectionPayload(SelectionPayload payload)

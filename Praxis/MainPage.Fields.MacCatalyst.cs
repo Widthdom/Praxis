@@ -64,6 +64,9 @@ public partial class MainPage
     private bool macSecondaryButtonWasDown;
     private bool macMiddleButtonWasDown;
     private bool macPlacementPollingSelectionActive;
+    private long macPlacementDeferredPrimaryDownId;
+    private Point? macPlacementPollingRawStartScreen;
+    private Point? macPlacementPollingAnchorViewport;
     private Guid? macPlacementPollingCommandSelectionItemId;
     private bool macInitialCommandFocusApplied;
     private ModalFocusTarget? macPseudoFocusedModalTarget;
@@ -77,6 +80,7 @@ public partial class MainPage
     private bool macSuppressEditorTabFallback;
     private UIView? macPlacementGestureNativeView;
     private Point? macPlacementHoverRootPoint;
+    private DateTimeOffset macPlacementHoverRootPointUpdatedAtUtc;
     private UIHoverGestureRecognizer? macPlacementHoverRecognizer;
     private UILongPressGestureRecognizer? macPlacementPrimarySelectionRecognizer;
     private UILongPressGestureRecognizer? macPlacementSecondaryCreateRecognizer;
