@@ -99,6 +99,7 @@ public partial class MainPage
     private int macPlacementPrimaryRecognizerDiagnosticCount;
     private int macPlacementSecondaryRecognizerDiagnosticCount;
     private int macPlacementPollTickDiagnosticCount;
+    private int macPlacementPollingGeometryDiagnosticCount;
 
     private enum ModalFocusTarget
     {

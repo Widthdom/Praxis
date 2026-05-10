@@ -36,6 +36,7 @@ public partial class MainPage
 
     private enum MacAppKitRootPointKind
     {
+        ScaledContentViewFlipped,
         ContentViewFlipped,
         RootFrameFlipped,
         NativeWindowFlipped,
@@ -2030,6 +2031,7 @@ public partial class MainPage
         macPlacementPollingRawStartScreen = hasRawStartScreen ? rawStartScreen : null;
         macPlacementPollingScreenPointKind = hasRawStartScreen ? rawStartScreenPointKind : null;
         macPlacementPollingAnchorViewport = viewportPoint;
+        macPlacementPollingGeometryDiagnosticCount = 0;
         selectionStartCanvas = canvasPoint;
         selectionStartViewport = viewportPoint;
         selectionLastCanvas = selectionStartCanvas;
@@ -2040,6 +2042,18 @@ public partial class MainPage
         LogMacPlacementInputDiagnostic(
             "poll-selection-started",
             $"root=({rootPoint.X:0.##},{rootPoint.Y:0.##}) viewport=({viewportPoint.X:0.##},{viewportPoint.Y:0.##}) canvas=({canvasPoint.X:0.##},{canvasPoint.Y:0.##})");
+        if (ShouldLogMacPlacementInputDiagnostic(ref macPlacementPollingGeometryDiagnosticCount, limit: 24, every: 0))
+        {
+            var rawText = hasRawStartScreen
+                ? $" raw=({rawStartScreen.X:0.##},{rawStartScreen.Y:0.##}) rawKind={rawStartScreenPointKind}"
+                : " raw=(null)";
+            var appKitText = hasAppKitStartRoot
+                ? $" appKitKind={appKitRootPointKind}"
+                : " appKitKind=(null)";
+            LogMacPlacementInputDiagnostic(
+                "poll-geometry-start",
+                $"root=({rootPoint.X:0.##},{rootPoint.Y:0.##}) viewport=({viewportPoint.X:0.##},{viewportPoint.Y:0.##}){rawText}{appKitText} pointer={FormatMacPlacementPointerDiagnostic()}");
+        }
     }
 
     private bool TryHandleMacPlacementPollingButtonPress(Point rootPoint)
@@ -2115,6 +2129,21 @@ public partial class MainPage
     {
         rootPoint = default;
 
+        if (macPlacementPollingAppKitRootPointKind is MacAppKitRootPointKind appKitRootPointKind &&
+            TryGetMacCurrentRootPointerFromAppKit(appKitRootPointKind, allowOutsideRoot: true, out var lockedAppKitRootPoint) &&
+            TryGetMacPlacementRootCanvasPoint(lockedAppKitRootPoint, allowOutside: true, out canvasPoint, out viewportPoint))
+        {
+            rootPoint = lockedAppKitRootPoint;
+            if (ShouldLogMacPlacementInputDiagnostic(ref macPlacementPollingGeometryDiagnosticCount, limit: 24, every: 0))
+            {
+                LogMacPlacementInputDiagnostic(
+                    "poll-geometry-run",
+                    $"source=appkit kind={appKitRootPointKind} viewport=({viewportPoint.X:0.##},{viewportPoint.Y:0.##}) root=({rootPoint.X:0.##},{rootPoint.Y:0.##})");
+            }
+
+            return true;
+        }
+
         if (macPlacementPollingRawStartScreen is Point rawStartScreen &&
             macPlacementPollingScreenPointKind is MacPointerScreenPointKind fallbackScreenPointKind &&
             macPlacementPollingAnchorViewport is Point anchorViewport &&
@@ -2128,14 +2157,13 @@ public partial class MainPage
                 viewportPoint.Y + PlacementScroll.ScrollY);
             var scrollOffset = GetPositionRelativeToAncestor(PlacementScroll, RootGrid);
             rootPoint = new Point(viewportPoint.X + scrollOffset.X, viewportPoint.Y + scrollOffset.Y);
-            return true;
-        }
+            if (ShouldLogMacPlacementInputDiagnostic(ref macPlacementPollingGeometryDiagnosticCount, limit: 24, every: 0))
+            {
+                LogMacPlacementInputDiagnostic(
+                    "poll-geometry-run",
+                    $"source=raw kind={fallbackScreenPointKind} rawStart=({rawStartScreen.X:0.##},{rawStartScreen.Y:0.##}) raw=({rawScreenPoint.X:0.##},{rawScreenPoint.Y:0.##}) anchor=({anchorViewport.X:0.##},{anchorViewport.Y:0.##}) viewport=({viewportPoint.X:0.##},{viewportPoint.Y:0.##}) root=({rootPoint.X:0.##},{rootPoint.Y:0.##})");
+            }
 
-        if (macPlacementPollingAppKitRootPointKind is MacAppKitRootPointKind appKitRootPointKind &&
-            TryGetMacCurrentRootPointerFromAppKit(appKitRootPointKind, allowOutsideRoot: true, out var lockedAppKitRootPoint) &&
-            TryGetMacPlacementRootCanvasPoint(lockedAppKitRootPoint, allowOutside: true, out canvasPoint, out viewportPoint))
-        {
-            rootPoint = lockedAppKitRootPoint;
             return true;
         }
 
@@ -2144,6 +2172,13 @@ public partial class MainPage
             TryGetMacPlacementRootCanvasPoint(lockedRootPoint, allowOutside: true, out canvasPoint, out viewportPoint))
         {
             rootPoint = lockedRootPoint;
+            if (ShouldLogMacPlacementInputDiagnostic(ref macPlacementPollingGeometryDiagnosticCount, limit: 24, every: 0))
+            {
+                LogMacPlacementInputDiagnostic(
+                    "poll-geometry-run",
+                    $"source=cg kind={screenPointKind} viewport=({viewportPoint.X:0.##},{viewportPoint.Y:0.##}) root=({rootPoint.X:0.##},{rootPoint.Y:0.##})");
+            }
+
             return true;
         }
 
@@ -2189,6 +2224,7 @@ public partial class MainPage
         macPlacementSelectionOverlayFadeRevision++;
         overlay.Layer.RemoveAllAnimations();
         overlay.Alpha = 1;
+        ApplyMacPlacementNativeSelectionOverlayColors(overlay);
         var x = Math.Min(startRootPoint.X, currentRootPoint.X);
         var y = Math.Min(startRootPoint.Y, currentRootPoint.Y);
         var w = Math.Abs(currentRootPoint.X - startRootPoint.X);
@@ -2215,14 +2251,22 @@ public partial class MainPage
         {
             UserInteractionEnabled = false,
             Opaque = false,
-            BackgroundColor = UIColor.FromWhiteAlpha(0.4f, 0.18f),
             Hidden = true,
         };
         overlay.Layer.BorderWidth = 1;
-        overlay.Layer.BorderColor = UIColor.FromWhiteAlpha(0.45f, 0.85f).CGColor;
+        ApplyMacPlacementNativeSelectionOverlayColors(overlay);
         rootView.AddSubview(overlay);
         macPlacementSelectionOverlayView = overlay;
         return overlay;
+    }
+
+    private static void ApplyMacPlacementNativeSelectionOverlayColors(UIView overlay)
+    {
+        var fillColor = UIColor.FromWhiteAlpha(0.42f, 0.30f);
+        var borderColor = UIColor.FromWhiteAlpha(0.45f, 0.85f);
+        overlay.BackgroundColor = fillColor;
+        overlay.Layer.BackgroundColor = fillColor.CGColor;
+        overlay.Layer.BorderColor = borderColor.CGColor;
     }
 
     private void HideMacPlacementNativeSelectionOverlay(bool fade = false)
@@ -2888,11 +2932,29 @@ public partial class MainPage
     private static IEnumerable<(MacAppKitRootPointKind Kind, Point Point)> EnumerateMacAppKitRootPointCandidatesWithKinds(CGPoint windowPoint, CGRect contentFrame, CGRect rootFrame, double nativeWindowHeight)
     {
         var contentHeight = contentFrame.Height > 0 ? contentFrame.Height : nativeWindowHeight;
+        var contentWidth = contentFrame.Width > 0 ? contentFrame.Width : rootFrame.Width;
         var rootHeight = rootFrame.Height > 0 ? rootFrame.Height : contentHeight;
+        var rootWidth = rootFrame.Width > 0 ? rootFrame.Width : contentWidth;
+        var contentX = windowPoint.X - contentFrame.X;
+        var contentY = contentHeight - (windowPoint.Y - contentFrame.Y);
+
+        if (contentWidth > 0 && contentHeight > 0 && rootWidth > 0 && rootHeight > 0)
+        {
+            var contentScaleX = rootWidth / contentWidth;
+            var contentScaleY = rootHeight / contentHeight;
+            if (contentScaleX > 0 &&
+                contentScaleY > 0 &&
+                (Math.Abs(contentScaleX - 1) > 0.01 || Math.Abs(contentScaleY - 1) > 0.01))
+            {
+                yield return (MacAppKitRootPointKind.ScaledContentViewFlipped, new Point(
+                    contentX * contentScaleX,
+                    contentY * contentScaleY));
+            }
+        }
 
         yield return (MacAppKitRootPointKind.ContentViewFlipped, new Point(
-            windowPoint.X - contentFrame.X,
-            contentHeight - (windowPoint.Y - contentFrame.Y)));
+            contentX,
+            contentY));
 
         yield return (MacAppKitRootPointKind.RootFrameFlipped, new Point(
             windowPoint.X - rootFrame.X,

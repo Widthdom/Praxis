@@ -1406,6 +1406,8 @@ public class AppLayerSourceGuardTests
         Assert.Contains("UpdateMacPlacementNativeSelectionOverlay(macPlacementPollingStartRootPoint ?? rootPoint, rootPoint);", macSource);
         Assert.Contains("private void UpdateMacPlacementNativeSelectionOverlay(Point startRootPoint, Point currentRootPoint, bool hide = false)", macSource);
         Assert.Contains("private UIView? EnsureMacPlacementNativeSelectionOverlay(UIView rootView)", macSource);
+        Assert.Contains("private static void ApplyMacPlacementNativeSelectionOverlayColors(UIView overlay)", macSource);
+        Assert.Contains("overlay.Layer.BackgroundColor = fillColor.CGColor;", macSource);
         Assert.Contains("private void HideMacPlacementNativeSelectionOverlay(bool fade = false)", macSource);
         Assert.Contains("UIView.AnimateNotify(", macSource);
         Assert.Contains("UiTimingPolicy.SelectionRectFadeOutDurationMs / 1000d", macSource);
@@ -1474,8 +1476,11 @@ public class AppLayerSourceGuardTests
         var pollingRunningRawDeltaIndex = pollingRunningBody.IndexOf("anchorViewport.X + rawScreenPoint.X - rawStartScreen.X", StringComparison.Ordinal);
         var pollingRunningAppKitIndex = pollingRunningBody.IndexOf("TryGetMacCurrentRootPointerFromAppKit(appKitRootPointKind, allowOutsideRoot: true, out var lockedAppKitRootPoint)", StringComparison.Ordinal);
         var pollingRunningCoreGraphicsIndex = pollingRunningBody.IndexOf("TryGetMacCurrentRootPointer(screenPointKind, allowOutsideRoot: true, out var lockedRootPoint)", StringComparison.Ordinal);
-        Assert.True(pollingRunningRawDeltaIndex >= 0 && pollingRunningAppKitIndex > pollingRunningRawDeltaIndex, "Polling rectangle updates should prefer locked raw-screen deltas over absolute AppKit root-coordinate fallback.");
-        Assert.True(pollingRunningAppKitIndex >= 0 && pollingRunningCoreGraphicsIndex > pollingRunningAppKitIndex, "Polling rectangle updates should keep the accepted AppKit root-coordinate candidate ahead of CoreGraphics fallback.");
+        Assert.True(pollingRunningAppKitIndex >= 0 && pollingRunningRawDeltaIndex > pollingRunningAppKitIndex, "Polling rectangle updates should prefer the accepted live AppKit root-coordinate candidate before raw-screen delta fallback.");
+        Assert.True(pollingRunningRawDeltaIndex >= 0 && pollingRunningCoreGraphicsIndex > pollingRunningRawDeltaIndex, "Polling rectangle updates should keep raw-screen delta fallback ahead of CoreGraphics absolute-coordinate fallback.");
+        Assert.Contains("MacAppKitRootPointKind.ScaledContentViewFlipped", macSource);
+        Assert.Contains("contentX * contentScaleX", macSource);
+        Assert.Contains("contentY * contentScaleY", macSource);
 
         var pollingCurrentRootIndex = macSource.IndexOf("private bool TryGetMacPlacementPollingCurrentRootPoint(out Point rootPoint)", StringComparison.Ordinal);
         var continuePollingIndex = macSource.IndexOf("private void ContinueMacPlacementPollingSelection()", StringComparison.Ordinal);
