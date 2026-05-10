@@ -117,6 +117,7 @@ public class MainPageStructureTests
         Assert.Contains("<Color x:Key=\"SelectionAccentDark\">#FF59636E</Color>", xaml);
         Assert.Contains("<Color x:Key=\"SolidModalLight\">#FFE3E9EE</Color>", xaml);
         Assert.Contains("<Color x:Key=\"SolidModalDark\">#FF2B333C</Color>", xaml);
+        Assert.Contains("<Color x:Key=\"TransparentOverlayHitTarget\">#01000000</Color>", xaml);
         Assert.Contains("<Color x:Key=\"GlassInputLight\">#58FFFFFF</Color>", xaml);
         Assert.Contains("<Color x:Key=\"GlassInputDark\">#66363B43</Color>", xaml);
         Assert.Contains("<Color x:Key=\"GlassModalInputLight\">#A6FFFFFF</Color>", xaml);
@@ -327,6 +328,43 @@ public class MainPageStructureTests
         var labelRegion = xaml.Substring(labelIndex, 900);
         Assert.Contains("<behaviors:HoverHandCursorBehavior />", labelRegion);
         Assert.Contains("ModalInvertThemeToggle_Tapped", labelRegion);
+    }
+
+    [Fact]
+    public void MainPage_Overlays_HaveTransparentHitTargetLayers()
+    {
+        var root = ResolveRepositoryRoot();
+        var xaml = File.ReadAllText(Path.Combine(root, "Praxis", "MainPage.xaml"));
+
+        var contextDismissIndex = xaml.IndexOf("x:Name=\"ContextMenuDismissLayer\"", StringComparison.Ordinal);
+        var contextPanelIndex = xaml.IndexOf("x:Name=\"ContextEditFocusRing\"", StringComparison.Ordinal);
+        var editorBackdropIndex = xaml.IndexOf("x:Name=\"EditorBackdropLayer\"", StringComparison.Ordinal);
+        var editorPanelIndex = xaml.IndexOf("x:Name=\"ModalButtonTextEntry\"", StringComparison.Ordinal);
+        var conflictBackdropIndex = xaml.IndexOf("x:Name=\"ConflictBackdropLayer\"", StringComparison.Ordinal);
+        var conflictPanelIndex = xaml.IndexOf("x:Name=\"ConflictTitleLabel\"", StringComparison.Ordinal);
+        var editorBackdropEndIndex = xaml.IndexOf("/>", editorBackdropIndex, StringComparison.Ordinal);
+        var conflictBackdropEndIndex = xaml.IndexOf("/>", conflictBackdropIndex, StringComparison.Ordinal);
+
+        Assert.True(contextDismissIndex >= 0, "ContextMenuDismissLayer should exist in MainPage.xaml.");
+        Assert.True(editorBackdropIndex >= 0, "EditorBackdropLayer should exist in MainPage.xaml.");
+        Assert.True(conflictBackdropIndex >= 0, "ConflictBackdropLayer should exist in MainPage.xaml.");
+        Assert.True(contextDismissIndex < contextPanelIndex, "Context-menu backdrop dismiss layer should sit behind the Edit/Delete panel.");
+        Assert.True(editorBackdropIndex < editorPanelIndex, "Editor backdrop layer should sit behind the modal body.");
+        Assert.True(conflictBackdropIndex < conflictPanelIndex, "Conflict backdrop layer should sit behind the conflict dialog body.");
+        Assert.True(editorBackdropEndIndex < editorPanelIndex, "Editor backdrop layer should be closed before modal body content starts.");
+        Assert.True(conflictBackdropEndIndex < conflictPanelIndex, "Conflict backdrop layer should be closed before conflict dialog content starts.");
+
+        Assert.Contains("x:Key=\"TransparentOverlayHitTargetStyle\"", xaml);
+        Assert.Contains("<Setter Property=\"BackgroundColor\" Value=\"{StaticResource TransparentOverlayHitTarget}\" />", xaml);
+        Assert.Contains("<Setter Property=\"Margin\" Value=\"-18\" />", xaml);
+        Assert.Contains("IsVisible=\"{Binding IsContextMenuOpen}\"\n              BackgroundColor=\"Transparent\"\n              ZIndex=\"970\"", xaml);
+        Assert.Contains("x:Name=\"EditorOverlay\"\n              Grid.RowSpan=\"4\"\n              IsVisible=\"{Binding IsEditorOpen}\"\n              BackgroundColor=\"Transparent\"\n              ZIndex=\"975\"", xaml);
+        Assert.Contains("x:Name=\"ConflictOverlay\"\n              Grid.RowSpan=\"4\"\n              IsVisible=\"False\"\n              BackgroundColor=\"Transparent\"\n              ZIndex=\"980\"", xaml);
+        Assert.Equal(3, CountOccurrences(xaml, "Style=\"{StaticResource TransparentOverlayHitTargetStyle}\""));
+        Assert.Contains("<TapGestureRecognizer Command=\"{Binding CloseContextMenuCommand}\" />", xaml);
+        Assert.Equal(2, CountOccurrences(xaml, "Tapped=\"OverlayBackdrop_Tapped\""));
+        Assert.Contains("Tapped=\"OverlayBackdrop_Tapped\"", xaml.Substring(editorBackdropIndex, editorBackdropEndIndex - editorBackdropIndex));
+        Assert.Contains("Tapped=\"OverlayBackdrop_Tapped\"", xaml.Substring(conflictBackdropIndex, conflictBackdropEndIndex - conflictBackdropIndex));
     }
 
     private static string ResolveRepositoryRoot()

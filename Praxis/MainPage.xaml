@@ -26,6 +26,7 @@
         <Color x:Key="SelectionAccentDark">#FF59636E</Color>
         <Color x:Key="SolidModalLight">#FFE3E9EE</Color>
         <Color x:Key="SolidModalDark">#FF2B333C</Color>
+        <Color x:Key="TransparentOverlayHitTarget">#01000000</Color>
         <Color x:Key="GlassInputLight">#58FFFFFF</Color>
         <Color x:Key="GlassInputDark">#66363B43</Color>
         <Color x:Key="GlassModalInputLight">#A6FFFFFF</Color>
@@ -60,6 +61,15 @@
             <Setter Property="HorizontalTextAlignment" Value="Center" />
             <Setter Property="VerticalTextAlignment" Value="Center" />
             <Setter Property="InputTransparent" Value="True" />
+        </Style>
+        <Style x:Key="TransparentOverlayHitTargetStyle"
+               TargetType="Border">
+            <Setter Property="BackgroundColor" Value="{StaticResource TransparentOverlayHitTarget}" />
+            <Setter Property="Margin" Value="-18" />
+            <Setter Property="HorizontalOptions" Value="Fill" />
+            <Setter Property="VerticalOptions" Value="Fill" />
+            <Setter Property="Stroke" Value="Transparent" />
+            <Setter Property="StrokeThickness" Value="0" />
         </Style>
     </ContentPage.Resources>
 
@@ -616,10 +626,14 @@
 
         <Grid Grid.RowSpan="4"
               IsVisible="{Binding IsContextMenuOpen}"
-              BackgroundColor="Transparent">
-            <Grid.GestureRecognizers>
-                <TapGestureRecognizer Command="{Binding CloseContextMenuCommand}" />
-            </Grid.GestureRecognizers>
+              BackgroundColor="Transparent"
+              ZIndex="970">
+            <Border x:Name="ContextMenuDismissLayer"
+                    Style="{StaticResource TransparentOverlayHitTargetStyle}">
+                <Border.GestureRecognizers>
+                    <TapGestureRecognizer Command="{Binding CloseContextMenuCommand}" />
+                </Border.GestureRecognizers>
+            </Border>
             <controls:MaterialFrame HorizontalOptions="Center"
                                     VerticalOptions="Center"
                                     WidthRequest="220"
@@ -679,7 +693,14 @@
         <Grid x:Name="EditorOverlay"
               Grid.RowSpan="4"
               IsVisible="{Binding IsEditorOpen}"
-              BackgroundColor="Transparent">
+              BackgroundColor="Transparent"
+              ZIndex="975">
+            <Border x:Name="EditorBackdropLayer"
+                    Style="{StaticResource TransparentOverlayHitTargetStyle}">
+                <Border.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="OverlayBackdrop_Tapped" />
+                </Border.GestureRecognizers>
+            </Border>
             <controls:MaterialFrame HorizontalOptions="Center"
                                     VerticalOptions="Center"
                                     WidthRequest="760"
@@ -1010,6 +1031,12 @@
               IsVisible="False"
               BackgroundColor="Transparent"
               ZIndex="980">
+            <Border x:Name="ConflictBackdropLayer"
+                    Style="{StaticResource TransparentOverlayHitTargetStyle}">
+                <Border.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="OverlayBackdrop_Tapped" />
+                </Border.GestureRecognizers>
+            </Border>
             <controls:MaterialFrame HorizontalOptions="Center"
                                     VerticalOptions="Center"
                                     WidthRequest="520"

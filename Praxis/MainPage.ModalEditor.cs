@@ -90,6 +90,11 @@ public partial class MainPage
         ModalInvertThemeCheckBox.Focus();
     }
 
+    private void OverlayBackdrop_Tapped(object? sender, TappedEventArgs e)
+    {
+        // Intentionally absorbs clicks so modal/conflict backdrops do not pass input to lower layers.
+    }
+
     private void ModalGuidEntry_HandlerChanged(object? sender, EventArgs e)
     {
 #if MACCATALYST
