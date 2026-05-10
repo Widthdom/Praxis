@@ -68,6 +68,7 @@ public partial class MainPage : ContentPage
             ApplyTabPolicy();
 #if WINDOWS
             EnsureWindowsKeyHooks();
+            ConfigureWindowsTitleBar();
 #endif
             ApplyNeutralStatusBackground();
 #if MACCATALYST

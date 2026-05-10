@@ -27,7 +27,71 @@
         </Style>
     </ContentPage.Resources>
 
-    <Grid x:Name="RootGrid" Padding="18" RowDefinitions="Auto,*,Auto,Auto" RowSpacing="8">
+    <Grid x:Name="WindowShell"
+          RowDefinitions="Auto,*"
+          RowSpacing="0">
+        <!-- Custom Windows title bar (collapsed on non-Windows so the OS title bar takes over). MainPage.WindowsTitleBar.cs sets ExtendsContentIntoTitleBar=true and uses Window.SetTitleBar() to designate WindowTitleBarDragRegion as the OS drag area, so dragging / double-click maximize / Aero Snap keep working without disabling native min/restore animations. -->
+        <Grid x:Name="WindowTitleBar"
+              Grid.Row="0"
+              IsVisible="{OnPlatform Default=False, WinUI=True}"
+              HeightRequest="{OnPlatform Default=0, WinUI=30}"
+              ColumnDefinitions="*,Auto"
+              BackgroundColor="Transparent"
+              ZIndex="1000">
+            <Grid x:Name="WindowTitleBarDragRegion"
+                  Grid.Column="0"
+                  BackgroundColor="Transparent"
+                  InputTransparent="True"
+                  HorizontalOptions="Fill"
+                  VerticalOptions="Fill" />
+            <HorizontalStackLayout x:Name="WindowCaptionButtonsStack"
+                                   Grid.Column="1"
+                                   Spacing="0"
+                                   VerticalOptions="Fill">
+                <Border x:Name="WindowMinimizeButton"
+                        WidthRequest="44"
+                        HeightRequest="30"
+                        Stroke="Transparent"
+                        StrokeThickness="0"
+                        BackgroundColor="Transparent">
+                    <Label Text="&#xE921;"
+                           FontFamily="{OnPlatform WinUI='Segoe Fluent Icons'}"
+                           FontSize="10"
+                           HorizontalOptions="Center"
+                           VerticalOptions="Center"
+                           TextColor="{AppThemeBinding Light=#1A1A1A, Dark=#F2F2F2}" />
+                </Border>
+                <Border x:Name="WindowMaximizeButton"
+                        WidthRequest="44"
+                        HeightRequest="30"
+                        Stroke="Transparent"
+                        StrokeThickness="0"
+                        BackgroundColor="Transparent">
+                    <Label x:Name="WindowMaximizeButtonGlyph"
+                           Text="&#xE922;"
+                           FontFamily="{OnPlatform WinUI='Segoe Fluent Icons'}"
+                           FontSize="10"
+                           HorizontalOptions="Center"
+                           VerticalOptions="Center"
+                           TextColor="{AppThemeBinding Light=#1A1A1A, Dark=#F2F2F2}" />
+                </Border>
+                <Border x:Name="WindowCloseButton"
+                        WidthRequest="44"
+                        HeightRequest="30"
+                        Stroke="Transparent"
+                        StrokeThickness="0"
+                        BackgroundColor="Transparent">
+                    <Label Text="&#xE8BB;"
+                           FontFamily="{OnPlatform WinUI='Segoe Fluent Icons'}"
+                           FontSize="10"
+                           HorizontalOptions="Center"
+                           VerticalOptions="Center"
+                           TextColor="{AppThemeBinding Light=#1A1A1A, Dark=#F2F2F2}" />
+                </Border>
+            </HorizontalStackLayout>
+        </Grid>
+
+        <Grid x:Name="RootGrid" Grid.Row="1" Padding="18" RowDefinitions="Auto,*,Auto,Auto" RowSpacing="8">
         <Grid.GestureRecognizers>
             <PointerGestureRecognizer PointerPressed="RootGrid_PointerPressed"
                                       PointerMoved="RootGrid_PointerMoved"
@@ -998,6 +1062,7 @@
                        VerticalTextAlignment="Center"
                        TextColor="{AppThemeBinding Light=#202020, Dark=#F2F2F2}" />
             </Border>
+        </Grid>
         </Grid>
     </Grid>
 </ContentPage>

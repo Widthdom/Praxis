@@ -23,6 +23,11 @@ public partial class MainPage
     private static readonly TimeSpan windowsFocusRestorePrimaryDelay = UiTimingPolicy.WindowsFocusRestorePrimaryDelay;
     private static readonly TimeSpan windowsFocusRestoreSecondaryDelay = UiTimingPolicy.WindowsFocusRestoreSecondaryDelay;
     private WindowsModalActionFocusTarget? windowsModalActionFocusTarget;
+    private Microsoft.UI.Xaml.Window? windowsNativeWindow;
+    private Microsoft.UI.Windowing.AppWindow? windowsAppWindow;
+    private Microsoft.UI.Windowing.OverlappedPresenter? windowsOverlappedPresenter;
+    private bool windowsTitleBarConfigured;
+    private bool windowsTitleBarMaximized;
 
     private enum WindowsModalActionFocusTarget
     {
