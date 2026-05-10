@@ -340,7 +340,8 @@
                             <DataTemplate>
                                 <Border AbsoluteLayout.LayoutBounds="{Binding LayoutBounds}"
                                         AbsoluteLayout.LayoutFlags="None"
-                                        Stroke="{AppThemeBinding Light=#B6B6B6, Dark=#545454}"
+                                        Stroke="Transparent"
+                                        StrokeThickness="0"
                                         StrokeShape="RoundRectangle 12"
                                         BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#363636}"
                                         Padding="0">
@@ -353,7 +354,6 @@
                                             <Setter Property="BackgroundColor" Value="{AppThemeBinding Light=#DCDCDC, Dark=#505050}" />
                                         </DataTrigger>
                                         <DataTrigger TargetType="Border" Binding="{Binding UseInvertedThemeColors}" Value="True">
-                                            <Setter Property="Stroke" Value="{AppThemeBinding Light=#545454, Dark=#B6B6B6}" />
                                             <Setter Property="BackgroundColor" Value="{AppThemeBinding Light=#363636, Dark=#FFFFFF}" />
                                         </DataTrigger>
                                         <MultiTrigger TargetType="Border">
@@ -443,7 +443,8 @@
                         </HorizontalStackLayout.GestureRecognizers>
                         <BindableLayout.ItemTemplate>
                             <DataTemplate>
-                                <Border Stroke="{AppThemeBinding Light=#B6B6B6, Dark=#545454}"
+                                <Border Stroke="Transparent"
+                                        StrokeThickness="0"
                                         StrokeShape="RoundRectangle 12"
                                         BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#363636}"
                                         WidthRequest="{x:Static corelogic:ButtonLayoutDefaults.Width}"
@@ -452,7 +453,6 @@
                                         Padding="0">
                                     <Border.Triggers>
                                         <DataTrigger TargetType="Border" Binding="{Binding UseInvertedThemeColors}" Value="True">
-                                            <Setter Property="Stroke" Value="{AppThemeBinding Light=#545454, Dark=#B6B6B6}" />
                                             <Setter Property="BackgroundColor" Value="{AppThemeBinding Light=#363636, Dark=#FFFFFF}" />
                                         </DataTrigger>
                                     </Border.Triggers>
