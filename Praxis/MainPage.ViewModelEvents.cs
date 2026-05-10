@@ -19,6 +19,15 @@ public partial class MainPage
         if (e.PropertyName == nameof(MainViewModel.SelectedTheme))
         {
             ApplyNeutralStatusBackground();
+            ApplyModalEditorThemeTextColors();
+#if WINDOWS
+            EnsureWindowsTextBoxHooks();
+            App.RefreshPlatformWindowBackdrops();
+#endif
+#if MACCATALYST
+            App.RefreshMacWindowBackdropForConnectedScenes();
+            ApplyMacVisualTuning();
+#endif
             return;
         }
 
@@ -53,6 +62,7 @@ public partial class MainPage
             {
 #if MACCATALYST
                 SetMacContextMenuPseudoFocus(ContextMenuFocusTarget.Edit);
+                FocusMacContextMenuKeyCaptureView();
 #endif
                 Dispatcher.DispatchDelayed(UiTimingPolicy.ContextMenuFocusInitialDelay, () =>
                 {
@@ -81,6 +91,7 @@ public partial class MainPage
             else
             {
 #if MACCATALYST
+                RemoveMacContextMenuKeyCaptureView();
                 ClearMacContextMenuPseudoFocus();
 #endif
             }
@@ -118,6 +129,7 @@ public partial class MainPage
         UpdateModalEditorHeights();
 #if MACCATALYST
         macGuidLockedText = viewModel.Editor.GuidText ?? string.Empty;
+        ScheduleMacModalButtonVisualStateRefresh();
 #endif
         modalPrimaryFieldSelectAllPending = !viewModel.Editor.IsExistingRecord;
         Dispatcher.DispatchDelayed(UiTimingPolicy.EditorOpenFocusDelay, () =>

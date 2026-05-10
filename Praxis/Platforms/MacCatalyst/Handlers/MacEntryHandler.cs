@@ -35,6 +35,15 @@ public class MacEntryHandler : EntryHandler
         private static readonly CGColor DarkBorderColor = UIColor.FromRGB(0x4E, 0x4E, 0x4E).CGColor;
         private static readonly CGColor LightFocusUnderlineColor = UIColor.FromRGB(0x4A, 0x4A, 0x4A).CGColor;
         private static readonly CGColor DarkFocusUnderlineColor = UIColor.FromRGB(0xA0, 0xA0, 0xA0).CGColor;
+        private static readonly CGColor TransparentBorderColor = UIColor.Clear.CGColor;
+        private static readonly UIColor LightGlassFieldBackground = UIColor.Clear;
+        private static readonly UIColor DarkGlassFieldBackground = UIColor.Clear;
+        private static readonly UIColor LightPlaceholderColor = UIColor.FromRGBA(0, 0, 0, 0.58f);
+        private static readonly UIColor DarkPlaceholderColor = UIColor.FromRGBA(196, 212, 224, 0.42f);
+        private static readonly UIColor LightTextColor = UIColor.Black;
+        private static readonly UIColor DarkTextColor = UIColor.White;
+        private static readonly UIColor LightTextSelectionColor = UIColor.FromRGB(0x4B, 0x00, 0xD9);
+        private static readonly UIColor DarkTextSelectionColor = UIColor.FromRGB(0x35, 0x00, 0xA8);
         private static readonly nfloat CornerRadius = 4;
         private static readonly nfloat BorderWidth = 1;
         private static readonly nfloat FocusBorderWidth = 1.5f;
@@ -42,7 +51,9 @@ public class MacEntryHandler : EntryHandler
         private readonly CAShapeLayer borderLayer = new();
         private readonly CAShapeLayer focusBorderLayer = new();
         private readonly CALayer focusBorderMaskLayer = new();
+        private UIView? glassBackdropView;
         private bool pseudoFocused;
+        private bool glassFieldVisual;
         private UIKeyCommand? cancelCommand;
 
         public override UIKeyCommand[] KeyCommands
@@ -73,6 +84,10 @@ public class MacEntryHandler : EntryHandler
             Layer.CornerRadius = CornerRadius;
             Layer.BorderWidth = 0;
             Layer.MasksToBounds = false;
+            Layer.ShouldRasterize = false;
+            ContentScaleFactor = UIScreen.MainScreen.Scale;
+            Layer.ContentsScale = UIScreen.MainScreen.Scale;
+            Opaque = false;
 
             borderLayer.FillColor = UIColor.Clear.CGColor;
             borderLayer.LineWidth = BorderWidth;
@@ -82,6 +97,8 @@ public class MacEntryHandler : EntryHandler
             focusBorderLayer.LineWidth = FocusBorderWidth;
             focusBorderLayer.Mask = focusBorderMaskLayer;
             focusBorderLayer.Hidden = true;
+            borderLayer.ZPosition = 10;
+            focusBorderLayer.ZPosition = 11;
             Layer.AddSublayer(focusBorderLayer);
         }
 
@@ -102,6 +119,14 @@ public class MacEntryHandler : EntryHandler
 
         public override CGRect PlaceholderRect(CGRect forBounds)
             => InsetTextBounds(forBounds);
+
+        public override CGRect BorderRect(CGRect forBounds)
+            => glassFieldVisual ? CGRect.Empty : base.BorderRect(forBounds);
+
+        public override void Draw(CGRect rect)
+        {
+            base.Draw(rect);
+        }
 
         public override void PressesBegan(NSSet<UIPress> presses, UIPressesEvent? evt)
         {
@@ -151,6 +176,19 @@ public class MacEntryHandler : EntryHandler
                 Math.Max(0, Bounds.Width - (bottomMaskInset * 2)),
                 bottomMaskHeight);
             focusBorderMaskLayer.BackgroundColor = UIColor.White.CGColor;
+            UpdateGlassBackdropFrame();
+            ApplyFocusVisualState();
+        }
+
+        public override void MovedToSuperview()
+        {
+            base.MovedToSuperview();
+            ApplyFocusVisualState();
+        }
+
+        public override void MovedToWindow()
+        {
+            base.MovedToWindow();
             ApplyFocusVisualState();
         }
 
@@ -173,10 +211,217 @@ public class MacEntryHandler : EntryHandler
             var dark = ResolveDarkThemeState();
             var borderColor = dark ? DarkBorderColor : LightBorderColor;
             var focusColor = dark ? DarkFocusUnderlineColor : LightFocusUnderlineColor;
-            TintColor = dark ? UIColor.White : UIColor.Black;
-            borderLayer.StrokeColor = borderColor;
+            var textColor = dark ? DarkTextColor : LightTextColor;
+            var selectionColor = dark ? DarkTextSelectionColor : LightTextSelectionColor;
+            ContentScaleFactor = UIScreen.MainScreen.Scale;
+            Layer.ContentsScale = UIScreen.MainScreen.Scale;
+            Layer.ShouldRasterize = false;
+            TintColor = selectionColor;
+            TextColor = textColor;
+            BorderStyle = UITextBorderStyle.None;
+            var textWeight = glassFieldVisual ? UIFontWeight.Regular : UIFontWeight.Medium;
+            Font = UIFont.SystemFontOfSize(Font?.PointSize ?? 13, textWeight);
+            borderLayer.StrokeColor = glassFieldVisual ? TransparentBorderColor : borderColor;
             focusBorderLayer.StrokeColor = focusColor;
             focusBorderLayer.Hidden = !(IsFirstResponder || pseudoFocused);
+            if (glassFieldVisual)
+            {
+                ApplyGlassFieldBackground(dark);
+            }
+            else
+            {
+                RemoveGlassBackdrop();
+            }
+            ApplyPlaceholderVisualState(dark);
+        }
+
+        private void ApplyGlassFieldBackground(bool dark)
+        {
+            EnsureGlassBackdrop();
+            var tintColor = dark ? DarkGlassFieldBackground : LightGlassFieldBackground;
+            Opaque = false;
+            Background = TransparentFieldImage;
+            DisabledBackground = TransparentFieldImage;
+            BackgroundColor = UIColor.Clear;
+            Layer.BackgroundColor = UIColor.Clear.CGColor;
+            Layer.MasksToBounds = false;
+            BorderStyle = UITextBorderStyle.None;
+            if (glassBackdropView is not null)
+            {
+                glassBackdropView.BackgroundColor = tintColor;
+                glassBackdropView.Opaque = false;
+                glassBackdropView.Alpha = 1f;
+                SendSubviewToBack(glassBackdropView);
+                UpdateGlassBackdropFrame();
+                ClearNativeGlassHostBackground(this, glassBackdropView);
+                ClearNativeGlassHostLayers();
+                ClearNativeGlassWrapperBackgrounds();
+            }
+            SetNeedsDisplay();
+        }
+
+        private void EnsureGlassBackdrop()
+        {
+            glassBackdropView ??= new UIView
+            {
+                UserInteractionEnabled = false,
+                Opaque = false,
+            };
+
+            if (glassBackdropView.Superview is null)
+            {
+                InsertSubview(glassBackdropView, 0);
+            }
+        }
+
+        private void UpdateGlassBackdropFrame()
+        {
+            if (glassBackdropView is null)
+            {
+                return;
+            }
+
+            glassBackdropView.Frame = Bounds;
+            glassBackdropView.Layer.CornerRadius = CornerRadius;
+            glassBackdropView.Layer.MasksToBounds = true;
+            glassBackdropView.ClipsToBounds = true;
+        }
+
+        private static readonly UIImage TransparentFieldImage = CreateTransparentFieldImage();
+
+        private static UIImage CreateTransparentFieldImage()
+        {
+            var renderer = new UIGraphicsImageRenderer(new CGSize(1, 1));
+            var image = renderer.CreateImage(_ => { });
+            return image.CreateResizableImage(UIEdgeInsets.Zero);
+        }
+
+        private static void ClearNativeGlassHostBackground(UIView view, UIView preservedBackdrop)
+        {
+            foreach (var subview in view.Subviews)
+            {
+                ClearNativeGlassSubviewBackground(subview, preservedBackdrop);
+            }
+        }
+
+        private static void ClearNativeGlassSubviewBackground(UIView view, UIView preservedBackdrop)
+        {
+            if (ReferenceEquals(view, preservedBackdrop))
+            {
+                return;
+            }
+
+            if (view is UIVisualEffectView effectView)
+            {
+                effectView.Effect = null;
+                effectView.ContentView.Opaque = false;
+                effectView.ContentView.BackgroundColor = UIColor.Clear;
+            }
+
+            view.Opaque = false;
+            view.BackgroundColor = UIColor.Clear;
+            view.Layer.BackgroundColor = UIColor.Clear.CGColor;
+            foreach (var subview in view.Subviews)
+            {
+                ClearNativeGlassSubviewBackground(subview, preservedBackdrop);
+            }
+        }
+
+        private void ClearNativeGlassHostLayers()
+        {
+            var layers = Layer.Sublayers;
+            if (layers is null)
+            {
+                return;
+            }
+
+            foreach (var layer in layers)
+            {
+                if (ReferenceEquals(layer, borderLayer) ||
+                    ReferenceEquals(layer, focusBorderLayer) ||
+                    ReferenceEquals(layer, focusBorderMaskLayer) ||
+                    ReferenceEquals(layer, glassBackdropView?.Layer))
+                {
+                    continue;
+                }
+
+                layer.BackgroundColor = UIColor.Clear.CGColor;
+                layer.ShouldRasterize = false;
+            }
+        }
+
+        private void ClearNativeGlassWrapperBackgrounds()
+        {
+            var ancestor = Superview;
+            var depth = 0;
+            while (ancestor is not null && ancestor is not UIWindow && depth < 4)
+            {
+                if (IsLikelyNativeInputWrapper(ancestor))
+                {
+                    ancestor.Opaque = false;
+                    ancestor.BackgroundColor = UIColor.Clear;
+                    ancestor.Layer.BackgroundColor = UIColor.Clear.CGColor;
+                    ClearNativeWrapperLayers(ancestor.Layer);
+                }
+
+                ancestor = ancestor.Superview;
+                depth++;
+            }
+        }
+
+        private bool IsLikelyNativeInputWrapper(UIView view)
+        {
+            const double widthSlack = 72;
+            const double heightSlack = 18;
+            return view.Bounds.Width <= Bounds.Width + widthSlack &&
+                view.Bounds.Height <= Bounds.Height + heightSlack;
+        }
+
+        private static void ClearNativeWrapperLayers(CALayer layer)
+        {
+            var layers = layer.Sublayers;
+            if (layers is null)
+            {
+                return;
+            }
+
+            foreach (var sublayer in layers)
+            {
+                sublayer.BackgroundColor = UIColor.Clear.CGColor;
+                sublayer.ShouldRasterize = false;
+            }
+        }
+
+        private void RemoveGlassBackdrop()
+        {
+            if (glassBackdropView is null)
+            {
+                return;
+            }
+
+            glassBackdropView.RemoveFromSuperview();
+            glassBackdropView.Dispose();
+            glassBackdropView = null;
+        }
+
+        private void ApplyPlaceholderVisualState(bool dark)
+        {
+            if (string.IsNullOrEmpty(Placeholder))
+            {
+                return;
+            }
+
+            var placeholderColor = glassFieldVisual ? UIColor.Clear : dark ? DarkPlaceholderColor : LightPlaceholderColor;
+            var placeholderFont = Font is not null
+                ? UIFont.SystemFontOfSize(Font.PointSize, UIFontWeight.Regular)
+                : UIFont.SystemFontOfSize(14, UIFontWeight.Regular);
+            AttributedPlaceholder = new NSAttributedString(
+                Placeholder,
+                new UIStringAttributes
+                {
+                    ForegroundColor = placeholderColor,
+                    Font = placeholderFont,
+                });
         }
 
         private bool ResolveDarkThemeState()
@@ -202,6 +447,12 @@ public class MacEntryHandler : EntryHandler
         public void SetPseudoFocus(bool enabled)
         {
             pseudoFocused = enabled;
+            ApplyFocusVisualState();
+        }
+
+        public void SetGlassFieldVisual(bool enabled)
+        {
+            glassFieldVisual = enabled;
             ApplyFocusVisualState();
         }
 

@@ -73,6 +73,9 @@ public partial class MainPage
         if (suppressTapExecuteForItemId == item.Id)
         {
             suppressTapExecuteForItemId = null;
+#if MACCATALYST
+            macPlacementPollingCommandSelectionItemId = null;
+#endif
             return;
         }
 
@@ -139,6 +142,7 @@ public partial class MainPage
         EnsureWindowsTextBoxHooks();
 #endif
 #if MACCATALYST
+        ApplyMacEntryVisualState();
         ApplyMacCommandSuggestionKeyCommands();
 #endif
         UpdateCommandSuggestionPopupPlacement();
@@ -146,7 +150,13 @@ public partial class MainPage
 
     private void MainCommandEntry_Focused(object? sender, FocusEventArgs e)
     {
+        SetMainInputFocusUnderline(MainCommandFocusUnderline, focused: true);
         ReopenCommandSuggestionsFromEntry();
+    }
+
+    private void MainCommandEntry_Unfocused(object? sender, FocusEventArgs e)
+    {
+        SetMainInputFocusUnderline(MainCommandFocusUnderline, focused: false);
     }
 
     private void MainCommandEntry_PointerPressed(object? sender, PointerEventArgs e)
@@ -161,7 +171,18 @@ public partial class MainPage
 
     private void MainSearchEntry_Focused(object? sender, FocusEventArgs e)
     {
+        SetMainInputFocusUnderline(MainSearchFocusUnderline, focused: true);
         CloseCommandSuggestionPopup();
+    }
+
+    private void MainSearchEntry_Unfocused(object? sender, FocusEventArgs e)
+    {
+        SetMainInputFocusUnderline(MainSearchFocusUnderline, focused: false);
+    }
+
+    private static void SetMainInputFocusUnderline(VisualElement underline, bool focused)
+    {
+        underline.Opacity = focused ? 1 : 0;
     }
 
     private void MainSearchEntry_PointerPressed(object? sender, PointerEventArgs e)
@@ -183,6 +204,9 @@ public partial class MainPage
 #if WINDOWS
         EnsureWindowsKeyHooks();
         EnsureWindowsTextBoxHooks();
+#endif
+#if MACCATALYST
+        ApplyMacEntryVisualState();
 #endif
     }
 

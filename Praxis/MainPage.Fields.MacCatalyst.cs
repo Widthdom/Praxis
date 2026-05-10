@@ -17,6 +17,7 @@ public partial class MainPage
     private static readonly TimeSpan macActivationFocusWindow = UiTimingPolicy.MacActivationFocusWindow;
     private static readonly TimeSpan macActivationFocusRequestCoalesceDelay = UiTimingPolicy.MacActivationFocusRequestCoalesceDelay;
     private static readonly TimeSpan macSearchFocusUserIntentWindow = UiTimingPolicy.MacSearchFocusUserIntentWindow;
+    private readonly UIGestureRecognizerDelegate macPlacementGestureDelegate = new MacPlacementGestureDelegate();
 
     private long macActivationFocusRequestId;
     private DateTimeOffset macActivationFocusSessionUntilUtc;
@@ -59,16 +60,46 @@ public partial class MainPage
     private UIKeyCommand? commandSuggestionUpKeyCommand;
     private UIKeyCommand? commandSuggestionDownKeyCommand;
     private Microsoft.Maui.Dispatching.IDispatcherTimer? macMiddleButtonPollTimer;
+    private bool macPrimaryButtonWasDown;
+    private bool macSecondaryButtonWasDown;
     private bool macMiddleButtonWasDown;
+    private bool macPlacementPollingSelectionActive;
+    private long macPlacementDeferredPrimaryDownId;
+    private DateTimeOffset? macPlacementPrimaryReleaseStartedAtUtc;
+    private MacAppKitRootPointKind? macPlacementPollingAppKitRootPointKind;
+    private Point? macPlacementPollingStartRootPoint;
+    private Point? macPlacementPollingRawStartScreen;
+    private MacPointerScreenPointKind? macPlacementPollingScreenPointKind;
+    private Point? macPlacementPollingAnchorViewport;
+    private UIView? macPlacementSelectionOverlayView;
+    private int macPlacementSelectionOverlayFadeRevision;
+    private Guid? macPlacementPollingCommandSelectionItemId;
     private bool macInitialCommandFocusApplied;
     private ModalFocusTarget? macPseudoFocusedModalTarget;
     private ContextMenuFocusTarget? macPseudoFocusedContextMenuTarget;
+    private MacContextMenuKeyCaptureView? macContextMenuKeyCaptureView;
     private static readonly bool macDynamicKeyCommandRegistrationEnabled = false;
     private readonly UITextFieldDelegate macGuidReadOnlyDelegate = new MacGuidReadOnlyTextFieldDelegate();
     private UITextField? macGuidNativeTextField;
     private string macGuidLockedText = string.Empty;
     private bool macApplyingGuidTextLock;
     private bool macSuppressEditorTabFallback;
+    private UIView? macPlacementGestureNativeView;
+    private Point? macPlacementHoverRootPoint;
+    private DateTimeOffset macPlacementHoverRootPointUpdatedAtUtc;
+    private UIHoverGestureRecognizer? macPlacementHoverRecognizer;
+    private UILongPressGestureRecognizer? macPlacementPrimarySelectionRecognizer;
+    private UILongPressGestureRecognizer? macPlacementSecondaryCreateRecognizer;
+    private bool macPlacementNativeSelectionActive;
+    private bool macPlacementNativeSelectionIgnored;
+    private Point? macPlacementNativeSelectionStartRootPoint;
+    private int macPlacementAttachDiagnosticCount;
+    private int macPlacementDetachDiagnosticCount;
+    private int macPlacementHoverDiagnosticCount;
+    private int macPlacementPrimaryRecognizerDiagnosticCount;
+    private int macPlacementSecondaryRecognizerDiagnosticCount;
+    private int macPlacementPollTickDiagnosticCount;
+    private int macPlacementPollingGeometryDiagnosticCount;
 
     private enum ModalFocusTarget
     {

@@ -64,6 +64,16 @@ public partial class MainPage
 
         if (bindable.BindingContext is LauncherButtonItemViewModel item && IsSelectionModifierPressed(e))
         {
+#if MACCATALYST
+            if (macPlacementPollingCommandSelectionItemId == item.Id)
+            {
+                macPlacementPollingCommandSelectionItemId = null;
+                suppressTapExecuteForItemId = item.Id;
+                pointerDragging = false;
+                ReleaseCapturedPointer();
+                return;
+            }
+#endif
             viewModel.ToggleSelection(item);
             suppressTapExecuteForItemId = item.Id;
             pointerDragging = false;
@@ -283,12 +293,17 @@ public partial class MainPage
         {
             if (!IsOnAnyVisibleButton(point.Value))
             {
-                _ = OpenCreateEditorFromCanvasPointAsync(point.Value);
+                _ = OpenCreateEditorFromCanvasPointWithWarningAsync(point.Value, nameof(Selection_PointerPressed));
             }
             return;
         }
 
 #if MACCATALYST
+        if (selectionDragging)
+        {
+            return;
+        }
+
         if (!IsPrimaryPointerPressed(e) || IsOnAnyVisibleButton(point.Value))
         {
             selectionPanPrimed = false;
@@ -331,6 +346,13 @@ public partial class MainPage
         {
             return;
         }
+
+#if MACCATALYST
+        if (macPlacementNativeSelectionActive)
+        {
+            return;
+        }
+#endif
 
         switch (e.StatusType)
         {
@@ -404,15 +426,7 @@ public partial class MainPage
             return;
         }
 
-        try
-        {
-            await OpenCreateEditorFromCanvasPointAsync(canvasPoint);
-        }
-        catch (Exception ex)
-        {
-            var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);
-            CrashFileLogger.WriteWarning(nameof(PlacementCanvas_SecondaryTapped), $"Secondary-tap create flow failed at ({canvasPoint.X:0.##}, {canvasPoint.Y:0.##}): {safeMessage}");
-        }
+        await OpenCreateEditorFromCanvasPointWithWarningAsync(canvasPoint, nameof(PlacementCanvas_SecondaryTapped));
     }
 
     private void Selection_PointerMoved(object? sender, PointerEventArgs e)
@@ -1061,19 +1075,78 @@ public partial class MainPage
     {
         if (hide)
         {
-            SelectionRect.IsVisible = false;
+            FadeOutSelectionRect();
             return;
         }
 
-        var x = Math.Min(start.X, current.X);
-        var y = Math.Min(start.Y, current.Y);
-        var w = Math.Abs(current.X - start.X);
-        var h = Math.Abs(current.Y - start.Y);
+        var fadeRevision = ++selectionRectFadeRevision;
+        SelectionRect.CancelAnimations();
+        SelectionRect.Opacity = 1;
+        var startDisplay = ConvertPlacementViewportPointToSelectionRectParent(start);
+        var currentDisplay = ConvertPlacementViewportPointToSelectionRectParent(current);
+        var x = Math.Min(startDisplay.X, currentDisplay.X);
+        var y = Math.Min(startDisplay.Y, currentDisplay.Y);
+        var w = Math.Abs(currentDisplay.X - startDisplay.X);
+        var h = Math.Abs(currentDisplay.Y - startDisplay.Y);
         SelectionRect.IsVisible = w > 2 && h > 2;
+        if (SelectionRect.IsVisible)
+        {
+            selectionRectFadeRevision = fadeRevision;
+        }
+
         SelectionRect.TranslationX = x;
         SelectionRect.TranslationY = y;
         SelectionRect.WidthRequest = w;
         SelectionRect.HeightRequest = h;
+    }
+
+    private void FadeOutSelectionRect()
+    {
+        if (!SelectionRect.IsVisible)
+        {
+            SelectionRect.CancelAnimations();
+            SelectionRect.Opacity = 1;
+            return;
+        }
+
+        var fadeRevision = ++selectionRectFadeRevision;
+        SelectionRect.CancelAnimations();
+        _ = FadeOutSelectionRectAsync(fadeRevision);
+    }
+
+    private async Task FadeOutSelectionRectAsync(int fadeRevision)
+    {
+        try
+        {
+            await SelectionRect.FadeToAsync(0, UiTimingPolicy.SelectionRectFadeOutDurationMs, Easing.CubicOut);
+        }
+        catch (Exception ex)
+        {
+            var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);
+            CrashFileLogger.WriteWarning(nameof(FadeOutSelectionRectAsync), $"Selection rectangle fade failed while visible={SelectionRect.IsVisible}: {safeMessage}");
+        }
+        finally
+        {
+            if (selectionRectFadeRevision == fadeRevision)
+            {
+                SelectionRect.IsVisible = false;
+                SelectionRect.Opacity = 1;
+            }
+        }
+    }
+
+    private Point ConvertPlacementViewportPointToSelectionRectParent(Point point)
+    {
+        if (SelectionRect.Parent is not VisualElement selectionParent)
+        {
+            return point;
+        }
+
+        var scrollOffset = GetPositionRelativeToAncestor(PlacementScroll, RootGrid);
+        var parentOffset = GetPositionRelativeToAncestor(selectionParent, RootGrid);
+        return new Point(
+            point.X + scrollOffset.X - parentOffset.X,
+            point.Y + scrollOffset.Y - parentOffset.Y);
     }
 
     private void ExecuteSelectionPayload(SelectionPayload payload)
@@ -1085,6 +1158,29 @@ public partial class MainPage
     {
         await viewModel.OpenCreateEditorAtAsync(canvasPoint.X, canvasPoint.Y, useClipboardForArguments: true);
         Dispatcher.DispatchDelayed(UiTimingPolicy.ModalOpenInitialFocusDelay, FocusModalPrimaryEditorField);
+    }
+
+    private async Task OpenCreateEditorFromCanvasPointWithWarningAsync(Point canvasPoint, string source)
+    {
+        if (placementCreateEditorOpening)
+        {
+            return;
+        }
+
+        placementCreateEditorOpening = true;
+        try
+        {
+            await OpenCreateEditorFromCanvasPointAsync(canvasPoint);
+        }
+        catch (Exception ex)
+        {
+            var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);
+            CrashFileLogger.WriteWarning(source, $"Placement-canvas create flow failed at ({canvasPoint.X:0.##}, {canvasPoint.Y:0.##}): {safeMessage}");
+        }
+        finally
+        {
+            placementCreateEditorOpening = false;
+        }
     }
 
     private void FocusModalPrimaryEditorField()

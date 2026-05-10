@@ -42,6 +42,9 @@ public sealed class MauiThemeService : IThemeService
         }
 
         Application.Current.UserAppTheme = appTheme;
+#if WINDOWS
+        App.RefreshPlatformWindowBackdrops();
+#endif
 #if MACCATALYST
         ApplyMacWindowStyle(appTheme);
 #endif

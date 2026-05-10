@@ -7,8 +7,8 @@ public class CommandSuggestionRowColorPolicyTests
     [Theory]
     [InlineData(false, false, "#00000000")]
     [InlineData(false, true, "#00000000")]
-    [InlineData(true, false, "#E6E6E6")]
-    [InlineData(true, true, "#3D3D3D")]
+    [InlineData(true, false, "#B7C0C9")]
+    [InlineData(true, true, "#59636E")]
     public void ResolveBackgroundHex_ReturnsExpectedColor(bool selected, bool isDarkTheme, string expected)
     {
         var actual = CommandSuggestionRowColorPolicy.ResolveBackgroundHex(selected, isDarkTheme);
@@ -31,7 +31,7 @@ public class CommandSuggestionRowColorPolicyTests
         var dark = CommandSuggestionRowColorPolicy.ResolveBackgroundHex(selected: true, isDarkTheme: true);
 
         Assert.NotEqual(light, dark);
-        Assert.Equal("#E6E6E6", light);
-        Assert.Equal("#3D3D3D", dark);
+        Assert.Equal("#B7C0C9", light);
+        Assert.Equal("#59636E", dark);
     }
 }

@@ -57,6 +57,13 @@ public partial class App : Application
         try
         {
             InitializeComponent();
+            RequestedThemeChanged += (_, _) =>
+            {
+#if WINDOWS
+                RefreshWindowsTextSelectionResources();
+#endif
+                RefreshWindowBackdrops();
+            };
         }
         catch (Exception ex)
         {
@@ -64,8 +71,61 @@ public partial class App : Application
             Resources = new ResourceDictionary();
         }
 
+#if WINDOWS
+        RefreshWindowsTextSelectionResources();
+#endif
         errorLogger?.LogInfo($"App started. CrashLog={CrashFileLogger.LogFilePath}", nameof(App));
     }
+
+#if WINDOWS
+    public static void RefreshWindowsTextSelectionResources()
+    {
+        var resources = Microsoft.UI.Xaml.Application.Current?.Resources;
+        if (resources is null)
+        {
+            return;
+        }
+
+        var selectionForegroundColor = ResolveWindowsSelectedTextColor();
+        var selectionForegroundBrush = new Microsoft.UI.Xaml.Media.SolidColorBrush(selectionForegroundColor);
+        var selectionBackgroundBrush = new Microsoft.UI.Xaml.Media.SolidColorBrush(ResolveWindowsTextSelectionColor());
+        SetWindowsAppResource(resources, "TextOnAccentFillColorSelectedText", selectionForegroundColor);
+        SetWindowsAppResource(resources, "TextOnAccentFillColorSelectedTextBrush", selectionForegroundBrush);
+        SetWindowsAppResource(resources, "TextControlSelectionHighlightForeground", selectionForegroundBrush);
+        SetWindowsAppResource(resources, "TextControlSelectionHighlightColor", selectionBackgroundBrush);
+        SetWindowsAppResource(resources, "TextSelectionHighlightColorThemeBrush", selectionBackgroundBrush);
+        SetWindowsAppResource(resources, "AccentFillColorSelectedTextBackgroundBrush", selectionBackgroundBrush);
+    }
+
+    private static void SetWindowsAppResource(
+        Microsoft.UI.Xaml.ResourceDictionary resources,
+        string key,
+        object value)
+    {
+        try
+        {
+            resources[key] = value;
+        }
+        catch (Exception ex)
+        {
+            var safeResourceMessage = CrashFileLogger.SafeExceptionMessage(ex);
+            CrashFileLogger.WriteWarning(nameof(App), $"Failed to set Windows app resource {key}: {safeResourceMessage}");
+        }
+    }
+
+    private static global::Windows.UI.Color ResolveWindowsSelectedTextColor()
+    {
+        return global::Windows.UI.Color.FromArgb(255, 255, 255, 255);
+    }
+
+    private static global::Windows.UI.Color ResolveWindowsTextSelectionColor()
+    {
+        return IsWindowsDarkThemeActive()
+            ? global::Windows.UI.Color.FromArgb(255, 82, 58, 124)
+            : global::Windows.UI.Color.FromArgb(255, 107, 75, 176);
+    }
+
+#endif
 
     private static void OnUnhandledException(object sender, UnhandledExceptionEventArgs e)
     {
@@ -127,8 +187,15 @@ public partial class App : Application
         {
             Width = 1000,
             Height = 700,
+#if WINDOWS
+            Title = string.Empty,
+#else
             Title = "Praxis",
+#endif
         };
+        page.BackgroundColor = Colors.Transparent;
+
+        window.HandlerChanged += (_, _) => ApplyPlatformWindowBackdrop(window);
 
 #if WINDOWS
         window.HandlerChanged += (_, _) =>
@@ -160,6 +227,34 @@ public partial class App : Application
         return window;
     }
 
+    private static void RefreshWindowBackdrops()
+    {
+        try
+        {
+            var windows = Current?.Windows;
+            if (windows is null)
+            {
+                return;
+            }
+
+            foreach (var window in windows)
+            {
+                ApplyPlatformWindowBackdrop(window);
+            }
+        }
+        catch (Exception ex)
+        {
+            errorLogger?.Log(ex, nameof(RefreshWindowBackdrops));
+        }
+    }
+
+    public static void RefreshPlatformWindowBackdrops()
+    {
+        RefreshWindowBackdrops();
+    }
+
+    static partial void ApplyPlatformWindowBackdrop(Window window);
+
     private static void TryFlushLogs(TimeSpan timeout, string context)
     {
         try
@@ -188,7 +283,11 @@ public partial class App : Application
             var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);
             return new ContentPage
             {
+#if WINDOWS
+                Title = string.Empty,
+#else
                 Title = "Praxis",
+#endif
                 Content = new ScrollView
                 {
                     Content = new VerticalStackLayout

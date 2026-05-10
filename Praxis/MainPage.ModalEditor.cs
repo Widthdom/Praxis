@@ -94,6 +94,7 @@ public partial class MainPage
     {
 #if MACCATALYST
         EnsureMacGuidEntryReadOnlyBehavior();
+        ApplyMacEntryVisualState();
 #endif
 #if WINDOWS
         EnsureWindowsTextBoxHooks();
@@ -102,8 +103,18 @@ public partial class MainPage
 
     private void ModalTextInput_HandlerChanged(object? sender, EventArgs e)
     {
+#if MACCATALYST
+        ApplyMacEntryVisualState();
+#endif
 #if WINDOWS
         EnsureWindowsTextBoxHooks();
+#endif
+    }
+
+    private void ModalGlassButton_HandlerChanged(object? sender, EventArgs e)
+    {
+#if MACCATALYST
+        ScheduleMacModalButtonVisualStateRefresh();
 #endif
     }
 
@@ -111,8 +122,21 @@ public partial class MainPage
     {
         var dark = IsDarkThemeActive();
         var textColor = Color.FromArgb(ThemeTextColorPolicy.ResolveTextColorHex(dark));
+        ModalGuidEntry.TextColor = textColor;
+        ModalButtonTextEntry.TextColor = textColor;
+        ModalCommandEntry.TextColor = textColor;
+        ModalToolEntry.TextColor = textColor;
+        ModalArgumentsEntry.TextColor = textColor;
         ModalClipWordEditor.TextColor = textColor;
         ModalNoteEditor.TextColor = textColor;
+#if WINDOWS
+        EnsureWindowsTextBoxHooks();
+#endif
+#if MACCATALYST
+        ApplyMacEntryVisualState();
+        ApplyMacClipWordEditorVisualState();
+        ApplyMacNoteEditorVisualState();
+#endif
     }
 
     private void ModalEditorField_Focused(object? sender, FocusEventArgs e)
@@ -168,7 +192,7 @@ public partial class MainPage
         EditorOverlay.InvalidateMeasure();
     }
 
-    private static void UpdateEditorHeight(Editor editor, Border container, Button? copyButton, double targetHeight)
+    private static void UpdateEditorHeight(Editor editor, Border container, Border? copyButton, double targetHeight)
     {
         editor.HeightRequest = targetHeight;
         container.HeightRequest = targetHeight;

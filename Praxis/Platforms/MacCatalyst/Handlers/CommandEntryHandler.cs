@@ -610,6 +610,7 @@ public class CommandEntryHandler : MacEntryHandler
             }
 
             SelectAllText();
+            ApplyFocusVisualState();
             RefreshInputSourceEnforcementState();
         }
 
