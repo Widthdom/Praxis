@@ -476,6 +476,7 @@ public partial class MainPage
         var dark = IsDarkThemeActive();
         button.BorderColor = Color.FromArgb(ButtonFocusVisualPolicy.ResolveBorderColorHex(focused, dark));
         button.BorderWidth = ButtonFocusVisualPolicy.ResolveBorderWidth();
+        button.BackgroundColor = Color.FromArgb(ButtonFocusVisualPolicy.ResolveBackgroundColorHex(focused, dark));
     }
 
     private static bool IsButtonFocused(Button button)
