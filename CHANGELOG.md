@@ -6,6 +6,12 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 
 ## [Unreleased]
 
+### Changed
+- The Edit/Delete context menu, modal editor, conflict dialog, and command-suggestion popup now fade in and out instead of toggling instantly, with cancellation tokens so rapid open/close cycles cannot leave an overlay stuck mid-fade
+
+### Fixed
+- Edit/Delete overlays now close when clicking outside the menu on both Windows and Mac Catalyst, and Edit/Delete, editor, and conflict overlays share a full-window hit target rendered as a `Border` (more reliable than a `Grid` for MAUI iOS gesture pickup) using a near-black `#01000000` tint that stays visually neutral. Editor/conflict hit targets block lower-layer clicks without dismissing their dialogs, with the conflict layer sitting between the conflict panel and any editor modal underneath
+
 ### [1.1.13] - 2026-04-30
 
 ### Changed
