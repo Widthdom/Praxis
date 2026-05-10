@@ -16,7 +16,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - The status bar at the bottom of the page is borderless (`Stroke="Transparent" StrokeThickness="0"`), keeps its idle background fully transparent so it disappears against the page when not flashing, and centers the status text horizontally
 - The placement-area drag-selection rectangle now uses a 1-pixel stroke (down from 2 px) so multi-select feedback is less visually heavy
 - Placement-area inverted-theme buttons (`UseInvertedThemeColors=True`) now use `#787878` (light) / `#A0A0A0` (dark) for the selected fill — visibly distinct from the inverted idle `#363636` / `#FFFFFF` while staying inside the monochrome palette
-- Edit/Delete context-menu, modal Cancel/Save, and conflict-dialog Reload/Overwrite/Cancel buttons indicate focus via a background tint (`#C8C8C8` light, `#555555` dark) instead of a focus border ring, keeping the labels stable across focus changes; the unfocused fill falls back to the platform default
+- Edit/Delete context-menu, modal Cancel/Save, and conflict-dialog Reload/Overwrite/Cancel buttons indicate focus via a background tint (`#E6E6E6` light, `#3D3D3D` dark) instead of a focus border ring, keeping the labels stable across focus changes; the unfocused fill falls back to the platform default
 - The OS titlebar no longer shows the literal "Praxis" string on either Windows or Mac Catalyst. On Mac Catalyst, the bundle / display-name fallback is overridden through a new `ClearMacWindowTitles` helper in `AppDelegate.OnActivated` that walks every connected `UIWindowScene` and sets `Title=""` plus `Titlebar.TitleVisibility=Hidden`
 
 ### Fixed
@@ -490,7 +490,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - ページ下端のステータスバーは枠なし（`Stroke="Transparent" StrokeThickness="0"`）。フラッシュしていない待機状態の背景も完全透明とし、ページに溶け込んで見えなくなる。ステータステキストは水平中央揃え
 - 配置領域のドラッグ選択矩形のストローク太さを 2px から 1px に半減し、複数選択フィードバックの見た目を軽くする
 - 配置領域の inverted ボタン（`UseInvertedThemeColors=True`）の選択時の塗りを `Light=#787878 / Dark=#A0A0A0` に変更し、inverted idle の `#363636 / #FFFFFF` とのコントラストを広げる（モノトーンの範囲内で）
-- Edit/Delete コンテキストメニュー、モーダルの Cancel/Save、conflict ダイアログの Reload/Overwrite/Cancel の各ボタンは、フォーカス表示を枠線ではなく背景色チント（`Light=#C8C8C8 / Dark=#555555`）で行うよう変更。フォーカス遷移でラベル位置がずれない。アンフォーカスの塗りはプラットフォーム既定にフォールバックする
+- Edit/Delete コンテキストメニュー、モーダルの Cancel/Save、conflict ダイアログの Reload/Overwrite/Cancel の各ボタンは、フォーカス表示を枠線ではなく背景色チント（`Light=#E6E6E6 / Dark=#3D3D3D`）で行うよう変更。フォーカス遷移でラベル位置がずれない。アンフォーカスの塗りはプラットフォーム既定にフォールバックする
 - OS のタイトルバーから "Praxis" 文言を削除（Windows / Mac Catalyst 両方）。Mac Catalyst では bundle / display-name にフォールバックするため、`AppDelegate.OnActivated` で新規ヘルパー `ClearMacWindowTitles` を実装し、接続中の `UIWindowScene` ごとに `Title=""` と `Titlebar.TitleVisibility=Hidden` を適用する
 
 ### 修正

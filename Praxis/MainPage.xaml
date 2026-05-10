@@ -584,6 +584,7 @@
                 <VerticalStackLayout Spacing="8">
                     <Button x:Name="ContextEditButton"
                             Text="Edit"
+                            BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#1F1F1F}"
                             BorderColor="Transparent"
                             BorderWidth="0"
                             HandlerChanged="ContextActionButton_HandlerChanged"
@@ -596,6 +597,7 @@
                     </Button>
                     <Button x:Name="ContextDeleteButton"
                             Text="Delete"
+                            BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#1F1F1F}"
                             BorderColor="Transparent"
                             BorderWidth="0"
                             HandlerChanged="ContextActionButton_HandlerChanged"
