@@ -584,7 +584,6 @@
                 <VerticalStackLayout Spacing="8">
                     <Button x:Name="ContextEditButton"
                             Text="Edit"
-                            BackgroundColor="Transparent"
                             BorderColor="Transparent"
                             BorderWidth="0"
                             HandlerChanged="ContextActionButton_HandlerChanged"
@@ -597,7 +596,6 @@
                     </Button>
                     <Button x:Name="ContextDeleteButton"
                             Text="Delete"
-                            BackgroundColor="Transparent"
                             BorderColor="Transparent"
                             BorderWidth="0"
                             HandlerChanged="ContextActionButton_HandlerChanged"
@@ -858,12 +856,28 @@
                     <HorizontalStackLayout Grid.Row="1"
                                            HorizontalOptions="Center"
                                            Spacing="10">
-                        <Button x:Name="ModalCancelButton" Text="Cancel" WidthRequest="96" Unfocused="ModalActionButton_Unfocused" Command="{Binding CancelEditorCommand}">
+                        <Button x:Name="ModalCancelButton"
+                                Text="Cancel"
+                                WidthRequest="96"
+                                BorderColor="Transparent"
+                                BorderWidth="0"
+                                HandlerChanged="ModalActionButton_HandlerChanged"
+                                Focused="ModalActionButton_Focused"
+                                Unfocused="ModalActionButton_Unfocused"
+                                Command="{Binding CancelEditorCommand}">
                             <Button.Behaviors>
                                 <behaviors:HoverHandCursorBehavior />
                             </Button.Behaviors>
                         </Button>
-                        <Button x:Name="ModalSaveButton" Text="Save" WidthRequest="96" Unfocused="ModalActionButton_Unfocused" Command="{Binding SaveEditorCommand}">
+                        <Button x:Name="ModalSaveButton"
+                                Text="Save"
+                                WidthRequest="96"
+                                BorderColor="Transparent"
+                                BorderWidth="0"
+                                HandlerChanged="ModalActionButton_HandlerChanged"
+                                Focused="ModalActionButton_Focused"
+                                Unfocused="ModalActionButton_Unfocused"
+                                Command="{Binding SaveEditorCommand}">
                             <Button.Behaviors>
                                 <behaviors:HoverHandCursorBehavior />
                             </Button.Behaviors>
@@ -907,7 +921,6 @@
                         <Button x:Name="ConflictReloadButton"
                                 Text="Reload latest"
                                 WidthRequest="132"
-                                BackgroundColor="Transparent"
                                 BorderColor="Transparent"
                                 BorderWidth="0"
                                 HandlerChanged="ConflictActionButton_HandlerChanged"
@@ -921,7 +934,6 @@
                         <Button x:Name="ConflictOverwriteButton"
                                 Text="Overwrite mine"
                                 WidthRequest="132"
-                                BackgroundColor="Transparent"
                                 BorderColor="Transparent"
                                 BorderWidth="0"
                                 HandlerChanged="ConflictActionButton_HandlerChanged"
@@ -935,7 +947,6 @@
                         <Button x:Name="ConflictCancelButton"
                                 Text="Cancel"
                                 WidthRequest="132"
-                                BackgroundColor="Transparent"
                                 BorderColor="Transparent"
                                 BorderWidth="0"
                                 HandlerChanged="ConflictActionButton_HandlerChanged"

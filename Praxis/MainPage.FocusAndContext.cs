@@ -405,6 +405,28 @@ public partial class MainPage
         ApplyButtonFocusVisual(ConflictCancelButton, IsButtonFocused(ConflictCancelButton));
     }
 
+    private void ApplyModalActionButtonFocusVisuals()
+    {
+        if (!viewModel.IsEditorOpen)
+        {
+            ApplyButtonFocusVisual(ModalCancelButton, false);
+            ApplyButtonFocusVisual(ModalSaveButton, false);
+            return;
+        }
+
+#if MACCATALYST
+        if (macPseudoFocusedModalTarget is ModalFocusTarget pseudoTarget)
+        {
+            ApplyButtonFocusVisual(ModalCancelButton, pseudoTarget == ModalFocusTarget.CancelButton);
+            ApplyButtonFocusVisual(ModalSaveButton, pseudoTarget == ModalFocusTarget.SaveButton);
+            return;
+        }
+#endif
+
+        ApplyButtonFocusVisual(ModalCancelButton, IsButtonFocused(ModalCancelButton));
+        ApplyButtonFocusVisual(ModalSaveButton, IsButtonFocused(ModalSaveButton));
+    }
+
     private void SyncConflictDialogPseudoFocusFromButton(Button button)
     {
         var target = GetConflictDialogTarget(button);
@@ -476,7 +498,18 @@ public partial class MainPage
         var dark = IsDarkThemeActive();
         button.BorderColor = Color.FromArgb(ButtonFocusVisualPolicy.ResolveBorderColorHex(focused, dark));
         button.BorderWidth = ButtonFocusVisualPolicy.ResolveBorderWidth();
-        button.BackgroundColor = Color.FromArgb(ButtonFocusVisualPolicy.ResolveBackgroundColorHex(focused, dark));
+        if (focused)
+        {
+            button.BackgroundColor = Color.FromArgb(ButtonFocusVisualPolicy.ResolveBackgroundColorHex(true, dark));
+        }
+        else
+        {
+            // Revert to the XAML-bound (or platform default) idle fill so the
+            // button stays visible against the modal / popup surface. Painting
+            // the unfocused policy color directly would set the fill to
+            // transparent and the button would disappear.
+            button.ClearValue(VisualElement.BackgroundColorProperty);
+        }
     }
 
     private static bool IsButtonFocused(Button button)

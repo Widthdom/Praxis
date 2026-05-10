@@ -8,6 +8,12 @@ public static class ButtonFocusVisualPolicy
 
     public static string ResolveBorderColorHex(bool focused, bool isDarkTheme) => "#00000000";
 
+    // Returns the focus-tint hex when focused. When unfocused this returns
+    // "#00000000" as a sentinel — callers must NOT paint the unfocused tint
+    // directly. Instead they should clear `BackgroundColor` so the platform
+    // default fill (or whatever the XAML idle binding supplies) shows
+    // through; otherwise the button visually disappears against the modal
+    // / popup surface it sits on.
     public static string ResolveBackgroundColorHex(bool focused, bool isDarkTheme)
     {
         if (!focused)
@@ -15,6 +21,6 @@ public static class ButtonFocusVisualPolicy
             return "#00000000";
         }
 
-        return isDarkTheme ? "#3F4750" : "#D8DDE3";
+        return isDarkTheme ? "#555555" : "#C8C8C8";
     }
 }

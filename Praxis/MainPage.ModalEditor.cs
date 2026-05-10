@@ -77,8 +77,25 @@ public partial class MainPage
 #endif
     }
 
+    private void ModalActionButton_Focused(object? sender, FocusEventArgs e)
+    {
+        ApplyModalActionButtonFocusVisuals();
+    }
+
+    private void ModalActionButton_HandlerChanged(object? sender, EventArgs e)
+    {
+#if WINDOWS
+        if (sender is Button button)
+        {
+            DisableWindowsSystemFocusVisual(button);
+        }
+#endif
+        ApplyModalActionButtonFocusVisuals();
+    }
+
     private void ModalActionButton_Unfocused(object? sender, FocusEventArgs e)
     {
+        ApplyModalActionButtonFocusVisuals();
 #if WINDOWS
         QueueWindowsEditorFocusRestore();
 #endif
