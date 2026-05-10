@@ -899,6 +899,7 @@ public partial class MainPage
         selectionLastViewport = selectionStartViewport;
         macPlacementNativeSelectionStartRootPoint = selectionRootPoint;
         SelectionRect.IsVisible = false;
+        SetMacPlacementSelectionCursor();
         UpdateMacPlacementNativeSelectionOverlay(selectionRootPoint, selectionRootPoint);
         ExecuteSelectionPayload(new SelectionPayload(selectionStartCanvas.X, selectionStartCanvas.Y, selectionStartCanvas.X, selectionStartCanvas.Y, GestureStatus.Started));
         LogMacPlacementInputDiagnostic(
@@ -932,6 +933,7 @@ public partial class MainPage
 
         selectionLastCanvas = canvasPoint;
         selectionLastViewport = viewportPoint;
+        SetMacPlacementSelectionCursor();
         UpdateMacPlacementNativeSelectionOverlay(macPlacementNativeSelectionStartRootPoint ?? selectionRootPoint, selectionRootPoint);
         ExecuteSelectionPayload(new SelectionPayload(selectionStartCanvas.X, selectionStartCanvas.Y, canvasPoint.X, canvasPoint.Y, GestureStatus.Running));
     }
@@ -2058,6 +2060,7 @@ public partial class MainPage
         selectionLastCanvas = selectionStartCanvas;
         selectionLastViewport = selectionStartViewport;
         SelectionRect.IsVisible = false;
+        SetMacPlacementSelectionCursor();
         UpdateMacPlacementNativeSelectionOverlay(selectionRootPoint, selectionRootPoint);
         ExecuteSelectionPayload(new SelectionPayload(selectionStartCanvas.X, selectionStartCanvas.Y, selectionStartCanvas.X, selectionStartCanvas.Y, GestureStatus.Started));
         LogMacPlacementInputDiagnostic(
@@ -2151,7 +2154,11 @@ public partial class MainPage
         rootPoint = default;
 
         if (macPlacementPollingAppKitRootPointKind is MacAppKitRootPointKind appKitRootPointKind &&
-            TryGetMacCurrentRootPointerFromAppKit(appKitRootPointKind, allowOutsideRoot: true, out var lockedAppKitRootPoint))
+            TryGetMacCurrentRootPointerFromAppKit(
+                appKitRootPointKind,
+                allowOutsideRoot: true,
+                allowOutsideWindow: true,
+                out var lockedAppKitRootPoint))
         {
             var selectionRootPoint = ApplyMacPlacementSelectionPointerOffset(lockedAppKitRootPoint);
             if (TryGetMacPlacementRootCanvasPoint(selectionRootPoint, allowOutside: true, out canvasPoint, out viewportPoint))
@@ -2302,6 +2309,20 @@ public partial class MainPage
         overlay.Layer.BorderColor = borderColor.CGColor;
     }
 
+    private static void SetMacPlacementSelectionCursor()
+    {
+        if (nsCursorClass == IntPtr.Zero)
+        {
+            return;
+        }
+
+        var cursor = ObjcMsgSendIntPtr(nsCursorClass, arrowCursorSelector);
+        if (cursor != IntPtr.Zero)
+        {
+            ObjcMsgSendVoid(cursor, setCursorSelector);
+        }
+    }
+
     private void HideMacPlacementNativeSelectionOverlay(bool fade = false)
     {
         if (macPlacementSelectionOverlayView is UIView overlay)
@@ -2419,6 +2440,7 @@ public partial class MainPage
 
         selectionLastCanvas = canvasPoint;
         selectionLastViewport = viewportPoint;
+        SetMacPlacementSelectionCursor();
         UpdateMacPlacementNativeSelectionOverlay(macPlacementPollingStartRootPoint ?? rootPoint, rootPoint);
 
         ExecuteSelectionPayload(new SelectionPayload(selectionStartCanvas.X, selectionStartCanvas.Y, canvasPoint.X, canvasPoint.Y, GestureStatus.Running));
@@ -2799,7 +2821,14 @@ public partial class MainPage
 
         try
         {
-            if (!TryGetMacCurrentAppKitWindowPoint(nativeWindow, rootView, out var windowPoint, out var contentFrame, out var rootFrame, out var nativeWindowHeight))
+            if (!TryGetMacCurrentAppKitWindowPoint(
+                nativeWindow,
+                rootView,
+                allowOutsideWindow: false,
+                out var windowPoint,
+                out var contentFrame,
+                out var rootFrame,
+                out var nativeWindowHeight))
             {
                 return false;
             }
@@ -2843,6 +2872,7 @@ public partial class MainPage
     private bool TryGetMacCurrentRootPointerFromAppKit(
         MacAppKitRootPointKind rootPointKind,
         bool allowOutsideRoot,
+        bool allowOutsideWindow,
         out Point rootPoint)
     {
         rootPoint = default;
@@ -2855,7 +2885,14 @@ public partial class MainPage
 
         try
         {
-            if (!TryGetMacCurrentAppKitWindowPoint(nativeWindow, rootView, out var windowPoint, out var contentFrame, out var rootFrame, out var nativeWindowHeight))
+            if (!TryGetMacCurrentAppKitWindowPoint(
+                nativeWindow,
+                rootView,
+                allowOutsideWindow,
+                out var windowPoint,
+                out var contentFrame,
+                out var rootFrame,
+                out var nativeWindowHeight))
             {
                 return false;
             }
@@ -2888,6 +2925,7 @@ public partial class MainPage
     private bool TryGetMacCurrentAppKitWindowPoint(
         UIWindow nativeWindow,
         UIView rootView,
+        bool allowOutsideWindow,
         out CGPoint windowPoint,
         out CGRect contentFrame,
         out CGRect rootFrame,
@@ -2906,7 +2944,8 @@ public partial class MainPage
         }
 
         var screenPoint = ObjcMsgSendCGPoint(nsEventClass, SelRegisterName("mouseLocation"));
-        if (!MacAppKitWindowContainsScreenPoint(nsWindow, screenPoint))
+        if (!allowOutsideWindow &&
+            !MacAppKitWindowContainsScreenPoint(nsWindow, screenPoint))
         {
             return false;
         }

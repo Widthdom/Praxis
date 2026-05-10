@@ -1393,12 +1393,16 @@ public class AppLayerSourceGuardTests
         Assert.Contains("macPlacementPollingAppKitRootPointKind = hasAppKitStartRoot ? appKitRootPointKind : null;", macSource);
         Assert.Contains("macPlacementPollingStartRootPoint = selectionRootPoint;", macSource);
         Assert.Contains("SelectionRect.IsVisible = false;", macSource);
+        Assert.Contains("SetMacPlacementSelectionCursor();", macSource);
+        Assert.Contains("private static void SetMacPlacementSelectionCursor()", macSource);
         Assert.Contains("UpdateMacPlacementNativeSelectionOverlay(selectionRootPoint, selectionRootPoint);", macSource);
         Assert.Contains("TryGetMacPlacementPrimaryRecognizerRunningRootPoint(out var rootPoint)", macSource);
         Assert.Contains("macPlacementPollingAppKitRootPointKind is MacAppKitRootPointKind appKitRootPointKind", macSource);
-        Assert.Contains("TryGetMacCurrentRootPointerFromAppKit(appKitRootPointKind, allowOutsideRoot: true, out var lockedAppKitRootPoint)", macSource);
+        Assert.Contains("allowOutsideWindow: true,", macSource);
         Assert.Contains("var selectionRootPoint = ApplyMacPlacementSelectionPointerOffset(lockedAppKitRootPoint);", macSource);
-        Assert.Contains("TryGetMacCurrentAppKitWindowPoint(nativeWindow, rootView", macSource);
+        Assert.Contains("!allowOutsideWindow &&", macSource);
+        Assert.Contains("!MacAppKitWindowContainsScreenPoint(nsWindow, screenPoint)", macSource);
+        Assert.Contains("private bool TryGetMacCurrentAppKitWindowPoint(", macSource);
         Assert.Contains("TryGetMacCurrentScreenPointer(rootPoint, out var rawStartScreen, out var rawStartScreenPointKind)", macSource);
         Assert.Contains("macPlacementPollingRawStartScreen = hasRawStartScreen ? rawStartScreen : null;", macSource);
         Assert.Contains("macPlacementPollingScreenPointKind = hasRawStartScreen ? rawStartScreenPointKind : null;", macSource);
@@ -1476,7 +1480,7 @@ public class AppLayerSourceGuardTests
         var pollingRunningBody = macSource[pollingRunningIndex..overlayUpdateIndex];
         Assert.DoesNotContain("TryGetMacPlacementPrimaryRecognizerRunningRootPoint", pollingRunningBody);
         var pollingRunningRawDeltaIndex = pollingRunningBody.IndexOf("anchorViewport.X + rawScreenPoint.X - rawStartScreen.X", StringComparison.Ordinal);
-        var pollingRunningAppKitIndex = pollingRunningBody.IndexOf("TryGetMacCurrentRootPointerFromAppKit(appKitRootPointKind, allowOutsideRoot: true, out var lockedAppKitRootPoint)", StringComparison.Ordinal);
+        var pollingRunningAppKitIndex = pollingRunningBody.IndexOf("TryGetMacCurrentRootPointerFromAppKit(", StringComparison.Ordinal);
         var pollingRunningCoreGraphicsIndex = pollingRunningBody.IndexOf("TryGetMacCurrentRootPointer(screenPointKind, allowOutsideRoot: true, out var lockedRootPoint)", StringComparison.Ordinal);
         Assert.True(pollingRunningAppKitIndex >= 0 && pollingRunningRawDeltaIndex > pollingRunningAppKitIndex, "Polling rectangle updates should prefer the accepted live AppKit root-coordinate candidate before raw-screen delta fallback.");
         Assert.True(pollingRunningRawDeltaIndex >= 0 && pollingRunningCoreGraphicsIndex > pollingRunningRawDeltaIndex, "Polling rectangle updates should keep raw-screen delta fallback ahead of CoreGraphics absolute-coordinate fallback.");
