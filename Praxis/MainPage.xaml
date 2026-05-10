@@ -354,7 +354,7 @@
                         WidthRequest="0"
                         HeightRequest="0"
                         Stroke="{AppThemeBinding Light=#7A7A7A, Dark=#A8A8A8}"
-                        StrokeThickness="2"
+                        StrokeThickness="1"
                         BackgroundColor="{AppThemeBinding Light=#40B0B0B0, Dark=#40686868}"
                         StrokeShape="RoundRectangle 2" />
             </Grid>
