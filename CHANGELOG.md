@@ -6,14 +6,26 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 
 ## [Unreleased]
 
+### Added
+- The `Command` and `Search` text inputs render their placeholder as small SVG-style icons inside the field at the left edge — a `>_` chevron + underscore for `Command`, a magnifying glass for `Search`. The icons fade out once the field has any text, mirroring how the literal placeholder strings used to disappear, and use a muted gray (`Light=#A0A0A0, Dark=#7C7C7C`) so they read as a hint rather than a visible control
+
 ### Changed
 - The Edit/Delete context menu, modal editor, conflict dialog, and command-suggestion popup now fade in and out instead of toggling instantly, with cancellation tokens so rapid open/close cycles cannot leave an overlay stuck mid-fade
-- The Dock surface now uses a shorter bottom-biased footprint so the borderless placement area gains more vertical room while the horizontal scrollbar still has space when visible
+- The Dock surface uses a shorter bottom-biased footprint so the borderless placement area gains more vertical room while the horizontal scrollbar still has space when visible. The Dock horizontal scrollbar gets a small bottom margin so launcher buttons no longer brush against it, and the Dock scroll content clips at the left/right edges so partially scrolled buttons end in straight edges
+- The placement-area and Dock surrounding `Border`s no longer paint their own backgrounds (`BackgroundColor="Transparent"`) and have no visible stroke, so the page background reads through; the launcher buttons themselves carry the only visible fill in those regions
+- The status bar at the bottom of the page is borderless (`Stroke="Transparent" StrokeThickness="0"`), keeps its idle background fully transparent so it disappears against the page when not flashing, and centers the status text horizontally
+- The placement-area drag-selection rectangle now uses a 1-pixel stroke (down from 2 px) so multi-select feedback is less visually heavy
+- Placement-area inverted-theme buttons (`UseInvertedThemeColors=True`) now use `#787878` (light) / `#A0A0A0` (dark) for the selected fill — visibly distinct from the inverted idle `#363636` / `#FFFFFF` while staying inside the monochrome palette
+- Edit/Delete context-menu, modal Cancel/Save, and conflict-dialog Reload/Overwrite/Cancel buttons indicate focus via a background tint (`#C8C8C8` light, `#555555` dark) instead of a focus border ring, keeping the labels stable across focus changes; the unfocused fill falls back to the platform default
+- The OS titlebar no longer shows the literal "Praxis" string on either Windows or Mac Catalyst. On Mac Catalyst, the bundle / display-name fallback is overridden through a new `ClearMacWindowTitles` helper in `AppDelegate.OnActivated` that walks every connected `UIWindowScene` and sets `Title=""` plus `Titlebar.TitleVisibility=Hidden`
 
 ### Fixed
 - Edit/Delete overlays now close when clicking outside the menu on both Windows and Mac Catalyst, and Edit/Delete, editor, and conflict overlays share a full-window hit target rendered as a `Border` (more reliable than a `Grid` for MAUI iOS gesture pickup) using a near-black `#01000000` tint that stays visually neutral. Editor/conflict hit targets block lower-layer clicks without dismissing their dialogs, with the conflict layer sitting between the conflict panel and any editor modal underneath
-- Mac Catalyst context-menu Edit/Delete actions now dispatch the selected item from a single Return/Enter key press after arrow-key navigation, including menus opened from the placement area, Dock, and command suggestions
+- Mac Catalyst context-menu Edit/Delete actions dispatch the selected item from a single Return/Enter key press after arrow-key navigation, including menus opened from the placement area, Dock, and command suggestions. The Mac path uses a private nested `MacContextMenuKeyCaptureView` UIView attached to the host as first responder, dispatching Return / Arrow / Tab / Escape into `App.RaiseEditorShortcut`
 - Placement rectangle feedback now fades out on mouse release on both Windows and Mac Catalyst instead of disappearing abruptly
+- Two phantom horizontal bars previously visible below the Dock scrollbar are gone — `DockScrollBarMask` now paints a transparent fill, and the obsolete drop shadows on the now-transparent placement / Dock `Border`s are removed
+- The modal editor's Invert Theme checkbox indicator and its accompanying label now use the pointing-hand hover cursor, matching the modal Cancel / Save buttons rather than leaving the cursor on the default arrow
+- The main window now enforces `MinimumWidth=860` and `MinimumHeight=600` so the editor modal (`WidthRequest=760` plus padding) always fits, and individual UI elements stop overflowing their containers when the window is shrunk to extreme small sizes
 
 ### [1.1.13] - 2026-04-30
 
@@ -468,11 +480,33 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 
 ## [Unreleased]
 
+### 追加
+- `Command` と `Search` 入力欄の placeholder を、欄内左端に配置する SVG 風アイコンに置き換え。`Command` は `>_`（chevron + underscore のターミナルプロンプト形）、`Search` はよくある虫眼鏡。文字列が入ると placeholder と同じくフェードアウトし、色は `Light=#A0A0A0, Dark=#7C7C7C` の控えめなグレーで「主張しない hint」として読ませる
+
+### 変更
+- Edit/Delete のコンテキストメニュー、編集モーダル、conflict ダイアログ、command 候補ポップアップは即時切り替えではなくフェードイン/アウトで開閉する。連続で開閉しても途中で固まらないよう、各 overlay にキャンセルトークンを持たせている
+- Dock は最小高と下寄せの余白をコンパクトにし、枠線なしの配置領域へ縦方向の余白を返す。Dock 横スクロールバーには下方向の小さなマージンを設けてランチャーボタンと干渉しないようにし、Dock のスクロール内容は左右端で clip して部分表示のボタン端を直線で切る
+- 配置領域と Dock を囲む `Border` は背景塗り (`BackgroundColor="Transparent"`) を持たず、stroke も透明。ページ背景がそのまま見える状態にし、ランチャーボタンの塗りだけがその領域内で視認できる
+- ページ下端のステータスバーは枠なし（`Stroke="Transparent" StrokeThickness="0"`）。フラッシュしていない待機状態の背景も完全透明とし、ページに溶け込んで見えなくなる。ステータステキストは水平中央揃え
+- 配置領域のドラッグ選択矩形のストローク太さを 2px から 1px に半減し、複数選択フィードバックの見た目を軽くする
+- 配置領域の inverted ボタン（`UseInvertedThemeColors=True`）の選択時の塗りを `Light=#787878 / Dark=#A0A0A0` に変更し、inverted idle の `#363636 / #FFFFFF` とのコントラストを広げる（モノトーンの範囲内で）
+- Edit/Delete コンテキストメニュー、モーダルの Cancel/Save、conflict ダイアログの Reload/Overwrite/Cancel の各ボタンは、フォーカス表示を枠線ではなく背景色チント（`Light=#C8C8C8 / Dark=#555555`）で行うよう変更。フォーカス遷移でラベル位置がずれない。アンフォーカスの塗りはプラットフォーム既定にフォールバックする
+- OS のタイトルバーから "Praxis" 文言を削除（Windows / Mac Catalyst 両方）。Mac Catalyst では bundle / display-name にフォールバックするため、`AppDelegate.OnActivated` で新規ヘルパー `ClearMacWindowTitles` を実装し、接続中の `UIWindowScene` ごとに `Title=""` と `Titlebar.TitleVisibility=Hidden` を適用する
+
+### 修正
+- Edit/Delete オーバーレイは Windows / Mac Catalyst のどちらでも、メニュー外をクリックすると閉じるようになった。Edit/Delete・編集・conflict の各オーバーレイは全画面の hit target を共有し、`Grid` では MAUI iOS 経路で gesture が拾えなかったため `Border` をターゲットにしている。ほぼ黒の `#01000000` で塗ることで視覚的にニュートラル。編集と conflict の hit target は下層クリックを止めるだけでダイアログ自体は閉じない（conflict layer は conflict panel の背面、かつ下層に残り得る編集モーダルの上）
+- Mac Catalyst のコンテキストメニュー（Edit/Delete）は、配置領域・Dock・command 候補のいずれから開いた場合でも、矢印キー選択後の Return / Enter 単発で対象アクションを発火するようになった。Mac 側は private nested `MacContextMenuKeyCaptureView` UIView をホストにアタッチして first responder にし、Return / Arrow / Tab / Escape を `App.RaiseEditorShortcut` へ中継して実装している
+- 配置領域の選択矩形は、Windows / Mac Catalyst のどちらでもマウスリリース時に瞬時に消えるのではなくフェードアウトするようになった
+- Dock スクロールバーの下に見えていた 2 本の余分な横バーを削除（`DockScrollBarMask` の塗りを透明化し、透明背景になった配置領域 / Dock の `Border` に残っていたドロップシャドウを除去）
+- モーダル編集画面の Invert Theme チェックボックスとその横のラベルにも、Cancel / Save ボタンと同じ pointing-hand ホバーカーソルを適用
+- メインウィンドウに `MinimumWidth=860` / `MinimumHeight=600` を設定し、編集モーダル（`WidthRequest=760` + padding）が常に収まるサイズを保証。ウィンドウを極端に小さくしても UI 要素がコンテナからはみ出さない
+
 ### [1.1.13] - 2026-04-30
 
 ### 変更
 - 配置領域のランチャーボタンは hover 時に既定の矢印カーソルのままとなり（従来の pointing-hand ではなく）、主ポインタが押下されている間だけ「掴んだ手」の grab カーソルへ切り替えるよう変更。これによりボタンのドラッグ移動が「掴んで動かす」操作として読み取れるようになり、ただ hover しているだけのときはクリック可能に見えすぎない挙動になる。Dock ボタンは意図的に従来の hover-hand カーソルのまま維持する（「Dock クリックで起動」のサイン）
 - macOS の配置領域 grab カーソルは、pointer release を取り逃した場合でも pointer move / exit のタイミングで arrow に復帰するようにし、閉じた手のまま残り続けるケースを防ぐ。複数の選択済みボタンの間をまたいで pointer が移動しても、共有された grab 状態が解除されるようにした
+- macOS の配置領域・Dock のランチャーボタンのラベルは、`12pt` ではなく `14pt` を使うようになり、レイアウトを変えずに文字を一回り大きく読める
 
 ### 追加
 - `Behaviors/GrabHandCursorBehavior.cs` を追加し、配置領域の pointer press/release/move/enter/exit に応じたカーソル切替（macOS は `NSCursor.closedHandCursor`、Windows は代替として `InputSystemCursorShape.SizeAll` を `ProtectedCursor` 経由で適用）を `HoverHandCursorBehavior` と同じプラットフォーム配線で実装。ただし hover ではなく pointer-pressed 状態を基準にし、かつ「主ポインタのみ押されている」場合だけ grab カーソルを出す（右クリック＝コンテキストメニュー、中クリック＝エディタ起動では grab カーソルに切り替えない）。加えて `MainPage.Draggable_PointerMoved` が Windows で使っている「`PointerReleased` 欠落時の primary 再判定」fallback と同じ考え方で、`PointerMoved` / `PointerExited` でも「もう primary が押されていない」と判定したら grab カーソルを解除する。複数の grab 対象ボタンの間を移動するケースでも、共有された active grab が解除されるようにしている。`OnDetachingFrom` では gesture recognizer を外す前に（grab 中なら）既定カーソルへ戻しておくことで、テンプレート再生成／絞り込み／外部同期削除など押下中の teardown でも Mac の `NSCursor.closedHandCursor` や Windows の `ProtectedCursor` が detach 済み platform view に残らないようにする

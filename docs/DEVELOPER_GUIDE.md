@@ -275,19 +275,22 @@ sequenceDiagram
 - Top-bar create action uses a custom line-art logo (outer hexagon, inscribed circle, inner hexagon, center plus) built from MAUI shapes.
 - Modal footer action buttons (`Cancel`/`Save`) are centered and use equal width for visual balance.
 - Edit/Delete, editor, and conflict overlays share a full-window hit-target style (`TransparentOverlayHitTargetStyle`) that targets `Border` (not `Grid`); a `Border` UIView is reliable for MAUI `TapGestureRecognizer` pickup on Mac Catalyst whereas the `LayoutView` backing a `Grid` was not. The layer uses a near-black low-alpha `#01000000` background instead of `Opacity=0` so Windows and Mac Catalyst still include it in hit testing while it remains visually neutral over both light and dark glass surfaces; this matches the existing `PlacementSurface` workaround color and avoids the white-tint compositing that previously made placement-area buttons appear outlined while a modal was open. The Edit/Delete layer runs `CloseContextMenuCommand` when clicked outside the menu. Editor and conflict layers do not dismiss their dialogs; they only block interaction with lower layers. Conflict backdrop sits inside `ConflictOverlay`, behind the conflict panel and above the editor modal that may still be open underneath.
+- Action-button focus visual: Edit/Delete context-menu buttons, modal Cancel/Save, and conflict-dialog Reload/Overwrite/Cancel use a background-tint focus indicator instead of a focus border ring (so the labels do not jitter on focus changes). [`Praxis.Core/Logic/ButtonFocusVisualPolicy.cs`](../Praxis.Core/Logic/ButtonFocusVisualPolicy.cs) returns the focus tint (`Light=#C8C8C8`, `Dark=#555555`) only when `focused`; for the unfocused branch it returns `#00000000` as a sentinel and `MainPage.ApplyButtonFocusVisual` clears the property via `ClearValue` so the button reverts to its platform-default idle fill (rather than disappearing into the modal). Border-related setters (`BorderColor` / `BorderWidth`) stay at transparent / 0 so no ring is drawn. Mac pseudo-focus (modal Cancel/Save, conflict dialog) and Windows native focus both converge on the same `ApplyModalActionButtonFocusVisuals` / `ApplyConflictActionButtonFocusVisuals` paths.
 - The top-bar create action, modal copy/action buttons, and Dock launcher buttons share [`Behaviors/HoverHandCursorBehavior.cs`](../Praxis/Behaviors/HoverHandCursorBehavior.cs), so Windows and Mac Catalyst both switch to a pointing-hand cursor on hover instead of leaving clickable surfaces on the arrow cursor.
 - Placement-area launcher buttons intentionally keep the default arrow cursor on hover and instead attach [`Behaviors/GrabHandCursorBehavior.cs`](../Praxis/Behaviors/GrabHandCursorBehavior.cs), which swaps to a closed-hand "grab" cursor while the primary pointer is pressed (macOS `NSCursor.closedHandCursor`, Windows `InputSystemCursorShape.SizeAll` substitute) so drag-to-reposition reads as a grabbed object instead of a generic clickable target.
 - Dock item visuals are intentionally matched to placement-area button visuals.
-- Dock keeps a compact minimum height and bottom-biased padding so the borderless layout gives more vertical room back to the placement area while still masking the horizontal scrollbar when it is idle.
+- Dock keeps a compact minimum height and bottom-biased padding so the borderless layout gives more vertical room back to the placement area while still masking the horizontal scrollbar when it is idle. Both the Dock (`DockRegionBorder`) and the surrounding placement-area `Border` declare `BackgroundColor="Transparent"` and `Stroke="Transparent"`, so the page background reads through cleanly and only the launcher buttons themselves carry visible fills in those regions. The Dock horizontal scrollbar gets a small bottom margin so launcher buttons no longer brush against it, and the Dock scroll content clips at the left/right edges so partially scrolled buttons end in straight edges. `DockScrollBarMask` is kept in the visual tree (assertions in `AppLayerSourceGuardTests` lock its existence) but paints a transparent fill, so it no longer renders as a visible bar.
+- The main window enforces `MinimumWidth = 860` and `MinimumHeight = 600` in [`App.xaml.cs::CreateWindow`](../Praxis/App.xaml.cs). The editor modal Border is `WidthRequest=760` plus 18 px padding (≈796 wide), sitting inside RootGrid's 18 px padding — 860 leaves a small chrome margin so the modal cannot be cropped at either side. 600 height keeps every editor row plus the Cancel/Save action row visible without the modal itself needing to scroll.
 - Placement-area and Dock buttons support per-button inverted theme colors (`UseInvertedThemeColors`):
   - In Light theme: render with Dark-theme button colors
   - In Dark theme: render with Light-theme button colors
   - Configured from editor modal checkbox (`Invert Theme`)
   - In editor modal, the checkbox indicator is rendered as a flat square on both Windows and Mac (native checkbox visuals hidden) to keep monochrome two-tone styling
-  - Both the checkbox indicator and its label ("Use opposite theme colors for this button") are tappable — each carries a `TapGestureRecognizer` bound to the same handler (`ModalInvertThemeToggle_Tapped`)
+  - Both the checkbox indicator and its label ("Use opposite theme colors for this button") are tappable — each carries a `TapGestureRecognizer` bound to the same handler (`ModalInvertThemeToggle_Tapped`) and a `<behaviors:HoverHandCursorBehavior />`, so hovering shows the pointing-hand cursor consistent with modal Cancel / Save
   - Border color and empty-state background are matched to modal text-field palette (Light `#CECECE/#FFFFFF`, Dark `#4E4E4E/#2A2A2A`)
   - Border is rendered by four equal-thickness lines (`1`) to keep edge weight consistent
   - Checkmark is drawn by a `Polyline` (`StrokeThickness=2`) with a slightly sharper angle
+  - Selected-state fill on inverted placement-area buttons is `Light=#787878 / Dark=#A0A0A0`, visibly distinct from the inverted idle (`#363636 / #FFFFFF`) so multi-select feedback stays visible while the palette stays monochrome (non-inverted selected fill is unchanged at `Light=#DCDCDC / Dark=#505050`)
 - Placement-area/Dock button label text uses a dedicated style (`PlacementButtonTextLabelStyle`) and is set to `12` across all platforms.
 - Dock horizontal scrollbar defaults to hidden and is shown only while the pointer is hovering the Dock region and horizontal overflow exists.
   - For macOS stability, Dock applies a bottom mask (`DockScrollBarMask`) while not hovered so the indicator stays visually hidden even when native indicator timing is inconsistent.
@@ -303,7 +306,7 @@ sequenceDiagram
 - Modal `ButtonText` focus fallback warnings now include the current `shouldSelectAll` state, so create-flow focus failures can be separated from normal re-entry focus retries.
 - `SetTabStop` fallback warnings now include the native target control type, so `IsTabStop` reflection failures point at the specific Windows view that rejected the write.
 - `DisableWindowsSystemFocusVisual` warnings now include the native control type too, so `UseSystemFocusVisuals` reflection failures identify which Windows control rejected the write.
-- Selection rectangle is rendered as `SelectionRect` in [`MainPage.xaml`](../Praxis/MainPage.xaml) with gray stroke/fill.
+- Selection rectangle is rendered as `SelectionRect` in [`MainPage.xaml`](../Praxis/MainPage.xaml) with a 1-pixel gray stroke (`Light=#7A7A7A, Dark=#A8A8A8`) and a translucent gray fill. On mouse release the rectangle fades to transparent over `UiTimingPolicy.SelectionRectFadeOutDurationMs` (110 ms) on both Windows and Mac Catalyst before its `IsVisible` flips off. Fade revisions are tracked through `selectionRectFadeRevision` in [`MainPage.InteractionState.cs`](../Praxis/MainPage.InteractionState.cs) so a new drag interrupts a stale fade.
 - Selection toggle modifier handling is centralized in [`MainPage.PointerAndSelection.cs`](../Praxis/MainPage.PointerAndSelection.cs):
   - Windows: `Ctrl+Click`
   - macOS (Mac Catalyst): `Command+Click`
@@ -327,10 +330,10 @@ sequenceDiagram
   - `Command+Z` => Undo latest button mutation
   - `Command+Shift+Z` => Redo latest undone mutation
   - App-level key commands keep theme switching active regardless of modal/context-menu state
-- Status bar is a rounded `Border` (`StatusBarBorder`) and flashes color briefly on `StatusText` change:
+- Status bar is a borderless rounded `Border` (`StatusBarBorder`, `Stroke="Transparent" StrokeThickness="0"`) at the bottom of the page. Idle background is `Transparent` so the bar disappears against the page background when not flashing, and the `StatusText` Label is horizontally centered (`HorizontalOptions="Fill" HorizontalTextAlignment="Center"`). On `StatusText` change the bar briefly flashes:
   - normal: green
   - error (`Failed`/`error`/`exception`/`not found`): red
-  - after flash/theme switch, local background override is cleared so AppThemeBinding is restored
+  - `MainPage.StatusAndTheme.GetNeutralStatusBackgroundColor()` returns `Colors.Transparent`, so the fade animation interpolates alpha cleanly between transparent → flash → transparent. After the flash the local override is cleared so the idle Transparent fill resumes
   - Unexpected animation failures are warning-logged; only the active flash token's own cancellation is silent
 - On macOS, when Enter execution in command input ends with `Command not found: ...`, focus is restored to command input for immediate retry typing.
 - Command input suggestion UX:
@@ -350,6 +353,7 @@ sequenceDiagram
   - On macOS, only `ModalCommandEntry` enforces an ASCII-capable input source while it is first responder in the active key window/app, and blocks/strips non-ASCII input paths (`setMarkedText`, `insertText`, editing-changed safety net), backed by `AsciiInputFilter` and `MacCommandInputSourcePolicy`; focused-state periodic re-apply is enabled, and it is detached immediately on key-window/app deactivation.
   - On macOS, `ModalCommandEntry` disables command suggestion navigation and activation-time native refocus, so modal command IME control does not change top-bar focus behavior.
   - On Windows, only `ModalCommandEntry` applies native `InputScopeNameValue.AlphanumericHalfWidth` on focus and nudges IME open/conversion state toward ASCII via `imm32` immediately plus one short delayed retry per focus acquisition. Focused-state periodic re-apply and `TextChanging` rewrite are disabled by default to avoid degrading text Undo/Redo granularity, while modal `ModalCommandEntry` enables focused-state ASCII reassertion so IME cannot be switched away from alphanumeric mode during modal editing.
+  - `Command` / `Search` placeholder is rendered as a small SVG-style icon inside the field at the left edge (instead of the literal `Placeholder="Command"` / `"Search"` strings). The Command icon is a `shapes:Polyline` chevron + `shapes:Line` underscore (terminal-prompt shape); the Search icon is a `shapes:Ellipse` + `shapes:Line` (magnifying glass). Both use `Stroke="{AppThemeBinding Light=#A0A0A0, Dark=#7C7C7C}"`, are wrapped in a `Grid` overlay with `InputTransparent="True"` so taps reach the underlying `Entry`, and a `DataTrigger` on `IsCommandInputClearVisible` / `IsSearchTextClearVisible` flips the overlay's `Opacity` to `0` once the field has any text.
   - `Command`/`Search` use an in-field circular clear button (`x`) shown only while text is non-empty; right text inset is increased to prevent overlap with the button.
   - Clear-button tap clears the target input and refocuses the same input so caret/editing state stays active.
   - Clear-button taps also write lightweight crash-file Info breadcrumbs (`Command` vs `Search`, previous text length) so clear-button-triggered hangs/aborts leave a last interaction marker even if async DB logging does not complete.
@@ -388,6 +392,9 @@ sequenceDiagram
   - `Up` / `Down` cycles between `Edit` and `Delete`.
   - `Tab` / `Shift+Tab` cycles between `Edit` and `Delete`.
   - `Enter` executes the focused context action (`Edit` / `Delete`).
+- OS titlebar is intentionally left without a title:
+  - [`App.xaml.cs::CreateWindow`](../Praxis/App.xaml.cs) sets `Window.Title = string.Empty`, the fallback `ContentPage` `Title = string.Empty`, and `MainPage.xaml` sets `ContentPage Title=""`. This is enough on Windows.
+  - On Mac Catalyst the platform falls back to the bundle / display name regardless of the empty MAUI title, so [`Platforms/MacCatalyst/AppDelegate.cs`](../Praxis/Platforms/MacCatalyst/AppDelegate.cs) runs a `ClearMacWindowTitles` helper from `OnActivated` that walks every connected `UIWindowScene` and (a) sets `windowScene.Title = string.Empty` and (b) sets `windowScene.Titlebar.TitleVisibility = UITitlebarTitleVisibility.Hidden`. Failures are wrapped with the existing `WriteWarning(nameof(AppDelegate))` pattern, and `MacAppDelegate_GuardsDuplicateGlobalExceptionHookRegistration` asserts the warning site exists.
 - Mac Catalyst AppDelegate selector safety:
   - Do not export UIKit standard action selectors (`save:`, `cancel:`, `dismiss:`, `cancelOperation:`) from [`Platforms/MacCatalyst/AppDelegate.cs`](../Praxis/Platforms/MacCatalyst/AppDelegate.cs).
   - Exporting these selectors can trigger launch-time `UINSApplicationDelegate` assertions and abort app startup (`SIGABRT`, `MSB3073` code 134 on `-t:Run`).
@@ -713,26 +720,29 @@ sequenceDiagram
 - 上部 Create アクションは MAUI Shapes で構成した線画ロゴ（外六角形・内接円・内六角形・中央 +）を使用する。
 - モーダル下部のアクションボタン（`Cancel` / `Save`）は中央寄せ・同一幅で揃えている。
 - Edit/Delete、編集、conflict の各オーバーレイは全画面の hit-target style（`TransparentOverlayHitTargetStyle`）を共有し、これは `Grid` ではなく `Border` をターゲットにする。Mac Catalyst で MAUI `TapGestureRecognizer` を確実に拾うのは `Border` の UIView であり、`Grid` の `LayoutView` では拾えなかったため。`Opacity=0` ではなく低アルファ寄りの黒 `#01000000` 背景色を使い、dark/light どちらの glass 表面にもほぼ中立な合成にする（`PlacementSurface` と同じ色）。これにより、以前の白系 `#02FFFFFF` で起きていた「モーダル表示中に配置エリアのボタン枠が強調されて見える」問題を避ける。Edit/Delete の layer はメニュー外クリックで `CloseContextMenuCommand` を実行する。編集/conflict の layer はダイアログを閉じず、下層への操作だけを止める。Conflict backdrop は `ConflictOverlay` 内で conflict panel の背面、かつ下に残り得る編集モーダルの上に置く。
+- アクションボタンのフォーカス表示: Edit/Delete コンテキストメニュー、モーダルの Cancel/Save、conflict ダイアログの Reload/Overwrite/Cancel は、フォーカスを枠線リングではなく背景色チントで示す（フォーカス遷移でラベルがずれないため）。[`Praxis.Core/Logic/ButtonFocusVisualPolicy.cs`](../Praxis.Core/Logic/ButtonFocusVisualPolicy.cs) は `focused` のときだけフォーカスチント（`Light=#C8C8C8 / Dark=#555555`）を返し、unfocused では `#00000000` を sentinel として返す。`MainPage.ApplyButtonFocusVisual` は unfocused のとき `ClearValue` で `BackgroundColor` を解除し、ボタンはプラットフォーム既定の idle 塗りに戻る（透明にしてしまうとモーダル背景に溶け込んでしまうため）。`BorderColor` / `BorderWidth` は常に Transparent / 0 で、リングは描かない。Mac の擬似フォーカス（モーダル Cancel/Save、conflict ダイアログ）と Windows のネイティブフォーカスは、どちらも `ApplyModalActionButtonFocusVisuals` / `ApplyConflictActionButtonFocusVisuals` の同じ経路に集約される。
 - 上部 Create アクション、モーダルのコピー/アクションボタン、Dock のランチャーボタンは [`Behaviors/HoverHandCursorBehavior.cs`](../Praxis/Behaviors/HoverHandCursorBehavior.cs) を共有し、Windows / Mac Catalyst の両方で hover 時に矢印ではなく hand cursor へ切り替える。
 - 配置領域のランチャーボタンは意図的に hover では既定の矢印カーソルのままにし、代わりに [`Behaviors/GrabHandCursorBehavior.cs`](../Praxis/Behaviors/GrabHandCursorBehavior.cs) を貼って、主ポインタが押下されている間だけ「掴んだ手」のカーソル（macOS は `NSCursor.closedHandCursor`、Windows は代替として `InputSystemCursorShape.SizeAll`）へ切り替える。これによりボタンのドラッグ移動が「掴んで動かす」操作として読み取れるようにしている。
 - Dock ボタンの見た目は、配置領域のボタンと意図的に揃えている。
-- Dock は最小高と下寄せの余白をコンパクトにし、横スクロールバーの非表示マスクを維持しつつ、枠線なしレイアウトで浮いた縦方向の余白を配置領域へ戻している。
+- Dock は最小高と下寄せの余白をコンパクトにし、横スクロールバーの非表示マスクを維持しつつ、枠線なしレイアウトで浮いた縦方向の余白を配置領域へ戻している。Dock（`DockRegionBorder`）と配置領域を囲む `Border` は `BackgroundColor="Transparent"` と `Stroke="Transparent"` を宣言しており、ページ背景がそのまま見える状態にする。各領域内で塗られて見えるのはランチャーボタンだけ。Dock 横スクロールバーには下方向の小さなマージンを設けてランチャーボタンと干渉しないようにし、Dock のスクロール内容は左右端で clip して部分表示のボタン端を直線で切る。`DockScrollBarMask` 自体は visual tree に残しつつ（`AppLayerSourceGuardTests` がその存在を固定する）、塗りは透明にして可視のバーとしては描かれないようにしている。
+- メインウィンドウは [`App.xaml.cs::CreateWindow`](../Praxis/App.xaml.cs) で `MinimumWidth = 860` / `MinimumHeight = 600` を強制する。編集モーダルの Border は `WidthRequest=760` + 18px padding（≒796px）で、RootGrid の 18px padding の中に置かれる。860px はその上に少しの chrome 余白を残し、モーダルが左右で見切れない最小幅。600px はすべての編集行 + Cancel/Save 行が一画面に収まる高さで、モーダル自身がスクロールしないことを保証する。
 - 配置領域/Dock の各ボタンは `UseInvertedThemeColors` で個別に反転配色できる。
   - ライトテーマ時はダークテーマ配色
   - ダークテーマ時はライトテーマ配色
   - 編集モーダルの `Invert Theme` チェックボックスで切り替える
   - 編集モーダルのチェック表示は Windows / Mac ともにフラットな正方形で統一し、ネイティブチェックボックスの立体表現やアクセント色（青）を出さない
-  - チェック表示のインジケーターとラベル（"Use opposite theme colors for this button"）はどちらもタップ可能で、それぞれ同じハンドラ（`ModalInvertThemeToggle_Tapped`）を持つ `TapGestureRecognizer` を配置している
+  - チェック表示のインジケーターとラベル（"Use opposite theme colors for this button"）はどちらもタップ可能で、それぞれ同じハンドラ（`ModalInvertThemeToggle_Tapped`）を持つ `TapGestureRecognizer` と `<behaviors:HoverHandCursorBehavior />` を配置しており、ホバー時はモーダルの Cancel / Save と同じ pointing-hand カーソルになる
   - 枠色と未チェック背景色はモーダルのテキスト入力欄に合わせる（Light `#CECECE/#FFFFFF`, Dark `#4E4E4E/#2A2A2A`）
   - 枠線は四辺を同一太さ（`1`）の線で描画して見え方を安定させる
   - チェックマークは `Polyline`（`StrokeThickness=2`）で描画し、少し鋭角の形状にしている
+  - 配置領域の inverted ボタンの選択時の塗りは `Light=#787878 / Dark=#A0A0A0` とし、inverted idle（`#363636 / #FFFFFF`）とのコントラストをはっきり広げて、モノトーンの範囲内で多重選択フィードバックの可視性を保つ（非 inverted の選択時の塗りは `Light=#DCDCDC / Dark=#505050` のまま変えていない）
 - 配置領域/Dock のボタン文言は専用スタイル（`PlacementButtonTextLabelStyle`）を使い、全プラットフォームで `12` を適用している。
 - Dock の横スクロールバーは通常非表示で、ポインターが Dock 領域をホバーしており、かつ横オーバーフローがある場合のみ表示する。
   - macOS ではネイティブインジケータ更新の揺らぎ対策として、非ホバー時に下端マスク（`DockScrollBarMask`）を重ねて視覚的に確実に隠す。
 - ホイールクリック編集は [`Behaviors/MiddleClickBehavior.cs`](../Praxis/Behaviors/MiddleClickBehavior.cs) に加え、macOS 向けフォールバックを [`MainPage.PointerAndSelection.cs`](../Praxis/MainPage.PointerAndSelection.cs)（ポインター判定）と [`MainPage.MacCatalystBehavior.cs`](../Praxis/MainPage.MacCatalystBehavior.cs)（ポーリング）で実装している。
   - **macOS クリックスルー問題**: macOS はフォーカスに関わらず、カーソル下のウィンドウへ非プライマリクリックを配送する。ポーリングタイマーは `CGEventSource.GetButtonState`（グローバル HID 状態）を参照するため、他アプリ上のホイールクリックでも発火する。`lastPointerOnRoot` は `OnMacApplicationDeactivating`（`OnResignActivation` から呼ばれる）で `null` にリセットし、前回フォーカス時の古いカーソル位置が非アクティブ中にエディターを開かないようにする。追加ガード: `IsMacApplicationActive()`（`OnResignActivation`/`OnActivated` で更新する volatile bool）、`IsActivationSuppressionActive()`（再アクティブ化後 500ms）、ViewModel の `OpenEditor` にも `IsMacApplicationActive()` チェックを配置。
 - Tab フォーカス制御は [`MainPage.FocusAndContext.cs`](../Praxis/MainPage.FocusAndContext.cs) の `ApplyTabPolicy` でネイティブ `IsTabStop` を切り替えて実現している。
-- 矩形選択は [`MainPage.xaml`](../Praxis/MainPage.xaml) の `SelectionRect`（グレーストローク/グレー透過塗り）で描画している。
+- 矩形選択は [`MainPage.xaml`](../Praxis/MainPage.xaml) の `SelectionRect` で描画する。ストロークは 1px のグレー（`Light=#7A7A7A, Dark=#A8A8A8`）、塗りはグレーの半透過。マウスリリース時は Windows / Mac Catalyst の両方で `UiTimingPolicy.SelectionRectFadeOutDurationMs`（110ms）かけて Opacity をフェードアウトしてから `IsVisible` を false にする。フェードのリビジョンは [`MainPage.InteractionState.cs`](../Praxis/MainPage.InteractionState.cs) の `selectionRectFadeRevision` で管理し、新しいドラッグが始まったら古いフェードはキャンセル扱いにする。
 - 選択トグル修飾キー判定は [`MainPage.PointerAndSelection.cs`](../Praxis/MainPage.PointerAndSelection.cs) に集約している。
   - Windows: `Ctrl+クリック`
   - macOS（Mac Catalyst）: `Command+クリック`
@@ -754,10 +764,10 @@ sequenceDiagram
   - `Command+Z` => 直近のボタン変更を Undo
   - `Command+Shift+Z` => 直近に Undo した変更を Redo
   - アプリレベルのキーコマンドとして登録し、モーダル/コンテキストメニュー表示状態に依存せず有効にする
-- ステータスバーは角丸 `Border`（`StatusBarBorder`）で構成し、`StatusText` 変更時に短時間の色フラッシュを行う。
+- ステータスバーは枠なしの角丸 `Border`（`StatusBarBorder`、`Stroke="Transparent" StrokeThickness="0"`）でページ下端に配置する。フラッシュしていない待機状態の背景は `Transparent` で、ページ背景に溶け込んで見えなくなる。`StatusText` の Label は `HorizontalOptions="Fill" HorizontalTextAlignment="Center"` で水平中央揃え。`StatusText` が変わったときは短時間の色フラッシュを行う。
   - 通常: 緑
   - エラー（`Failed` / `error` / `exception` / `not found` 判定）: 赤
-  - フェード後やテーマ切替後はローカル背景上書きを解除し、AppThemeBinding を再適用する
+  - `MainPage.StatusAndTheme.GetNeutralStatusBackgroundColor()` は `Colors.Transparent` を返すので、フェードアニメーションは「透明 → flash 色 → 透明」というアルファ補間になる。フラッシュ完了後はローカル背景上書きを解除し、待機状態の Transparent に戻る
 - macOS では、command 入力の Enter 実行結果が `Command not found: ...` の場合、再入力しやすいよう command 入力へフォーカスを戻す。
 - command 入力補助:
   - `MainViewModel` で `LauncherButtonItemViewModel.Command` の部分一致候補 (`CommandSuggestions`) を構築
@@ -776,6 +786,7 @@ sequenceDiagram
   - macOS の command 入力欄では、ASCII 強制は `ModalCommandEntry` にだけ適用する。「対象欄が first responder かつ自アプリが前面 active のキーウィンドウ」の間だけ ASCII 入力ソースを維持し、`setMarkedText` / `insertText` / 編集変更時の安全網で非 ASCII 入力を遮断・除去する（`AsciiInputFilter` / `MacCommandInputSourcePolicy` 使用。フォーカス中は周期再強制し、キーウィンドウ喪失/アプリ非 active で即停止する）
   - macOS の `ModalCommandEntry` は候補ナビゲーションとアクティブ化時再フォーカスを無効化し、モーダル外の command 欄フォーカス挙動に干渉しない
 - Windows の command 入力欄では、ASCII 強制は `ModalCommandEntry` にだけ適用する。フォーカス時にネイティブ `InputScopeNameValue.AlphanumericHalfWidth` を適用し、`imm32` で IME の Open/Conversion 状態を英字入力寄りへ「即時 + 短遅延の 1 回再試行」で戻す。通常はフォーカス中のタイマー再強制や `TextChanging` での文字列書き換えを無効化して Undo/Redo 粒度への副作用を避けるが、モーダル `ModalCommandEntry` はフォーカス中の英字再強制を有効化して、フォーカス後の手動IME切替を抑止している。`InputScope` 設定が `ArgumentException (E_RUNTIME_SETVALUE)` で失敗した環境では、再設定を無効化してフォールバック動作を維持する。
+  - `Command` / `Search` の placeholder は、文字列ではなく欄内左端に置いた SVG 風アイコンで表現する（`Placeholder="Command"` / `"Search"` の文字は使わない）。`Command` は `shapes:Polyline` の chevron + `shapes:Line` のアンダースコア（ターミナルプロンプト形）、`Search` は `shapes:Ellipse` + `shapes:Line`（虫眼鏡）。どちらも `Stroke="{AppThemeBinding Light=#A0A0A0, Dark=#7C7C7C}"` で控えめなグレー、`InputTransparent="True"` の `Grid` でラップしてタップは下層の `Entry` に届くようにし、`IsCommandInputClearVisible` / `IsSearchTextClearVisible` の `DataTrigger` で文字列が入った瞬間に `Opacity=0` へ切り替えて見えなくする
   - `Command`/`Search` は、文字列が空でないときのみ欄内右端に丸形クリアボタン（`x`）を表示し、文字重なり防止のため右側テキスト余白を拡張する
   - 配置領域/Dock のボタンをホバーすると、ミニマルな Quick Look オーバーレイで `Command` / `Tool` / `Arguments` / `Clip Word` / `Note` の概要を表示する。遅延表示失敗は hover 対象の `item.Id` つき warning として残す
   - クリアボタン押下時は対象入力欄をクリアし、同じ入力欄へ再フォーカスしてキャレット表示を維持する
@@ -816,6 +827,9 @@ sequenceDiagram
   - `↑` / `↓` で `Edit` と `Delete` を循環する。
   - `Tab` / `Shift+Tab` で `Edit` と `Delete` を循環する。
   - `Enter` でフォーカス中のコンテキストアクション（`Edit` / `Delete`）を実行する。
+- OS のタイトルバーには意図的にタイトルを出さない:
+  - [`App.xaml.cs::CreateWindow`](../Praxis/App.xaml.cs) で `Window.Title = string.Empty` を設定し、フォールバック `ContentPage` の `Title = string.Empty`、`MainPage.xaml` の `ContentPage Title=""` も空にしている。Windows ではこれだけで十分。
+  - Mac Catalyst では MAUI の `Title` を空にしてもプラットフォームが bundle / display name にフォールバックしてしまうため、[`Platforms/MacCatalyst/AppDelegate.cs`](../Praxis/Platforms/MacCatalyst/AppDelegate.cs) の `OnActivated` で `ClearMacWindowTitles` ヘルパーを実行し、接続中のすべての `UIWindowScene` に対して `windowScene.Title = string.Empty` と `windowScene.Titlebar.TitleVisibility = UITitlebarTitleVisibility.Hidden` を適用する。失敗時は既存の `WriteWarning(nameof(AppDelegate))` パターンで warning を残す。`MacAppDelegate_GuardsDuplicateGlobalExceptionHookRegistration` テストはこの warning site の存在を固定する。
 - Mac Catalyst の AppDelegate セレクタ安全性:
   - [`Platforms/MacCatalyst/AppDelegate.cs`](../Praxis/Platforms/MacCatalyst/AppDelegate.cs) で UIKit 標準アクションセレクタ（`save:`, `cancel:`, `dismiss:`, `cancelOperation:`）を `Export` しないこと。
   - これらを `Export` すると、起動時に `UINSApplicationDelegate` のアサートが発生し、アプリ起動が `SIGABRT`（`-t:Run` では `MSB3073` code 134）で中断する場合がある。
