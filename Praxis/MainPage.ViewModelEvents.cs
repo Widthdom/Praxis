@@ -19,6 +19,10 @@ public partial class MainPage
         if (e.PropertyName == nameof(MainViewModel.SelectedTheme))
         {
             ApplyNeutralStatusBackground();
+            // Repaint the focus tints under the new theme so Cancel/Save (and the conflict-dialog action buttons) pick up the matching gray when the user toggles theme via Ctrl+Shift+L/D/H while one of those buttons is focused.
+            ApplyModalActionButtonFocusVisuals();
+            ApplyContextActionButtonFocusVisuals();
+            ApplyConflictActionButtonFocusVisuals();
             return;
         }
 

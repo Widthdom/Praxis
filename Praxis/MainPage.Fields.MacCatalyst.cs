@@ -30,6 +30,7 @@ public partial class MainPage
     private NSObject? macDidEnterBackgroundObserver;
     private NSObject? macWindowDidResignKeyObserver;
 
+    // ModalInvertThemeCheckBox is invisible (Opacity=0) and toggled via a sibling Grid+TapGesture, so it is intentionally absent from this Tab cycle.
     private static readonly ModalFocusTarget[] ModalFocusOrder =
     [
         ModalFocusTarget.Guid,
@@ -39,7 +40,6 @@ public partial class MainPage
         ModalFocusTarget.Arguments,
         ModalFocusTarget.ClipWord,
         ModalFocusTarget.Note,
-        ModalFocusTarget.InvertThemeColors,
         ModalFocusTarget.CancelButton,
         ModalFocusTarget.SaveButton,
     ];

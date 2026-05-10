@@ -810,6 +810,7 @@
                                     <CheckBox x:Name="ModalInvertThemeCheckBox"
                                               IsChecked="{Binding Editor.UseInvertedThemeColors}"
                                               Focused="ModalEditorField_Focused"
+                                              HandlerChanged="ModalInvertThemeCheckBox_HandlerChanged"
                                               Color="{AppThemeBinding Light=#1A1A1A, Dark=#F2F2F2}"
                                               Opacity="0"
                                               WidthRequest="18"

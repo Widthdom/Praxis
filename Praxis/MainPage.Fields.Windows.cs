@@ -22,5 +22,12 @@ public partial class MainPage
     private bool windowsConflictFocusRestorePending;
     private static readonly TimeSpan windowsFocusRestorePrimaryDelay = UiTimingPolicy.WindowsFocusRestorePrimaryDelay;
     private static readonly TimeSpan windowsFocusRestoreSecondaryDelay = UiTimingPolicy.WindowsFocusRestoreSecondaryDelay;
+    private WindowsModalActionFocusTarget? windowsModalActionFocusTarget;
+
+    private enum WindowsModalActionFocusTarget
+    {
+        Cancel,
+        Save,
+    }
 #endif
 }

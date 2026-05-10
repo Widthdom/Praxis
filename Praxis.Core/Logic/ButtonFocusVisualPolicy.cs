@@ -14,6 +14,11 @@ public static class ButtonFocusVisualPolicy
     // default fill (or whatever the XAML idle binding supplies) shows
     // through; otherwise the button visually disappears against the modal
     // / popup surface it sits on.
+    //
+    // Focus tints must be visibly distinct from the default Button idle fill in
+    // Resources/Styles/Styles.xaml (`Light=#E6E6E6, Dark=#3A3A3A`). A slightly
+    // darker gray on light theme and a slightly lighter gray on dark theme
+    // gives a noticeable shift without competing with the modal accent.
     public static string ResolveBackgroundColorHex(bool focused, bool isDarkTheme)
     {
         if (!focused)
@@ -21,6 +26,6 @@ public static class ButtonFocusVisualPolicy
             return "#00000000";
         }
 
-        return isDarkTheme ? "#3D3D3D" : "#E6E6E6";
+        return isDarkTheme ? "#5A5A5A" : "#C8C8C8";
     }
 }

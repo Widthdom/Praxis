@@ -79,6 +79,10 @@ public partial class MainPage
 
     private void ModalActionButton_Focused(object? sender, FocusEventArgs e)
     {
+#if WINDOWS
+        // Native focus has settled on this button — drop the bridge pseudo-focus so subsequent Tab moves between Cancel/Save use real focus state.
+        windowsModalActionFocusTarget = null;
+#endif
         ApplyModalActionButtonFocusVisuals();
     }
 
@@ -105,6 +109,17 @@ public partial class MainPage
     {
         viewModel.Editor.UseInvertedThemeColors = !viewModel.Editor.UseInvertedThemeColors;
         ModalInvertThemeCheckBox.Focus();
+    }
+
+    private void ModalInvertThemeCheckBox_HandlerChanged(object? sender, EventArgs e)
+    {
+#if WINDOWS
+        // The CheckBox is invisible (Opacity=0) and toggled via the sibling Grid+TapGesture, so it must never sit in the Tab cycle. Apply IsTabStop=false as soon as the platform handler exists, since the modal overlay can rebuild handlers after ApplyTabPolicy already ran.
+        if (sender is VisualElement element)
+        {
+            SetTabStop(element, false);
+        }
+#endif
     }
 
     private void OverlayBackdrop_Tapped(object? sender, TappedEventArgs e)

@@ -27,8 +27,8 @@ public class ButtonFocusVisualPolicyTests
     [Theory]
     [InlineData(false, false, "#00000000")]
     [InlineData(false, true, "#00000000")]
-    [InlineData(true, false, "#E6E6E6")]
-    [InlineData(true, true, "#3D3D3D")]
+    [InlineData(true, false, "#C8C8C8")]
+    [InlineData(true, true, "#5A5A5A")]
     public void ResolveBackgroundColorHex_TintsTheButtonOnlyWhenFocused(bool focused, bool isDarkTheme, string expected)
     {
         var color = ButtonFocusVisualPolicy.ResolveBackgroundColorHex(focused, isDarkTheme);
