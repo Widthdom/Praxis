@@ -79,7 +79,7 @@ public class AppLayerSourceGuardTests
     {
         var xaml = ReadRepositoryFile("Praxis", "MainPage.xaml");
 
-        Assert.Equal(16, CountOccurrences(xaml, "<behaviors:HoverHandCursorBehavior />"));
+        Assert.Equal(18, CountOccurrences(xaml, "<behaviors:HoverHandCursorBehavior />"));
         Assert.Contains("<Border x:Name=\"CreateButton\"", xaml);
         Assert.Contains("<behaviors:HoverHandCursorBehavior />\n                                        <behaviors:MiddleClickBehavior", xaml);
         Assert.Contains("<Button x:Name=\"ContextEditButton\"", xaml);
