@@ -450,24 +450,7 @@ public partial class MainPage
 
     private void ApplyMacModalPseudoFocusVisuals()
     {
-        var dark = IsDarkThemeActive();
-        var focusedBorderColor = dark ? Color.FromArgb("#F2F2F2") : Color.FromArgb("#1A1A1A");
-
-        ApplyMacPseudoFocusVisual(ModalCancelButton, macPseudoFocusedModalTarget == ModalFocusTarget.CancelButton, focusedBorderColor);
-        ApplyMacPseudoFocusVisual(ModalSaveButton, macPseudoFocusedModalTarget == ModalFocusTarget.SaveButton, focusedBorderColor);
-    }
-
-    private static void ApplyMacPseudoFocusVisual(Button button, bool focused, Color focusedBorderColor)
-    {
-        if (focused)
-        {
-            button.BorderColor = focusedBorderColor;
-            button.BorderWidth = 1.5;
-            return;
-        }
-
-        button.BorderColor = Colors.Transparent;
-        button.BorderWidth = 0;
+        ApplyModalActionButtonFocusVisuals();
     }
 
     private void RebuildCommandSuggestionStack()
