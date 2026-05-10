@@ -357,14 +357,60 @@ public class MainPageStructureTests
         Assert.Contains("x:Key=\"TransparentOverlayHitTargetStyle\"", xaml);
         Assert.Contains("<Setter Property=\"BackgroundColor\" Value=\"{StaticResource TransparentOverlayHitTarget}\" />", xaml);
         Assert.Contains("<Setter Property=\"Margin\" Value=\"-18\" />", xaml);
-        Assert.Contains("IsVisible=\"{Binding IsContextMenuOpen}\"\n              BackgroundColor=\"Transparent\"\n              ZIndex=\"970\"", xaml);
-        Assert.Contains("x:Name=\"EditorOverlay\"\n              Grid.RowSpan=\"4\"\n              IsVisible=\"{Binding IsEditorOpen}\"\n              BackgroundColor=\"Transparent\"\n              ZIndex=\"975\"", xaml);
-        Assert.Contains("x:Name=\"ConflictOverlay\"\n              Grid.RowSpan=\"4\"\n              IsVisible=\"False\"\n              BackgroundColor=\"Transparent\"\n              ZIndex=\"980\"", xaml);
+        Assert.Contains("x:Name=\"ContextMenuOverlay\"\n              Grid.RowSpan=\"4\"\n              IsVisible=\"False\"\n              Opacity=\"0\"\n              BackgroundColor=\"Transparent\"\n              ZIndex=\"970\"", xaml);
+        Assert.Contains("x:Name=\"EditorOverlay\"\n              Grid.RowSpan=\"4\"\n              IsVisible=\"False\"\n              Opacity=\"0\"\n              BackgroundColor=\"Transparent\"\n              ZIndex=\"975\"", xaml);
+        Assert.Contains("x:Name=\"ConflictOverlay\"\n              Grid.RowSpan=\"4\"\n              IsVisible=\"False\"\n              Opacity=\"0\"\n              BackgroundColor=\"Transparent\"\n              ZIndex=\"980\"", xaml);
         Assert.Equal(3, CountOccurrences(xaml, "Style=\"{StaticResource TransparentOverlayHitTargetStyle}\""));
         Assert.Contains("<TapGestureRecognizer Command=\"{Binding CloseContextMenuCommand}\" />", xaml);
         Assert.Equal(2, CountOccurrences(xaml, "Tapped=\"OverlayBackdrop_Tapped\""));
         Assert.Contains("Tapped=\"OverlayBackdrop_Tapped\"", xaml.Substring(editorBackdropIndex, editorBackdropEndIndex - editorBackdropIndex));
         Assert.Contains("Tapped=\"OverlayBackdrop_Tapped\"", xaml.Substring(conflictBackdropIndex, conflictBackdropEndIndex - conflictBackdropIndex));
+    }
+
+    [Fact]
+    public void MainPage_Overlays_AreWiredThroughFadeAnimations()
+    {
+        var root = ResolveRepositoryRoot();
+        var xaml = File.ReadAllText(Path.Combine(root, "Praxis", "MainPage.xaml"));
+        var animations = File.ReadAllText(Path.Combine(root, "Praxis", "MainPage.OverlayAnimations.cs"));
+        var fields = File.ReadAllText(Path.Combine(root, "Praxis", "MainPage.Fields.OverlayAndEditor.cs"));
+        var viewModelEvents = File.ReadAllText(Path.Combine(root, "Praxis", "MainPage.ViewModelEvents.cs"));
+        var conflict = File.ReadAllText(Path.Combine(root, "Praxis", "MainPage.ShortcutsAndConflict.cs"));
+
+        // CommandSuggestionPopup must start hidden + transparent so the helper can fade it in.
+        Assert.Contains("x:Name=\"CommandSuggestionPopup\"\n                                Grid.RowSpan=\"4\"\n                                IsVisible=\"False\"\n                                Opacity=\"0\"", xaml);
+
+        // Context-menu and editor overlays must carry visible drop shadows so they pop above the workspace.
+        var contextMenuIndex = xaml.IndexOf("x:Name=\"ContextMenuOverlay\"", StringComparison.Ordinal);
+        Assert.True(contextMenuIndex >= 0);
+        var contextMenuRegionEnd = xaml.IndexOf("</Grid>", contextMenuIndex, StringComparison.Ordinal);
+        Assert.Contains("<Shadow ", xaml.Substring(contextMenuIndex, contextMenuRegionEnd - contextMenuIndex));
+
+        var editorIndex = xaml.IndexOf("x:Name=\"EditorOverlay\"", StringComparison.Ordinal);
+        Assert.True(editorIndex >= 0);
+        var editorRegion = xaml.Substring(editorIndex, Math.Min(2200, xaml.Length - editorIndex));
+        Assert.Contains("<Shadow ", editorRegion);
+
+        // Helper + cancellation-token fields must exist so animations cancel cleanly under rapid toggles.
+        Assert.Contains("private CancellationTokenSource? editorOverlayFadeCts;", fields);
+        Assert.Contains("private CancellationTokenSource? contextMenuOverlayFadeCts;", fields);
+        Assert.Contains("private CancellationTokenSource? conflictOverlayFadeCts;", fields);
+        Assert.Contains("private CancellationTokenSource? commandSuggestionOverlayFadeCts;", fields);
+        Assert.Contains("private static async Task AnimateOverlayFadeAsync(VisualElement overlay, bool show", animations);
+        Assert.Contains("RequestEditorOverlayAnimation", animations);
+        Assert.Contains("RequestContextMenuOverlayAnimation", animations);
+        Assert.Contains("RequestConflictOverlayAnimation", animations);
+        Assert.Contains("RequestCommandSuggestionOverlayAnimation", animations);
+
+        // Property-change handler and conflict open/close must drive the fade requests.
+        Assert.Contains("RequestCommandSuggestionOverlayAnimation(viewModel.IsCommandSuggestionOpen);", viewModelEvents);
+        Assert.Contains("RequestContextMenuOverlayAnimation(viewModel.IsContextMenuOpen);", viewModelEvents);
+        Assert.Contains("RequestEditorOverlayAnimation(viewModel.IsEditorOpen);", viewModelEvents);
+        Assert.Contains("RequestEditorOverlayAnimation(true);", viewModelEvents);
+        Assert.Contains("RequestConflictOverlayAnimation(true);", conflict);
+        Assert.Contains("RequestConflictOverlayAnimation(false);", conflict);
+        Assert.DoesNotContain("ConflictOverlay.IsVisible = true;", conflict);
+        Assert.DoesNotContain("ConflictOverlay.IsVisible = false;", conflict);
     }
 
     private static string ResolveRepositoryRoot()

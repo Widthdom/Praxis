@@ -21,12 +21,26 @@ public partial class MainPage
     private const double QuickLookViewportMargin = 10;
     private const int DockHoverExitHideDelayMs = 60;
 
+    // Overlay fade animation durations (per-overlay tuned).
+    private const uint EditorOverlayFadeInMs = 140;
+    private const uint EditorOverlayFadeOutMs = 160;
+    private const uint ContextMenuOverlayFadeInMs = 110;
+    private const uint ContextMenuOverlayFadeOutMs = 130;
+    private const uint ConflictOverlayFadeInMs = 140;
+    private const uint ConflictOverlayFadeOutMs = 160;
+    private const uint CommandSuggestionOverlayFadeInMs = 90;
+    private const uint CommandSuggestionOverlayFadeOutMs = 110;
+
     // Overlay/popup state.
     private CancellationTokenSource? copyNoticeCts;
     private CancellationTokenSource? statusFlashCts;
     private CancellationTokenSource? quickLookShowCts;
     private CancellationTokenSource? quickLookHideCts;
     private CancellationTokenSource? dockHoverExitCts;
+    private CancellationTokenSource? editorOverlayFadeCts;
+    private CancellationTokenSource? contextMenuOverlayFadeCts;
+    private CancellationTokenSource? conflictOverlayFadeCts;
+    private CancellationTokenSource? commandSuggestionOverlayFadeCts;
     private TaskCompletionSource<EditorConflictResolution>? editorConflictTcs;
     private Guid? quickLookPendingItemId;
     private VisualElement? quickLookPendingAnchor;

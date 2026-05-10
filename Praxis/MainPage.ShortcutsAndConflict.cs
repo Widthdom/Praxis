@@ -522,7 +522,7 @@ public partial class MainPage
             ConflictTitleLabel.Text = title;
             ConflictMessageLabel.Text = message;
             SetConflictDialogPseudoFocus(ConflictDialogFocusTarget.Cancel);
-            ConflictOverlay.IsVisible = true;
+            RequestConflictOverlayAnimation(true);
             App.SetConflictDialogOpenState(true);
             UpdateConflictDialogModalState(isOpen: true);
             CloseCommandSuggestionPopup();
@@ -552,7 +552,7 @@ public partial class MainPage
 
         var tcs = editorConflictTcs;
         editorConflictTcs = null;
-        ConflictOverlay.IsVisible = false;
+        RequestConflictOverlayAnimation(false);
         ClearConflictDialogPseudoFocus();
         App.SetConflictDialogOpenState(false);
         UpdateConflictDialogModalState(isOpen: false);
