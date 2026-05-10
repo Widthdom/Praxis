@@ -762,6 +762,9 @@
                                           HeightRequest="18"
                                           VerticalOptions="Center"
                                           HorizontalOptions="Center">
+                                        <Grid.Behaviors>
+                                            <behaviors:HoverHandCursorBehavior />
+                                        </Grid.Behaviors>
                                         <Grid.GestureRecognizers>
                                             <TapGestureRecognizer Tapped="ModalInvertThemeToggle_Tapped" />
                                         </Grid.GestureRecognizers>
@@ -795,6 +798,9 @@
                                 <Label Text="Use opposite theme colors for this button"
                                        VerticalTextAlignment="Center"
                                        LineBreakMode="TailTruncation">
+                                    <Label.Behaviors>
+                                        <behaviors:HoverHandCursorBehavior />
+                                    </Label.Behaviors>
                                     <Label.GestureRecognizers>
                                         <TapGestureRecognizer Tapped="ModalInvertThemeToggle_Tapped" />
                                     </Label.GestureRecognizers>
