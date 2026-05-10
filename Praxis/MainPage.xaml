@@ -254,7 +254,7 @@
                 IsVisible="False"
                 Opacity="0"
                 Stroke="{AppThemeBinding Light=#BBBBBB, Dark=#565656}"
-                BackgroundColor="{AppThemeBinding Light=#F3F3F3, Dark=#252525}"
+                BackgroundColor="{AppThemeBinding Light=#FDFDFD, Dark=#252525}"
                 StrokeShape="RoundRectangle 10"
                 Padding="6"
                 HeightRequest="{Binding CommandSuggestionPopupHeight}"
