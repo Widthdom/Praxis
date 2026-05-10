@@ -504,7 +504,7 @@
                 Grid.Row="3"
                 Stroke="Transparent"
                 StrokeThickness="0"
-                BackgroundColor="{AppThemeBinding Light=#F2F2F2, Dark=#1E1E1E}"
+                BackgroundColor="Transparent"
                 StrokeShape="RoundRectangle 10"
                 Padding="10,6">
             <Label Text="{Binding StatusText}"

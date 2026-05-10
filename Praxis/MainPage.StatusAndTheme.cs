@@ -93,31 +93,12 @@ public partial class MainPage
 
     private Color GetNeutralStatusBackgroundColor()
     {
-#if WINDOWS
-        if (pageNativeElement is Microsoft.UI.Xaml.FrameworkElement fe)
-        {
-            var actual = fe.ActualTheme;
-            if (actual == Microsoft.UI.Xaml.ElementTheme.Dark)
-            {
-                return Color.FromArgb("#1E1E1E");
-            }
-
-            if (actual == Microsoft.UI.Xaml.ElementTheme.Light)
-            {
-                return Color.FromArgb("#F2F2F2");
-            }
-        }
-#endif
-        var theme = viewModel.SelectedTheme switch
-        {
-            ThemeMode.Light => AppTheme.Light,
-            ThemeMode.Dark => AppTheme.Dark,
-            _ => Application.Current?.RequestedTheme ?? AppTheme.Unspecified,
-        };
-
-        return theme == AppTheme.Dark
-            ? Color.FromArgb("#1E1E1E")
-            : Color.FromArgb("#F2F2F2");
+        // Match the page background by being transparent — using a fixed gray
+        // would not perfectly align with the platform-default ContentPage fill
+        // (especially in dark mode), leaving a faint outline of the status bar
+        // visible while idle. The flash animations interpolate alpha cleanly
+        // between this transparent neutral and the in/out flash colors.
+        return Colors.Transparent;
     }
 
     private bool IsDarkThemeActive()
