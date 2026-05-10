@@ -262,7 +262,7 @@
         <Border Grid.Row="1"
                 Stroke="Transparent"
                 StrokeThickness="0"
-                BackgroundColor="{AppThemeBinding Light=#FCFCFC, Dark=#212121}"
+                BackgroundColor="Transparent"
                 StrokeShape="RoundRectangle 20"
                 Padding="14"
                 SizeChanged="PlacementArea_SizeChanged">
@@ -364,7 +364,7 @@
                 Grid.Row="2"
                 Stroke="Transparent"
                 StrokeThickness="0"
-                BackgroundColor="{AppThemeBinding Light=#FCFCFC, Dark=#212121}"
+                BackgroundColor="Transparent"
                 StrokeShape="RoundRectangle 20"
                 Margin="{OnPlatform Default='0,-16,0,-14', WinUI='0,-16,0,-14', MacCatalyst='0,-16,0,-14'}"
                 Padding="12,0,12,4"
