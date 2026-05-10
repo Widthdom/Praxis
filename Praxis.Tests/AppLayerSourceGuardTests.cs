@@ -215,6 +215,7 @@ public class AppLayerSourceGuardTests
     public void MainPage_DockRegion_UsesCompactBorderlessFootprint()
     {
         var xaml = ReadRepositoryFile("Praxis", "MainPage.xaml");
+        var dockSource = ReadRepositoryFile("Praxis", "MainPage.DockAndQuickLook.cs");
 
         var dockIndex = xaml.IndexOf("x:Name=\"DockRegionBorder\"", StringComparison.Ordinal);
         Assert.True(dockIndex >= 0);
@@ -227,8 +228,12 @@ public class AppLayerSourceGuardTests
         Assert.Contains("Padding=\"12,0,12,4\"", dockHeader);
         Assert.Contains("MinimumHeightRequest=\"{OnPlatform Default=78, WinUI=82, MacCatalyst=82}\"", dockHeader);
         Assert.Contains("Margin=\"0,0,0,18\"", xaml);
-        Assert.Contains("x:Name=\"DockButtonsStack\"\n                                           Spacing=\"10\"\n                                           Margin=\"0,0,0,6\"", xaml);
+        Assert.Contains("Margin=\"0,0,0,10\"\n                                           VerticalOptions=\"Start\"", xaml);
+        Assert.Contains("VerticalOptions=\"Start\"\n                                        Padding=\"0\"", xaml);
         Assert.Contains("x:Name=\"DockScrollBarMask\"", xaml);
+        Assert.Contains("private const double MacDockScrollIndicatorBottomOffset = 8;", dockSource);
+        Assert.Contains("scrollView.ClipsToBounds = true;", dockSource);
+        Assert.Contains("scrollView.ScrollIndicatorInsets = new UIEdgeInsets(0, 0, (nfloat)(-MacDockScrollIndicatorBottomOffset), 0);", dockSource);
     }
 
     [Fact]
