@@ -57,3 +57,8 @@ Desktop.ini
 
 # Backups
 *.bak
+
+# Python cache (agent harness hooks)
+__pycache__/
+*.pyc
+
