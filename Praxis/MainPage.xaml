@@ -266,9 +266,6 @@
                 StrokeShape="RoundRectangle 20"
                 Padding="14"
                 SizeChanged="PlacementArea_SizeChanged">
-            <Border.Shadow>
-                <Shadow Brush="{AppThemeBinding Light=#55000000, Dark=#AA000000}" Opacity="0.20" Offset="0,8" Radius="20" />
-            </Border.Shadow>
 
             <Grid>
                 <ScrollView Orientation="{Binding PlacementScrollOrientation}"
@@ -373,9 +370,6 @@
                 <PointerGestureRecognizer PointerEntered="DockRegion_PointerEntered"
                                           PointerExited="DockRegion_PointerExited" />
             </Border.GestureRecognizers>
-            <Border.Shadow>
-                <Shadow Brush="{AppThemeBinding Light=#44000000, Dark=#99000000}" Opacity="0.18" Offset="0,6" Radius="18" />
-            </Border.Shadow>
 
             <Grid>
                 <ScrollView x:Name="DockScroll"
@@ -448,7 +442,8 @@
                         VerticalOptions="End"
                         Margin="0"
                         InputTransparent="True"
-                        BackgroundColor="{AppThemeBinding Light=#FCFCFC, Dark=#212121}"
+                        BackgroundColor="Transparent"
+                        Stroke="Transparent"
                         StrokeThickness="0"
                         IsVisible="True" />
             </Grid>
