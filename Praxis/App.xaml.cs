@@ -127,6 +127,12 @@ public partial class App : Application
         {
             Width = 1000,
             Height = 700,
+            // The editor modal is 760 wide + 18 padding × 2 = 796, sitting inside the
+            // RootGrid's 18 px padding. Plus a little chrome margin gives ~860.
+            // Height is set so all editor rows + Cancel/Save buttons stay visible
+            // without scroll-clipping the modal itself.
+            MinimumWidth = 860,
+            MinimumHeight = 600,
             Title = string.Empty,
         };
 
