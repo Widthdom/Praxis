@@ -21,6 +21,6 @@ public static class ButtonFocusVisualPolicy
             return "#00000000";
         }
 
-        return isDarkTheme ? "#555555" : "#C8C8C8";
+        return isDarkTheme ? "#3D3D3D" : "#E6E6E6";
     }
 }
