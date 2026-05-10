@@ -212,6 +212,46 @@ public class AppLayerSourceGuardTests
     }
 
     [Fact]
+    public void MainPage_DockRegion_UsesCompactBorderlessFootprint()
+    {
+        var xaml = ReadRepositoryFile("Praxis", "MainPage.xaml");
+
+        var dockIndex = xaml.IndexOf("x:Name=\"DockRegionBorder\"", StringComparison.Ordinal);
+        Assert.True(dockIndex >= 0);
+        var dockOpenEnd = xaml.IndexOf(">", dockIndex, StringComparison.Ordinal);
+        var dockHeader = xaml.Substring(dockIndex, dockOpenEnd - dockIndex);
+
+        Assert.Contains("Stroke=\"Transparent\"", dockHeader);
+        Assert.Contains("StrokeThickness=\"0\"", dockHeader);
+        Assert.Contains("Margin=\"{OnPlatform Default='0,-16,0,-14', WinUI='0,-16,0,-14', MacCatalyst='0,-16,0,-14'}\"", dockHeader);
+        Assert.Contains("Padding=\"12,0,12,4\"", dockHeader);
+        Assert.Contains("MinimumHeightRequest=\"{OnPlatform Default=78, WinUI=82, MacCatalyst=82}\"", dockHeader);
+        Assert.Contains("Margin=\"0,0,0,18\"", xaml);
+        Assert.Contains("x:Name=\"DockButtonsStack\"\n                                           Spacing=\"10\"\n                                           Margin=\"0,0,0,6\"", xaml);
+        Assert.Contains("x:Name=\"DockScrollBarMask\"", xaml);
+    }
+
+    [Fact]
+    public void MainPage_ContextMenu_UsesNativeMacKeyCaptureView()
+    {
+        var xaml = ReadRepositoryFile("Praxis", "MainPage.xaml");
+        var fieldsSource = ReadRepositoryFile("Praxis", "MainPage.Fields.MacCatalyst.cs");
+        var focusSource = ReadRepositoryFile("Praxis", "MainPage.FocusAndContext.cs");
+        var eventSource = ReadRepositoryFile("Praxis", "MainPage.ViewModelEvents.cs");
+
+        Assert.DoesNotContain("x:Name=\"ContextMenuKeyCaptureEntry\"", xaml);
+        Assert.Contains("private MacContextMenuKeyCaptureView? macContextMenuKeyCaptureView;", fieldsSource);
+        Assert.Contains("private sealed class MacContextMenuKeyCaptureView(Action<string> dispatchShortcut) : UIView", focusSource);
+        Assert.Contains("public override void PressesBegan(NSSet<UIPress> presses, UIPressesEvent evt)", focusSource);
+        Assert.Contains("dispatchShortcut(action);", focusSource);
+        Assert.Contains("action = \"PrimaryAction\";", focusSource);
+        Assert.Contains("action = \"ContextMenuNext\";", focusSource);
+        Assert.Contains("FocusMacContextMenuKeyCaptureView();", eventSource);
+        Assert.Contains("RemoveMacContextMenuKeyCaptureView();", eventSource);
+        Assert.DoesNotContain("responder.BecomeFirstResponder();\n        }\n        SyncMacContextMenuPseudoFocusFromButton(button);", focusSource, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void SqliteAppRepository_Initialization_AssignsSharedConnectionOnlyAfterSuccessfulLoad()
     {
         var source = ReadRepositoryFile("Praxis", "Services", "SqliteAppRepository.cs");

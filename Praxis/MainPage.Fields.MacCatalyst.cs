@@ -63,6 +63,7 @@ public partial class MainPage
     private bool macInitialCommandFocusApplied;
     private ModalFocusTarget? macPseudoFocusedModalTarget;
     private ContextMenuFocusTarget? macPseudoFocusedContextMenuTarget;
+    private MacContextMenuKeyCaptureView? macContextMenuKeyCaptureView;
     private static readonly bool macDynamicKeyCommandRegistrationEnabled = false;
     private readonly UITextFieldDelegate macGuidReadOnlyDelegate = new MacGuidReadOnlyTextFieldDelegate();
     private UITextField? macGuidNativeTextField;
