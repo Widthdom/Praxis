@@ -302,7 +302,8 @@
 
         <controls:MaterialFrame x:Name="CommandSuggestionPopup"
                                 Grid.RowSpan="4"
-                                IsVisible="{Binding IsCommandSuggestionOpen}"
+                                IsVisible="False"
+                                Opacity="0"
                                 CornerRadius="10"
                                 MacOSBehindWindowBlur="False"
                                 Stroke="Transparent"
@@ -624,8 +625,10 @@
             </VerticalStackLayout>
         </controls:MaterialFrame>
 
-        <Grid Grid.RowSpan="4"
-              IsVisible="{Binding IsContextMenuOpen}"
+        <Grid x:Name="ContextMenuOverlay"
+              Grid.RowSpan="4"
+              IsVisible="False"
+              Opacity="0"
               BackgroundColor="Transparent"
               ZIndex="970">
             <Border x:Name="ContextMenuDismissLayer"
@@ -643,6 +646,9 @@
                                     Stroke="Transparent"
                                     StrokeThickness="0"
                                     BackgroundColor="{AppThemeBinding Light={StaticResource MutedPopupLight}, Dark={StaticResource MutedPopupDark}}">
+                <controls:MaterialFrame.Shadow>
+                    <Shadow Brush="{AppThemeBinding Light=#55000000, Dark=#AA000000}" Opacity="0.22" Offset="0,8" Radius="18" />
+                </controls:MaterialFrame.Shadow>
                 <VerticalStackLayout Spacing="8">
                     <Grid>
                         <Border x:Name="ContextEditFocusRing"
@@ -692,7 +698,8 @@
 
         <Grid x:Name="EditorOverlay"
               Grid.RowSpan="4"
-              IsVisible="{Binding IsEditorOpen}"
+              IsVisible="False"
+              Opacity="0"
               BackgroundColor="Transparent"
               ZIndex="975">
             <Border x:Name="EditorBackdropLayer"
@@ -712,7 +719,7 @@
                                     StrokeThickness="0"
                                     BackgroundColor="{AppThemeBinding Light={StaticResource SolidModalLight}, Dark={StaticResource SolidModalDark}}">
                 <controls:MaterialFrame.Shadow>
-                    <Shadow Brush="{AppThemeBinding Light=#24000000, Dark=#52000000}" Opacity="0.04" Offset="0,3" Radius="8" />
+                    <Shadow Brush="{AppThemeBinding Light=#66000000, Dark=#AA000000}" Opacity="0.28" Offset="0,12" Radius="24" />
                 </controls:MaterialFrame.Shadow>
 
                 <Grid RowDefinitions="Auto,Auto" RowSpacing="12">
@@ -1029,6 +1036,7 @@
         <Grid x:Name="ConflictOverlay"
               Grid.RowSpan="4"
               IsVisible="False"
+              Opacity="0"
               BackgroundColor="Transparent"
               ZIndex="980">
             <Border x:Name="ConflictBackdropLayer"

@@ -42,12 +42,14 @@ public partial class MainPage
 
         if (e.PropertyName == nameof(MainViewModel.IsCommandSuggestionOpen))
         {
+            RequestCommandSuggestionOverlayAnimation(viewModel.IsCommandSuggestionOpen);
             Dispatcher.Dispatch(UpdateCommandSuggestionPopupPlacement);
             return;
         }
 
         if (e.PropertyName == nameof(MainViewModel.IsContextMenuOpen))
         {
+            RequestContextMenuOverlayAnimation(viewModel.IsContextMenuOpen);
             App.SetContextMenuOpenState(viewModel.IsContextMenuOpen);
             if (viewModel.IsContextMenuOpen)
             {
@@ -105,6 +107,7 @@ public partial class MainPage
         {
             if (e.PropertyName == nameof(MainViewModel.IsEditorOpen))
             {
+                RequestEditorOverlayAnimation(viewModel.IsEditorOpen);
                 App.SetEditorOpenState(viewModel.IsEditorOpen);
                 if (!viewModel.IsEditorOpen)
                 {
@@ -123,6 +126,7 @@ public partial class MainPage
             return;
         }
 
+        RequestEditorOverlayAnimation(true);
         App.SetEditorOpenState(true);
         HideQuickLookPopup();
         ApplyTabPolicy();
