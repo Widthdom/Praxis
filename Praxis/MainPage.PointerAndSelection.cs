@@ -1061,19 +1061,62 @@ public partial class MainPage
     {
         if (hide)
         {
-            SelectionRect.IsVisible = false;
+            FadeOutSelectionRect();
             return;
         }
 
+        var fadeRevision = ++selectionRectFadeRevision;
+        SelectionRect.CancelAnimations();
+        SelectionRect.Opacity = 1;
         var x = Math.Min(start.X, current.X);
         var y = Math.Min(start.Y, current.Y);
         var w = Math.Abs(current.X - start.X);
         var h = Math.Abs(current.Y - start.Y);
         SelectionRect.IsVisible = w > 2 && h > 2;
+        if (SelectionRect.IsVisible)
+        {
+            selectionRectFadeRevision = fadeRevision;
+        }
+
         SelectionRect.TranslationX = x;
         SelectionRect.TranslationY = y;
         SelectionRect.WidthRequest = w;
         SelectionRect.HeightRequest = h;
+    }
+
+    private void FadeOutSelectionRect()
+    {
+        if (!SelectionRect.IsVisible)
+        {
+            SelectionRect.CancelAnimations();
+            SelectionRect.Opacity = 1;
+            return;
+        }
+
+        var fadeRevision = ++selectionRectFadeRevision;
+        SelectionRect.CancelAnimations();
+        _ = FadeOutSelectionRectAsync(fadeRevision);
+    }
+
+    private async Task FadeOutSelectionRectAsync(int fadeRevision)
+    {
+        try
+        {
+            await SelectionRect.FadeToAsync(0, UiTimingPolicy.SelectionRectFadeOutDurationMs, Easing.CubicOut);
+        }
+        catch (Exception ex)
+        {
+            var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);
+            CrashFileLogger.WriteWarning(nameof(FadeOutSelectionRectAsync), $"Selection rectangle fade failed while visible={SelectionRect.IsVisible}: {safeMessage}");
+        }
+        finally
+        {
+            if (selectionRectFadeRevision == fadeRevision)
+            {
+                SelectionRect.IsVisible = false;
+                SelectionRect.Opacity = 1;
+            }
+        }
     }
 
     private void ExecuteSelectionPayload(SelectionPayload payload)

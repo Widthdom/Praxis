@@ -18,6 +18,7 @@ public partial class MainPage
     private Point selectionStartViewport;
     private Point selectionLastCanvas;
     private Point selectionLastViewport;
+    private int selectionRectFadeRevision;
     private Point? lastPointerOnRoot;
     private bool isDockPointerHovering;
 #if MACCATALYST
