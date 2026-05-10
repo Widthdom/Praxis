@@ -2,6 +2,8 @@ using System.Reflection;
 using Praxis.Core.Logic;
 using Praxis.Services;
 #if MACCATALYST
+using CoreGraphics;
+using Foundation;
 using UIKit;
 #endif
 
@@ -44,17 +46,10 @@ public partial class MainPage
     private void FocusContextActionButton(Button button)
     {
 #if MACCATALYST
-        ResignMainInputFirstResponder();
-#endif
-        button.Focus();
-#if MACCATALYST
-        if (button.Handler?.PlatformView is UIResponder responder &&
-            responder.CanBecomeFirstResponder &&
-            !responder.IsFirstResponder)
-        {
-            responder.BecomeFirstResponder();
-        }
         SyncMacContextMenuPseudoFocusFromButton(button);
+        FocusMacContextMenuKeyCaptureView();
+#else
+        button.Focus();
 #endif
     }
 
@@ -161,6 +156,177 @@ public partial class MainPage
     private void ClearMacContextMenuPseudoFocus()
     {
         macPseudoFocusedContextMenuTarget = null;
+    }
+
+    private void FocusMacContextMenuKeyCaptureView()
+    {
+        if (!viewModel.IsContextMenuOpen)
+        {
+            return;
+        }
+
+        var captureView = EnsureMacContextMenuKeyCaptureView();
+        if (captureView is null)
+        {
+            return;
+        }
+
+        if (!captureView.IsFirstResponder)
+        {
+            captureView.BecomeFirstResponder();
+        }
+    }
+
+    private MacContextMenuKeyCaptureView? EnsureMacContextMenuKeyCaptureView()
+    {
+        if (macContextMenuKeyCaptureView is { Superview: not null } existingView)
+        {
+            return existingView;
+        }
+
+        var hostView = ResolveMacContextMenuKeyCaptureHostView();
+        if (hostView is null)
+        {
+            return null;
+        }
+
+        var captureView = new MacContextMenuKeyCaptureView(action => App.RaiseEditorShortcut(action))
+        {
+            Frame = new CGRect(0, 0, 1, 1),
+            BackgroundColor = UIColor.Clear,
+            Alpha = 0.01f,
+            UserInteractionEnabled = true,
+        };
+
+        hostView.AddSubview(captureView);
+        macContextMenuKeyCaptureView = captureView;
+        return captureView;
+    }
+
+    private UIView? ResolveMacContextMenuKeyCaptureHostView()
+    {
+        if (Window?.Handler?.PlatformView is UIWindow nativeWindow)
+        {
+            return nativeWindow.RootViewController?.View ?? nativeWindow;
+        }
+
+        return Handler?.PlatformView as UIView;
+    }
+
+    private void RemoveMacContextMenuKeyCaptureView()
+    {
+        if (macContextMenuKeyCaptureView is not { } captureView)
+        {
+            return;
+        }
+
+        if (captureView.IsFirstResponder)
+        {
+            captureView.ResignFirstResponder();
+        }
+
+        captureView.RemoveFromSuperview();
+        captureView.Dispose();
+        macContextMenuKeyCaptureView = null;
+    }
+
+    private sealed class MacContextMenuKeyCaptureView(Action<string> dispatchShortcut) : UIView
+    {
+        public override bool CanBecomeFirstResponder => true;
+
+        public override void PressesBegan(NSSet<UIPress> presses, UIPressesEvent evt)
+        {
+            foreach (var pressObject in presses)
+            {
+                if (pressObject is not UIPress press || press.Key is not UIKey key)
+                {
+                    continue;
+                }
+
+                if (!TryResolveContextMenuShortcut(press, key, out var action))
+                {
+                    continue;
+                }
+
+                dispatchShortcut(action);
+                return;
+            }
+
+            base.PressesBegan(presses, evt);
+        }
+
+        private static bool TryResolveContextMenuShortcut(UIPress press, UIKey key, out string action)
+        {
+            var shiftDown = (key.ModifierFlags & UIKeyModifierFlags.Shift) != 0;
+
+            if (IsArrowPress(press, MainPage.macUpArrowKeyInput, "UpArrow", 82))
+            {
+                action = "ContextMenuPrevious";
+                return true;
+            }
+
+            if (IsArrowPress(press, MainPage.macDownArrowKeyInput, "DownArrow", 81))
+            {
+                action = "ContextMenuNext";
+                return true;
+            }
+
+            if (IsKeyInput(key, MainPage.macTabKeyInput))
+            {
+                action = shiftDown ? "TabPrevious" : "TabNext";
+                return true;
+            }
+
+            if (IsKeyInput(key, MainPage.macEscapeKeyInput))
+            {
+                action = "Cancel";
+                return true;
+            }
+
+            if (IsKeyInput(key, MainPage.macReturnKeyInput) ||
+                (!string.IsNullOrEmpty(MainPage.macEnterKeyInput) && IsKeyInput(key, MainPage.macEnterKeyInput!)))
+            {
+                action = "PrimaryAction";
+                return true;
+            }
+
+            action = string.Empty;
+            return false;
+        }
+
+        private static bool IsKeyInput(UIKey key, string input)
+        {
+            return string.Equals(key.CharactersIgnoringModifiers, input, StringComparison.Ordinal) ||
+                   string.Equals(key.Characters, input, StringComparison.Ordinal);
+        }
+
+        private static bool IsArrowPress(UIPress press, string keyInput, string keyCodeName, int keyCodeNumeric)
+        {
+            if (press.Key is not { } key)
+            {
+                return false;
+            }
+
+            if (IsKeyInput(key, keyInput))
+            {
+                return true;
+            }
+
+            var keyCodeProp = key.GetType().GetProperty("KeyCode");
+            var keyCodeValue = keyCodeProp?.GetValue(key);
+            if (keyCodeValue is null)
+            {
+                return false;
+            }
+
+            var keyCodeText = keyCodeValue.ToString() ?? string.Empty;
+            if (keyCodeText.Contains(keyCodeName, StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+
+            return int.TryParse(keyCodeText, out var numericCode) && numericCode == keyCodeNumeric;
+        }
     }
 #endif
 
