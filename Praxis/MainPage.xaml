@@ -345,6 +345,12 @@
                                         StrokeShape="RoundRectangle 12"
                                         BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#363636}"
                                         Padding="0">
+                                    <Border.Shadow>
+                                        <Shadow Brush="{AppThemeBinding Light=#000000, Dark=#000000}"
+                                                Opacity="0.18"
+                                                Offset="2,2"
+                                                Radius="3" />
+                                    </Border.Shadow>
                                     <Border.Behaviors>
                                         <behaviors:GrabHandCursorBehavior />
                                         <behaviors:MiddleClickBehavior Command="{Binding Source={x:Reference RootPage}, Path=BindingContext.OpenEditorCommand}" />
@@ -451,6 +457,12 @@
                                         HeightRequest="{x:Static corelogic:ButtonLayoutDefaults.Height}"
                                         VerticalOptions="Start"
                                         Padding="0">
+                                    <Border.Shadow>
+                                        <Shadow Brush="{AppThemeBinding Light=#000000, Dark=#000000}"
+                                                Opacity="0.18"
+                                                Offset="2,2"
+                                                Radius="3" />
+                                    </Border.Shadow>
                                     <Border.Triggers>
                                         <DataTrigger TargetType="Border" Binding="{Binding UseInvertedThemeColors}" Value="True">
                                             <Setter Property="BackgroundColor" Value="{AppThemeBinding Light=#363636, Dark=#FFFFFF}" />
