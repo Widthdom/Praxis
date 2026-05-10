@@ -23,6 +23,7 @@ public partial class MainPage
     private static readonly bool MacPlacementPrimarySelectionUsesPolling = false;
     private static readonly TimeSpan MacPlacementRecentHoverWindow = TimeSpan.FromMilliseconds(250);
     private static readonly TimeSpan MacPlacementPrimaryReleaseGraceWindow = TimeSpan.FromMilliseconds(80);
+    private static readonly Point MacPlacementSelectionPointerOffset = new(-4, -14);
     private static readonly UIColor LightMacTextSelectionColor = UIColor.FromRGB(0x4B, 0x00, 0xD9);
     private static readonly UIColor DarkMacTextSelectionColor = UIColor.FromRGB(0x35, 0x00, 0xA8);
 
@@ -879,18 +880,26 @@ public partial class MainPage
             return;
         }
 
+        var selectionRootPoint = ApplyMacPlacementSelectionPointerOffset(rootPoint);
+        if (!TryGetMacPlacementRootCanvasPoint(selectionRootPoint, allowOutside: false, out var selectionCanvasPoint, out var selectionViewportPoint))
+        {
+            selectionRootPoint = rootPoint;
+            selectionCanvasPoint = canvasPoint;
+            selectionViewportPoint = viewportPoint;
+        }
+
         CloseCommandSuggestionPopup();
         macPlacementNativeSelectionIgnored = false;
         macPlacementNativeSelectionActive = true;
         selectionDragging = true;
         selectionPanPrimed = true;
-        selectionStartCanvas = canvasPoint;
-        selectionStartViewport = viewportPoint;
+        selectionStartCanvas = selectionCanvasPoint;
+        selectionStartViewport = selectionViewportPoint;
         selectionLastCanvas = selectionStartCanvas;
         selectionLastViewport = selectionStartViewport;
-        macPlacementNativeSelectionStartRootPoint = rootPoint;
+        macPlacementNativeSelectionStartRootPoint = selectionRootPoint;
         SelectionRect.IsVisible = false;
-        UpdateMacPlacementNativeSelectionOverlay(rootPoint, rootPoint);
+        UpdateMacPlacementNativeSelectionOverlay(selectionRootPoint, selectionRootPoint);
         ExecuteSelectionPayload(new SelectionPayload(selectionStartCanvas.X, selectionStartCanvas.Y, selectionStartCanvas.X, selectionStartCanvas.Y, GestureStatus.Started));
         LogMacPlacementInputDiagnostic(
             "native-selection-started",
@@ -910,15 +919,20 @@ public partial class MainPage
             return;
         }
 
-        if (!TryGetMacPlacementPrimaryRecognizerRunningRootPoint(out var rootPoint) ||
-            !TryGetMacPlacementRootCanvasPoint(rootPoint, allowOutside: true, out var canvasPoint, out var viewportPoint))
+        if (!TryGetMacPlacementPrimaryRecognizerRunningRootPoint(out var rootPoint))
+        {
+            return;
+        }
+
+        var selectionRootPoint = ApplyMacPlacementSelectionPointerOffset(rootPoint);
+        if (!TryGetMacPlacementRootCanvasPoint(selectionRootPoint, allowOutside: true, out var canvasPoint, out var viewportPoint))
         {
             return;
         }
 
         selectionLastCanvas = canvasPoint;
         selectionLastViewport = viewportPoint;
-        UpdateMacPlacementNativeSelectionOverlay(macPlacementNativeSelectionStartRootPoint ?? rootPoint, rootPoint);
+        UpdateMacPlacementNativeSelectionOverlay(macPlacementNativeSelectionStartRootPoint ?? selectionRootPoint, selectionRootPoint);
         ExecuteSelectionPayload(new SelectionPayload(selectionStartCanvas.X, selectionStartCanvas.Y, canvasPoint.X, canvasPoint.Y, GestureStatus.Running));
     }
 
@@ -2020,6 +2034,13 @@ public partial class MainPage
 
         var hasRawStartScreen = TryGetMacCurrentScreenPointer(rootPoint, out var rawStartScreen, out var rawStartScreenPointKind);
         var hasAppKitStartRoot = TryGetMacCurrentRootPointerFromAppKit(rootPoint, out _, out var appKitRootPointKind);
+        var selectionRootPoint = ApplyMacPlacementSelectionPointerOffset(rootPoint);
+        if (!TryGetMacPlacementRootCanvasPoint(selectionRootPoint, allowOutside: false, out var selectionCanvasPoint, out var selectionViewportPoint))
+        {
+            selectionRootPoint = rootPoint;
+            selectionCanvasPoint = canvasPoint;
+            selectionViewportPoint = viewportPoint;
+        }
 
         CloseCommandSuggestionPopup();
         macPlacementPollingSelectionActive = true;
@@ -2027,21 +2048,21 @@ public partial class MainPage
         selectionPanPrimed = true;
         macPlacementPrimaryReleaseStartedAtUtc = null;
         macPlacementPollingAppKitRootPointKind = hasAppKitStartRoot ? appKitRootPointKind : null;
-        macPlacementPollingStartRootPoint = rootPoint;
+        macPlacementPollingStartRootPoint = selectionRootPoint;
         macPlacementPollingRawStartScreen = hasRawStartScreen ? rawStartScreen : null;
         macPlacementPollingScreenPointKind = hasRawStartScreen ? rawStartScreenPointKind : null;
-        macPlacementPollingAnchorViewport = viewportPoint;
+        macPlacementPollingAnchorViewport = selectionViewportPoint;
         macPlacementPollingGeometryDiagnosticCount = 0;
-        selectionStartCanvas = canvasPoint;
-        selectionStartViewport = viewportPoint;
+        selectionStartCanvas = selectionCanvasPoint;
+        selectionStartViewport = selectionViewportPoint;
         selectionLastCanvas = selectionStartCanvas;
         selectionLastViewport = selectionStartViewport;
         SelectionRect.IsVisible = false;
-        UpdateMacPlacementNativeSelectionOverlay(rootPoint, rootPoint);
+        UpdateMacPlacementNativeSelectionOverlay(selectionRootPoint, selectionRootPoint);
         ExecuteSelectionPayload(new SelectionPayload(selectionStartCanvas.X, selectionStartCanvas.Y, selectionStartCanvas.X, selectionStartCanvas.Y, GestureStatus.Started));
         LogMacPlacementInputDiagnostic(
             "poll-selection-started",
-            $"root=({rootPoint.X:0.##},{rootPoint.Y:0.##}) viewport=({viewportPoint.X:0.##},{viewportPoint.Y:0.##}) canvas=({canvasPoint.X:0.##},{canvasPoint.Y:0.##})");
+            $"root=({selectionRootPoint.X:0.##},{selectionRootPoint.Y:0.##}) viewport=({selectionViewportPoint.X:0.##},{selectionViewportPoint.Y:0.##}) canvas=({selectionCanvasPoint.X:0.##},{selectionCanvasPoint.Y:0.##})");
         if (ShouldLogMacPlacementInputDiagnostic(ref macPlacementPollingGeometryDiagnosticCount, limit: 24, every: 0))
         {
             var rawText = hasRawStartScreen
@@ -2052,7 +2073,7 @@ public partial class MainPage
                 : " appKitKind=(null)";
             LogMacPlacementInputDiagnostic(
                 "poll-geometry-start",
-                $"root=({rootPoint.X:0.##},{rootPoint.Y:0.##}) viewport=({viewportPoint.X:0.##},{viewportPoint.Y:0.##}){rawText}{appKitText} pointer={FormatMacPlacementPointerDiagnostic()}");
+                $"root=({selectionRootPoint.X:0.##},{selectionRootPoint.Y:0.##}) viewport=({selectionViewportPoint.X:0.##},{selectionViewportPoint.Y:0.##}){rawText}{appKitText} pointer={FormatMacPlacementPointerDiagnostic()}");
         }
     }
 
@@ -2130,18 +2151,21 @@ public partial class MainPage
         rootPoint = default;
 
         if (macPlacementPollingAppKitRootPointKind is MacAppKitRootPointKind appKitRootPointKind &&
-            TryGetMacCurrentRootPointerFromAppKit(appKitRootPointKind, allowOutsideRoot: true, out var lockedAppKitRootPoint) &&
-            TryGetMacPlacementRootCanvasPoint(lockedAppKitRootPoint, allowOutside: true, out canvasPoint, out viewportPoint))
+            TryGetMacCurrentRootPointerFromAppKit(appKitRootPointKind, allowOutsideRoot: true, out var lockedAppKitRootPoint))
         {
-            rootPoint = lockedAppKitRootPoint;
-            if (ShouldLogMacPlacementInputDiagnostic(ref macPlacementPollingGeometryDiagnosticCount, limit: 24, every: 0))
+            var selectionRootPoint = ApplyMacPlacementSelectionPointerOffset(lockedAppKitRootPoint);
+            if (TryGetMacPlacementRootCanvasPoint(selectionRootPoint, allowOutside: true, out canvasPoint, out viewportPoint))
             {
-                LogMacPlacementInputDiagnostic(
-                    "poll-geometry-run",
-                    $"source=appkit kind={appKitRootPointKind} viewport=({viewportPoint.X:0.##},{viewportPoint.Y:0.##}) root=({rootPoint.X:0.##},{rootPoint.Y:0.##})");
-            }
+                rootPoint = selectionRootPoint;
+                if (ShouldLogMacPlacementInputDiagnostic(ref macPlacementPollingGeometryDiagnosticCount, limit: 24, every: 0))
+                {
+                    LogMacPlacementInputDiagnostic(
+                        "poll-geometry-run",
+                        $"source=appkit kind={appKitRootPointKind} viewport=({viewportPoint.X:0.##},{viewportPoint.Y:0.##}) root=({rootPoint.X:0.##},{rootPoint.Y:0.##})");
+                }
 
-            return true;
+                return true;
+            }
         }
 
         if (macPlacementPollingRawStartScreen is Point rawStartScreen &&
@@ -2168,32 +2192,41 @@ public partial class MainPage
         }
 
         if (macPlacementPollingScreenPointKind is MacPointerScreenPointKind screenPointKind &&
-            TryGetMacCurrentRootPointer(screenPointKind, allowOutsideRoot: true, out var lockedRootPoint) &&
-            TryGetMacPlacementRootCanvasPoint(lockedRootPoint, allowOutside: true, out canvasPoint, out viewportPoint))
+            TryGetMacCurrentRootPointer(screenPointKind, allowOutsideRoot: true, out var lockedRootPoint))
         {
-            rootPoint = lockedRootPoint;
-            if (ShouldLogMacPlacementInputDiagnostic(ref macPlacementPollingGeometryDiagnosticCount, limit: 24, every: 0))
+            var selectionRootPoint = ApplyMacPlacementSelectionPointerOffset(lockedRootPoint);
+            if (TryGetMacPlacementRootCanvasPoint(selectionRootPoint, allowOutside: true, out canvasPoint, out viewportPoint))
             {
-                LogMacPlacementInputDiagnostic(
-                    "poll-geometry-run",
-                    $"source=cg kind={screenPointKind} viewport=({viewportPoint.X:0.##},{viewportPoint.Y:0.##}) root=({rootPoint.X:0.##},{rootPoint.Y:0.##})");
+                rootPoint = selectionRootPoint;
+                if (ShouldLogMacPlacementInputDiagnostic(ref macPlacementPollingGeometryDiagnosticCount, limit: 24, every: 0))
+                {
+                    LogMacPlacementInputDiagnostic(
+                        "poll-geometry-run",
+                        $"source=cg kind={screenPointKind} viewport=({viewportPoint.X:0.##},{viewportPoint.Y:0.##}) root=({rootPoint.X:0.##},{rootPoint.Y:0.##})");
+                }
+
+                return true;
             }
-
-            return true;
         }
 
-        if (TryGetMacPlacementPollingCurrentRootPoint(out var currentRootPoint) &&
-            TryGetMacPlacementRootCanvasPoint(currentRootPoint, allowOutside: true, out canvasPoint, out viewportPoint))
+        if (TryGetMacPlacementPollingCurrentRootPoint(out var currentRootPoint))
         {
-            rootPoint = currentRootPoint;
-            return true;
+            var selectionRootPoint = ApplyMacPlacementSelectionPointerOffset(currentRootPoint);
+            if (TryGetMacPlacementRootCanvasPoint(selectionRootPoint, allowOutside: true, out canvasPoint, out viewportPoint))
+            {
+                rootPoint = selectionRootPoint;
+                return true;
+            }
         }
 
-        if (TryGetRecentMacPlacementHoverRootPoint(out var recentHoverRootPoint) &&
-            TryGetMacPlacementRootCanvasPoint(recentHoverRootPoint, allowOutside: true, out canvasPoint, out viewportPoint))
+        if (TryGetRecentMacPlacementHoverRootPoint(out var recentHoverRootPoint))
         {
-            rootPoint = recentHoverRootPoint;
-            return true;
+            var selectionRootPoint = ApplyMacPlacementSelectionPointerOffset(recentHoverRootPoint);
+            if (TryGetMacPlacementRootCanvasPoint(selectionRootPoint, allowOutside: true, out canvasPoint, out viewportPoint))
+            {
+                rootPoint = selectionRootPoint;
+                return true;
+            }
         }
 
         canvasPoint = default;
@@ -2478,6 +2511,9 @@ public partial class MainPage
             viewportPoint.Y + PlacementScroll.ScrollY);
         return true;
     }
+
+    private static Point ApplyMacPlacementSelectionPointerOffset(Point rootPoint)
+        => new(rootPoint.X + MacPlacementSelectionPointerOffset.X, rootPoint.Y + MacPlacementSelectionPointerOffset.Y);
 
     private bool TryGetMacCurrentPlacementRootPointer(
         out Point rootPoint,
