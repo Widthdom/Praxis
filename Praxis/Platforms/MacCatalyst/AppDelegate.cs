@@ -104,6 +104,41 @@ public class AppDelegate : MauiUIApplicationDelegate
         MarkMacAppActive();
         CommandEntryHandler.RequestNativeActivationFocus("AppDelegate.OnActivated");
         MainThread.BeginInvokeOnMainThread(() => MainPage.RequestMacCommandFocusFromNativeActivation("AppDelegate.OnActivated"));
+        ClearMacWindowTitles(application);
+    }
+
+    private static void ClearMacWindowTitles(UIApplication application)
+    {
+        // Mac Catalyst falls back to the bundle / display name in the window
+        // titlebar, so just setting MAUI's Window.Title="" leaves "Praxis"
+        // visible. Walk every UIWindowScene and (a) blank its Title and
+        // (b) hide the titlebar's title visibility so the text never paints.
+        try
+        {
+            if (application?.ConnectedScenes is null)
+            {
+                return;
+            }
+
+            foreach (var scene in application.ConnectedScenes)
+            {
+                if (scene is not UIWindowScene windowScene)
+                {
+                    continue;
+                }
+
+                windowScene.Title = string.Empty;
+                if (windowScene.Titlebar is { } titlebar)
+                {
+                    titlebar.TitleVisibility = UITitlebarTitleVisibility.Hidden;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);
+            CrashFileLogger.WriteWarning(nameof(AppDelegate), $"Failed to clear Mac window titles: {safeMessage}");
+        }
     }
 
     [Export("handleThemeDark:")]

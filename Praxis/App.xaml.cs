@@ -127,7 +127,7 @@ public partial class App : Application
         {
             Width = 1000,
             Height = 700,
-            Title = "Praxis",
+            Title = string.Empty,
         };
 
 #if WINDOWS
@@ -188,7 +188,7 @@ public partial class App : Application
             var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);
             return new ContentPage
             {
-                Title = "Praxis",
+                Title = string.Empty,
                 Content = new ScrollView
                 {
                     Content = new VerticalStackLayout

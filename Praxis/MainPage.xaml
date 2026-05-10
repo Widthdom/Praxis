@@ -8,7 +8,7 @@
              xmlns:corelogic="clr-namespace:Praxis.Core.Logic;assembly=Praxis.Core"
              x:Class="Praxis.MainPage"
              x:Name="RootPage"
-             Title="Praxis">
+             Title="">
     <ContentPage.Resources>
         <converters:BoolToScrollBarVisibilityConverter x:Key="BoolToScrollBarVisibilityConverter" />
         <Color x:Key="TransparentOverlayHitTarget">#01000000</Color>
