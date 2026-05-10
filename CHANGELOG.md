@@ -13,6 +13,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 ### Fixed
 - Edit/Delete overlays now close when clicking outside the menu on both Windows and Mac Catalyst, and Edit/Delete, editor, and conflict overlays share a full-window hit target rendered as a `Border` (more reliable than a `Grid` for MAUI iOS gesture pickup) using a near-black `#01000000` tint that stays visually neutral. Editor/conflict hit targets block lower-layer clicks without dismissing their dialogs, with the conflict layer sitting between the conflict panel and any editor modal underneath
 - Mac Catalyst context-menu Edit/Delete actions now dispatch the selected item from a single Return/Enter key press after arrow-key navigation, including menus opened from the placement area, Dock, and command suggestions
+- Placement rectangle feedback now fades out on mouse release on both Windows and Mac Catalyst instead of disappearing abruptly
 
 ### [1.1.13] - 2026-04-30
 

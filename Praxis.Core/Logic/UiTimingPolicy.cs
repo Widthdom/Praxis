@@ -6,6 +6,7 @@ public static class UiTimingPolicy
     public const int CopyNoticeHoldDurationMs = 320;
     public const uint StatusFlashInDurationMs = 120;
     public const uint StatusFlashOutDurationMs = 220;
+    public const uint SelectionRectFadeOutDurationMs = 110;
 
     public static readonly TimeSpan WindowsFocusRestorePrimaryDelay = TimeSpan.FromMilliseconds(24);
     public static readonly TimeSpan WindowsFocusRestoreSecondaryDelay = TimeSpan.FromMilliseconds(120);

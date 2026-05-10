@@ -768,10 +768,11 @@ public class AppLayerSourceGuardTests
     public void MainPage_SecondaryTapCreateFailures_AreWarningLogged()
     {
         var source = ReadRepositoryFile("Praxis", "MainPage.PointerAndSelection.cs");
-        Assert.Equal(2, CountOccurrences(source, "var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);"));
+        Assert.Equal(3, CountOccurrences(source, "var safeMessage = CrashFileLogger.SafeExceptionMessage(ex);"));
         Assert.Contains("CrashFileLogger.WriteWarning(nameof(PlacementCanvas_SecondaryTapped), $\"Secondary-tap create flow failed at ({canvasPoint.X:0.##}, {canvasPoint.Y:0.##}): {safeMessage}\");", source);
         Assert.Contains("var modalVisible = EditorOverlay.IsVisible;", source);
         Assert.Contains("CrashFileLogger.WriteWarning(nameof(FocusModalPrimaryEditorField), $\"Failed to focus modal ButtonText entry while shouldSelectAll={shouldSelectAll} modalVisible={modalVisible}: {safeMessage}\");", source);
+        Assert.Contains("CrashFileLogger.WriteWarning(nameof(FadeOutSelectionRectAsync)", source);
     }
 
     [Fact]
