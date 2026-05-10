@@ -313,7 +313,7 @@
                                                 <BindingCondition Binding="{Binding IsSelected}" Value="True" />
                                                 <BindingCondition Binding="{Binding UseInvertedThemeColors}" Value="True" />
                                             </MultiTrigger.Conditions>
-                                            <Setter Property="BackgroundColor" Value="{AppThemeBinding Light=#505050, Dark=#DCDCDC}" />
+                                            <Setter Property="BackgroundColor" Value="{AppThemeBinding Light=#787878, Dark=#A0A0A0}" />
                                         </MultiTrigger>
                                     </Border.Triggers>
                                     <Border.GestureRecognizers>
