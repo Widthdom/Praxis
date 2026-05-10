@@ -9,10 +9,6 @@ namespace Praxis;
 
 public partial class MainPage
 {
-#if MACCATALYST
-    private const double MacDockScrollIndicatorBottomOffset = 8;
-#endif
-
     private void DockRegion_PointerEntered(object? sender, PointerEventArgs e)
     {
         CancelDockHoverExitHide();
@@ -106,8 +102,6 @@ public partial class MainPage
         if (TryResolveMacDockScrollView() is UIScrollView scrollView)
         {
             scrollView.ShowsHorizontalScrollIndicator = showHorizontalScrollBar;
-            scrollView.ClipsToBounds = true;
-            scrollView.ScrollIndicatorInsets = new UIEdgeInsets(0, 0, (nfloat)(-MacDockScrollIndicatorBottomOffset), 0);
             scrollView.SetNeedsLayout();
             scrollView.LayoutIfNeeded();
         }

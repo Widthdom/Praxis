@@ -5,14 +5,6 @@ namespace Praxis;
 public partial class MainPage
 {
 #if WINDOWS
-    private enum WindowsModalActionFocusTarget
-    {
-        Cancel,
-        Save
-    }
-
-    private WindowsModalActionFocusTarget? windowsModalActionFocusTarget;
-
     private void CommandTextBox_KeyDown(object sender, Microsoft.UI.Xaml.Input.KeyRoutedEventArgs e)
     {
         if (e.Handled)
@@ -88,13 +80,6 @@ public partial class MainPage
 
         if (e.Key == Windows.System.VirtualKey.Tab)
         {
-            if (viewModel.IsEditorOpen &&
-                TryMoveWindowsModalEditorFocusFromTextBox(sender, forward: !IsWindowsShiftDown()))
-            {
-                e.Handled = true;
-                return;
-            }
-
             windowsSelectAllOnTabNavigationPending = true;
         }
     }
@@ -126,73 +111,26 @@ public partial class MainPage
 
     private void WindowsTextBox_GotFocus(object sender, Microsoft.UI.Xaml.RoutedEventArgs e)
     {
-        ClearWindowsModalActionFocus();
-        var focusedTextBox = sender as Microsoft.UI.Xaml.Controls.TextBox;
-        if (focusedTextBox is not null)
-        {
-            ConfigureWindowsTextSelectionAndCaret(focusedTextBox);
-            if (ReferenceEquals(focusedTextBox, commandTextBox) ||
-                ReferenceEquals(focusedTextBox, searchTextBox))
-            {
-                Praxis.Controls.WindowsTextBoxVisualPolicy.ApplyInputCaretContrast(focusedTextBox);
-            }
-        }
-
         if (!windowsSelectAllOnTabNavigationPending)
         {
             return;
         }
 
         windowsSelectAllOnTabNavigationPending = false;
-        focusedTextBox?.SelectAll();
-        if (focusedTextBox is not null)
+        if (sender is Microsoft.UI.Xaml.Controls.TextBox textBox)
         {
-            ConfigureWindowsTextSelectionAndCaret(focusedTextBox);
-            if (ReferenceEquals(focusedTextBox, commandTextBox) ||
-                ReferenceEquals(focusedTextBox, searchTextBox))
-            {
-                Praxis.Controls.WindowsTextBoxVisualPolicy.ApplyInputCaretContrast(focusedTextBox);
-            }
+            textBox.SelectAll();
         }
     }
 
     private void WindowsTextBox_PointerPressed(object sender, Microsoft.UI.Xaml.Input.PointerRoutedEventArgs e)
     {
         windowsSelectAllOnTabNavigationPending = false;
-        ClearWindowsModalActionFocus();
-    }
-
-    private void WindowsTextBox_SelectionChanged(object sender, Microsoft.UI.Xaml.RoutedEventArgs e)
-    {
-        if (sender is not Microsoft.UI.Xaml.Controls.TextBox textBox)
-        {
-            return;
-        }
-
-        ConfigureWindowsTextSelectionAndCaret(textBox);
-        if (ReferenceEquals(textBox, commandTextBox) ||
-            ReferenceEquals(textBox, searchTextBox))
-        {
-            Praxis.Controls.WindowsTextBoxVisualPolicy.ApplyInputCaretContrast(textBox);
-        }
     }
 
     private void WindowsModalInput_LostFocus(object sender, Microsoft.UI.Xaml.RoutedEventArgs e)
     {
-        ClearWindowsTextSelection(sender);
         QueueWindowsEditorFocusRestore();
-    }
-
-    private static void ClearWindowsTextSelection(object sender)
-    {
-        if (sender is not Microsoft.UI.Xaml.Controls.TextBox textBox ||
-            textBox.SelectionLength <= 0)
-        {
-            return;
-        }
-
-        textBox.SelectionStart += textBox.SelectionLength;
-        textBox.SelectionLength = 0;
     }
 
     private void QueueWindowsEditorFocusRestore()
@@ -290,7 +228,6 @@ public partial class MainPage
             IsWindowsTextBoxFocused(modalClipWordTextBox) ||
             IsWindowsTextBoxFocused(modalNoteTextBox) ||
             IsCheckBoxFocused(ModalInvertThemeCheckBox) ||
-            windowsModalActionFocusTarget is not null ||
             IsButtonFocused(ModalCancelButton) ||
             IsButtonFocused(ModalSaveButton);
     }
@@ -340,7 +277,8 @@ public partial class MainPage
 
         var ctrlDown = Microsoft.UI.Input.InputKeyboardSource.GetKeyStateForCurrentThread(Windows.System.VirtualKey.Control)
             .HasFlag(Windows.UI.Core.CoreVirtualKeyStates.Down);
-        var shiftDown = IsWindowsShiftDown();
+        var shiftDown = Microsoft.UI.Input.InputKeyboardSource.GetKeyStateForCurrentThread(Windows.System.VirtualKey.Shift)
+            .HasFlag(Windows.UI.Core.CoreVirtualKeyStates.Down);
 
         if (TryGetWindowsHistoryShortcutAction(e, out var historyAction) &&
             TryExecuteHistoryShortcut(historyAction))
@@ -436,20 +374,6 @@ public partial class MainPage
             return;
         }
 
-        if (e.Key == Windows.System.VirtualKey.Tab &&
-            TryMoveWindowsModalEditorFocus(forward: !shiftDown))
-        {
-            e.Handled = true;
-            return;
-        }
-
-        if (e.Key == Windows.System.VirtualKey.Enter &&
-            TryInvokeWindowsModalAction())
-        {
-            e.Handled = true;
-            return;
-        }
-
         if (e.Key == Windows.System.VirtualKey.Escape)
         {
             if (viewModel.CancelEditorCommand.CanExecute(null))
@@ -518,162 +442,6 @@ public partial class MainPage
         }
 
         return false;
-    }
-
-    private static bool IsWindowsShiftDown()
-    {
-        return Microsoft.UI.Input.InputKeyboardSource.GetKeyStateForCurrentThread(Windows.System.VirtualKey.Shift)
-            .HasFlag(Windows.UI.Core.CoreVirtualKeyStates.Down);
-    }
-
-    private bool TryMoveWindowsModalEditorFocusFromTextBox(object sender, bool forward)
-    {
-        if (sender is not Microsoft.UI.Xaml.Controls.TextBox textBox)
-        {
-            return false;
-        }
-
-        if (ReferenceEquals(textBox, modalNoteTextBox))
-        {
-            FocusWindowsModalActionButton(ModalCancelButton);
-            return true;
-        }
-
-        if (!forward && ReferenceEquals(textBox, modalGuidTextBox))
-        {
-            FocusWindowsModalActionButton(ModalSaveButton);
-            return true;
-        }
-
-        return false;
-    }
-
-    private bool TryMoveWindowsModalEditorFocus(bool forward)
-    {
-        if (forward)
-        {
-            if (windowsModalActionFocusTarget == WindowsModalActionFocusTarget.Cancel ||
-                IsButtonFocused(ModalCancelButton))
-            {
-                FocusWindowsModalActionButton(ModalSaveButton);
-                return true;
-            }
-
-            if (windowsModalActionFocusTarget == WindowsModalActionFocusTarget.Save ||
-                IsButtonFocused(ModalSaveButton))
-            {
-                FocusWindowsModalTextBox(modalGuidTextBox, ModalGuidEntry);
-                return true;
-            }
-        }
-        else
-        {
-            if (windowsModalActionFocusTarget == WindowsModalActionFocusTarget.Save ||
-                IsButtonFocused(ModalSaveButton))
-            {
-                FocusWindowsModalActionButton(ModalCancelButton);
-                return true;
-            }
-
-            if (windowsModalActionFocusTarget == WindowsModalActionFocusTarget.Cancel ||
-                IsButtonFocused(ModalCancelButton))
-            {
-                FocusWindowsModalTextBox(modalNoteTextBox, ModalNoteEditor);
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private void FocusWindowsModalActionButton(VisualElement button)
-    {
-        windowsEditorFocusRestorePending = false;
-        windowsModalActionFocusTarget = ReferenceEquals(button, ModalSaveButton)
-            ? WindowsModalActionFocusTarget.Save
-            : WindowsModalActionFocusTarget.Cancel;
-        ApplyWindowsModalActionFocusVisuals();
-        button.Focus();
-        if (button.Handler?.PlatformView is Microsoft.UI.Xaml.Controls.Control control)
-        {
-            control.Focus(Microsoft.UI.Xaml.FocusState.Keyboard);
-        }
-    }
-
-    private void FocusWindowsModalTextBox(Microsoft.UI.Xaml.Controls.TextBox? textBox, VisualElement fallback)
-    {
-        windowsSelectAllOnTabNavigationPending = true;
-        ClearWindowsModalActionFocus();
-        if (textBox is not null)
-        {
-            textBox.Focus(Microsoft.UI.Xaml.FocusState.Keyboard);
-            return;
-        }
-
-        fallback.Focus();
-    }
-
-    private bool TryInvokeWindowsModalAction()
-    {
-        if (windowsModalActionFocusTarget == WindowsModalActionFocusTarget.Cancel)
-        {
-            if (viewModel.CancelEditorCommand.CanExecute(null))
-            {
-                viewModel.CancelEditorCommand.Execute(null);
-                return true;
-            }
-
-            return false;
-        }
-
-        if (windowsModalActionFocusTarget == WindowsModalActionFocusTarget.Save)
-        {
-            if (viewModel.SaveEditorCommand.CanExecute(null))
-            {
-                viewModel.SaveEditorCommand.Execute(null);
-                return true;
-            }
-
-            return false;
-        }
-
-        return false;
-    }
-
-    private void ClearWindowsModalActionFocus()
-    {
-        if (windowsModalActionFocusTarget is null)
-        {
-            return;
-        }
-
-        windowsModalActionFocusTarget = null;
-        ApplyWindowsModalActionFocusVisuals();
-    }
-
-    private void ApplyWindowsModalActionFocusVisuals()
-    {
-        ApplyWindowsModalActionFocusVisual(
-            ModalCancelButton,
-            windowsModalActionFocusTarget == WindowsModalActionFocusTarget.Cancel);
-        ApplyWindowsModalActionFocusVisual(
-            ModalSaveButton,
-            windowsModalActionFocusTarget == WindowsModalActionFocusTarget.Save);
-    }
-
-    private static void ApplyWindowsModalActionFocusVisual(Border button, bool focused)
-    {
-        button.Stroke = focused
-            ? new SolidColorBrush(ResolveWindowsModalActionFocusStrokeColor())
-            : Brush.Transparent;
-        button.StrokeThickness = focused ? 2 : 0;
-    }
-
-    private static Color ResolveWindowsModalActionFocusStrokeColor()
-    {
-        return IsWindowsTextDarkThemeActive()
-            ? Color.FromArgb("#FFD5D9DF")
-            : Color.FromArgb("#FF5F6974");
     }
 
     private bool ShouldPreferTextHistoryShortcut(Microsoft.UI.Xaml.Controls.TextBox textBox)
@@ -762,15 +530,6 @@ public partial class MainPage
 
         ConfigureWindowsMultilineEditor(modalClipWordTextBox);
         ConfigureWindowsMultilineEditor(modalNoteTextBox);
-        ConfigureWindowsTextSelectionAndCaret(commandTextBox);
-        ConfigureWindowsTextSelectionAndCaret(searchTextBox);
-        ConfigureWindowsTextSelectionAndCaret(modalGuidTextBox);
-        ConfigureWindowsTextSelectionAndCaret(modalCommandTextBox);
-        ConfigureWindowsTextSelectionAndCaret(modalButtonTextTextBox);
-        ConfigureWindowsTextSelectionAndCaret(modalToolTextBox);
-        ConfigureWindowsTextSelectionAndCaret(modalArgumentsTextBox);
-        ConfigureWindowsTextSelectionAndCaret(modalClipWordTextBox);
-        ConfigureWindowsTextSelectionAndCaret(modalNoteTextBox);
     }
 
     private void SyncWindowsTextBoxHooks(
@@ -790,7 +549,6 @@ public partial class MainPage
             slot.PreviewKeyDown -= WindowsTextBox_PreviewKeyDown;
             slot.KeyDown -= WindowsTextBox_KeyDown;
             slot.GotFocus -= WindowsTextBox_GotFocus;
-            slot.SelectionChanged -= WindowsTextBox_SelectionChanged;
             slot.PointerPressed -= WindowsTextBox_PointerPressed;
             if (extraKeyDown is not null)
             {
@@ -817,7 +575,6 @@ public partial class MainPage
         slot.PreviewKeyDown += WindowsTextBox_PreviewKeyDown;
         slot.KeyDown += WindowsTextBox_KeyDown;
         slot.GotFocus += WindowsTextBox_GotFocus;
-        slot.SelectionChanged += WindowsTextBox_SelectionChanged;
         slot.PointerPressed += WindowsTextBox_PointerPressed;
         if (extraKeyDown is not null)
         {
@@ -850,96 +607,6 @@ public partial class MainPage
         Microsoft.UI.Xaml.Controls.ScrollViewer.SetVerticalScrollMode(
             textBox,
             Microsoft.UI.Xaml.Controls.ScrollMode.Auto);
-    }
-
-    private static void ConfigureWindowsTextSelectionAndCaret(Microsoft.UI.Xaml.Controls.TextBox? textBox)
-    {
-        if (textBox is null)
-        {
-            return;
-        }
-
-        App.RefreshWindowsTextSelectionResources();
-        var selectionBrush = new Microsoft.UI.Xaml.Media.SolidColorBrush(ResolveWindowsTextSelectionAccentColor());
-        var caretBrush = new Microsoft.UI.Xaml.Media.SolidColorBrush(ResolveWindowsTextCaretAccentColor());
-        var foregroundBrush = new Microsoft.UI.Xaml.Media.SolidColorBrush(ResolveWindowsTextForegroundColor());
-        var selectionForegroundColor = ResolveWindowsTextSelectionForegroundColor();
-        var selectionForegroundBrush = new Microsoft.UI.Xaml.Media.SolidColorBrush(selectionForegroundColor);
-        var chromeBrush = new Microsoft.UI.Xaml.Media.SolidColorBrush(global::Windows.UI.Color.FromArgb(0, 0, 0, 0));
-        textBox.RequestedTheme = IsWindowsTextDarkThemeActive()
-            ? Microsoft.UI.Xaml.ElementTheme.Dark
-            : Microsoft.UI.Xaml.ElementTheme.Light;
-        textBox.Background = chromeBrush;
-        textBox.BorderBrush = chromeBrush;
-        textBox.BorderThickness = new Microsoft.UI.Xaml.Thickness(0);
-        textBox.Foreground = foregroundBrush;
-        textBox.SelectionHighlightColor = selectionBrush;
-        textBox.SelectionHighlightColorWhenNotFocused = selectionBrush;
-        TrySetWindowsTextControlResource(textBox, "TextControlBackground", chromeBrush);
-        TrySetWindowsTextControlResource(textBox, "TextControlBackgroundPointerOver", chromeBrush);
-        TrySetWindowsTextControlResource(textBox, "TextControlBackgroundFocused", chromeBrush);
-        TrySetWindowsTextControlResource(textBox, "TextControlBorderBrush", chromeBrush);
-        TrySetWindowsTextControlResource(textBox, "TextControlBorderBrushPointerOver", chromeBrush);
-        TrySetWindowsTextControlResource(textBox, "TextControlBorderBrushFocused", chromeBrush);
-        TrySetWindowsTextControlResource(textBox, "TextControlCaretBrush", caretBrush);
-        TrySetWindowsTextControlResource(textBox, "TextControlCaretBrushFocused", caretBrush);
-        TrySetWindowsTextControlResource(textBox, "TextControlSelectionHighlightColor", selectionBrush);
-        TrySetWindowsTextControlResource(textBox, "TextControlSelectionHighlightForeground", selectionForegroundBrush);
-        TrySetWindowsTextControlResource(textBox, "TextSelectionHighlightColorThemeBrush", selectionBrush);
-        TrySetWindowsTextControlResource(textBox, "AccentFillColorSelectedTextBackgroundBrush", selectionBrush);
-        TrySetWindowsTextControlResource(textBox, "TextOnAccentFillColorSelectedText", selectionForegroundColor);
-        TrySetWindowsTextControlResource(textBox, "TextOnAccentFillColorSelectedTextBrush", selectionForegroundBrush);
-        TrySetWindowsTextControlResource(textBox, "SystemColorHighlightTextColor", selectionForegroundColor);
-        TrySetWindowsTextControlResource(textBox, "SystemColorHighlightTextColorBrush", selectionForegroundBrush);
-    }
-
-    private static void TrySetWindowsTextControlResource(
-        Microsoft.UI.Xaml.Controls.TextBox textBox,
-        string key,
-        object value)
-    {
-        try
-        {
-            textBox.Resources[key] = value;
-        }
-        catch (Exception ex)
-        {
-            var safeResourceMessage = Praxis.Services.CrashFileLogger.SafeExceptionMessage(ex);
-            Praxis.Services.CrashFileLogger.WriteWarning(nameof(MainPage), $"Failed to set {key}: {safeResourceMessage}");
-        }
-    }
-
-    private static global::Windows.UI.Color ResolveWindowsTextSelectionAccentColor()
-    {
-        return IsWindowsTextDarkThemeActive()
-            ? global::Windows.UI.Color.FromArgb(255, 82, 58, 124)
-            : global::Windows.UI.Color.FromArgb(255, 107, 75, 176);
-    }
-
-    private static global::Windows.UI.Color ResolveWindowsTextCaretAccentColor()
-    {
-        return IsWindowsTextDarkThemeActive()
-            ? global::Windows.UI.Color.FromArgb(255, 255, 255, 255)
-            : global::Windows.UI.Color.FromArgb(255, 0, 0, 0);
-    }
-
-    private static global::Windows.UI.Color ResolveWindowsTextForegroundColor()
-    {
-        return IsWindowsTextDarkThemeActive()
-            ? global::Windows.UI.Color.FromArgb(255, 255, 255, 255)
-            : global::Windows.UI.Color.FromArgb(255, 0, 0, 0);
-    }
-
-    private static global::Windows.UI.Color ResolveWindowsTextSelectionForegroundColor()
-    {
-        return global::Windows.UI.Color.FromArgb(255, 255, 255, 255);
-    }
-
-    private static bool IsWindowsTextDarkThemeActive()
-    {
-        return Application.Current?.UserAppTheme == AppTheme.Dark ||
-            Application.Current?.UserAppTheme == AppTheme.Unspecified &&
-            Application.Current?.RequestedTheme == AppTheme.Dark;
     }
 #endif
 }

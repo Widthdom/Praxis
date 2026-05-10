@@ -8,59 +8,12 @@
              xmlns:corelogic="clr-namespace:Praxis.Core.Logic;assembly=Praxis.Core"
              x:Class="Praxis.MainPage"
              x:Name="RootPage"
-             BackgroundColor="Transparent">
+             Title="Praxis">
     <ContentPage.Resources>
         <converters:BoolToScrollBarVisibilityConverter x:Key="BoolToScrollBarVisibilityConverter" />
-        <converters:StringIsNullOrEmptyConverter x:Key="StringIsNullOrEmptyConverter" />
-        <Color x:Key="GlassPanelLight">#00FFFFFF</Color>
-        <Color x:Key="GlassPanelDark">#00000000</Color>
-        <Color x:Key="GlassSurfaceLight">#00FFFFFF</Color>
-        <Color x:Key="GlassSurfaceDark">#00000000</Color>
-        <Color x:Key="GlassPopupLight">#06FFFFFF</Color>
-        <Color x:Key="GlassPopupDark">#101E2228</Color>
-        <Color x:Key="SolidPopupLight">#FFE0E8EE</Color>
-        <Color x:Key="SolidPopupDark">#FF36424C</Color>
-        <Color x:Key="MutedPopupLight">#FFD4DADF</Color>
-        <Color x:Key="MutedPopupDark">#FF303842</Color>
-        <Color x:Key="SelectionAccentLight">#FFB7C0C9</Color>
-        <Color x:Key="SelectionAccentDark">#FF59636E</Color>
-        <Color x:Key="SolidModalLight">#FFE3E9EE</Color>
-        <Color x:Key="SolidModalDark">#FF2B333C</Color>
-        <Color x:Key="TransparentOverlayHitTarget">#01000000</Color>
-        <Color x:Key="GlassInputLight">#58FFFFFF</Color>
-        <Color x:Key="GlassInputDark">#66363B43</Color>
-        <Color x:Key="GlassModalInputLight">#A6FFFFFF</Color>
-        <Color x:Key="GlassModalInputDark">#A548535F</Color>
-        <Color x:Key="GlassButtonLight">#62FFFFFF</Color>
-        <Color x:Key="GlassButtonDark">#78363B43</Color>
-        <Color x:Key="PlacementSelectedTextOnLightSurface">#FF5F2DA0</Color>
-        <Color x:Key="PlacementSelectedTextOnDarkSurface">#FFC77DFF</Color>
-        <Color x:Key="GlassModalButtonLight">#B8FFFFFF</Color>
-        <Color x:Key="GlassModalButtonDark">#A85A6876</Color>
-        <Color x:Key="GlassButtonStrokeLight">#00FFFFFF</Color>
-        <Color x:Key="GlassButtonStrokeDark">#00000000</Color>
-        <Color x:Key="GlassStrokeLight">#58FFFFFF</Color>
-        <Color x:Key="GlassStrokeDark">#66717B88</Color>
         <Style x:Key="PlacementButtonTextLabelStyle"
                TargetType="Label">
             <Setter Property="FontSize" Value="{OnPlatform Default=12, MacCatalyst=14}" />
-            <Setter Property="FontAutoScalingEnabled" Value="False" />
-        </Style>
-        <Style x:Key="GlassModalButtonSurfaceStyle"
-               TargetType="Border">
-            <Setter Property="Stroke" Value="{AppThemeBinding Light={StaticResource GlassButtonStrokeLight}, Dark={StaticResource GlassButtonStrokeDark}}" />
-            <Setter Property="StrokeThickness" Value="0" />
-            <Setter Property="StrokeShape" Value="RoundRectangle 12" />
-            <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource GlassModalButtonLight}, Dark={StaticResource GlassModalButtonDark}}" />
-        </Style>
-        <Style x:Key="GlassModalButtonLabelStyle"
-               TargetType="Label">
-            <Setter Property="FontSize" Value="13" />
-            <Setter Property="FontAutoScalingEnabled" Value="False" />
-            <Setter Property="TextColor" Value="{AppThemeBinding Light=#050505, Dark=#FFFFFF}" />
-            <Setter Property="HorizontalTextAlignment" Value="Center" />
-            <Setter Property="VerticalTextAlignment" Value="Center" />
-            <Setter Property="InputTransparent" Value="True" />
         </Style>
         <Style x:Key="TransparentOverlayHitTargetStyle"
                TargetType="Border">
@@ -73,7 +26,7 @@
         </Style>
     </ContentPage.Resources>
 
-    <Grid x:Name="RootGrid" Padding="18" RowDefinitions="Auto,*,Auto,Auto" RowSpacing="8" BackgroundColor="Transparent">
+    <Grid x:Name="RootGrid" Padding="18" RowDefinitions="Auto,*,Auto,Auto" RowSpacing="14">
         <Grid.GestureRecognizers>
             <PointerGestureRecognizer PointerPressed="RootGrid_PointerPressed"
                                       PointerMoved="RootGrid_PointerMoved"
@@ -81,46 +34,18 @@
         </Grid.GestureRecognizers>
         <Grid x:Name="TopBarGrid" ColumnDefinitions="2*,Auto,2*" ColumnSpacing="8">
             <Grid Grid.Column="0">
-                <Border HeightRequest="40"
-                        Stroke="Transparent"
-                        StrokeThickness="0"
-                        BackgroundColor="{AppThemeBinding Light={StaticResource GlassInputLight}, Dark={StaticResource GlassInputDark}}"
-                        StrokeShape="RoundRectangle 6"
-                        InputTransparent="True" />
                 <controls:CommandEntry x:Name="MainCommandEntry"
                                        Placeholder="Command"
                                        Text="{Binding CommandInput}"
-                                       TextColor="{AppThemeBinding Light=#000000, Dark=#FFFFFF}"
-                                       BackgroundColor="Transparent"
                                        ReturnType="Go"
                                        ReturnCommand="{Binding ExecuteCommandInputCommand}"
                                        Focused="MainCommandEntry_Focused"
-                                       Unfocused="MainCommandEntry_Unfocused"
                                        HandlerChanged="MainCommandEntry_HandlerChanged">
                     <controls:CommandEntry.GestureRecognizers>
                         <TapGestureRecognizer Tapped="MainCommandEntry_Tapped" />
                         <PointerGestureRecognizer PointerPressed="MainCommandEntry_PointerPressed" />
                     </controls:CommandEntry.GestureRecognizers>
                 </controls:CommandEntry>
-                <BoxView x:Name="MainCommandFocusUnderline"
-                         HeightRequest="1.5"
-                         HorizontalOptions="Fill"
-                         VerticalOptions="End"
-                         Color="{AppThemeBinding Light=#3A3A3A, Dark=#C8CDD4}"
-                         Opacity="0"
-                         InputTransparent="True"
-                         ZIndex="3" />
-                <Label x:Name="MainCommandPlaceholderLabel"
-                       Text="Command"
-                       Margin="10,0,0,0"
-                       VerticalOptions="Center"
-                       HorizontalOptions="Start"
-                       InputTransparent="True"
-                       IsVisible="{Binding CommandInput, Converter={StaticResource StringIsNullOrEmptyConverter}}"
-                       Opacity="{OnPlatform Default=0, MacCatalyst=1}"
-                       FontSize="13"
-                       FontAutoScalingEnabled="False"
-                       TextColor="{AppThemeBinding Light=#8A111111, Dark=#86C4D4E0}" />
                 <Border HorizontalOptions="End"
                         VerticalOptions="Center"
                         Margin="0,0,6,0"
@@ -171,7 +96,7 @@
                     WidthRequest="44"
                     HeightRequest="40"
                     StrokeThickness="0"
-                    BackgroundColor="{AppThemeBinding Light=#48FFFFFF, Dark=#5C333A42}"
+                    BackgroundColor="{AppThemeBinding Light=#E6E6E6, Dark=#3A3A3A}"
                     StrokeShape="RoundRectangle 10"
                     Padding="0">
                 <Border.Behaviors>
@@ -214,44 +139,16 @@
                 </Grid>
             </Border>
             <Grid Grid.Column="2">
-                <Border HeightRequest="40"
-                        Stroke="Transparent"
-                        StrokeThickness="0"
-                        BackgroundColor="{AppThemeBinding Light={StaticResource GlassInputLight}, Dark={StaticResource GlassInputDark}}"
-                        StrokeShape="RoundRectangle 6"
-                        InputTransparent="True" />
                 <controls:SearchEntry x:Name="MainSearchEntry"
                                       Placeholder="Search"
                                       Text="{Binding SearchText}"
-                                      TextColor="{AppThemeBinding Light=#000000, Dark=#FFFFFF}"
-                                      BackgroundColor="Transparent"
                                       Focused="MainSearchEntry_Focused"
-                                      Unfocused="MainSearchEntry_Unfocused"
                                       HandlerChanged="MainSearchEntry_HandlerChanged">
                     <controls:SearchEntry.GestureRecognizers>
                         <TapGestureRecognizer Tapped="MainSearchEntry_Tapped" />
                         <PointerGestureRecognizer PointerPressed="MainSearchEntry_PointerPressed" />
                     </controls:SearchEntry.GestureRecognizers>
                 </controls:SearchEntry>
-                <BoxView x:Name="MainSearchFocusUnderline"
-                         HeightRequest="1.5"
-                         HorizontalOptions="Fill"
-                         VerticalOptions="End"
-                         Color="{AppThemeBinding Light=#3A3A3A, Dark=#C8CDD4}"
-                         Opacity="0"
-                         InputTransparent="True"
-                         ZIndex="3" />
-                <Label x:Name="MainSearchPlaceholderLabel"
-                       Text="Search"
-                       Margin="10,0,0,0"
-                       VerticalOptions="Center"
-                       HorizontalOptions="Start"
-                       InputTransparent="True"
-                       IsVisible="{Binding SearchText, Converter={StaticResource StringIsNullOrEmptyConverter}}"
-                       Opacity="{OnPlatform Default=0, MacCatalyst=1}"
-                       FontSize="13"
-                       FontAutoScalingEnabled="False"
-                       TextColor="{AppThemeBinding Light=#8A111111, Dark=#86C4D4E0}" />
                 <Border HorizontalOptions="End"
                         VerticalOptions="Center"
                         Margin="0,0,6,0"
@@ -300,27 +197,24 @@
             </Grid>
         </Grid>
 
-        <controls:MaterialFrame x:Name="CommandSuggestionPopup"
-                                Grid.RowSpan="4"
-                                IsVisible="False"
-                                Opacity="0"
-                                CornerRadius="10"
-                                MacOSBehindWindowBlur="False"
-                                Stroke="Transparent"
-                                StrokeThickness="0"
-                                BackgroundColor="{AppThemeBinding Light={StaticResource MutedPopupLight}, Dark={StaticResource MutedPopupDark}}"
-                                Padding="6"
-                                HeightRequest="{Binding CommandSuggestionPopupHeight}"
-                                MinimumHeightRequest="44"
-                                MaximumHeightRequest="280"
-                                HorizontalOptions="Start"
-                                VerticalOptions="Start"
-                                TranslationX="0"
-                                TranslationY="0"
-                                ZIndex="950">
-            <controls:MaterialFrame.Shadow>
+        <Border x:Name="CommandSuggestionPopup"
+                Grid.RowSpan="4"
+                IsVisible="{Binding IsCommandSuggestionOpen}"
+                Stroke="{AppThemeBinding Light=#BBBBBB, Dark=#565656}"
+                BackgroundColor="{AppThemeBinding Light=#F3F3F3, Dark=#252525}"
+                StrokeShape="RoundRectangle 10"
+                Padding="6"
+                HeightRequest="{Binding CommandSuggestionPopupHeight}"
+                MinimumHeightRequest="44"
+                MaximumHeightRequest="280"
+                HorizontalOptions="Start"
+                VerticalOptions="Start"
+                TranslationX="0"
+                TranslationY="0"
+                ZIndex="950">
+            <Border.Shadow>
                 <Shadow Brush="{AppThemeBinding Light=#55000000, Dark=#AA000000}" Opacity="0.22" Offset="0,8" Radius="18" />
-            </controls:MaterialFrame.Shadow>
+            </Border.Shadow>
             <CollectionView IsVisible="False"
                             ItemsSource="{Binding CommandSuggestions}"
                             SelectionMode="None">
@@ -333,7 +227,7 @@
                             <Grid.Triggers>
                                 <DataTrigger TargetType="Grid" Binding="{Binding IsSelected}" Value="True">
                                     <Setter Property="BackgroundColor"
-                                            Value="{AppThemeBinding Light={StaticResource SelectionAccentLight}, Dark={StaticResource SelectionAccentDark}}" />
+                                            Value="{AppThemeBinding Light=#E6E6E6, Dark=#3D3D3D}" />
                                 </DataTrigger>
                             </Grid.Triggers>
                             <Grid.GestureRecognizers>
@@ -361,13 +255,18 @@
                                      Spacing="2"
                                      HorizontalOptions="Fill" />
             </ScrollView>
-        </controls:MaterialFrame>
+        </Border>
 
-        <Grid x:Name="PlacementSurface"
-              Grid.Row="1"
-              Padding="14"
-              BackgroundColor="{OnPlatform Default=Transparent, MacCatalyst=#01000000}"
-              SizeChanged="PlacementArea_SizeChanged">
+        <Border Grid.Row="1"
+                Stroke="{AppThemeBinding Light=#CECECE, Dark=#4E4E4E}"
+                BackgroundColor="{AppThemeBinding Light=#FCFCFC, Dark=#212121}"
+                StrokeShape="RoundRectangle 20"
+                Padding="14"
+                SizeChanged="PlacementArea_SizeChanged">
+            <Border.Shadow>
+                <Shadow Brush="{AppThemeBinding Light=#55000000, Dark=#AA000000}" Opacity="0.20" Offset="0,8" Radius="20" />
+            </Border.Shadow>
+
             <Grid>
                 <ScrollView Orientation="{Binding PlacementScrollOrientation}"
                             x:Name="PlacementScroll"
@@ -377,7 +276,6 @@
                     <AbsoluteLayout x:Name="PlacementCanvas"
                                     WidthRequest="{Binding CanvasWidth}"
                                     HeightRequest="{Binding CanvasHeight}"
-                                    BackgroundColor="{OnPlatform Default=Transparent, MacCatalyst=#01000000}"
                                     BindableLayout.ItemsSource="{Binding VisibleButtons}">
                         <AbsoluteLayout.GestureRecognizers>
                             <PanGestureRecognizer PanUpdated="Selection_PanUpdated" />
@@ -391,10 +289,9 @@
                             <DataTemplate>
                                 <Border AbsoluteLayout.LayoutBounds="{Binding LayoutBounds}"
                                         AbsoluteLayout.LayoutFlags="None"
-                                        Stroke="Transparent"
-                                        StrokeThickness="0"
+                                        Stroke="{AppThemeBinding Light=#B6B6B6, Dark=#545454}"
                                         StrokeShape="RoundRectangle 12"
-                                        BackgroundColor="{AppThemeBinding Light=#62FFFFFF, Dark=#78363B43}"
+                                        BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#363636}"
                                         Padding="0">
                                     <Border.Behaviors>
                                         <behaviors:GrabHandCursorBehavior />
@@ -402,18 +299,18 @@
                                     </Border.Behaviors>
                                     <Border.Triggers>
                                         <DataTrigger TargetType="Border" Binding="{Binding IsSelected}" Value="True">
-                                            <Setter Property="BackgroundColor" Value="{AppThemeBinding Light=#86FFFFFF, Dark=#90505660}" />
+                                            <Setter Property="BackgroundColor" Value="{AppThemeBinding Light=#DCDCDC, Dark=#505050}" />
                                         </DataTrigger>
                                         <DataTrigger TargetType="Border" Binding="{Binding UseInvertedThemeColors}" Value="True">
-                                            <Setter Property="Stroke" Value="Transparent" />
-                                            <Setter Property="BackgroundColor" Value="{AppThemeBinding Light=#BA363636, Dark=#E8FFFFFF}" />
+                                            <Setter Property="Stroke" Value="{AppThemeBinding Light=#545454, Dark=#B6B6B6}" />
+                                            <Setter Property="BackgroundColor" Value="{AppThemeBinding Light=#363636, Dark=#FFFFFF}" />
                                         </DataTrigger>
                                         <MultiTrigger TargetType="Border">
                                             <MultiTrigger.Conditions>
                                                 <BindingCondition Binding="{Binding IsSelected}" Value="True" />
                                                 <BindingCondition Binding="{Binding UseInvertedThemeColors}" Value="True" />
                                             </MultiTrigger.Conditions>
-                                            <Setter Property="BackgroundColor" Value="{AppThemeBinding Light=#C9505050, Dark=#E8DCDCDC}" />
+                                            <Setter Property="BackgroundColor" Value="{AppThemeBinding Light=#505050, Dark=#DCDCDC}" />
                                         </MultiTrigger>
                                     </Border.Triggers>
                                     <Border.GestureRecognizers>
@@ -430,23 +327,13 @@
                                     <Grid Padding="0,0" InputTransparent="True">
                                         <Label Text="{Binding ButtonText}"
                                                Style="{StaticResource PlacementButtonTextLabelStyle}"
-                                               TextColor="{AppThemeBinding Light=#050505, Dark=#FFFFFF}"
+                                               TextColor="{AppThemeBinding Light=#1A1A1A, Dark=#F2F2F2}"
                                                HorizontalTextAlignment="Center"
                                                VerticalTextAlignment="Center">
                                             <Label.Triggers>
-                                                <DataTrigger TargetType="Label" Binding="{Binding IsSelected}" Value="True">
-                                                    <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource PlacementSelectedTextOnLightSurface}, Dark={StaticResource PlacementSelectedTextOnDarkSurface}}" />
-                                                </DataTrigger>
                                                 <DataTrigger TargetType="Label" Binding="{Binding UseInvertedThemeColors}" Value="True">
-                                                    <Setter Property="TextColor" Value="{AppThemeBinding Light=#FFFFFF, Dark=#050505}" />
+                                                    <Setter Property="TextColor" Value="{AppThemeBinding Light=#F2F2F2, Dark=#1A1A1A}" />
                                                 </DataTrigger>
-                                                <MultiTrigger TargetType="Label">
-                                                    <MultiTrigger.Conditions>
-                                                        <BindingCondition Binding="{Binding IsSelected}" Value="True" />
-                                                        <BindingCondition Binding="{Binding UseInvertedThemeColors}" Value="True" />
-                                                    </MultiTrigger.Conditions>
-                                                    <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource PlacementSelectedTextOnDarkSurface}, Dark={StaticResource PlacementSelectedTextOnLightSurface}}" />
-                                                </MultiTrigger>
                                             </Label.Triggers>
                                         </Label>
                                     </Grid>
@@ -464,59 +351,54 @@
                         WidthRequest="0"
                         HeightRequest="0"
                         Stroke="{AppThemeBinding Light=#7A7A7A, Dark=#A8A8A8}"
-                        StrokeThickness="1"
+                        StrokeThickness="2"
                         BackgroundColor="{AppThemeBinding Light=#40B0B0B0, Dark=#40686868}"
                         StrokeShape="RoundRectangle 2" />
             </Grid>
-        </Grid>
+        </Border>
 
-        <controls:MaterialFrame x:Name="DockRegionBorder"
-                                Grid.Row="2"
-                                CornerRadius="20"
-                                MacOSBehindWindowBlur="False"
-                                Stroke="Transparent"
-                                StrokeThickness="0"
-                                BackgroundColor="{AppThemeBinding Light={StaticResource GlassPanelLight}, Dark={StaticResource GlassPanelDark}}"
-                                Margin="{OnPlatform Default='0,-16,0,-14', WinUI='0,-16,0,-14', MacCatalyst='0,-16,0,-14'}"
-                                Padding="12,0,12,4"
-                                MinimumHeightRequest="{OnPlatform Default=78, WinUI=82, MacCatalyst=82}">
-            <controls:MaterialFrame.GestureRecognizers>
+        <Border x:Name="DockRegionBorder"
+                Grid.Row="2"
+                Stroke="{AppThemeBinding Light=#CECECE, Dark=#4E4E4E}"
+                BackgroundColor="{AppThemeBinding Light=#FCFCFC, Dark=#212121}"
+                StrokeShape="RoundRectangle 20"
+                Margin="{OnPlatform Default='0', WinUI='0,-4,0,-4', MacCatalyst='0,-4,0,-4'}"
+                Padding="12"
+                MinimumHeightRequest="{OnPlatform Default=92, WinUI=100, MacCatalyst=100}">
+            <Border.GestureRecognizers>
                 <PointerGestureRecognizer PointerEntered="DockRegion_PointerEntered"
                                           PointerExited="DockRegion_PointerExited" />
-            </controls:MaterialFrame.GestureRecognizers>
+            </Border.GestureRecognizers>
+            <Border.Shadow>
+                <Shadow Brush="{AppThemeBinding Light=#44000000, Dark=#99000000}" Opacity="0.18" Offset="0,6" Radius="18" />
+            </Border.Shadow>
+
             <Grid>
                 <ScrollView x:Name="DockScroll"
                             Orientation="Horizontal"
                             HandlerChanged="DockScroll_HandlerChanged"
-                            HorizontalScrollBarVisibility="Never"
-                            Margin="0,0,0,18">
+                            HorizontalScrollBarVisibility="Never">
                     <ScrollView.GestureRecognizers>
                         <PointerGestureRecognizer PointerEntered="DockRegion_PointerEntered"
                                                   PointerExited="DockRegion_PointerExited" />
                     </ScrollView.GestureRecognizers>
-                    <HorizontalStackLayout x:Name="DockButtonsStack"
-                                           Spacing="10"
-                                           Margin="0,0,0,10"
-                                           VerticalOptions="Start"
-                                           BindableLayout.ItemsSource="{Binding DockButtons}">
+                    <HorizontalStackLayout x:Name="DockButtonsStack" Spacing="10" BindableLayout.ItemsSource="{Binding DockButtons}">
                         <HorizontalStackLayout.GestureRecognizers>
                             <PointerGestureRecognizer PointerEntered="DockRegion_PointerEntered"
                                                       PointerExited="DockRegion_PointerExited" />
                         </HorizontalStackLayout.GestureRecognizers>
                         <BindableLayout.ItemTemplate>
                             <DataTemplate>
-                                <Border Stroke="Transparent"
-                                        StrokeThickness="0"
+                                <Border Stroke="{AppThemeBinding Light=#B6B6B6, Dark=#545454}"
                                         StrokeShape="RoundRectangle 12"
-                                        BackgroundColor="{AppThemeBinding Light=#62FFFFFF, Dark=#78363B43}"
+                                        BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#363636}"
                                         WidthRequest="{x:Static corelogic:ButtonLayoutDefaults.Width}"
                                         HeightRequest="{x:Static corelogic:ButtonLayoutDefaults.Height}"
-                                        VerticalOptions="Start"
                                         Padding="0">
                                     <Border.Triggers>
                                         <DataTrigger TargetType="Border" Binding="{Binding UseInvertedThemeColors}" Value="True">
-                                            <Setter Property="Stroke" Value="Transparent" />
-                                            <Setter Property="BackgroundColor" Value="{AppThemeBinding Light=#BA363636, Dark=#E8FFFFFF}" />
+                                            <Setter Property="Stroke" Value="{AppThemeBinding Light=#545454, Dark=#B6B6B6}" />
+                                            <Setter Property="BackgroundColor" Value="{AppThemeBinding Light=#363636, Dark=#FFFFFF}" />
                                         </DataTrigger>
                                     </Border.Triggers>
                                     <Border.Behaviors>
@@ -535,12 +417,12 @@
                                         </Grid.GestureRecognizers>
                                         <Label Text="{Binding ButtonText}"
                                                Style="{StaticResource PlacementButtonTextLabelStyle}"
-                                               TextColor="{AppThemeBinding Light=#050505, Dark=#FFFFFF}"
+                                               TextColor="{AppThemeBinding Light=#1A1A1A, Dark=#F2F2F2}"
                                                HorizontalTextAlignment="Center"
                                                VerticalTextAlignment="Center">
                                             <Label.Triggers>
                                                 <DataTrigger TargetType="Label" Binding="{Binding UseInvertedThemeColors}" Value="True">
-                                                    <Setter Property="TextColor" Value="{AppThemeBinding Light=#FFFFFF, Dark=#050505}" />
+                                                    <Setter Property="TextColor" Value="{AppThemeBinding Light=#F2F2F2, Dark=#1A1A1A}" />
                                                 </DataTrigger>
                                             </Label.Triggers>
                                         </Label>
@@ -554,48 +436,40 @@
                 <Border x:Name="DockScrollBarMask"
                         HeightRequest="12"
                         VerticalOptions="End"
-                        Margin="0"
+                        Margin="0,0,0,2"
                         InputTransparent="True"
-                        BackgroundColor="{AppThemeBinding Light={StaticResource GlassPanelLight}, Dark={StaticResource GlassPanelDark}}"
+                        BackgroundColor="{AppThemeBinding Light=#FCFCFC, Dark=#212121}"
                         StrokeThickness="0"
                         IsVisible="True" />
             </Grid>
-        </controls:MaterialFrame>
+        </Border>
 
-        <controls:MaterialFrame x:Name="StatusBarBorder"
-                                Grid.Row="3"
-                                CornerRadius="10"
-                                MacOSBehindWindowBlur="False"
-                                Stroke="Transparent"
-                                StrokeThickness="0"
-                                BackgroundColor="{AppThemeBinding Light={StaticResource GlassSurfaceLight}, Dark={StaticResource GlassSurfaceDark}}"
-                                Padding="10,6">
-            <Label Text="{Binding StatusText}"
-                   FontSize="13"
-                   HorizontalOptions="Fill"
-                   HorizontalTextAlignment="Center"
-                   VerticalTextAlignment="Center" />
-        </controls:MaterialFrame>
+        <Border x:Name="StatusBarBorder"
+                Grid.Row="3"
+                Stroke="{AppThemeBinding Light=#B8B8B8, Dark=#4C4C4C}"
+                BackgroundColor="{AppThemeBinding Light=#F2F2F2, Dark=#1E1E1E}"
+                StrokeShape="RoundRectangle 10"
+                Padding="10,6">
+            <Label Text="{Binding StatusText}" FontSize="13" />
+        </Border>
 
-        <controls:MaterialFrame x:Name="QuickLookPopup"
-                                Grid.RowSpan="4"
-                                IsVisible="False"
-                                CornerRadius="12"
-                                MacOSBehindWindowBlur="False"
-                                Stroke="Transparent"
-                                StrokeThickness="0"
-                                BackgroundColor="{AppThemeBinding Light={StaticResource SolidPopupLight}, Dark={StaticResource SolidPopupDark}}"
-                                Padding="10,9"
-                                WidthRequest="420"
-                                MaximumWidthRequest="460"
-                                HorizontalOptions="Start"
-                                VerticalOptions="Start"
-                                TranslationX="0"
-                                TranslationY="0"
-                                ZIndex="960">
-            <controls:MaterialFrame.Shadow>
+        <Border x:Name="QuickLookPopup"
+                Grid.RowSpan="4"
+                IsVisible="False"
+                Stroke="{AppThemeBinding Light=#D0D0D0, Dark=#4D4D4D}"
+                BackgroundColor="{AppThemeBinding Light=#FDFDFD, Dark=#252525}"
+                StrokeShape="RoundRectangle 12"
+                Padding="10,9"
+                WidthRequest="420"
+                MaximumWidthRequest="460"
+                HorizontalOptions="Start"
+                VerticalOptions="Start"
+                TranslationX="0"
+                TranslationY="0"
+                ZIndex="960">
+            <Border.Shadow>
                 <Shadow Brush="{AppThemeBinding Light=#44000000, Dark=#88000000}" Opacity="0.18" Offset="0,6" Radius="16" />
-            </controls:MaterialFrame.Shadow>
+            </Border.Shadow>
             <VerticalStackLayout Spacing="3">
                 <Label x:Name="QuickLookCommandLabel"
                        FontSize="12"
@@ -623,104 +497,61 @@
                        LineBreakMode="TailTruncation"
                        TextColor="{AppThemeBinding Light=#3A3A3A, Dark=#D4D4D4}" />
             </VerticalStackLayout>
-        </controls:MaterialFrame>
+        </Border>
 
-        <Grid x:Name="ContextMenuOverlay"
-              Grid.RowSpan="4"
-              IsVisible="False"
-              Opacity="0"
-              BackgroundColor="Transparent"
-              ZIndex="970">
-            <Border x:Name="ContextMenuDismissLayer"
-                    Style="{StaticResource TransparentOverlayHitTargetStyle}">
-                <Border.GestureRecognizers>
-                    <TapGestureRecognizer Command="{Binding CloseContextMenuCommand}" />
-                </Border.GestureRecognizers>
-            </Border>
-            <controls:MaterialFrame HorizontalOptions="Center"
-                                    VerticalOptions="Center"
-                                    WidthRequest="220"
-                                    Padding="10"
-                                    CornerRadius="14"
-                                    MacOSBehindWindowBlur="False"
-                                    Stroke="Transparent"
-                                    StrokeThickness="0"
-                                    BackgroundColor="{AppThemeBinding Light={StaticResource MutedPopupLight}, Dark={StaticResource MutedPopupDark}}">
-                <controls:MaterialFrame.Shadow>
-                    <Shadow Brush="{AppThemeBinding Light=#55000000, Dark=#AA000000}" Opacity="0.22" Offset="0,8" Radius="18" />
-                </controls:MaterialFrame.Shadow>
+        <Grid Grid.RowSpan="4"
+              IsVisible="{Binding IsContextMenuOpen}"
+              BackgroundColor="Transparent">
+            <Grid.GestureRecognizers>
+                <TapGestureRecognizer Command="{Binding CloseContextMenuCommand}" />
+            </Grid.GestureRecognizers>
+            <Border HorizontalOptions="Center"
+                    VerticalOptions="Center"
+                    WidthRequest="220"
+                    Padding="10"
+                    Stroke="{AppThemeBinding Light=#B8B8B8, Dark=#505050}"
+                    BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#1F1F1F}"
+                    StrokeShape="RoundRectangle 14">
                 <VerticalStackLayout Spacing="8">
-                    <Grid>
-                        <Border x:Name="ContextEditFocusRing"
-                                Stroke="Transparent"
-                                StrokeThickness="0"
-                                StrokeShape="RoundRectangle 8"
-                                InputTransparent="True" />
-                        <Button x:Name="ContextEditButton"
-                                Text="Edit"
-                                BackgroundColor="Transparent"
-                                BorderColor="Transparent"
-                                BorderWidth="0"
-                                TextColor="{AppThemeBinding Light=#111111, Dark=#F5F7FA}"
-                                HandlerChanged="ContextActionButton_HandlerChanged"
-                                Focused="ContextActionButton_Focused"
-                                Unfocused="ContextActionButton_Unfocused"
-                                Command="{Binding ContextEditCommand}">
-                            <Button.Behaviors>
-                                <behaviors:HoverHandCursorBehavior />
-                            </Button.Behaviors>
-                        </Button>
-                    </Grid>
-                    <Grid>
-                        <Border x:Name="ContextDeleteFocusRing"
-                                Stroke="Transparent"
-                                StrokeThickness="0"
-                                StrokeShape="RoundRectangle 8"
-                                InputTransparent="True" />
-                        <Button x:Name="ContextDeleteButton"
-                                Text="Delete"
-                                BackgroundColor="Transparent"
-                                BorderColor="Transparent"
-                                BorderWidth="0"
-                                TextColor="{AppThemeBinding Light=#111111, Dark=#F5F7FA}"
-                                HandlerChanged="ContextActionButton_HandlerChanged"
-                                Focused="ContextActionButton_Focused"
-                                Unfocused="ContextActionButton_Unfocused"
-                                Command="{Binding ContextDeleteCommand}">
-                            <Button.Behaviors>
-                                <behaviors:HoverHandCursorBehavior />
-                            </Button.Behaviors>
-                        </Button>
-                    </Grid>
+                    <Button x:Name="ContextEditButton"
+                            Text="Edit"
+                            HandlerChanged="ContextActionButton_HandlerChanged"
+                            Focused="ContextActionButton_Focused"
+                            Unfocused="ContextActionButton_Unfocused"
+                            Command="{Binding ContextEditCommand}">
+                        <Button.Behaviors>
+                            <behaviors:HoverHandCursorBehavior />
+                        </Button.Behaviors>
+                    </Button>
+                    <Button x:Name="ContextDeleteButton"
+                            Text="Delete"
+                            HandlerChanged="ContextActionButton_HandlerChanged"
+                            Focused="ContextActionButton_Focused"
+                            Unfocused="ContextActionButton_Unfocused"
+                            Command="{Binding ContextDeleteCommand}">
+                        <Button.Behaviors>
+                            <behaviors:HoverHandCursorBehavior />
+                        </Button.Behaviors>
+                    </Button>
                 </VerticalStackLayout>
-            </controls:MaterialFrame>
+            </Border>
         </Grid>
 
         <Grid x:Name="EditorOverlay"
               Grid.RowSpan="4"
-              IsVisible="False"
-              Opacity="0"
-              BackgroundColor="Transparent"
-              ZIndex="975">
-            <Border x:Name="EditorBackdropLayer"
-                    Style="{StaticResource TransparentOverlayHitTargetStyle}">
-                <Border.GestureRecognizers>
-                    <TapGestureRecognizer Tapped="OverlayBackdrop_Tapped" />
-                </Border.GestureRecognizers>
-            </Border>
-            <controls:MaterialFrame HorizontalOptions="Center"
-                                    VerticalOptions="Center"
-                                    WidthRequest="760"
-                                    MaximumWidthRequest="860"
-                                    Padding="18"
-                                    CornerRadius="18"
-                                    MacOSBehindWindowBlur="False"
-                                    Stroke="Transparent"
-                                    StrokeThickness="0"
-                                    BackgroundColor="{AppThemeBinding Light={StaticResource SolidModalLight}, Dark={StaticResource SolidModalDark}}">
-                <controls:MaterialFrame.Shadow>
-                    <Shadow Brush="{AppThemeBinding Light=#66000000, Dark=#AA000000}" Opacity="0.28" Offset="0,12" Radius="24" />
-                </controls:MaterialFrame.Shadow>
+              IsVisible="{Binding IsEditorOpen}"
+              BackgroundColor="Transparent">
+            <Border HorizontalOptions="Center"
+                    VerticalOptions="Center"
+                    WidthRequest="760"
+                    MaximumWidthRequest="860"
+                    Padding="18"
+                    Stroke="{AppThemeBinding Light=#B5B5B5, Dark=#505050}"
+                    BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#1F1F1F}"
+                    StrokeShape="RoundRectangle 18">
+                <Border.Shadow>
+                    <Shadow Brush="{AppThemeBinding Light=#66000000, Dark=#AA000000}" Opacity="0.22" Offset="0,10" Radius="22" />
+                </Border.Shadow>
 
                 <Grid RowDefinitions="Auto,Auto" RowSpacing="12">
                     <ScrollView x:Name="EditorFieldsScrollView"
@@ -728,119 +559,77 @@
                                 VerticalOptions="Start">
                         <Grid ColumnDefinitions="140,*,44" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto" ColumnSpacing="8" RowSpacing="8">
                             <Label Grid.Row="0" Grid.Column="0" Text="GUID" VerticalTextAlignment="Center" HeightRequest="40" />
-                            <Border Grid.Row="0" Grid.Column="1" HeightRequest="40" Stroke="Transparent" StrokeThickness="0" BackgroundColor="{AppThemeBinding Light={StaticResource GlassModalInputLight}, Dark={StaticResource GlassModalInputDark}}" StrokeShape="RoundRectangle 6" InputTransparent="True" />
-                            <Entry x:Name="ModalGuidEntry" Grid.Row="0" Grid.Column="1" Text="{Binding Editor.GuidText}" IsReadOnly="{OnPlatform Default=True, MacCatalyst=False}" HeightRequest="40" BackgroundColor="Transparent" TextColor="{AppThemeBinding Light=#000000, Dark=#FFFFFF}" HandlerChanged="ModalGuidEntry_HandlerChanged" />
-                            <Grid Grid.Row="0" Grid.Column="2" HeightRequest="40" WidthRequest="40" VerticalOptions="Center">
-                                <Border x:Name="CopyGuidButton"
-                                        Style="{StaticResource GlassModalButtonSurfaceStyle}">
-                                    <Border.Behaviors>
-                                        <behaviors:HoverHandCursorBehavior />
-                                    </Border.Behaviors>
-                                    <Border.GestureRecognizers>
-                                        <TapGestureRecognizer Command="{Binding CopyFieldCommand}"
-                                                              CommandParameter="{Binding Editor.GuidText}"
-                                                              Tapped="CopyIconButton_Tapped" />
-                                    </Border.GestureRecognizers>
-                                </Border>
-                                <Label Text="{OnPlatform WinUI='&#xE8C8;', MacCatalyst='⧉'}"
-                                       FontFamily="{OnPlatform WinUI='Segoe MDL2 Assets', MacCatalyst=''}"
-                                       Style="{StaticResource GlassModalButtonLabelStyle}" />
-                            </Grid>
+                            <Entry x:Name="ModalGuidEntry" Grid.Row="0" Grid.Column="1" Text="{Binding Editor.GuidText}" IsReadOnly="{OnPlatform Default=True, MacCatalyst=False}" HeightRequest="40" HandlerChanged="ModalGuidEntry_HandlerChanged" />
+                            <Button x:Name="CopyGuidButton" Grid.Row="0" Grid.Column="2" Text="{OnPlatform WinUI='&#xE8C8;', MacCatalyst='⧉'}" FontFamily="{OnPlatform WinUI='Segoe MDL2 Assets', MacCatalyst=''}"
+                                    Command="{Binding CopyFieldCommand}"
+                                    CommandParameter="{Binding Editor.GuidText}" HeightRequest="40" WidthRequest="40" Padding="0"
+                                    VerticalOptions="Center"
+                                    Clicked="CopyIconButton_Clicked">
+                                <Button.Behaviors>
+                                    <behaviors:HoverHandCursorBehavior />
+                                </Button.Behaviors>
+                            </Button>
 
                             <Label Grid.Row="1" Grid.Column="0" Text="Button Text" VerticalTextAlignment="Center" HeightRequest="40" />
-                            <Border Grid.Row="1" Grid.Column="1" HeightRequest="40" Stroke="Transparent" StrokeThickness="0" BackgroundColor="{AppThemeBinding Light={StaticResource GlassModalInputLight}, Dark={StaticResource GlassModalInputDark}}" StrokeShape="RoundRectangle 6" InputTransparent="True" />
-                            <Entry x:Name="ModalButtonTextEntry" Grid.Row="1" Grid.Column="1" Text="{Binding Editor.ButtonText}" HeightRequest="40" BackgroundColor="Transparent" TextColor="{AppThemeBinding Light=#000000, Dark=#FFFFFF}" HandlerChanged="ModalTextInput_HandlerChanged" />
-                            <Grid Grid.Row="1" Grid.Column="2" HeightRequest="40" WidthRequest="40" VerticalOptions="Center">
-                                <Border x:Name="CopyButtonTextButton"
-                                        Style="{StaticResource GlassModalButtonSurfaceStyle}">
-                                    <Border.Behaviors>
-                                        <behaviors:HoverHandCursorBehavior />
-                                    </Border.Behaviors>
-                                    <Border.GestureRecognizers>
-                                        <TapGestureRecognizer Command="{Binding CopyFieldCommand}"
-                                                              CommandParameter="{Binding Editor.ButtonText}"
-                                                              Tapped="CopyIconButton_Tapped" />
-                                    </Border.GestureRecognizers>
-                                </Border>
-                                <Label Text="{OnPlatform WinUI='&#xE8C8;', MacCatalyst='⧉'}"
-                                       FontFamily="{OnPlatform WinUI='Segoe MDL2 Assets', MacCatalyst=''}"
-                                       Style="{StaticResource GlassModalButtonLabelStyle}" />
-                            </Grid>
+                            <Entry x:Name="ModalButtonTextEntry" Grid.Row="1" Grid.Column="1" Text="{Binding Editor.ButtonText}" HeightRequest="40" HandlerChanged="ModalTextInput_HandlerChanged" />
+                            <Button x:Name="CopyButtonTextButton" Grid.Row="1" Grid.Column="2" Text="{OnPlatform WinUI='&#xE8C8;', MacCatalyst='⧉'}" FontFamily="{OnPlatform WinUI='Segoe MDL2 Assets', MacCatalyst=''}"
+                                    Command="{Binding CopyFieldCommand}"
+                                    CommandParameter="{Binding Editor.ButtonText}" HeightRequest="40" WidthRequest="40" Padding="0"
+                                    VerticalOptions="Center"
+                                    Clicked="CopyIconButton_Clicked">
+                                <Button.Behaviors>
+                                    <behaviors:HoverHandCursorBehavior />
+                                </Button.Behaviors>
+                            </Button>
 
                             <Label Grid.Row="2" Grid.Column="0" Text="Command" VerticalTextAlignment="Center" HeightRequest="40" />
-                            <Border Grid.Row="2" Grid.Column="1" HeightRequest="40" Stroke="Transparent" StrokeThickness="0" BackgroundColor="{AppThemeBinding Light={StaticResource GlassModalInputLight}, Dark={StaticResource GlassModalInputDark}}" StrokeShape="RoundRectangle 6" InputTransparent="True" />
                             <controls:CommandEntry x:Name="ModalCommandEntry" Grid.Row="2" Grid.Column="1" Text="{Binding Editor.Command}" HeightRequest="40"
-                                                   BackgroundColor="Transparent"
-                                                   TextColor="{AppThemeBinding Light=#000000, Dark=#FFFFFF}"
                                                    EnableCommandNavigationShortcuts="False"
                                                    EnableNativeActivationFocus="False"
                                                    EnforceAsciiInput="True"
                                                    KeepAsciiImeWhileFocused="True"
                                                    HandlerChanged="ModalTextInput_HandlerChanged" />
-                            <Grid Grid.Row="2" Grid.Column="2" HeightRequest="40" WidthRequest="40" VerticalOptions="Center">
-                                <Border x:Name="CopyCommandButton"
-                                        Style="{StaticResource GlassModalButtonSurfaceStyle}">
-                                    <Border.Behaviors>
-                                        <behaviors:HoverHandCursorBehavior />
-                                    </Border.Behaviors>
-                                    <Border.GestureRecognizers>
-                                        <TapGestureRecognizer Command="{Binding CopyFieldCommand}"
-                                                              CommandParameter="{Binding Editor.Command}"
-                                                              Tapped="CopyIconButton_Tapped" />
-                                    </Border.GestureRecognizers>
-                                </Border>
-                                <Label Text="{OnPlatform WinUI='&#xE8C8;', MacCatalyst='⧉'}"
-                                       FontFamily="{OnPlatform WinUI='Segoe MDL2 Assets', MacCatalyst=''}"
-                                       Style="{StaticResource GlassModalButtonLabelStyle}" />
-                            </Grid>
+                            <Button x:Name="CopyCommandButton" Grid.Row="2" Grid.Column="2" Text="{OnPlatform WinUI='&#xE8C8;', MacCatalyst='⧉'}" FontFamily="{OnPlatform WinUI='Segoe MDL2 Assets', MacCatalyst=''}"
+                                    Command="{Binding CopyFieldCommand}"
+                                    CommandParameter="{Binding Editor.Command}" HeightRequest="40" WidthRequest="40" Padding="0"
+                                    VerticalOptions="Center"
+                                    Clicked="CopyIconButton_Clicked">
+                                <Button.Behaviors>
+                                    <behaviors:HoverHandCursorBehavior />
+                                </Button.Behaviors>
+                            </Button>
 
                             <Label Grid.Row="3" Grid.Column="0" Text="Tool" VerticalTextAlignment="Center" HeightRequest="40" />
-                            <Border Grid.Row="3" Grid.Column="1" HeightRequest="40" Stroke="Transparent" StrokeThickness="0" BackgroundColor="{AppThemeBinding Light={StaticResource GlassModalInputLight}, Dark={StaticResource GlassModalInputDark}}" StrokeShape="RoundRectangle 6" InputTransparent="True" />
-                            <Entry x:Name="ModalToolEntry" Grid.Row="3" Grid.Column="1" Text="{Binding Editor.Tool}" HeightRequest="40" BackgroundColor="Transparent" TextColor="{AppThemeBinding Light=#000000, Dark=#FFFFFF}" HandlerChanged="ModalTextInput_HandlerChanged" />
-                            <Grid Grid.Row="3" Grid.Column="2" HeightRequest="40" WidthRequest="40" VerticalOptions="Center">
-                                <Border x:Name="CopyToolButton"
-                                        Style="{StaticResource GlassModalButtonSurfaceStyle}">
-                                    <Border.Behaviors>
-                                        <behaviors:HoverHandCursorBehavior />
-                                    </Border.Behaviors>
-                                    <Border.GestureRecognizers>
-                                        <TapGestureRecognizer Command="{Binding CopyFieldCommand}"
-                                                              CommandParameter="{Binding Editor.Tool}"
-                                                              Tapped="CopyIconButton_Tapped" />
-                                    </Border.GestureRecognizers>
-                                </Border>
-                                <Label Text="{OnPlatform WinUI='&#xE8C8;', MacCatalyst='⧉'}"
-                                       FontFamily="{OnPlatform WinUI='Segoe MDL2 Assets', MacCatalyst=''}"
-                                       Style="{StaticResource GlassModalButtonLabelStyle}" />
-                            </Grid>
+                            <Entry x:Name="ModalToolEntry" Grid.Row="3" Grid.Column="1" Text="{Binding Editor.Tool}" HeightRequest="40" HandlerChanged="ModalTextInput_HandlerChanged" />
+                            <Button x:Name="CopyToolButton" Grid.Row="3" Grid.Column="2" Text="{OnPlatform WinUI='&#xE8C8;', MacCatalyst='⧉'}" FontFamily="{OnPlatform WinUI='Segoe MDL2 Assets', MacCatalyst=''}"
+                                    Command="{Binding CopyFieldCommand}"
+                                    CommandParameter="{Binding Editor.Tool}" HeightRequest="40" WidthRequest="40" Padding="0"
+                                    VerticalOptions="Center"
+                                    Clicked="CopyIconButton_Clicked">
+                                <Button.Behaviors>
+                                    <behaviors:HoverHandCursorBehavior />
+                                </Button.Behaviors>
+                            </Button>
 
                             <Label Grid.Row="4" Grid.Column="0" Text="Arguments" VerticalTextAlignment="Center" HeightRequest="40" />
-                            <Border Grid.Row="4" Grid.Column="1" HeightRequest="40" Stroke="Transparent" StrokeThickness="0" BackgroundColor="{AppThemeBinding Light={StaticResource GlassModalInputLight}, Dark={StaticResource GlassModalInputDark}}" StrokeShape="RoundRectangle 6" InputTransparent="True" />
-                            <Entry x:Name="ModalArgumentsEntry" Grid.Row="4" Grid.Column="1" Text="{Binding Editor.Arguments}" HeightRequest="40" BackgroundColor="Transparent" TextColor="{AppThemeBinding Light=#000000, Dark=#FFFFFF}" HandlerChanged="ModalTextInput_HandlerChanged" />
-                            <Grid Grid.Row="4" Grid.Column="2" HeightRequest="40" WidthRequest="40" VerticalOptions="Center">
-                                <Border x:Name="CopyArgumentsButton"
-                                        Style="{StaticResource GlassModalButtonSurfaceStyle}">
-                                    <Border.Behaviors>
-                                        <behaviors:HoverHandCursorBehavior />
-                                    </Border.Behaviors>
-                                    <Border.GestureRecognizers>
-                                        <TapGestureRecognizer Command="{Binding CopyFieldCommand}"
-                                                              CommandParameter="{Binding Editor.Arguments}"
-                                                              Tapped="CopyIconButton_Tapped" />
-                                    </Border.GestureRecognizers>
-                                </Border>
-                                <Label Text="{OnPlatform WinUI='&#xE8C8;', MacCatalyst='⧉'}"
-                                       FontFamily="{OnPlatform WinUI='Segoe MDL2 Assets', MacCatalyst=''}"
-                                       Style="{StaticResource GlassModalButtonLabelStyle}" />
-                            </Grid>
+                            <Entry x:Name="ModalArgumentsEntry" Grid.Row="4" Grid.Column="1" Text="{Binding Editor.Arguments}" HeightRequest="40" HandlerChanged="ModalTextInput_HandlerChanged" />
+                            <Button x:Name="CopyArgumentsButton" Grid.Row="4" Grid.Column="2" Text="{OnPlatform WinUI='&#xE8C8;', MacCatalyst='⧉'}" FontFamily="{OnPlatform WinUI='Segoe MDL2 Assets', MacCatalyst=''}"
+                                    Command="{Binding CopyFieldCommand}"
+                                    CommandParameter="{Binding Editor.Arguments}" HeightRequest="40" WidthRequest="40" Padding="0"
+                                    VerticalOptions="Center"
+                                    Clicked="CopyIconButton_Clicked">
+                                <Button.Behaviors>
+                                    <behaviors:HoverHandCursorBehavior />
+                                </Button.Behaviors>
+                            </Button>
 
                             <Label Grid.Row="5" Grid.Column="0" Text="Clip Word" VerticalTextAlignment="Center" HeightRequest="40" />
                             <Border x:Name="ModalClipWordContainer"
                                     Grid.Row="5"
                                     Grid.Column="1"
-                                    Stroke="Transparent"
-                                    StrokeThickness="0"
-                                    BackgroundColor="{AppThemeBinding Light={StaticResource GlassModalInputLight}, Dark={StaticResource GlassModalInputDark}}"
+                                    Stroke="{AppThemeBinding Light=#CECECE, Dark=#4E4E4E}"
+                                    StrokeThickness="1"
+                                    BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#2A2A2A}"
                                     StrokeShape="RoundRectangle 6"
                                     MinimumHeightRequest="40"
                                     HeightRequest="40"
@@ -852,7 +641,7 @@
                                                                   MinimumHeightRequest="40"
                                                                   HeightRequest="40"
                                                                   BackgroundColor="Transparent"
-                                                                  TextColor="{AppThemeBinding Light=#000000, Dark=#FFFFFF}"
+                                                                  TextColor="{AppThemeBinding Light=#111111, Dark=#F2F2F2}"
                                                                   TextChanged="ModalClipWordEditor_TextChanged"
                                                                   HandlerChanged="ModalClipWordEditor_HandlerChanged"
                                                                   Focused="ModalClipWordEditor_Focused"
@@ -868,30 +657,22 @@
                                              BackgroundColor="{AppThemeBinding Light=#4A4A4A, Dark=#A0A0A0}" />
                                 </Grid>
                             </Border>
-                            <Grid Grid.Row="5" Grid.Column="2" HeightRequest="40" WidthRequest="40" VerticalOptions="Center">
-                                <Border x:Name="CopyClipWordButton"
-                                        Style="{StaticResource GlassModalButtonSurfaceStyle}">
-                                    <Border.Behaviors>
-                                        <behaviors:HoverHandCursorBehavior />
-                                    </Border.Behaviors>
-                                    <Border.GestureRecognizers>
-                                        <TapGestureRecognizer Command="{Binding CopyFieldCommand}"
-                                                              CommandParameter="{Binding Editor.ClipText}"
-                                                              Tapped="CopyIconButton_Tapped" />
-                                    </Border.GestureRecognizers>
-                                </Border>
-                                <Label Text="{OnPlatform WinUI='&#xE8C8;', MacCatalyst='⧉'}"
-                                       FontFamily="{OnPlatform WinUI='Segoe MDL2 Assets', MacCatalyst=''}"
-                                       Style="{StaticResource GlassModalButtonLabelStyle}" />
-                            </Grid>
+                            <Button x:Name="CopyClipWordButton" Grid.Row="5" Grid.Column="2" Text="{OnPlatform WinUI='&#xE8C8;', MacCatalyst='⧉'}" FontFamily="{OnPlatform WinUI='Segoe MDL2 Assets', MacCatalyst=''}"
+                                    Command="{Binding CopyFieldCommand}"
+                                    CommandParameter="{Binding Editor.ClipText}" HeightRequest="40" WidthRequest="40" Padding="0" VerticalOptions="Center"
+                                    Clicked="CopyIconButton_Clicked">
+                                <Button.Behaviors>
+                                    <behaviors:HoverHandCursorBehavior />
+                                </Button.Behaviors>
+                            </Button>
 
                             <Label Grid.Row="6" Grid.Column="0" Text="Note" VerticalTextAlignment="Center" HeightRequest="40" />
                             <Border x:Name="ModalNoteContainer"
                                     Grid.Row="6"
                                     Grid.Column="1"
-                                    Stroke="Transparent"
-                                    StrokeThickness="0"
-                                    BackgroundColor="{AppThemeBinding Light={StaticResource GlassModalInputLight}, Dark={StaticResource GlassModalInputDark}}"
+                                    Stroke="{AppThemeBinding Light=#CECECE, Dark=#4E4E4E}"
+                                    StrokeThickness="1"
+                                    BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#2A2A2A}"
                                     StrokeShape="RoundRectangle 6"
                                     MinimumHeightRequest="40"
                                     HeightRequest="40"
@@ -903,7 +684,7 @@
                                                                   MinimumHeightRequest="40"
                                                                   HeightRequest="40"
                                                                   BackgroundColor="Transparent"
-                                                                  TextColor="{AppThemeBinding Light=#000000, Dark=#FFFFFF}"
+                                                                  TextColor="{AppThemeBinding Light=#111111, Dark=#F2F2F2}"
                                                                   TextChanged="ModalNoteEditor_TextChanged"
                                                                   HandlerChanged="ModalNoteEditor_HandlerChanged"
                                                                   Focused="ModalNoteEditor_Focused"
@@ -919,29 +700,18 @@
                                              BackgroundColor="{AppThemeBinding Light=#4A4A4A, Dark=#A0A0A0}" />
                                 </Grid>
                             </Border>
-                            <Grid Grid.Row="6" Grid.Column="2" HeightRequest="40" WidthRequest="40" VerticalOptions="Center">
-                                <Border x:Name="CopyNoteButton"
-                                        Style="{StaticResource GlassModalButtonSurfaceStyle}">
-                                    <Border.Behaviors>
-                                        <behaviors:HoverHandCursorBehavior />
-                                    </Border.Behaviors>
-                                    <Border.GestureRecognizers>
-                                        <TapGestureRecognizer Command="{Binding CopyFieldCommand}"
-                                                              CommandParameter="{Binding Editor.Note}"
-                                                              Tapped="CopyIconButton_Tapped" />
-                                    </Border.GestureRecognizers>
-                                </Border>
-                                <Label Text="{OnPlatform WinUI='&#xE8C8;', MacCatalyst='⧉'}"
-                                       FontFamily="{OnPlatform WinUI='Segoe MDL2 Assets', MacCatalyst=''}"
-                                       Style="{StaticResource GlassModalButtonLabelStyle}" />
-                            </Grid>
+                            <Button x:Name="CopyNoteButton" Grid.Row="6" Grid.Column="2" Text="{OnPlatform WinUI='&#xE8C8;', MacCatalyst='⧉'}" FontFamily="{OnPlatform WinUI='Segoe MDL2 Assets', MacCatalyst=''}"
+                                    Command="{Binding CopyFieldCommand}"
+                                    CommandParameter="{Binding Editor.Note}" HeightRequest="40" WidthRequest="40" Padding="0" VerticalOptions="Center"
+                                    Clicked="CopyIconButton_Clicked">
+                                <Button.Behaviors>
+                                    <behaviors:HoverHandCursorBehavior />
+                                </Button.Behaviors>
+                            </Button>
 
                             <Label Grid.Row="7" Grid.Column="0" Text="Invert Theme" VerticalTextAlignment="Center" HeightRequest="40" />
                             <HorizontalStackLayout Grid.Row="7" Grid.Column="1" Spacing="8" VerticalOptions="Center">
                                 <Grid WidthRequest="18" HeightRequest="18" VerticalOptions="Center">
-                                    <Grid.Behaviors>
-                                        <behaviors:HoverHandCursorBehavior />
-                                    </Grid.Behaviors>
                                     <CheckBox x:Name="ModalInvertThemeCheckBox"
                                               IsChecked="{Binding Editor.UseInvertedThemeColors}"
                                               Focused="ModalEditorField_Focused"
@@ -959,7 +729,7 @@
                                             <TapGestureRecognizer Tapped="ModalInvertThemeToggle_Tapped" />
                                         </Grid.GestureRecognizers>
                                         <BoxView Margin="1"
-                                                 Color="{AppThemeBinding Light=#54FFFFFF, Dark=#68282D34}" />
+                                                 Color="{AppThemeBinding Light=#FFFFFF, Dark=#2A2A2A}" />
                                         <BoxView IsVisible="{Binding Editor.UseInvertedThemeColors}"
                                                  Margin="1"
                                                  Color="{AppThemeBinding Light=#111111, Dark=#F2F2F2}" />
@@ -988,9 +758,6 @@
                                 <Label Text="Use opposite theme colors for this button"
                                        VerticalTextAlignment="Center"
                                        LineBreakMode="TailTruncation">
-                                    <Label.Behaviors>
-                                        <behaviors:HoverHandCursorBehavior />
-                                    </Label.Behaviors>
                                     <Label.GestureRecognizers>
                                         <TapGestureRecognizer Tapped="ModalInvertThemeToggle_Tapped" />
                                     </Label.GestureRecognizers>
@@ -1002,35 +769,19 @@
                     <HorizontalStackLayout Grid.Row="1"
                                            HorizontalOptions="Center"
                                            Spacing="10">
-                        <Grid WidthRequest="96" HeightRequest="38">
-                            <Border x:Name="ModalCancelButton"
-                                    Style="{StaticResource GlassModalButtonSurfaceStyle}">
-                                <Border.Behaviors>
-                                    <behaviors:HoverHandCursorBehavior />
-                                </Border.Behaviors>
-                                <Border.GestureRecognizers>
-                                    <TapGestureRecognizer Command="{Binding CancelEditorCommand}" />
-                                </Border.GestureRecognizers>
-                            </Border>
-                            <Label Text="Cancel"
-                                   Style="{StaticResource GlassModalButtonLabelStyle}" />
-                        </Grid>
-                        <Grid WidthRequest="96" HeightRequest="38">
-                            <Border x:Name="ModalSaveButton"
-                                    Style="{StaticResource GlassModalButtonSurfaceStyle}">
-                                <Border.Behaviors>
-                                    <behaviors:HoverHandCursorBehavior />
-                                </Border.Behaviors>
-                                <Border.GestureRecognizers>
-                                    <TapGestureRecognizer Command="{Binding SaveEditorCommand}" />
-                                </Border.GestureRecognizers>
-                            </Border>
-                            <Label Text="Save"
-                                   Style="{StaticResource GlassModalButtonLabelStyle}" />
-                        </Grid>
+                        <Button x:Name="ModalCancelButton" Text="Cancel" WidthRequest="96" Unfocused="ModalActionButton_Unfocused" Command="{Binding CancelEditorCommand}">
+                            <Button.Behaviors>
+                                <behaviors:HoverHandCursorBehavior />
+                            </Button.Behaviors>
+                        </Button>
+                        <Button x:Name="ModalSaveButton" Text="Save" WidthRequest="96" Unfocused="ModalActionButton_Unfocused" Command="{Binding SaveEditorCommand}">
+                            <Button.Behaviors>
+                                <behaviors:HoverHandCursorBehavior />
+                            </Button.Behaviors>
+                        </Button>
                     </HorizontalStackLayout>
                 </Grid>
-            </controls:MaterialFrame>
+            </Border>
         </Grid>
 
         <Grid x:Name="ConflictOverlay"
@@ -1039,25 +790,17 @@
               Opacity="0"
               BackgroundColor="Transparent"
               ZIndex="980">
-            <Border x:Name="ConflictBackdropLayer"
-                    Style="{StaticResource TransparentOverlayHitTargetStyle}">
-                <Border.GestureRecognizers>
-                    <TapGestureRecognizer Tapped="OverlayBackdrop_Tapped" />
-                </Border.GestureRecognizers>
-            </Border>
-            <controls:MaterialFrame HorizontalOptions="Center"
-                                    VerticalOptions="Center"
-                                    WidthRequest="520"
-                                    MaximumWidthRequest="620"
-                                    Padding="18"
-                                    CornerRadius="18"
-                                    MacOSBehindWindowBlur="False"
-                                    Stroke="Transparent"
-                                    StrokeThickness="0"
-                                    BackgroundColor="{AppThemeBinding Light={StaticResource SolidModalLight}, Dark={StaticResource SolidModalDark}}">
-                <controls:MaterialFrame.Shadow>
+            <Border HorizontalOptions="Center"
+                    VerticalOptions="Center"
+                    WidthRequest="520"
+                    MaximumWidthRequest="620"
+                    Padding="18"
+                    Stroke="{AppThemeBinding Light=#B5B5B5, Dark=#505050}"
+                    BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#1F1F1F}"
+                    StrokeShape="RoundRectangle 18">
+                <Border.Shadow>
                     <Shadow Brush="{AppThemeBinding Light=#66000000, Dark=#AA000000}" Opacity="0.22" Offset="0,10" Radius="22" />
-                </controls:MaterialFrame.Shadow>
+                </Border.Shadow>
                 <VerticalStackLayout Spacing="12">
                     <Label x:Name="ConflictTitleLabel"
                            FontSize="22"
@@ -1069,13 +812,6 @@
                         <Button x:Name="ConflictReloadButton"
                                 Text="Reload latest"
                                 WidthRequest="132"
-                                HeightRequest="38"
-                                CornerRadius="12"
-                                BackgroundColor="{AppThemeBinding Light={StaticResource GlassModalButtonLight}, Dark={StaticResource GlassModalButtonDark}}"
-                                BorderColor="Transparent"
-                                BorderWidth="0"
-                                TextColor="{AppThemeBinding Light=#050505, Dark=#FFFFFF}"
-                                FontSize="13"
                                 HandlerChanged="ConflictActionButton_HandlerChanged"
                                 Focused="ConflictActionButton_Focused"
                                 Unfocused="ConflictActionButton_Unfocused"
@@ -1087,13 +823,6 @@
                         <Button x:Name="ConflictOverwriteButton"
                                 Text="Overwrite mine"
                                 WidthRequest="132"
-                                HeightRequest="38"
-                                CornerRadius="12"
-                                BackgroundColor="{AppThemeBinding Light={StaticResource GlassModalButtonLight}, Dark={StaticResource GlassModalButtonDark}}"
-                                BorderColor="Transparent"
-                                BorderWidth="0"
-                                TextColor="{AppThemeBinding Light=#050505, Dark=#FFFFFF}"
-                                FontSize="13"
                                 HandlerChanged="ConflictActionButton_HandlerChanged"
                                 Focused="ConflictActionButton_Focused"
                                 Unfocused="ConflictActionButton_Unfocused"
@@ -1105,13 +834,6 @@
                         <Button x:Name="ConflictCancelButton"
                                 Text="Cancel"
                                 WidthRequest="132"
-                                HeightRequest="38"
-                                CornerRadius="12"
-                                BackgroundColor="{AppThemeBinding Light={StaticResource GlassModalButtonLight}, Dark={StaticResource GlassModalButtonDark}}"
-                                BorderColor="Transparent"
-                                BorderWidth="0"
-                                TextColor="{AppThemeBinding Light=#050505, Dark=#FFFFFF}"
-                                FontSize="13"
                                 HandlerChanged="ConflictActionButton_HandlerChanged"
                                 Focused="ConflictActionButton_Focused"
                                 Unfocused="ConflictActionButton_Unfocused"
@@ -1122,7 +844,7 @@
                         </Button>
                     </HorizontalStackLayout>
                 </VerticalStackLayout>
-            </controls:MaterialFrame>
+            </Border>
         </Grid>
 
         <Grid x:Name="CopyNoticeOverlay"
@@ -1131,23 +853,21 @@
               Opacity="0"
               InputTransparent="True"
               ZIndex="999">
-            <controls:MaterialFrame x:Name="CopyNoticeBox"
-                                    HorizontalOptions="Center"
-                                    VerticalOptions="Center"
-                                    WidthRequest="78"
-                                    HeightRequest="78"
-                                    CornerRadius="18"
-                                    MacOSBehindWindowBlur="False"
-                                    BackgroundColor="{AppThemeBinding Light={StaticResource SolidPopupLight}, Dark={StaticResource SolidPopupDark}}"
-                                    Stroke="Transparent"
-                                    StrokeThickness="0">
+            <Border x:Name="CopyNoticeBox"
+                    HorizontalOptions="Center"
+                    VerticalOptions="Center"
+                    WidthRequest="78"
+                    HeightRequest="78"
+                    BackgroundColor="{AppThemeBinding Light=#D9FFFFFF, Dark=#D9202020}"
+                    Stroke="{AppThemeBinding Light=#C4C4C4, Dark=#707070}"
+                    StrokeShape="RoundRectangle 18">
                 <Label Text="{OnPlatform WinUI='&#xE8C8;', MacCatalyst='⧉'}"
                        FontFamily="{OnPlatform WinUI='Segoe MDL2 Assets', MacCatalyst=''}"
                        FontSize="30"
                        HorizontalTextAlignment="Center"
                        VerticalTextAlignment="Center"
                        TextColor="{AppThemeBinding Light=#202020, Dark=#F2F2F2}" />
-            </controls:MaterialFrame>
+            </Border>
         </Grid>
     </Grid>
 </ContentPage>

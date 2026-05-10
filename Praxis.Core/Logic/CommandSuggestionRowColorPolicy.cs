@@ -9,6 +9,6 @@ public static class CommandSuggestionRowColorPolicy
             return "#00000000";
         }
 
-        return isDarkTheme ? "#59636E" : "#B7C0C9";
+        return isDarkTheme ? "#3D3D3D" : "#E6E6E6";
     }
 }

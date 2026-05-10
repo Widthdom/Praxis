@@ -5,8 +5,8 @@ namespace Praxis.Tests;
 public class ThemeTextColorPolicyTests
 {
     [Theory]
-    [InlineData(false, "#000000")]
-    [InlineData(true, "#FFFFFF")]
+    [InlineData(false, "#111111")]
+    [InlineData(true, "#F2F2F2")]
     public void ResolveTextColorHex_ReturnsExpectedPaletteValue(bool isDarkTheme, string expected)
     {
         var hex = ThemeTextColorPolicy.ResolveTextColorHex(isDarkTheme);

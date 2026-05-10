@@ -3,5 +3,5 @@ namespace Praxis.Core.Logic;
 public static class ThemeTextColorPolicy
 {
     public static string ResolveTextColorHex(bool isDarkTheme)
-        => isDarkTheme ? "#FFFFFF" : "#000000";
+        => isDarkTheme ? "#F2F2F2" : "#111111";
 }
