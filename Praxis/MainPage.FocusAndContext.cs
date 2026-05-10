@@ -423,6 +423,15 @@ public partial class MainPage
         }
 #endif
 
+#if WINDOWS
+        if (windowsModalActionFocusTarget is WindowsModalActionFocusTarget windowsPseudoTarget)
+        {
+            ApplyButtonFocusVisual(ModalCancelButton, windowsPseudoTarget == WindowsModalActionFocusTarget.Cancel);
+            ApplyButtonFocusVisual(ModalSaveButton, windowsPseudoTarget == WindowsModalActionFocusTarget.Save);
+            return;
+        }
+#endif
+
         ApplyButtonFocusVisual(ModalCancelButton, IsButtonFocused(ModalCancelButton));
         ApplyButtonFocusVisual(ModalSaveButton, IsButtonFocused(ModalSaveButton));
     }
@@ -623,7 +632,8 @@ public partial class MainPage
         SetTabStop(ModalArgumentsEntry, editorEnabled);
         SetTabStop(ModalClipWordEditor, editorEnabled);
         SetTabStop(ModalNoteEditor, editorEnabled);
-        SetTabStop(ModalInvertThemeCheckBox, editorEnabled);
+        // ModalInvertThemeCheckBox is invisible (Opacity=0) and toggled via a sibling Grid+TapGesture, so always skip it — Mac achieves the same skip via ModalFocusOrder.
+        SetTabStop(ModalInvertThemeCheckBox, false);
         SetTabStop(ModalCancelButton, editorEnabled);
         SetTabStop(ModalSaveButton, editorEnabled);
 

@@ -84,9 +84,92 @@ public partial class MainPage
         }
     }
 
+    private bool TryHandleWindowsMultilineModalTab(object sender, Microsoft.UI.Xaml.Input.KeyRoutedEventArgs e)
+    {
+        if (e.Key != Windows.System.VirtualKey.Tab)
+        {
+            return false;
+        }
+
+        // WinUI 3 multi-line TextBox eats Tab as a literal character inside its built-in OnKeyDown override (AcceptsTab is not exposed in WinUI 3), so the modal Note / Clip Word editors need explicit focus navigation invoked from PreviewKeyDown — KeyDown handlers fire after the TextBox has already inserted the tab character.
+        if (sender is not Microsoft.UI.Xaml.Controls.TextBox textBox || !TryResolveMultilineModalTabTarget(textBox, out var target))
+        {
+            return false;
+        }
+
+        FocusModalTabTarget(target);
+        windowsSelectAllOnTabNavigationPending = true;
+        e.Handled = true;
+        return true;
+    }
+
+    private bool TryResolveMultilineModalTabTarget(Microsoft.UI.Xaml.Controls.TextBox textBox, out VisualElement target)
+    {
+        var shiftDown = Microsoft.UI.Input.InputKeyboardSource.GetKeyStateForCurrentThread(Windows.System.VirtualKey.Shift)
+            .HasFlag(Windows.UI.Core.CoreVirtualKeyStates.Down);
+
+        if (ReferenceEquals(textBox, modalClipWordTextBox))
+        {
+            target = shiftDown ? ModalArgumentsEntry : ModalNoteEditor;
+            return true;
+        }
+
+        if (ReferenceEquals(textBox, modalNoteTextBox))
+        {
+            target = shiftDown ? ModalClipWordEditor : (VisualElement)ModalCancelButton;
+            return true;
+        }
+
+        target = null!;
+        return false;
+    }
+
+    private void FocusModalTabTarget(VisualElement target)
+    {
+        // Stamp pseudo-focus + cancel any pending LostFocus restore before attempting native Focus(). The pseudo-focus paints Cancel/Save immediately and keeps HasWindowsEditorModalFocus reporting true while the focus engine settles, even if the native Focus() call partially fails.
+        if (ReferenceEquals(target, ModalCancelButton))
+        {
+            windowsEditorFocusRestorePending = false;
+            windowsModalActionFocusTarget = WindowsModalActionFocusTarget.Cancel;
+            ApplyModalActionButtonFocusVisuals();
+        }
+        else if (ReferenceEquals(target, ModalSaveButton))
+        {
+            windowsEditorFocusRestorePending = false;
+            windowsModalActionFocusTarget = WindowsModalActionFocusTarget.Save;
+            ApplyModalActionButtonFocusVisuals();
+        }
+        else
+        {
+            ClearWindowsModalActionPseudoFocus();
+        }
+
+        target.Focus();
+        if (target.Handler?.PlatformView is Microsoft.UI.Xaml.Controls.Control control)
+        {
+            control.Focus(Microsoft.UI.Xaml.FocusState.Keyboard);
+        }
+    }
+
+    private void ClearWindowsModalActionPseudoFocus()
+    {
+        if (windowsModalActionFocusTarget is null)
+        {
+            return;
+        }
+
+        windowsModalActionFocusTarget = null;
+        ApplyModalActionButtonFocusVisuals();
+    }
+
     private void WindowsTextBox_PreviewKeyDown(object sender, Microsoft.UI.Xaml.Input.KeyRoutedEventArgs e)
     {
         if (e.Handled)
+        {
+            return;
+        }
+
+        if (TryHandleWindowsMultilineModalTab(sender, e))
         {
             return;
         }
@@ -111,6 +194,8 @@ public partial class MainPage
 
     private void WindowsTextBox_GotFocus(object sender, Microsoft.UI.Xaml.RoutedEventArgs e)
     {
+        ClearWindowsModalActionPseudoFocus();
+
         if (!windowsSelectAllOnTabNavigationPending)
         {
             return;
@@ -126,6 +211,7 @@ public partial class MainPage
     private void WindowsTextBox_PointerPressed(object sender, Microsoft.UI.Xaml.Input.PointerRoutedEventArgs e)
     {
         windowsSelectAllOnTabNavigationPending = false;
+        ClearWindowsModalActionPseudoFocus();
     }
 
     private void WindowsModalInput_LostFocus(object sender, Microsoft.UI.Xaml.RoutedEventArgs e)
@@ -228,6 +314,7 @@ public partial class MainPage
             IsWindowsTextBoxFocused(modalClipWordTextBox) ||
             IsWindowsTextBoxFocused(modalNoteTextBox) ||
             IsCheckBoxFocused(ModalInvertThemeCheckBox) ||
+            windowsModalActionFocusTarget is not null ||
             IsButtonFocused(ModalCancelButton) ||
             IsButtonFocused(ModalSaveButton);
     }
@@ -374,6 +461,27 @@ public partial class MainPage
             return;
         }
 
+        // Pseudo-focused Cancel/Save: native focus is still on a modal TextBox, so Tab / Shift+Tab and Enter must be routed off the page-level handler instead of the TextBox's own input behavior.
+        if (windowsModalActionFocusTarget is not null)
+        {
+            if (e.Key == Windows.System.VirtualKey.Tab)
+            {
+                if (TryMoveWindowsModalActionPseudoFocus(forward: !shiftDown))
+                {
+                    e.Handled = true;
+                    return;
+                }
+            }
+            else if (e.Key == Windows.System.VirtualKey.Enter)
+            {
+                if (TryInvokeWindowsModalActionPseudoFocus())
+                {
+                    e.Handled = true;
+                    return;
+                }
+            }
+        }
+
         if (e.Key == Windows.System.VirtualKey.Escape)
         {
             if (viewModel.CancelEditorCommand.CanExecute(null))
@@ -382,6 +490,82 @@ public partial class MainPage
                 e.Handled = true;
             }
         }
+    }
+
+    private bool TryMoveWindowsModalActionPseudoFocus(bool forward)
+    {
+        if (windowsModalActionFocusTarget == WindowsModalActionFocusTarget.Cancel)
+        {
+            if (forward)
+            {
+                windowsModalActionFocusTarget = WindowsModalActionFocusTarget.Save;
+                ApplyModalActionButtonFocusVisuals();
+                return true;
+            }
+
+            // Shift+Tab from Cancel returns native focus to the Note multi-line editor.
+            ClearWindowsModalActionPseudoFocus();
+            windowsSelectAllOnTabNavigationPending = true;
+            if (modalNoteTextBox is not null)
+            {
+                modalNoteTextBox.Focus(Microsoft.UI.Xaml.FocusState.Keyboard);
+            }
+            else
+            {
+                ModalNoteEditor.Focus();
+            }
+            return true;
+        }
+
+        if (windowsModalActionFocusTarget == WindowsModalActionFocusTarget.Save)
+        {
+            if (forward)
+            {
+                // Tab from Save wraps to the GUID field at the top of the modal.
+                ClearWindowsModalActionPseudoFocus();
+                windowsSelectAllOnTabNavigationPending = true;
+                if (modalGuidTextBox is not null)
+                {
+                    modalGuidTextBox.Focus(Microsoft.UI.Xaml.FocusState.Keyboard);
+                }
+                else
+                {
+                    ModalGuidEntry.Focus();
+                }
+                return true;
+            }
+
+            windowsModalActionFocusTarget = WindowsModalActionFocusTarget.Cancel;
+            ApplyModalActionButtonFocusVisuals();
+            return true;
+        }
+
+        return false;
+    }
+
+    private bool TryInvokeWindowsModalActionPseudoFocus()
+    {
+        if (windowsModalActionFocusTarget == WindowsModalActionFocusTarget.Cancel)
+        {
+            if (viewModel.CancelEditorCommand.CanExecute(null))
+            {
+                viewModel.CancelEditorCommand.Execute(null);
+                return true;
+            }
+            return false;
+        }
+
+        if (windowsModalActionFocusTarget == WindowsModalActionFocusTarget.Save)
+        {
+            if (viewModel.SaveEditorCommand.CanExecute(null))
+            {
+                viewModel.SaveEditorCommand.Execute(null);
+                return true;
+            }
+            return false;
+        }
+
+        return false;
     }
 
     private bool TryHandleThemeShortcutFromKey(Microsoft.UI.Xaml.Input.KeyRoutedEventArgs e)

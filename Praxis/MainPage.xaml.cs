@@ -93,6 +93,8 @@ public partial class MainPage : ContentPage
             {
                 ApplyNeutralStatusBackground();
                 ApplyContextActionButtonFocusVisuals();
+                ApplyModalActionButtonFocusVisuals();
+                ApplyConflictActionButtonFocusVisuals();
                 ApplyModalEditorThemeTextColors();
                 RebuildCommandSuggestionStack();
 #if MACCATALYST
