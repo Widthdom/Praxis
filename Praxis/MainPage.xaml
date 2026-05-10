@@ -11,6 +11,7 @@
              Title="Praxis">
     <ContentPage.Resources>
         <converters:BoolToScrollBarVisibilityConverter x:Key="BoolToScrollBarVisibilityConverter" />
+        <Color x:Key="TransparentOverlayHitTarget">#01000000</Color>
         <Style x:Key="PlacementButtonTextLabelStyle"
                TargetType="Label">
             <Setter Property="FontSize" Value="{OnPlatform Default=12, MacCatalyst=14}" />
@@ -199,7 +200,8 @@
 
         <Border x:Name="CommandSuggestionPopup"
                 Grid.RowSpan="4"
-                IsVisible="{Binding IsCommandSuggestionOpen}"
+                IsVisible="False"
+                Opacity="0"
                 Stroke="{AppThemeBinding Light=#BBBBBB, Dark=#565656}"
                 BackgroundColor="{AppThemeBinding Light=#F3F3F3, Dark=#252525}"
                 StrokeShape="RoundRectangle 10"
@@ -499,12 +501,18 @@
             </VerticalStackLayout>
         </Border>
 
-        <Grid Grid.RowSpan="4"
-              IsVisible="{Binding IsContextMenuOpen}"
-              BackgroundColor="Transparent">
-            <Grid.GestureRecognizers>
-                <TapGestureRecognizer Command="{Binding CloseContextMenuCommand}" />
-            </Grid.GestureRecognizers>
+        <Grid x:Name="ContextMenuOverlay"
+              Grid.RowSpan="4"
+              IsVisible="False"
+              Opacity="0"
+              BackgroundColor="Transparent"
+              ZIndex="970">
+            <Border x:Name="ContextMenuDismissLayer"
+                    Style="{StaticResource TransparentOverlayHitTargetStyle}">
+                <Border.GestureRecognizers>
+                    <TapGestureRecognizer Command="{Binding CloseContextMenuCommand}" />
+                </Border.GestureRecognizers>
+            </Border>
             <Border HorizontalOptions="Center"
                     VerticalOptions="Center"
                     WidthRequest="220"
@@ -512,6 +520,9 @@
                     Stroke="{AppThemeBinding Light=#B8B8B8, Dark=#505050}"
                     BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#1F1F1F}"
                     StrokeShape="RoundRectangle 14">
+                <Border.Shadow>
+                    <Shadow Brush="{AppThemeBinding Light=#55000000, Dark=#AA000000}" Opacity="0.22" Offset="0,8" Radius="18" />
+                </Border.Shadow>
                 <VerticalStackLayout Spacing="8">
                     <Button x:Name="ContextEditButton"
                             Text="Edit"
@@ -539,8 +550,16 @@
 
         <Grid x:Name="EditorOverlay"
               Grid.RowSpan="4"
-              IsVisible="{Binding IsEditorOpen}"
-              BackgroundColor="Transparent">
+              IsVisible="False"
+              Opacity="0"
+              BackgroundColor="Transparent"
+              ZIndex="975">
+            <Border x:Name="EditorBackdropLayer"
+                    Style="{StaticResource TransparentOverlayHitTargetStyle}">
+                <Border.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="OverlayBackdrop_Tapped" />
+                </Border.GestureRecognizers>
+            </Border>
             <Border HorizontalOptions="Center"
                     VerticalOptions="Center"
                     WidthRequest="760"
@@ -550,7 +569,7 @@
                     BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#1F1F1F}"
                     StrokeShape="RoundRectangle 18">
                 <Border.Shadow>
-                    <Shadow Brush="{AppThemeBinding Light=#66000000, Dark=#AA000000}" Opacity="0.22" Offset="0,10" Radius="22" />
+                    <Shadow Brush="{AppThemeBinding Light=#66000000, Dark=#AA000000}" Opacity="0.28" Offset="0,12" Radius="24" />
                 </Border.Shadow>
 
                 <Grid RowDefinitions="Auto,Auto" RowSpacing="12">
@@ -790,6 +809,12 @@
               Opacity="0"
               BackgroundColor="Transparent"
               ZIndex="980">
+            <Border x:Name="ConflictBackdropLayer"
+                    Style="{StaticResource TransparentOverlayHitTargetStyle}">
+                <Border.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="OverlayBackdrop_Tapped" />
+                </Border.GestureRecognizers>
+            </Border>
             <Border HorizontalOptions="Center"
                     VerticalOptions="Center"
                     WidthRequest="520"

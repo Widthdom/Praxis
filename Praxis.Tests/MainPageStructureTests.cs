@@ -221,7 +221,7 @@ public class MainPageStructureTests
         var xaml = File.ReadAllText(Path.Combine(root, "Praxis", "MainPage.xaml"));
 
         var contextDismissIndex = xaml.IndexOf("x:Name=\"ContextMenuDismissLayer\"", StringComparison.Ordinal);
-        var contextPanelIndex = xaml.IndexOf("x:Name=\"ContextEditFocusRing\"", StringComparison.Ordinal);
+        var contextPanelIndex = xaml.IndexOf("x:Name=\"ContextEditButton\"", StringComparison.Ordinal);
         var editorBackdropIndex = xaml.IndexOf("x:Name=\"EditorBackdropLayer\"", StringComparison.Ordinal);
         var editorPanelIndex = xaml.IndexOf("x:Name=\"ModalButtonTextEntry\"", StringComparison.Ordinal);
         var conflictBackdropIndex = xaml.IndexOf("x:Name=\"ConflictBackdropLayer\"", StringComparison.Ordinal);
@@ -262,7 +262,7 @@ public class MainPageStructureTests
         var conflict = File.ReadAllText(Path.Combine(root, "Praxis", "MainPage.ShortcutsAndConflict.cs"));
 
         // CommandSuggestionPopup must start hidden + transparent so the helper can fade it in.
-        Assert.Contains("x:Name=\"CommandSuggestionPopup\"\n                                Grid.RowSpan=\"4\"\n                                IsVisible=\"False\"\n                                Opacity=\"0\"", xaml);
+        Assert.Contains("x:Name=\"CommandSuggestionPopup\"\n                Grid.RowSpan=\"4\"\n                IsVisible=\"False\"\n                Opacity=\"0\"", xaml);
 
         // Context-menu and editor overlays must carry visible drop shadows so they pop above the workspace.
         var contextMenuIndex = xaml.IndexOf("x:Name=\"ContextMenuOverlay\"", StringComparison.Ordinal);
