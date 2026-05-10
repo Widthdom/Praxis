@@ -47,7 +47,6 @@ public partial class MainPage : ContentPage
             return;
         }
 
-        ForceTransparentRootBackground();
         SetDockScrollBarVisibility(isPointerOverDockRegion: false);
         ApplyClearButtonGlyphAlignmentTuning();
         this.viewModel.ResolveEditorConflictAsync = ResolveEditorConflictAsync;
@@ -80,8 +79,6 @@ public partial class MainPage : ContentPage
             UpdateCommandSuggestionPopupPlacement();
             UpdateModalEditorHeights();
 #if MACCATALYST
-            ScheduleMacRootTransparencyRefresh();
-            ScheduleMacPlacementCanvasNativeGesturesRefresh();
             ApplyMacContentScale();
 #endif
         };
@@ -98,9 +95,6 @@ public partial class MainPage : ContentPage
                 ApplyContextActionButtonFocusVisuals();
                 ApplyModalEditorThemeTextColors();
                 RebuildCommandSuggestionStack();
-#if WINDOWS
-                EnsureWindowsTextBoxHooks();
-#endif
 #if MACCATALYST
                 ApplyMacVisualTuning();
                 ApplyMacNoteEditorVisualState();
@@ -115,9 +109,6 @@ public partial class MainPage : ContentPage
         ModalToolEntry.Focused += ModalEditorField_Focused;
         ModalArgumentsEntry.Focused += ModalEditorField_Focused;
         ModalClipWordEditor.Focused += ModalEditorField_Focused;
-        RootGrid.HandlerChanged += (_, _) => ScheduleMacPlacementCanvasNativeGesturesRefresh();
-        PlacementSurface.HandlerChanged += (_, _) => EnsureMacPlacementCanvasNativeGestures();
-        PlacementScroll.HandlerChanged += (_, _) => EnsureMacPlacementCanvasNativeGestures();
 #endif
     }
 
@@ -133,18 +124,12 @@ public partial class MainPage : ContentPage
             return;
         }
 
-#if MACCATALYST
-        App.RefreshMacWindowBackdropForConnectedScenes();
-#endif
-        ForceTransparentRootBackground();
         AttachWindowActivationHook();
         AttachEditorPropertyChanged(viewModel.Editor);
 
         if (initialized)
         {
 #if MACCATALYST
-            ApplyMacVisualTuning();
-            StartMacMiddleButtonPolling();
             ScheduleMainCommandFocusAfterActivation("MainPage.OnAppearing");
 #else
             Dispatcher.Dispatch(RequestMainCommandFocusAfterActivation);
@@ -210,7 +195,6 @@ public partial class MainPage : ContentPage
         UpdateConflictDialogModalState(isOpen: false);
         HideQuickLookPopup();
 #if MACCATALYST
-        DetachMacPlacementCanvasNativeGestures();
         DetachMacGuidEntryReadOnlyBehavior();
         macGuidLockedText = string.Empty;
         StopMacMiddleButtonPolling();
@@ -304,9 +288,6 @@ public partial class MainPage : ContentPage
         }
 
         SyncViewportToViewModel();
-#if MACCATALYST
-        ScheduleMacPlacementCanvasNativeGesturesRefresh();
-#endif
     }
 
     private void AttachWindowActivationHook()
@@ -505,11 +486,6 @@ public partial class MainPage : ContentPage
                 CopyNoticeOverlay.IsVisible = false;
             }
         }
-    }
-
-    private void CopyIconButton_Tapped(object? sender, TappedEventArgs e)
-    {
-        CopyIconButton_Clicked(sender, e);
     }
 
 }

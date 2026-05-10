@@ -26,7 +26,7 @@ public static class MauiProgram
             handlers.AddHandler(typeof(TabNavigatingEditor), typeof(MacEditorHandler));
 #endif
             handlers.AddHandler(typeof(CommandEntry), typeof(CommandEntryHandler));
-#if MACCATALYST || WINDOWS
+#if MACCATALYST
             handlers.AddHandler(typeof(SearchEntry), typeof(SearchEntryHandler));
 #endif
         });
