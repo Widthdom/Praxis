@@ -6,6 +6,8 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 
 ## [Unreleased]
 
+### [1.2.0] - 2026-05-11
+
 ### Added
 - The `Command` and `Search` text inputs render their placeholder as small SVG-style icons inside the field at the left edge — a `>_` chevron + underscore for `Command`, a magnifying glass for `Search`. The icons fade out once the field has any text, mirroring how the literal placeholder strings used to disappear, and use a muted gray (`Light=#A0A0A0, Dark=#7C7C7C`) so they read as a hint rather than a visible control
 - Windows: a custom 30 px title bar with three subtle caption buttons (minimize / maximize-restore / close) replaces the OS-managed title bar chrome. `Microsoft.UI.Xaml.Window.ExtendsContentIntoTitleBar = true` (the canonical WinUI 3 XAML Window property — the `AppWindow.TitleBar.ExtendsContentIntoTitleBar` property left the OS title bar in place under MAUI's WinUI host) combined with `OverlappedPresenter.SetBorderAndTitleBar(hasBorder: true, hasTitleBar: false)` hides both the OS title bar and the system caption buttons while keeping the resize border and Windows 11 rounded corners. `Microsoft.UI.Xaml.Window.SystemBackdrop = null` disables MAUI's default `MicaBackdrop` so the page background (`Light=#F2F2F2 / Dark=#161616` matching `Resources/Styles/Colors.xaml`) fills the entire window with no Mica lavender tint. The drag region is declared via `Microsoft.UI.Input.InputNonClientPointerSource.SetRegionRects(NonClientRegionKind.Caption, ...)` covering the title bar area to the left of the caption buttons, with the rect re-declared on `WindowTitleBar.SizeChanged`, `WindowTitleBarDragRegion.SizeChanged`, `WindowCaptionButtonsStack.SizeChanged`, and `AppWindow.Changed` (`DidPresenterChange` / `DidSizeChange`) so dragging, double-click-to-maximize, snap-to-edge, and Aero Snap keep working at every window size; the buttons themselves call `OverlappedPresenter.Minimize / Maximize / Restore` and `Window.Close` so OS-native min/restore animations stay enabled even with the user's "Animate windows when minimizing and maximizing" Performance Options setting in effect. The maximize glyph swaps between `ChromeMaximize` and `ChromeRestore` (Segoe Fluent Icons) on `AppWindow.Changed`. All three buttons share the same subtle theme-aware tint (`Light=#E0E0E0 / Dark=#3A3A3A` hover, `Light=#D0D0D0 / Dark=#4A4A4A` pressed) so close does not draw the conventional destructive red. Mac Catalyst is unaffected: the title bar row is collapsed to height 0 so the OS title bar continues to own the chrome there
@@ -490,6 +492,8 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 
 ## [Unreleased]
 
+### [1.2.0] - 2026-05-11
+
 ### 追加
 - `Command` と `Search` 入力欄の placeholder を、欄内左端に配置する SVG 風アイコンに置き換え。`Command` は `>_`（chevron + underscore のターミナルプロンプト形）、`Search` はよくある虫眼鏡。文字列が入ると placeholder と同じくフェードアウトし、色は `Light=#A0A0A0, Dark=#7C7C7C` の控えめなグレーで「主張しない hint」として読ませる
 - Windows: OS タイトルバーを置き換える 30px のカスタムタイトルバー（控えめな minimize / maximize-restore / close キャプションボタン3つ）を追加。`Microsoft.UI.Xaml.Window.ExtendsContentIntoTitleBar = true`（WinUI 3 XAML 公式の API。`AppWindow.TitleBar.ExtendsContentIntoTitleBar` だと MAUI の WinUI ホスト下で OS タイトルバーが残る）と `OverlappedPresenter.SetBorderAndTitleBar(hasBorder: true, hasTitleBar: false)` の組み合わせで OS タイトルバーとシステムキャプションボタンの両方を消しつつ、リサイズ境界と Windows 11 の角丸を維持する。`Microsoft.UI.Xaml.Window.SystemBackdrop = null` で MAUI 既定の `MicaBackdrop` を無効化し、ページ背景（`Resources/Styles/Colors.xaml` の `Light=#F2F2F2 / Dark=#161616`）が Mica ラベンダー tint なしでウィンドウ全面を塗る。ドラッグ領域は `Microsoft.UI.Input.InputNonClientPointerSource.SetRegionRects(NonClientRegionKind.Caption, ...)` でキャプションボタン群より左側を OS に通知し、`WindowTitleBar.SizeChanged` / `WindowTitleBarDragRegion.SizeChanged` / `WindowCaptionButtonsStack.SizeChanged` / `AppWindow.Changed`（`DidPresenterChange` / `DidSizeChange`）で再計算する。各ボタンは `OverlappedPresenter.Minimize / Maximize / Restore` と `Window.Close` を呼ぶため、ユーザーの「パフォーマンスオプション」の「ウィンドウの最小化と最大化のアニメーション」設定が無効化されない。最大化グリフは `AppWindow.Changed` で `ChromeMaximize` ⇔ `ChromeRestore`（Segoe Fluent Icons）を切り替える。3 ボタンは同じテーマ連動 tint（`Light=#E0E0E0 / Dark=#3A3A3A` ホバー、`Light=#D0D0D0 / Dark=#4A4A4A` 押下）を共有し、close も赤系を使わない。Mac Catalyst は影響を受けない（タイトルバー行は高さ 0 に潰して OS のタイトルバーがクロムを担当する）
@@ -842,7 +846,8 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - 重複 `using` ディレクティブの削除と `using` 順序の正規化
 - `MainViewModel` と各 partial クラスに主要ライフサイクルイベントの `LogInfo` 呼び出しを追加
 
-[Unreleased]: https://github.com/Widthdom/Praxis/compare/v1.1.13...HEAD
+[Unreleased]: https://github.com/Widthdom/Praxis/compare/v1.2.0...HEAD
+[1.2.0]: https://github.com/Widthdom/Praxis/compare/v1.1.13...v1.2.0
 [1.1.13]: https://github.com/Widthdom/Praxis/compare/v1.1.12...v1.1.13
 [1.1.12]: https://github.com/Widthdom/Praxis/compare/v1.1.11...v1.1.12
 [1.1.11]: https://github.com/Widthdom/Praxis/compare/v1.1.10...v1.1.11
