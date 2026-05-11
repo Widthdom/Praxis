@@ -443,6 +443,32 @@ public partial class App : Application
     [System.Runtime.InteropServices.DllImport("dwmapi.dll")]
     private static extern int DwmSetWindowAttribute(IntPtr hwnd, int attr, ref int attrValue, int attrSize);
 
+    [System.Runtime.InteropServices.DllImport("comctl32.dll", SetLastError = true)]
+    private static extern bool SetWindowSubclass(IntPtr hWnd, EraseBkgndSubclassProcDelegate pfnSubclass, UIntPtr uIdSubclass, IntPtr dwRefData);
+
+    [System.Runtime.InteropServices.DllImport("comctl32.dll")]
+    private static extern IntPtr DefSubclassProc(IntPtr hWnd, uint uMsg, IntPtr wParam, IntPtr lParam);
+
+    [System.Runtime.InteropServices.DllImport("user32.dll")]
+    private static extern int FillRect(IntPtr hDC, ref RECT lprc, IntPtr hbr);
+
+    [System.Runtime.InteropServices.DllImport("user32.dll")]
+    private static extern bool GetClientRect(IntPtr hWnd, out RECT lpRect);
+
+    [System.Runtime.InteropServices.DllImport("gdi32.dll")]
+    private static extern bool DeleteObject(IntPtr hObject);
+
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
+    private struct RECT
+    {
+        public int Left;
+        public int Top;
+        public int Right;
+        public int Bottom;
+    }
+
+    private delegate IntPtr EraseBkgndSubclassProcDelegate(IntPtr hWnd, uint uMsg, IntPtr wParam, IntPtr lParam, UIntPtr uIdSubclass, IntPtr dwRefData);
+
     private const int GCLP_HBRBACKGROUND = -10;
     private const int DWMWA_USE_IMMERSIVE_DARK_MODE = 20;
     private const int DWMWA_BORDER_COLOR = 34;
@@ -452,6 +478,7 @@ public partial class App : Application
     private const uint SWP_NOZORDER = 0x0004;
     private const uint SWP_NOACTIVATE = 0x0010;
     private const uint SWP_FRAMECHANGED = 0x0020;
+    private const uint WM_ERASEBKGND = 0x0014;
 
     // Single entry point for every theme-dependent Win32/DWM/WinUI chrome attribute. Called once at startup from Window.HandlerChanged, and again whenever MAUI's effective theme changes (RequestedThemeChanged fires for both OS theme changes and user-driven UserAppTheme toggles).
     internal static void ApplyWindowsThemeChrome(Microsoft.UI.Xaml.Window nativeWindow)
@@ -461,6 +488,84 @@ public partial class App : Application
         ApplyWindowsRootContentBackground(nativeWindow, isDark);
         ApplyWindowsClassBackgroundBrush(nativeWindow, isDark);
         ApplyWindowsDwmColors(nativeWindow, isDark);
+        UpdateEraseBkgndBrush(isDark);
+        InstallEraseBkgndSubclass(nativeWindow);
+    }
+
+    // Keep delegate, brush handle, and subclassed HWND set alive at static scope. The SubclassProc runs on the OS message pump for the lifetime of the HWND, so the marshalled thunk must not be GC'd; the brush must not be deleted while the subclass is still installed.
+    private static EraseBkgndSubclassProcDelegate? eraseBkgndSubclassDelegate;
+    private static IntPtr eraseBkgndBrush = IntPtr.Zero;
+    private static uint eraseBkgndBrushColor;
+    private static readonly UIntPtr EraseBkgndSubclassId = unchecked((UIntPtr)0xE7A5EBC0u);
+    private static readonly System.Collections.Generic.HashSet<IntPtr> eraseBkgndSubclassedHwnds = new();
+
+    private static void UpdateEraseBkgndBrush(bool isDark)
+    {
+        // The class brush set via SetClassLongPtrW does not always get used by the OS during the brief window between a Win32 resize and WinUI's next swapchain present — the OS fills the freshly-exposed client strip with a white default. Owning the WM_ERASEBKGND path with our own FillRect closes that gap. Recreate the brush whenever the color changes (theme toggle); the old brush is GDI-leaked otherwise.
+        var newColor = isDark ? 0x00161616u : 0x00F2F2F2u;
+        if (eraseBkgndBrush != IntPtr.Zero && newColor == eraseBkgndBrushColor)
+        {
+            return;
+        }
+        var newBrush = CreateSolidBrush(newColor);
+        if (newBrush == IntPtr.Zero)
+        {
+            CrashFileLogger.WriteWarning(nameof(UpdateEraseBkgndBrush), $"CreateSolidBrush returned NULL for 0x{newColor:X6}");
+            return;
+        }
+        var oldBrush = eraseBkgndBrush;
+        eraseBkgndBrush = newBrush;
+        eraseBkgndBrushColor = newColor;
+        if (oldBrush != IntPtr.Zero)
+        {
+            DeleteObject(oldBrush);
+        }
+    }
+
+    private static void InstallEraseBkgndSubclass(Microsoft.UI.Xaml.Window nativeWindow)
+    {
+        try
+        {
+            var windowId = nativeWindow.AppWindow?.Id;
+            if (windowId is null)
+            {
+                return;
+            }
+            var hwnd = Microsoft.UI.Win32Interop.GetWindowFromWindowId(windowId.Value);
+            if (hwnd == IntPtr.Zero || eraseBkgndSubclassedHwnds.Contains(hwnd))
+            {
+                return;
+            }
+            eraseBkgndSubclassDelegate ??= EraseBkgndSubclassProc;
+            if (SetWindowSubclass(hwnd, eraseBkgndSubclassDelegate, EraseBkgndSubclassId, IntPtr.Zero))
+            {
+                eraseBkgndSubclassedHwnds.Add(hwnd);
+            }
+            else
+            {
+                var err = System.Runtime.InteropServices.Marshal.GetLastWin32Error();
+                CrashFileLogger.WriteWarning(nameof(InstallEraseBkgndSubclass), $"SetWindowSubclass failed: Win32Error={err}");
+            }
+        }
+        catch (Exception ex)
+        {
+            CrashFileLogger.WriteWarning(nameof(InstallEraseBkgndSubclass), $"Failed: {CrashFileLogger.SafeExceptionMessage(ex)}");
+        }
+    }
+
+    private static IntPtr EraseBkgndSubclassProc(IntPtr hWnd, uint uMsg, IntPtr wParam, IntPtr lParam, UIntPtr uIdSubclass, IntPtr dwRefData)
+    {
+        // Only intercept WM_ERASEBKGND. Everything else passes through to DefSubclassProc so we don't disturb NC painting, hit-testing, rounded corners, resize borders, or anything else WinUI / the OS rely on.
+        if (uMsg == WM_ERASEBKGND && eraseBkgndBrush != IntPtr.Zero)
+        {
+            if (GetClientRect(hWnd, out var rc))
+            {
+                FillRect(wParam, ref rc, eraseBkgndBrush);
+            }
+            // Returning non-zero tells the OS the background has already been erased — DefWindowProc will not re-fill the area with the class brush (which on WinUI 3 windows tends to be white regardless of GCLP_HBRBACKGROUND overrides).
+            return (IntPtr)1;
+        }
+        return DefSubclassProc(hWnd, uMsg, wParam, lParam);
     }
 
     private static bool ResolveWindowsAppThemeIsDark()
