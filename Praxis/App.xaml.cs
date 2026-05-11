@@ -180,7 +180,7 @@ public partial class App : Application
                                 el.InvalidateMeasure();
                             }
                         };
-                        // Diagnostic logs showed the drag region's TransformToVisual returns (0,0) at startup but jumps to (0,32) after the user manually resizes the window — i.e., the visible caption-buttons row only matches the declared Caption region after the layout has had one full resize cycle to settle. Trigger that cycle programmatically via a 1-pixel resize-and-restore right after activation, so the "drag works" state is reached before the user touches anything.
+                        // Even though the drag region's TransformToVisual ends up at (0,32) (matching the visible caption-buttons row), the OS does NOT honour the InputNonClientPointerSource.SetRegionRects call until something forces it to re-evaluate the window's non-client area. The user's report is the smoking gun: clicking a caption button (which triggers OverlappedPresenter.Maximize/Restore — a presenter-level state change) causes Windows to re-run NC hit-testing, and from that point on drag works. A programmatic 1-pixel AppWindow.Resize doesn't reproduce that effect because it only updates the size, not the frame. Win32 SetWindowPos with SWP_FRAMECHANGED is the canonical way to force the OS to recompute NC areas (it synthesises WM_NCCALCSIZE), which is exactly what gets the SetRegionRects declaration to take effect.
                         nativeWindow.DispatcherQueue.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Low, () =>
                         {
                             try
@@ -190,6 +190,15 @@ public partial class App : Application
                                     var size = aw.Size;
                                     aw.Resize(new global::Windows.Graphics.SizeInt32(size.Width + 1, size.Height));
                                     aw.Resize(size);
+
+                                    // Force the OS to re-run NC hit-testing so the InputNonClientPointerSource.SetRegionRects Caption declaration becomes effective without requiring the user to click a caption button first.
+                                    var hwnd = Microsoft.UI.Win32Interop.GetWindowFromWindowId(aw.Id);
+                                    if (hwnd != IntPtr.Zero)
+                                    {
+                                        SetWindowPos(hwnd, IntPtr.Zero, 0, 0, 0, 0,
+                                            SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED);
+                                        CrashFileLogger.WriteInfo("Window.HandlerChanged", $"SWP_FRAMECHANGED issued on HWND 0x{hwnd.ToInt64():X} to commit Caption rects");
+                                    }
                                 }
                             }
                             catch (Exception nudgeEx)
@@ -275,6 +284,19 @@ public partial class App : Application
             TrySetField(type, element, "_useCustomAppTitleBar", false);
             TrySetField(type, element, "_titleBar", null);
 
+            // The ~32 px phantom row above our visible caption-buttons row originates inside MAUI's RootNavigationView template, NOT in WindowRootView itself. A visual-tree dump showed that when `ExtendsContentIntoTitleBar = true`, WinUI's NavigationView template stamps `Margin="32,0,0,0"` onto the named ContentGrid template part. The public `NavigationView.IsTitleBarAutoPaddingEnabled` property is supposed to gate this, but on the current Windows App SDK it reads false by default yet the margin still gets applied — so we directly find the ContentGrid template part and force its Margin to zero on every measure pass. Re-applied (not one-shot) because the template re-stamps the margin during layout.
+            if (element is Microsoft.UI.Xaml.DependencyObject navRoot)
+            {
+                try
+                {
+                    ForceNavigationViewContentGridMarginZero(navRoot, depth: 0);
+                }
+                catch (Exception ex)
+                {
+                    CrashFileLogger.WriteWarning("NavView.ContentGrid", $"Walk failed: {CrashFileLogger.SafeExceptionMessage(ex)}");
+                }
+            }
+
             if (element is Microsoft.UI.Xaml.UIElement uiEl)
             {
                 uiEl.InvalidateMeasure();
@@ -292,22 +314,97 @@ public partial class App : Application
         }
     }
 
+    private static bool navigationViewContentGridLogged;
+    private static System.Runtime.CompilerServices.ConditionalWeakTable<Microsoft.UI.Xaml.FrameworkElement, object> contentGridGuards = new();
+
+    private static void AttachContentGridMarginGuard(Microsoft.UI.Xaml.FrameworkElement contentGrid)
+    {
+        // ConditionalWeakTable keyed by the element itself dedupes attach calls without leaking memory if the visual tree is rebuilt — each ContentGrid only gets one LayoutUpdated handler attached.
+        if (contentGridGuards.TryGetValue(contentGrid, out _))
+        {
+            return;
+        }
+        var sentinel = new object();
+        contentGridGuards.Add(contentGrid, sentinel);
+
+        contentGrid.LayoutUpdated += (_, _) =>
+        {
+            try
+            {
+                var m = contentGrid.Margin;
+                if (m.Top != 0 || m.Left != 0 || m.Right != 0 || m.Bottom != 0)
+                {
+                    contentGrid.Margin = new Microsoft.UI.Xaml.Thickness(0);
+                }
+            }
+            catch (Exception ex)
+            {
+                CrashFileLogger.WriteWarning("NavView.ContentGrid", $"LayoutUpdated guard failed: {CrashFileLogger.SafeExceptionMessage(ex)}");
+            }
+        };
+        CrashFileLogger.WriteInfo("NavView.ContentGrid", $"LayoutUpdated guard attached on {contentGrid.GetType().FullName}");
+    }
+
+    private static int ForceNavigationViewContentGridMarginZero(Microsoft.UI.Xaml.DependencyObject? node, int depth)
+    {
+        if (node is null || depth > 14)
+        {
+            return 0;
+        }
+
+        if (node is Microsoft.UI.Xaml.Controls.NavigationView navView)
+        {
+            try
+            {
+                // Belt-and-suspenders: also flip the public gate. Logs from a previous run showed this property is already false by default on the active SDK, but if a future build changes the default we still want it off.
+                if (navView.IsTitleBarAutoPaddingEnabled)
+                {
+                    navView.IsTitleBarAutoPaddingEnabled = false;
+                    CrashFileLogger.WriteInfo("NavView.Padding", $"IsTitleBarAutoPaddingEnabled false on {navView.GetType().FullName}");
+                }
+            }
+            catch (Exception ex)
+            {
+                CrashFileLogger.WriteWarning("NavView.Padding", $"Set failed: {CrashFileLogger.SafeExceptionMessage(ex)}");
+            }
+        }
+
+        if (node is Microsoft.UI.Xaml.FrameworkElement fe && fe.Name == "ContentGrid")
+        {
+            var m = fe.Margin;
+            if (m.Top != 0 || m.Left != 0 || m.Right != 0 || m.Bottom != 0)
+            {
+                if (!navigationViewContentGridLogged)
+                {
+                    navigationViewContentGridLogged = true;
+                    CrashFileLogger.WriteInfo("NavView.ContentGrid", $"Forcing Margin {m.Top:0}/{m.Left:0}/{m.Right:0}/{m.Bottom:0} → 0/0/0/0 (type={fe.GetType().FullName})");
+                }
+                fe.Margin = new Microsoft.UI.Xaml.Thickness(0);
+            }
+            // Attach a persistent guard the first time we encounter ContentGrid. Window resize triggers a NavigationView measure pass that re-stamps Margin="32,0,0,0" AFTER our SizeChanged null-out runs, so the one-shot or per-SizeChanged approach races with the template. LayoutUpdated fires on every layout cycle, so the guard catches the template's re-stamp and zeroes it back immediately — no race window where the phantom row reappears.
+            AttachContentGridMarginGuard(fe);
+            return 1;
+        }
+
+        var n = Microsoft.UI.Xaml.Media.VisualTreeHelper.GetChildrenCount(node);
+        var hits = 0;
+        for (var i = 0; i < n; i++)
+        {
+            hits += ForceNavigationViewContentGridMarginZero(Microsoft.UI.Xaml.Media.VisualTreeHelper.GetChild(node, i), depth + 1);
+        }
+        return hits;
+    }
+
     private static void TrySetProperty(Type type, object instance, string name, object? value)
     {
         try
         {
             var prop = type.GetProperty(name, System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            if (prop is null)
+            if (prop is null || !prop.CanWrite)
             {
-                return;
-            }
-            if (!prop.CanWrite)
-            {
-                CrashFileLogger.WriteInfo("WRV.Set", $"{name} not writable");
                 return;
             }
             prop.SetValue(instance, value);
-            CrashFileLogger.WriteInfo("WRV.Set", $"{name}={value ?? "null"}");
         }
         catch (Exception ex)
         {
@@ -325,7 +422,6 @@ public partial class App : Application
                 return;
             }
             field.SetValue(instance, value);
-            CrashFileLogger.WriteInfo("WRV.Set", $"{name}={value ?? "null"}");
         }
         catch (Exception ex)
         {
@@ -345,9 +441,17 @@ public partial class App : Application
     [System.Runtime.InteropServices.DllImport("dwmapi.dll")]
     private static extern int DwmSetWindowAttribute(IntPtr hwnd, int attr, ref uint attrValue, int attrSize);
 
+    [System.Runtime.InteropServices.DllImport("user32.dll", SetLastError = true)]
+    private static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter, int X, int Y, int cx, int cy, uint uFlags);
+
     private const int GCLP_HBRBACKGROUND = -10;
     private const int DWMWA_BORDER_COLOR = 34;
     private const int DWMWA_CAPTION_COLOR = 35;
+    private const uint SWP_NOMOVE = 0x0002;
+    private const uint SWP_NOSIZE = 0x0001;
+    private const uint SWP_NOZORDER = 0x0004;
+    private const uint SWP_NOACTIVATE = 0x0010;
+    private const uint SWP_FRAMECHANGED = 0x0020;
 
     private static void ApplyWindowsDwmColors(Microsoft.UI.Xaml.Window nativeWindow)
     {
@@ -415,103 +519,10 @@ public partial class App : Application
 
     private static void CollapseWindowsTitleBarReserveRow(Microsoft.UI.Xaml.Window nativeWindow)
     {
+        // The actual phantom-row fix lives one level deeper inside Microsoft.Maui.Platform.WindowRootView (a descendant of WindowRootViewContainer). Recursively walk the visual tree from Window.Content and null-out the title-bar fields on every WindowRootView we find; ForceNavigationViewContentGridMarginZero in TryNullAppTitleBarRecursive handles the actual margin override.
         try
         {
-            // MAUI's WindowRootViewContainer is a custom internal Panel whose MeasureOverride reserves an AppTitleBar slot at the top before sizing the page content. The exact member name has changed across MAUI versions — enumerate properties and fields so we can null out whatever holds the title-bar element.
-            var content = nativeWindow.Content;
-            if (content is null)
-            {
-                CrashFileLogger.WriteInfo(nameof(CollapseWindowsTitleBarReserveRow), "Window.Content is null");
-                return;
-            }
-
-            var contentType = content.GetType();
-            if (contentType.FullName != "Microsoft.Maui.Platform.WindowRootViewContainer")
-            {
-                CrashFileLogger.WriteInfo(nameof(CollapseWindowsTitleBarReserveRow), $"Window.Content is not WindowRootViewContainer; type={contentType.FullName}");
-                return;
-            }
-
-            const System.Reflection.BindingFlags allInstance = System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance;
-
-            // Diagnostic: log every property and field so we can identify the right name once and for all.
-            var properties = new System.Text.StringBuilder();
-            foreach (var p in contentType.GetProperties(allInstance))
-            {
-                properties.Append($"{p.Name}:{p.PropertyType.Name}(r={p.CanRead}w={p.CanWrite}) ");
-            }
-            CrashFileLogger.WriteInfo("WRVC.Properties", properties.ToString());
-
-            var fields = new System.Text.StringBuilder();
-            foreach (var f in contentType.GetFields(allInstance))
-            {
-                fields.Append($"{f.Name}:{f.FieldType.Name} ");
-            }
-            CrashFileLogger.WriteInfo("WRVC.Fields", fields.ToString());
-
-            // Try the documented candidate names; first one that's writable wins.
-            var candidateProperties = new[] { "AppTitleBar", "TitleBar", "AppTitleBarContainer", "TitleBarContainer" };
-            foreach (var name in candidateProperties)
-            {
-                var prop = contentType.GetProperty(name, allInstance);
-                if (prop?.CanWrite == true)
-                {
-                    var hadValue = prop.GetValue(content) is not null;
-                    prop.SetValue(content, null);
-                    CrashFileLogger.WriteInfo(nameof(CollapseWindowsTitleBarReserveRow), $"{name}=null (hadValue={hadValue})");
-                    return;
-                }
-            }
-
-            var candidateFields = new[] { "_titleBar", "_appTitleBar", "_titleBarContainer", "_appTitleBarContainer" };
-            foreach (var name in candidateFields)
-            {
-                var field = contentType.GetField(name, allInstance);
-                if (field is not null)
-                {
-                    var hadValue = field.GetValue(content) is not null;
-                    field.SetValue(content, null);
-                    if (content is Microsoft.UI.Xaml.UIElement uiContent)
-                    {
-                        uiContent.InvalidateMeasure();
-                    }
-                    CrashFileLogger.WriteInfo(nameof(CollapseWindowsTitleBarReserveRow), $"{name}=null (hadValue={hadValue})");
-                    return;
-                }
-            }
-
-            // The actual title-bar slot lives one level deeper, in Microsoft.Maui.Platform.WindowRootView (Children[0] of WindowRootViewContainer). Recursively walk the visual tree and null out any AppTitleBar / TitleBar property we find on the way.
-            TryNullAppTitleBarRecursive(content, depth: 0);
-
-            // Diagnostic: dump WindowRootView's members so we can see exactly what's there.
-            if (content is Microsoft.UI.Xaml.Controls.Panel rootPanel)
-            {
-                foreach (var child in rootPanel.Children)
-                {
-                    if (child?.GetType().FullName == "Microsoft.Maui.Platform.WindowRootView")
-                    {
-                        var rvType = child.GetType();
-                        var rvProps = new System.Text.StringBuilder();
-                        foreach (var p in rvType.GetProperties(allInstance))
-                        {
-                            if (p.Name.Contains("Title", StringComparison.OrdinalIgnoreCase) || p.Name.Contains("Caption", StringComparison.OrdinalIgnoreCase))
-                            {
-                                rvProps.Append($"{p.Name}:{p.PropertyType.Name}(r={p.CanRead}w={p.CanWrite}) ");
-                            }
-                        }
-                        CrashFileLogger.WriteInfo("WRV.TitleProps", rvProps.ToString());
-                        var rvFields = new System.Text.StringBuilder();
-                        foreach (var f in rvType.GetFields(allInstance))
-                        {
-                            if (f.Name.Contains("title", StringComparison.OrdinalIgnoreCase) || f.Name.Contains("caption", StringComparison.OrdinalIgnoreCase))
-                            {
-                                rvFields.Append($"{f.Name}:{f.FieldType.Name} ");
-                            }
-                        }
-                        CrashFileLogger.WriteInfo("WRV.TitleFields", rvFields.ToString());
-                    }
-                }
-            }
+            TryNullAppTitleBarRecursive(nativeWindow.Content, depth: 0);
         }
         catch (Exception ex)
         {

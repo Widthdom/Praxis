@@ -28,6 +28,10 @@ public partial class MainPage
     private Microsoft.UI.Windowing.OverlappedPresenter? windowsOverlappedPresenter;
     private bool windowsTitleBarConfigured;
     private bool windowsTitleBarMaximized;
+    private double windowsTitleBarDragRegionLastOriginX = double.NaN;
+    private double windowsTitleBarDragRegionLastOriginY = double.NaN;
+    private int windowsTitleBarDragRegionLastWidthPx = -1;
+    private int windowsTitleBarDragRegionLastHeightPx = -1;
 
     private enum WindowsModalActionFocusTarget
     {
