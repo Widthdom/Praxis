@@ -98,6 +98,12 @@ public partial class MainPage : ContentPage
                 ApplyConflictActionButtonFocusVisuals();
                 ApplyModalEditorThemeTextColors();
                 RebuildCommandSuggestionStack();
+#if WINDOWS
+                if (windowsNativeWindow is not null)
+                {
+                    App.ApplyWindowsThemeChrome(windowsNativeWindow);
+                }
+#endif
 #if MACCATALYST
                 ApplyMacVisualTuning();
                 ApplyMacNoteEditorVisualState();

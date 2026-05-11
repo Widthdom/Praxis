@@ -161,12 +161,8 @@ public partial class App : Application
                             presenterKind = $"OverlappedPresenter(HasTitleBar={presenter.HasTitleBar}, HasBorder={presenter.HasBorder})";
                         }
 
-                        // During a window resize the WinUI layout pass lags behind the native HWND geometry, so the OS-painted client area shows pure white where MAUI's content has not yet stretched to the new edge. Painting the WinUI Window's root content panel with the theme's page colour eliminates that "stretching gap" — the new strip is filled with the matching gray instead of white.
-                        ApplyWindowsRootContentBackground(nativeWindow);
-                        // The XAML brush only covers the WinUI client area; when the user drags the right or bottom resize border outward, the OS extends the HWND first and paints the new client edge with the window class's background brush before WinUI gets a chance to render. The default class brush is white. Win32 SetClassLongPtrW lets us swap it for a brush matching the page background — minimal Win32 surface (no acrylic, no NC paint hooks) and the only way to eliminate the right/bottom resize flash.
-                        ApplyWindowsClassBackgroundBrush(nativeWindow);
-                        // DWM also paints the resize-border / caption strip directly during compositor-managed resizes. Tell it our page colour so the right/bottom drag lookup matches the rest of the window.
-                        ApplyWindowsDwmColors(nativeWindow);
+                        // Apply every theme-dependent Windows chrome attribute (WinUI root background, Win32 window-class brush, DWM border/caption colors, and DWMWA_USE_IMMERSIVE_DARK_MODE). One entry point so subsequent re-application on theme change stays in sync.
+                        ApplyWindowsThemeChrome(nativeWindow);
 
                         // MAUI's WindowRootViewContainer has Row 0 reserved (~32px Auto) for an AppTitleBar and Row 1 for the page content. The reserve is kept even when no MAUI TitleBar is set, so MainPage's row 0 is pushed down 32px and the OS treats that phantom strip above as default drag area. Collapse Row 0 to 0 so MainPage starts flush against the top of the window and our InputNonClientPointerSource Caption region (computed from the visible WindowTitleBarDragRegion's TransformToVisual) lands on the visually rendered title bar row.
                         CollapseWindowsTitleBarReserveRow(nativeWindow);
@@ -444,7 +440,11 @@ public partial class App : Application
     [System.Runtime.InteropServices.DllImport("user32.dll", SetLastError = true)]
     private static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter, int X, int Y, int cx, int cy, uint uFlags);
 
+    [System.Runtime.InteropServices.DllImport("dwmapi.dll")]
+    private static extern int DwmSetWindowAttribute(IntPtr hwnd, int attr, ref int attrValue, int attrSize);
+
     private const int GCLP_HBRBACKGROUND = -10;
+    private const int DWMWA_USE_IMMERSIVE_DARK_MODE = 20;
     private const int DWMWA_BORDER_COLOR = 34;
     private const int DWMWA_CAPTION_COLOR = 35;
     private const uint SWP_NOMOVE = 0x0002;
@@ -453,7 +453,64 @@ public partial class App : Application
     private const uint SWP_NOACTIVATE = 0x0010;
     private const uint SWP_FRAMECHANGED = 0x0020;
 
-    private static void ApplyWindowsDwmColors(Microsoft.UI.Xaml.Window nativeWindow)
+    // Single entry point for every theme-dependent Win32/DWM/WinUI chrome attribute. Called once at startup from Window.HandlerChanged, and again whenever MAUI's effective theme changes (RequestedThemeChanged fires for both OS theme changes and user-driven UserAppTheme toggles).
+    internal static void ApplyWindowsThemeChrome(Microsoft.UI.Xaml.Window nativeWindow)
+    {
+        var isDark = ResolveWindowsAppThemeIsDark();
+        ApplyWindowsImmersiveDarkMode(nativeWindow, isDark);
+        ApplyWindowsRootContentBackground(nativeWindow, isDark);
+        ApplyWindowsClassBackgroundBrush(nativeWindow, isDark);
+        ApplyWindowsDwmColors(nativeWindow, isDark);
+    }
+
+    private static bool ResolveWindowsAppThemeIsDark()
+    {
+        // Resolve the *effective* app theme: an explicit UserAppTheme override wins, otherwise fall back to the OS RequestedTheme. Reading WinUI's Microsoft.UI.Xaml.Application.RequestedTheme (which mirrors the OS) bypasses any Ctrl+Shift+L/D/H override the user has made, so we must consult MAUI's Application.UserAppTheme first.
+        try
+        {
+            var maui = Microsoft.Maui.Controls.Application.Current;
+            if (maui is not null)
+            {
+                if (maui.UserAppTheme != AppTheme.Unspecified)
+                {
+                    return maui.UserAppTheme == AppTheme.Dark;
+                }
+                return maui.RequestedTheme == AppTheme.Dark;
+            }
+        }
+        catch
+        {
+            // Fall through to the WinUI-side oracle below.
+        }
+        return Microsoft.UI.Xaml.Application.Current?.RequestedTheme == Microsoft.UI.Xaml.ApplicationTheme.Dark;
+    }
+
+    private static void ApplyWindowsImmersiveDarkMode(Microsoft.UI.Xaml.Window nativeWindow, bool isDark)
+    {
+        try
+        {
+            var windowId = nativeWindow.AppWindow?.Id;
+            if (windowId is null)
+            {
+                return;
+            }
+            var hwnd = Microsoft.UI.Win32Interop.GetWindowFromWindowId(windowId.Value);
+            if (hwnd == IntPtr.Zero)
+            {
+                return;
+            }
+
+            // The Win11 DWM draws the ~1 px outer border around the window. Without DWMWA_USE_IMMERSIVE_DARK_MODE the OS treats the window as a Light-mode app and paints that border in a near-white tone, which is the visible "white outline" around a dark-themed Praxis window. Setting the attribute to TRUE flips DWM to its Dark-mode chrome (dark outer border + dark inactive title-bar simulacrum). Documented since Windows 10 build 18985 (BOOL = int).
+            var value = isDark ? 1 : 0;
+            DwmSetWindowAttribute(hwnd, DWMWA_USE_IMMERSIVE_DARK_MODE, ref value, sizeof(int));
+        }
+        catch (Exception ex)
+        {
+            CrashFileLogger.WriteWarning(nameof(ApplyWindowsImmersiveDarkMode), $"Failed: {CrashFileLogger.SafeExceptionMessage(ex)}");
+        }
+    }
+
+    private static void ApplyWindowsDwmColors(Microsoft.UI.Xaml.Window nativeWindow, bool isDark)
     {
         try
         {
@@ -469,11 +526,9 @@ public partial class App : Application
             }
 
             // DWM uses these attributes to paint the resize border + (logical) caption strip during compositor-managed resizes. Painting them with the page background colour stops the white flash that appears when the user grabs the right or bottom resize handle. Format is COLORREF (0x00BBGGRR).
-            var dark = Microsoft.UI.Xaml.Application.Current?.RequestedTheme == Microsoft.UI.Xaml.ApplicationTheme.Dark;
-            var color = dark ? 0x00161616u : 0x00F2F2F2u;
+            var color = isDark ? 0x00161616u : 0x00F2F2F2u;
             DwmSetWindowAttribute(hwnd, DWMWA_BORDER_COLOR, ref color, sizeof(uint));
             DwmSetWindowAttribute(hwnd, DWMWA_CAPTION_COLOR, ref color, sizeof(uint));
-            CrashFileLogger.WriteInfo(nameof(ApplyWindowsDwmColors), $"DWM border+caption color set to 0x{color:X6}");
         }
         catch (Exception ex)
         {
@@ -481,7 +536,7 @@ public partial class App : Application
         }
     }
 
-    private static void ApplyWindowsClassBackgroundBrush(Microsoft.UI.Xaml.Window nativeWindow)
+    private static void ApplyWindowsClassBackgroundBrush(Microsoft.UI.Xaml.Window nativeWindow, bool isDark)
     {
         try
         {
@@ -498,8 +553,7 @@ public partial class App : Application
             }
 
             // SetClassLongPtrW expects COLORREF (0x00BBGGRR). Mirror the page idle background from Resources/Styles/Colors.xaml.
-            var dark = Microsoft.UI.Xaml.Application.Current?.RequestedTheme == Microsoft.UI.Xaml.ApplicationTheme.Dark;
-            var colorRef = dark ? 0x00161616u : 0x00F2F2F2u;
+            var colorRef = isDark ? 0x00161616u : 0x00F2F2F2u;
             var brush = CreateSolidBrush(colorRef);
             if (brush == IntPtr.Zero)
             {
@@ -507,9 +561,8 @@ public partial class App : Application
                 return;
             }
 
-            var previous = SetClassLongPtrW(hwnd, GCLP_HBRBACKGROUND, brush);
+            SetClassLongPtrW(hwnd, GCLP_HBRBACKGROUND, brush);
             InvalidateRect(hwnd, IntPtr.Zero, true);
-            CrashFileLogger.WriteInfo(nameof(ApplyWindowsClassBackgroundBrush), $"GCLP_HBRBACKGROUND set: previous=0x{previous.ToInt64():X} new=0x{brush.ToInt64():X} colorRef=0x{colorRef:X6}");
         }
         catch (Exception ex)
         {
@@ -530,13 +583,12 @@ public partial class App : Application
         }
     }
 
-    private static void ApplyWindowsRootContentBackground(Microsoft.UI.Xaml.Window nativeWindow)
+    private static void ApplyWindowsRootContentBackground(Microsoft.UI.Xaml.Window nativeWindow, bool isDark)
     {
         try
         {
-            // Match the page idle background from Resources/Styles/Colors.xaml (`Light=#F2F2F2 / Dark=#161616`). Using the OS RequestedTheme as the theme oracle means the background tracks the OS even before MAUI's app theme has loaded.
-            var dark = Microsoft.UI.Xaml.Application.Current?.RequestedTheme == Microsoft.UI.Xaml.ApplicationTheme.Dark;
-            var bg = dark
+            // Match the page idle background from Resources/Styles/Colors.xaml (`Light=#F2F2F2 / Dark=#161616`). The effective theme oracle is resolved by ApplyWindowsThemeChrome's caller (UserAppTheme override wins over OS RequestedTheme).
+            var bg = isDark
                 ? global::Windows.UI.Color.FromArgb(255, 0x16, 0x16, 0x16)
                 : global::Windows.UI.Color.FromArgb(255, 0xF2, 0xF2, 0xF2);
             var brush = new Microsoft.UI.Xaml.Media.SolidColorBrush(bg);
