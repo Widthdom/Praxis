@@ -52,6 +52,9 @@ public partial class MainPage
         WindowTitleBar.SizeChanged += (_, _) => UpdateWindowsTitleBarDragRegion();
         WindowTitleBarDragRegion.SizeChanged += (_, _) => UpdateWindowsTitleBarDragRegion();
         WindowCaptionButtonsStack.SizeChanged += (_, _) => UpdateWindowsTitleBarDragRegion();
+        // `SizeChanged` only fires when the rect's width/height changes. It does NOT fire when only the y-offset shifts because an ancestor's Margin / layout changed. That mismatch is exactly what produced "drag works only after manual resize": App.xaml.cs forces the NavigationView ContentGrid Margin to zero, but `WindowTitleBarDragRegion.TransformToVisual` takes another layout cycle to follow, and SizeChanged never re-fires because the size stays the same. Hook the native `Microsoft.UI.Xaml.UIElement.LayoutUpdated` event on the drag region's platform view via `HandlerChanged` so any post-measure offset shift re-declares the Caption region. LayoutUpdated fires frequently, so `UpdateWindowsTitleBarDragRegion` guards itself with the last-known origin and only re-issues `SetRegionRects` when the position actually moved.
+        WindowTitleBarDragRegion.HandlerChanged += (_, _) => AttachWindowsTitleBarLayoutUpdated();
+        AttachWindowsTitleBarLayoutUpdated();
         UpdateWindowsTitleBarDragRegion();
 
         if (windowsAppWindow is not null)
@@ -218,6 +221,23 @@ public partial class MainPage
         }
     }
 
+    private void AttachWindowsTitleBarLayoutUpdated()
+    {
+        if (WindowTitleBarDragRegion.Handler?.PlatformView is not Microsoft.UI.Xaml.FrameworkElement dragElement)
+        {
+            return;
+        }
+
+        // FrameworkElement.LayoutUpdated is a singleton per element — re-registering is safe (same delegate target replaces the previous subscription via -=/+= pair).
+        dragElement.LayoutUpdated -= OnWindowsTitleBarDragRegionLayoutUpdated;
+        dragElement.LayoutUpdated += OnWindowsTitleBarDragRegionLayoutUpdated;
+    }
+
+    private void OnWindowsTitleBarDragRegionLayoutUpdated(object? sender, object e)
+    {
+        UpdateWindowsTitleBarDragRegion();
+    }
+
     private void UpdateWindowsTitleBarDragRegion()
     {
         try
@@ -254,7 +274,19 @@ public partial class MainPage
 
             var dragWidthPx = (int)Math.Round(width * scale);
             var dragHeightPx = (int)Math.Round(height * scale);
-            CrashFileLogger.WriteInfo(nameof(MainPage), $"[DragRegion] scale={scale:0.##} elementOrigin=({topLeft.X:0},{topLeft.Y:0}) size=({width:0}x{height:0}) → rectPx=({(int)Math.Round(topLeft.X * scale)},{(int)Math.Round(topLeft.Y * scale)},{dragWidthPx},{dragHeightPx})");
+
+            // LayoutUpdated fires constantly during normal operation (focus moves, animations, etc). Bail out when the rect we would declare matches the last successful declaration — otherwise we burn cycles + flood the crash log with redundant lines.
+            if (Math.Abs(topLeft.X - windowsTitleBarDragRegionLastOriginX) < 0.5
+                && Math.Abs(topLeft.Y - windowsTitleBarDragRegionLastOriginY) < 0.5
+                && dragWidthPx == windowsTitleBarDragRegionLastWidthPx
+                && dragHeightPx == windowsTitleBarDragRegionLastHeightPx)
+            {
+                return;
+            }
+            windowsTitleBarDragRegionLastOriginX = topLeft.X;
+            windowsTitleBarDragRegionLastOriginY = topLeft.Y;
+            windowsTitleBarDragRegionLastWidthPx = dragWidthPx;
+            windowsTitleBarDragRegionLastHeightPx = dragHeightPx;
 
             var ncSource = Microsoft.UI.Input.InputNonClientPointerSource.GetForWindowId(windowsAppWindow.Id);
             if (dragWidthPx <= 0 || dragHeightPx <= 0)
