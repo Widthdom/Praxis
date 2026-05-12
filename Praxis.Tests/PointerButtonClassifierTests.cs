@@ -31,7 +31,7 @@ public class PointerButtonClassifierTests
     [Fact]
     public void IsMiddle_DetectsMiddleButtonMaskBits()
     {
-        // 0x4 / 0x8 / 0x10 are the middle/other-mouse bits in the MainPage classifier.
+        // 0x4 / 0x8 / 0x10 are middle/other-mouse bits seen in native pointer payloads.
         Assert.True(PointerButtonClassifier.IsMiddle(new FakePlatformArgs { ButtonMask = 0x4UL }));
         Assert.True(PointerButtonClassifier.IsMiddle(new FakePlatformArgs { ButtonMask = 0x8UL }));
         Assert.True(PointerButtonClassifier.IsMiddle(new FakePlatformArgs { ButtonMask = 0x10UL }));

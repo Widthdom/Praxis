@@ -1,10 +1,11 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <IsPackable>false</IsPackable>
+    <NoWarn>$(NoWarn);NETSDK1206</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
@@ -22,30 +23,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Praxis.Core\Praxis.Core.csproj" />
+    <ProjectReference Include="..\Praxis.Data\Praxis.Data.csproj" />
   </ItemGroup>
-
-  <ItemGroup>
-    <Compile Include="..\Praxis\Services\IAppRepository.cs" Link="Integration\IAppRepository.cs" />
-    <Compile Include="..\Praxis\Services\IClipboardService.cs" Link="Integration\IClipboardService.cs" />
-    <Compile Include="..\Praxis\Services\ICommandExecutor.cs" Link="Integration\ICommandExecutor.cs" />
-    <Compile Include="..\Praxis\Services\IStateSyncNotifier.cs" Link="Integration\IStateSyncNotifier.cs" />
-    <Compile Include="..\Praxis\Services\IAppConfigService.cs" Link="Integration\IAppConfigService.cs" />
-    <Compile Include="..\Praxis\Services\IErrorLogger.cs" Link="Integration\IErrorLogger.cs" />
-    <Compile Include="..\Praxis\Services\AppStoragePaths.cs" Link="Integration\AppStoragePaths.cs" />
-    <Compile Include="..\Praxis\Services\CrashFileLogger.cs" Link="Integration\CrashFileLogger.cs" />
-    <Compile Include="..\Praxis\Services\CommandExecutor.cs" Link="Integration\CommandExecutor.cs" />
-    <Compile Include="..\Praxis\Services\DbErrorLogger.cs" Link="Integration\DbErrorLogger.cs" />
-    <Compile Include="..\Praxis\Services\FileAppConfigService.cs" Link="Integration\FileAppConfigService.cs" />
-    <Compile Include="..\Praxis\Services\FileStateSyncNotifier.cs" Link="Integration\FileStateSyncNotifier.cs" />
-    <Compile Include="..\Praxis\Services\IThemeService.cs" Link="Integration\IThemeService.cs" />
-    <Compile Include="..\Praxis\Services\SecondaryFailureLogger.cs" Link="Integration\SecondaryFailureLogger.cs" />
-    <Compile Include="..\Praxis\ViewModels\ButtonEditorViewModel.cs" Link="Integration\ButtonEditorViewModel.cs" />
-    <Compile Include="..\Praxis\ViewModels\ButtonHistoryAction.cs" Link="Integration\ButtonHistoryAction.cs" />
-    <Compile Include="..\Praxis\ViewModels\CommandSuggestionItemViewModel.cs" Link="Integration\CommandSuggestionItemViewModel.cs" />
-    <Compile Include="..\Praxis\ViewModels\LauncherButtonItemViewModel.cs" Link="Integration\LauncherButtonItemViewModel.cs" />
-    <Compile Include="..\Praxis\ViewModels\MainViewModel.cs" Link="Integration\MainViewModel.cs" />
-    <Compile Include="..\Praxis\ViewModels\MainViewModel.Actions.cs" Link="Integration\MainViewModel.Actions.cs" />
-    <Compile Include="..\Praxis\ViewModels\MainViewModel.CommandSuggestions.cs" Link="Integration\MainViewModel.CommandSuggestions.cs" />
-  </ItemGroup>
-
 </Project>

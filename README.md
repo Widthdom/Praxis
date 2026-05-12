@@ -7,121 +7,62 @@
 [![Delivery](https://img.shields.io/badge/Delivery-tags%20%7C%20manual-2EA44F)](https://github.com/Widthdom/Praxis/actions/workflows/delivery.yml)
 
 ![.NET 10](https://img.shields.io/badge/.NET-10-512BD4?logo=dotnet&logoColor=white)
-![.NET_MAUI](https://img.shields.io/badge/.NET%20MAUI-Desktop-512BD4?logo=dotnet&logoColor=white)
-![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20macOS-lightgrey)
-![SQLite](https://img.shields.io/badge/Database-SQLite-003B57?logo=sqlite&logoColor=white)
+![Avalonia](https://img.shields.io/badge/Avalonia-Desktop-8B44AC)
+![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey)
 ![License](https://img.shields.io/badge/License-MIT-blue)
 
 License: MIT (see [`LICENSE`](LICENSE)).
 
 ## Overview
-Praxis is a desktop launcher app built with .NET MAUI.
-It stores launcher buttons in SQLite (with schema version tracking via `PRAGMA user_version`) and executes commands with arguments.
-Application exceptions are captured and stored in the local SQLite database for diagnostic purposes (30-day retention).
+Praxis v2 is an Avalonia desktop launcher migration. The app uses strict-MVVM Core models with model-owned launcher button state, a pseudo-acrylic frameless shell, command execution with suggestions, search, free-positioned launcher buttons, a persisted recent Dock, a model-driven status bar, SQLite-backed launcher persistence, launch logging, and basic desktop command/default-app execution.
 
-## User Features
-- Execute from the command input with `Enter`
-- Keep command inputs (top bar + edit modal `Command`) in alphanumeric mode on Windows/macOS
-  - Windows behavior: IME is forced toward ASCII immediately on focus acquisition plus one short delayed retry; modal edit `Command` also reasserts ASCII while focused to block manual IME-mode switching.
-- Search and filter launcher buttons quickly
-- In `Command` / `Search`, the in-field clear button keeps editing focus on the same input after clear
-  - Windows uses guarded native `TextBox` refocus/caret restore to avoid rare clear-button crashes in top-bar inputs.
-- Drag, multi-select, edit, and delete buttons in the placement area
-  - Placement-area buttons keep the default arrow cursor on hover and switch to a closed-hand grab cursor only while the primary pointer is pressed, so drag-to-reposition reads as a grabbed object; on macOS, the grab cursor also falls back to arrow if a release event is missed while moving or leaving a button, including when the pointer crosses between multiple selected buttons or a single selected button is dragged. Dock buttons intentionally keep the pointing-hand cursor on hover to still signal "click to launch"
-  - Clicking outside the Edit/Delete menu dismisses it on both Windows and macOS; Edit/Delete, editor, and conflict overlays use a visually transparent full-window click target so lower layers do not receive clicks
-- Undo/Redo for recent button mutations (move/edit/delete):
-  - Windows: `Ctrl+Z` / `Ctrl+Y`
-  - macOS: `Command+Z` / `Command+Shift+Z`
-- Show recent launches in Dock (restored on next startup)
-- Show Dock horizontal scrollbar only while hovering the Dock area and horizontal overflow exists
-- Dock keeps a compact borderless bottom-biased footprint so the placement area can use more vertical space
-- Windows: custom 30 px title bar with subtle minimize / maximize-restore / close buttons replaces the OS-managed title bar chrome; Windows 11 rounded corners and the resize border are preserved, OS-native min/restore animations stay enabled, and every theme-dependent chrome attribute (DWM outer border, caption strip, class brush, resize-erase brush) tracks the active theme so dark mode no longer shows a white outer border and right/bottom resize no longer flashes a white strip
-- Create buttons from the top Create button or right-clicking empty placement area
-  - On new-button create, the edit modal opens with `ButtonText` focused and its text selected on both Windows and macOS for immediate overwrite
-- Keyboard-friendly suggestions and modal operations
-  - Suggestion popup opens without auto-select; first `Down` key selects the first candidate
-- Quick Look preview on button hover (`Command` / `Tool` / `Arguments` / `Clip Word` / `Note`)
-- Persisted theme mode (`Light` / `Dark` / `System`)
-- Cross-window sync for button changes, Dock order, and theme mode
-- Fallback launch behavior when `Tool` is empty:
-  - HTTP(S) URL: open in default browser
-  - File path: open with associated app
-  - Directory path: open in file manager
-  - Relative paths such as `docs/readme.txt`, `./notes.txt`, `../notes.txt`, and bare `~` are also treated as filesystem targets
-  - `.` and `..` are also treated as filesystem directory targets
-  - Windows shell tools such as `cmd.exe`, `powershell`, `pwsh`, and `wt` start in the user-profile directory instead of inheriting the Praxis process directory
-  - On Windows UNC paths (`\\\\server\\share...`), passes the path directly to `explorer.exe` so auth prompt can appear before existence checks succeed
+The former .NET MAUI app project has been removed. Existing v1 launcher databases remain readable through the shared data layer: v2 uses the existing `praxis.db3` file when present, also accepts an existing `praxis.db`, and migrates launcher-button schema to version 5. Editing UI, drag UI wiring, theme settings, error logging, and sync flows are still being reintroduced during the v2 migration.
 
 ## Supported Platforms
-- Windows: `net10.0-windows10.0.19041.0`
-- macOS (Mac Catalyst): `net10.0-maccatalyst`
+- Windows: Avalonia desktop on .NET 10
+- macOS: Avalonia desktop on .NET 10
+- Linux: buildable experimental target for v2.x readiness
 
-> **Note:** The repository contains [`Platforms/Android`](Praxis/Platforms/Android) and [`Platforms/iOS`](Praxis/Platforms/iOS) folders generated by the MAUI project template. These platforms are **not supported** and those folders exist only as scaffolding artifacts.
+Linux support is intentionally kept architecture-ready, but Windows and macOS remain the first v2.0.0 product targets.
 
-## Environment Setup (Prerequisites)
+## Environment Setup
 - Install .NET 10 SDK (`10.x`).
-- Example install commands for .NET 10 SDK:
-```powershell
-# Windows (winget)
-winget install Microsoft.DotNet.SDK.10 --source winget
-```
-```powershell
-# Windows (dotnet-install script)
-powershell -ExecutionPolicy Bypass -c "& { iwr https://dot.net/v1/dotnet-install.ps1 -OutFile dotnet-install.ps1; .\dotnet-install.ps1 -Channel 10.0 }"
-```
-```bash
-# macOS (dotnet-install script)
-curl -fsSL https://dot.net/v1/dotnet-install.sh | bash /dev/stdin --channel 10.0
-```
-- Install MAUI workloads for your target platform:
-```bash
-# Windows
-dotnet workload install maui-windows
+- No MAUI workload is required.
+- Restore packages before the first build:
 
-# macOS (Mac Catalyst)
-dotnet workload install maui-maccatalyst
-```
-- Optional maintenance:
-```bash
-dotnet workload update
-```
-- Restore NuGet packages once before first build/test:
 ```bash
 dotnet restore Praxis.slnx
 ```
-- Verify the environment:
+
+## Quick Start
+
+Run the Avalonia app:
+
 ```bash
-dotnet --version
-dotnet --info
-dotnet workload list
+dotnet run --project Praxis.Avalonia/Praxis.Avalonia.csproj
 ```
 
-## Quick Start (Developers)
+Build and test:
+
 ```bash
-dotnet restore Praxis.slnx
-dotnet test Praxis.slnx
+dotnet build Praxis.slnx -c Debug
+dotnet test Praxis.Tests/Praxis.Tests.csproj -c Release --nologo
+dotnet build Praxis.Avalonia/Praxis.Avalonia.csproj -c Release --nologo
 ```
 
-Platform-specific run/build examples:
-```bash
-# Windows
-dotnet run --project Praxis/Praxis.csproj -f net10.0-windows10.0.19041.0
+## Repository Map
+- `Praxis.Avalonia/` - Avalonia desktop app, views, converters, behaviors, and app-local services
+- `Praxis.Core/` - UI-independent models, records, policies, and service contracts
+- `Praxis.Data/` - SQLite entities, storage path resolution, and repository implementations
+- `Praxis.Tests/` - xUnit tests for Core policies, v2 model behavior, storage paths, and repository migrations
+- `docs/` - developer, testing, database, branding, and migration notes
+- `.github/workflows/` - CI and delivery workflows for Avalonia builds
 
-# macOS (Mac Catalyst)
-dotnet build Praxis/Praxis.csproj -t:Run -f net10.0-maccatalyst -r maccatalyst-arm64 -p:RunWithOpen=false
-```
-
-If `-t:Run` launch fails on macOS:
-```bash
-dotnet build Praxis/Praxis.csproj -f net10.0-maccatalyst -r maccatalyst-arm64
-open Praxis/bin/Debug/net10.0-maccatalyst/maccatalyst-arm64/Praxis.app
-```
-
-## Documentation Map
-- Implementation details: [`docs/DEVELOPER_GUIDE.md`](docs/DEVELOPER_GUIDE.md)
-- Refactoring notes: [`MainPage`](Praxis/MainPage.xaml.cs) / [`MainViewModel`](Praxis/ViewModels/MainViewModel.cs) are split into feature-based partial classes. `MainPage` fields live in concern-based `MainPage.Fields.*.cs` files, and UI behavior is further separated into focused partials such as [`MainPage.ModalEditor.cs`](Praxis/MainPage.ModalEditor.cs), [`MainPage.StatusAndTheme.cs`](Praxis/MainPage.StatusAndTheme.cs), [`MainPage.DockAndQuickLook.cs`](Praxis/MainPage.DockAndQuickLook.cs), and [`MainPage.WindowsInput.cs`](Praxis/MainPage.WindowsInput.cs). UI delay constants are centralized in [`UiTimingPolicy`](Praxis.Core/Logic/UiTimingPolicy.cs) (see Developer Guide).
-- Testing guide (execution, coverage, test inventory): [`docs/TESTING_GUIDE.md`](docs/TESTING_GUIDE.md)
-- SQLite schema: [`docs/DATABASE_SCHEMA.md`](docs/DATABASE_SCHEMA.md)
+## Documentation
+- Developer guide: [`docs/DEVELOPER_GUIDE.md`](docs/DEVELOPER_GUIDE.md)
+- Testing guide: [`docs/TESTING_GUIDE.md`](docs/TESTING_GUIDE.md)
+- Database status: [`docs/DATABASE_SCHEMA.md`](docs/DATABASE_SCHEMA.md)
+- v2 migration plan: [`docs/V2_AVALONIA_MIGRATION_PLAN.md`](docs/V2_AVALONIA_MIGRATION_PLAN.md)
 - Branding assets: [`docs/branding/README.md`](docs/branding/README.md)
 
 ---
@@ -133,111 +74,53 @@ open Praxis/bin/Debug/net10.0-maccatalyst/maccatalyst-arm64/Praxis.app
 ライセンス: MIT（[`LICENSE`](LICENSE) を参照）。
 
 ## 概要
-Praxis は .NET MAUI で実装したデスクトップ向けランチャーです。
-ランチャーボタンを SQLite（`PRAGMA user_version` によるスキーマバージョン管理付き）に保存し、コマンドと引数を実行します。
-アプリケーション例外は診断目的でローカルの SQLite データベースに記録されます（保持期間: 30 日）。
+Praxis v2 は Avalonia へのデスクトップランチャー移行版です。strict MVVM の Core model がランチャーボタン状態を所有し、擬似アクリル風のフレームレス shell、候補付き Command 実行、Search、自由配置ボタン、永続化される最近使った Dock、Model 駆動のステータスバー、SQLite 永続化、launch log、基本的なデスクトップコマンド/既定アプリ起動を持ちます。
 
-## 主な機能（ユーザー向け）
-- コマンド入力欄で `Enter` 実行
-- コマンド入力欄（上部 + 編集モーダル `Command`）を Windows/macOS で英字入力モードに維持
-  - Windows はフォーカス取得直後 + 短い遅延で英字入力へ補正し、編集モーダル `Command` ではフォーカス中も英字入力を再強制して手動IME切替を抑止する。
-- ボタンの高速検索・絞り込み
-- `Command` / `Search` の欄内クリアボタン押下後も、同じ入力欄の編集フォーカスを維持する
-  - Windows では native `TextBox` 再フォーカス/キャレット復帰を安全条件付きで行い、上部入力欄のまれな clear-button クラッシュを避ける
-- 配置領域でのドラッグ、複数選択、編集、削除
-  - 配置領域のボタンは hover 中は既定の矢印カーソルのままで、主ポインタを押下している間だけ「掴んだ手」の grab カーソルに変わる（ドラッグ移動が「掴んで動かす」操作として読めるように）。macOS では、移動中や領域外へ出るときに release イベントを取り逃しても、grab カーソルが arrow に戻るよう補助する。Dock のボタンは引き続き hover で pointing-hand になり、「クリックで起動」の示唆を維持する
-  - Edit/Delete メニューの外側をクリックすると Windows / macOS とも閉じる。Edit/Delete、編集、conflict の各オーバーレイは見た目上透明な全画面クリック受けを使い、下層へクリックを通さない
-- 直近のボタン変更（移動/編集/削除）の Undo/Redo:
-  - Windows: `Ctrl+Z` / `Ctrl+Y`
-  - macOS: `Command+Z` / `Command+Shift+Z`
-- 実行履歴の Dock 表示（次回起動時に復元）
-- Dock の横スクロールバーは Dock 領域ホバー中かつ横オーバーフロー時のみ表示
-- Dock はコンパクトな枠線なし・下寄せフットプリントにし、配置領域へ縦方向の余白を戻す
-- Windows: OS のタイトルバーを 30px のカスタムタイトルバー（控えめな最小化 / 最大化-復元 / 閉じるボタン付き）に置き換える。Windows 11 の角丸とリサイズ枠は維持し、OS ネイティブの最小化／復元アニメーションも生かす。テーマ依存の chrome 属性（DWM 外周枠線、キャプション帯、クラスブラシ、リサイズ時の erase ブラシ）はすべてアクティブテーマに追従するため、ダークモード時の外周白枠と右端／下端リサイズ時の白帯が消える
-- 上部 Create ボタンと配置領域の空きスペース右クリックから新規作成
-  - 新規ボタン作成時は、編集モーダルの `ButtonText` に初期フォーカスし、Windows / macOS ともテキストを全選択して即上書きできる
-- 候補一覧とモーダル操作のキーボード対応
-  - 候補ポップアップは表示直後に自動選択せず、最初の `↓` 入力で先頭候補を選択
-- ボタンホバー時の Quick Look プレビュー（`Command` / `Tool` / `Arguments` / `Clip Word` / `Note`）
-- テーマモード（`Light` / `Dark` / `System`）の保存・復元
-- ボタン変更、Dock 順序、テーマの複数ウィンドウ同期
-- `Tool` が空の場合のフォールバック起動:
-  - HTTP(S) URL: 既定ブラウザ
-  - ファイルパス: 関連付けアプリ
-  - ディレクトリパス: ファイルマネージャ
-  - `docs/readme.txt`、`./notes.txt`、`../notes.txt`、bare `~` のような相対パスもファイルシステム対象として扱う
-  - `.` と `..` もディレクトリ対象として扱う
-  - Windows の `cmd.exe`、`powershell`、`pwsh`、`wt` のようなシェル系ツールは、Praxis プロセスの作業ディレクトリを引き継がず、ユーザープロファイルを起点に起動する
-  - Windows の UNC パス（`\\\\server\\share...`）は、存在確認前でも認証ダイアログを出せるよう `explorer.exe` へ直接渡す
+旧 .NET MAUI アプリプロジェクトは削除済みです。既存 v1 の launcher DB は共有 data layer から読み込めます。v2 は既存の `praxis.db3` を優先し、既存の `praxis.db` も受け入れ、launcher button schema を version 5 へ移行します。編集 UI、ドラッグ UI wiring、テーマ設定、error log、同期フローは v2 移行中に戻していきます。
 
 ## 対応プラットフォーム
-- Windows: `net10.0-windows10.0.19041.0`
-- macOS（Mac Catalyst）: `net10.0-maccatalyst`
+- Windows: .NET 10 上の Avalonia desktop
+- macOS: .NET 10 上の Avalonia desktop
+- Linux: v2.x 対応準備として build 可能な実験対象
 
-> **注記:** リポジトリには MAUI プロジェクトテンプレートが生成した [`Platforms/Android`](Praxis/Platforms/Android) および [`Platforms/iOS`](Praxis/Platforms/iOS) フォルダが存在しますが、これらのプラットフォームは**サポート対象外**です。これらのフォルダはスキャフォールドの残骸です。
+Linux は構成上の余地を残しますが、v2.0.0 の製品対象は Windows / macOS を優先します。
 
-## 開発環境の前提
-- .NET 10 SDK（`10.x`）をインストールする
-- .NET 10 SDK のインストール例:
-```powershell
-# Windows (winget)
-winget install Microsoft.DotNet.SDK.10 --source winget
-```
-```powershell
-# Windows (dotnet-install スクリプト)
-powershell -ExecutionPolicy Bypass -c "& { iwr https://dot.net/v1/dotnet-install.ps1 -OutFile dotnet-install.ps1; .\dotnet-install.ps1 -Channel 10.0 }"
-```
-```bash
-# macOS (dotnet-install スクリプト)
-curl -fsSL https://dot.net/v1/dotnet-install.sh | bash /dev/stdin --channel 10.0
-```
-- 対象プラットフォームに応じて MAUI workload をインストールする:
-```bash
-# Windows
-dotnet workload install maui-windows
+## 開発環境
+- .NET 10 SDK（`10.x`）をインストールしてください。
+- MAUI workload は不要です。
+- 初回ビルド前にパッケージを復元します。
 
-# macOS（Mac Catalyst）
-dotnet workload install maui-maccatalyst
-```
-- 任意のメンテナンス:
-```bash
-dotnet workload update
-```
-- 最初のビルド/テスト前に NuGet パッケージを復元する:
 ```bash
 dotnet restore Praxis.slnx
 ```
-- 環境確認:
+
+## クイックスタート
+
+Avalonia アプリを起動:
+
 ```bash
-dotnet --version
-dotnet --info
-dotnet workload list
+dotnet run --project Praxis.Avalonia/Praxis.Avalonia.csproj
 ```
 
-## 開発クイックスタート
+ビルドとテスト:
+
 ```bash
-dotnet restore Praxis.slnx
-dotnet test Praxis.slnx
+dotnet build Praxis.slnx -c Debug
+dotnet test Praxis.Tests/Praxis.Tests.csproj -c Release --nologo
+dotnet build Praxis.Avalonia/Praxis.Avalonia.csproj -c Release --nologo
 ```
 
-プラットフォーム別の実行 / ビルド例:
-```bash
-# Windows
-dotnet run --project Praxis/Praxis.csproj -f net10.0-windows10.0.19041.0
+## リポジトリ構成
+- `Praxis.Avalonia/` - Avalonia デスクトップアプリ、View、Converter、Behavior、アプリ側 service
+- `Praxis.Core/` - UI 非依存の Model、record、policy、service contract
+- `Praxis.Data/` - SQLite entity、保存先解決、repository 実装
+- `Praxis.Tests/` - Core policy、v2 Model、保存先、repository migration の xUnit テスト
+- `docs/` - 開発者向け、テスト、DB、ブランディング、移行メモ
+- `.github/workflows/` - Avalonia build 用 CI / delivery workflow
 
-# macOS（Mac Catalyst）
-dotnet build Praxis/Praxis.csproj -t:Run -f net10.0-maccatalyst -r maccatalyst-arm64 -p:RunWithOpen=false
-```
-
-macOS で `-t:Run` の起動が失敗する場合:
-```bash
-dotnet build Praxis/Praxis.csproj -f net10.0-maccatalyst -r maccatalyst-arm64
-open Praxis/bin/Debug/net10.0-maccatalyst/maccatalyst-arm64/Praxis.app
-```
-
-## ドキュメント一覧
-- 実装仕様: [`docs/DEVELOPER_GUIDE.md`](docs/DEVELOPER_GUIDE.md)
-- リファクタ方針: [`MainPage`](Praxis/MainPage.xaml.cs) / [`MainViewModel`](Praxis/ViewModels/MainViewModel.cs) は機能別 partial class に分割し、`MainPage` のフィールド宣言は責務別 `MainPage.Fields.*.cs` に整理。UI 振る舞いも [`MainPage.ModalEditor.cs`](Praxis/MainPage.ModalEditor.cs)、[`MainPage.StatusAndTheme.cs`](Praxis/MainPage.StatusAndTheme.cs)、[`MainPage.DockAndQuickLook.cs`](Praxis/MainPage.DockAndQuickLook.cs)、[`MainPage.WindowsInput.cs`](Praxis/MainPage.WindowsInput.cs) などへ責務分割している。UI 遅延定数は [`UiTimingPolicy`](Praxis.Core/Logic/UiTimingPolicy.cs) に集約（詳細は開発者ガイド参照）
-- テストガイド（実行手順・カバレッジ・テスト一覧）: [`docs/TESTING_GUIDE.md`](docs/TESTING_GUIDE.md)
-- SQLite スキーマ: [`docs/DATABASE_SCHEMA.md`](docs/DATABASE_SCHEMA.md)
+## ドキュメント
+- 開発者ガイド: [`docs/DEVELOPER_GUIDE.md`](docs/DEVELOPER_GUIDE.md)
+- テストガイド: [`docs/TESTING_GUIDE.md`](docs/TESTING_GUIDE.md)
+- DB 状態: [`docs/DATABASE_SCHEMA.md`](docs/DATABASE_SCHEMA.md)
+- v2 移行計画: [`docs/V2_AVALONIA_MIGRATION_PLAN.md`](docs/V2_AVALONIA_MIGRATION_PLAN.md)
 - ブランディング素材: [`docs/branding/README.md`](docs/branding/README.md)

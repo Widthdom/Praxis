@@ -48,9 +48,19 @@ jobs:
           path: TestResults/**/coverage.cobertura.xml
           if-no-files-found: error
 
-  windows-build:
-    name: Windows Build
-    runs-on: windows-latest
+  desktop-build:
+    name: Avalonia Build (${{ matrix.name }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: windows
+            os: windows-latest
+          - name: macos
+            os: macos-latest
+          - name: linux
+            os: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -63,53 +73,5 @@ jobs:
           dotnet-version: 10.0.x
           dotnet-quality: ga
 
-      - name: Install MAUI workload
-        run: dotnet workload install maui
-
-      - name: Build app (Windows)
-        run: dotnet build Praxis/Praxis.csproj -c Release -f net10.0-windows10.0.19041.0 -v minimal
-
-  mac-build:
-    name: Mac Catalyst Build
-    runs-on: macos-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: 10.0.x
-          dotnet-quality: ga
-
-      - name: Install MAUI workload
-        run: dotnet workload install maui
-
-      - name: Initialize Xcode
-        run: sudo xcodebuild -runFirstLaunch
-
-      - name: Check Xcode compatibility
-        id: xcode_check
-        shell: bash
-        run: |
-          set -euo pipefail
-          XCODE_VERSION="$(xcodebuild -version | awk '/Xcode/ {print $2}')"
-          echo "Detected Xcode: ${XCODE_VERSION}"
-          MAJOR="$(echo "${XCODE_VERSION}" | cut -d. -f1)"
-          MINOR="$(echo "${XCODE_VERSION}" | cut -d. -f2)"
-          if [[ "${MAJOR}" -gt 26 ]] || [[ "${MAJOR}" -eq 26 && "${MINOR}" -ge 2 ]]; then
-            echo "compatible=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "compatible=false" >> "$GITHUB_OUTPUT"
-            echo "::warning::Skipping Mac Catalyst build. .NET 10 MAUI requires Xcode 26.2+, runner has Xcode ${XCODE_VERSION}."
-          fi
-
-      - name: Build app (Mac Catalyst)
-        if: steps.xcode_check.outputs.compatible == 'true'
-        run: dotnet build Praxis/Praxis.csproj -c Release -f net10.0-maccatalyst -v minimal -p:EnableCodeSigning=false -p:CodesignRequireProvisioningProfile=false
-
-      - name: Mac build skipped
-        if: steps.xcode_check.outputs.compatible != 'true'
-        run: echo "Mac Catalyst build skipped due to runner Xcode version."
+      - name: Build Avalonia app
+        run: dotnet build Praxis.Avalonia/Praxis.Avalonia.csproj -c Release -v minimal

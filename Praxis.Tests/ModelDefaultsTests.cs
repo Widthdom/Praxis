@@ -22,6 +22,10 @@ public class ModelDefaultsTests
         Assert.Equal(ButtonLayoutDefaults.Width, record.Width);
         Assert.Equal(ButtonLayoutDefaults.Height, record.Height);
         Assert.False(record.UseInvertedThemeColors);
+        Assert.Equal(LauncherButtonColorKey.Default, record.ColorKey);
+        Assert.Equal(string.Empty, record.ToolTip);
+        Assert.Null(record.LastExecutedAtUtc);
+        Assert.Equal(0, record.SortOrder);
         Assert.Equal(DateTimeKind.Utc, record.CreatedAtUtc.Kind);
         Assert.Equal(DateTimeKind.Utc, record.UpdatedAtUtc.Kind);
     }
@@ -99,6 +103,10 @@ public class ModelDefaultsTests
             Width = 321.25,
             Height = 654.5,
             UseInvertedThemeColors = true,
+            ColorKey = LauncherButtonColorKey.Purple,
+            ToolTip = "tip",
+            LastExecutedAtUtc = new DateTime(2024, 03, 04, 05, 06, 07, DateTimeKind.Utc),
+            SortOrder = 12,
             CreatedAtUtc = new DateTime(2024, 01, 02, 03, 04, 05, DateTimeKind.Utc),
             UpdatedAtUtc = new DateTime(2024, 06, 07, 08, 09, 10, DateTimeKind.Utc),
         };
@@ -118,6 +126,10 @@ public class ModelDefaultsTests
         Assert.Equal(source.Width, copied.Width);
         Assert.Equal(source.Height, copied.Height);
         Assert.Equal(source.UseInvertedThemeColors, copied.UseInvertedThemeColors);
+        Assert.Equal(source.ColorKey, copied.ColorKey);
+        Assert.Equal(source.ToolTip, copied.ToolTip);
+        Assert.Equal(source.LastExecutedAtUtc, copied.LastExecutedAtUtc);
+        Assert.Equal(source.SortOrder, copied.SortOrder);
         Assert.Equal(source.CreatedAtUtc, copied.CreatedAtUtc);
         Assert.Equal(source.UpdatedAtUtc, copied.UpdatedAtUtc);
 
@@ -133,6 +145,10 @@ public class ModelDefaultsTests
         Assert.Equal(source.Width, cloned.Width);
         Assert.Equal(source.Height, cloned.Height);
         Assert.Equal(source.UseInvertedThemeColors, cloned.UseInvertedThemeColors);
+        Assert.Equal(source.ColorKey, cloned.ColorKey);
+        Assert.Equal(source.ToolTip, cloned.ToolTip);
+        Assert.Equal(source.LastExecutedAtUtc, cloned.LastExecutedAtUtc);
+        Assert.Equal(source.SortOrder, cloned.SortOrder);
         Assert.Equal(source.CreatedAtUtc, cloned.CreatedAtUtc);
         Assert.Equal(source.UpdatedAtUtc, cloned.UpdatedAtUtc);
 

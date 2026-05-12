@@ -1,0 +1,22 @@
+<Application xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:converters="using:Praxis.Avalonia.Converters"
+             x:Class="Praxis.Avalonia.App"
+             RequestedThemeVariant="Dark">
+  <Application.Resources>
+    <converters:ButtonColorKeyToBrushConverter x:Key="ButtonColorKeyToBrushConverter" />
+    <converters:StatusKindToBrushConverter x:Key="StatusKindToBrushConverter" />
+    <converters:EmptyStringToBoolConverter x:Key="EmptyStringToBoolConverter" />
+    <converters:NotEmptyStringToBoolConverter x:Key="NotEmptyStringToBoolConverter" />
+    <converters:InputPlaceholderVisibleConverter x:Key="InputPlaceholderVisibleConverter" />
+    <converters:LauncherButtonBackgroundConverter x:Key="LauncherButtonBackgroundConverter" />
+    <converters:LauncherButtonForegroundConverter x:Key="LauncherButtonForegroundConverter" />
+    <converters:SelectedSuggestionBackgroundConverter x:Key="SelectedSuggestionBackgroundConverter" />
+    <converters:StatusForegroundConverter x:Key="StatusForegroundConverter" />
+  </Application.Resources>
+
+  <Application.Styles>
+    <FluentTheme />
+    <StyleInclude Source="avares://Praxis/Themes/PseudoAcrylicTheme.axaml" />
+  </Application.Styles>
+</Application>

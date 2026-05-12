@@ -2,17 +2,11 @@
 
 This folder contains branding deliverables derived from the production app icon style.
 
-## Build-Referenced Assets vs Branding Assets
+## Build Integration Status
 
-Only files declared in [`Praxis/Praxis.csproj`](../../Praxis/Praxis.csproj) are used automatically at build time.
-
-Build-referenced assets:
-- [`Praxis/Resources/AppIcon/appiconfg_windows.svg`](../../Praxis/Resources/AppIcon/appiconfg_windows.svg)
-  - Windows app icon source (`MauiIcon` for Windows target).
-- [`Praxis/Resources/AppIcon/appicon.svg`](../../Praxis/Resources/AppIcon/appicon.svg) + [`Praxis/Resources/AppIcon/appiconfg.svg`](../../Praxis/Resources/AppIcon/appiconfg.svg)
-  - Non-Windows app icon background + foreground (`MauiIcon` for non-Windows targets).
-- [`Praxis/Resources/Splash/splash.svg`](../../Praxis/Resources/Splash/splash.svg)
-  - Splash screen source (`MauiSplashScreen`).
+The former MAUI resource pipeline has been removed with the old app project.
+The current Avalonia app packaging does not yet include these branding files.
+When packaging is reintroduced, wire the selected icon assets through `Praxis.Avalonia/Praxis.Avalonia.csproj` or platform-specific packaging metadata.
 
 Branding assets in this `docs/branding` folder:
 - [`store-icon-1024.svg`](store-icon-1024.svg)
@@ -44,17 +38,11 @@ Generated PNG outputs are stored in:
 
 このフォルダには、本番アプリアイコンのスタイルから派生したブランディング成果物が含まれています。
 
-## ビルド参照アセットとブランディング用アセット
+## ビルド組み込み状況
 
-ビルド時に自動で使われるのは、[`Praxis/Praxis.csproj`](../../Praxis/Praxis.csproj) に宣言されているファイルだけです。
-
-ビルド参照アセット:
-- [`Praxis/Resources/AppIcon/appiconfg_windows.svg`](../../Praxis/Resources/AppIcon/appiconfg_windows.svg)
-  - Windowsアプリ用アイコンのソース（Windowsターゲット向け `MauiIcon`）。
-- [`Praxis/Resources/AppIcon/appicon.svg`](../../Praxis/Resources/AppIcon/appicon.svg) + [`Praxis/Resources/AppIcon/appiconfg.svg`](../../Praxis/Resources/AppIcon/appiconfg.svg)
-  - Windows以外向けアプリアイコンの背景 + 前景（Windows以外のターゲット向け `MauiIcon`）。
-- [`Praxis/Resources/Splash/splash.svg`](../../Praxis/Resources/Splash/splash.svg)
-  - スプラッシュ画面のソース（`MauiSplashScreen`）。
+旧 MAUI resource pipeline は旧 app project と一緒に削除済みです。
+現在の Avalonia app packaging では、これらのブランディングファイルはまだ含まれていません。
+packaging を再導入するときに、選択した icon asset を `Praxis.Avalonia/Praxis.Avalonia.csproj` または platform-specific packaging metadata へ接続します。
 
 この `docs/branding` フォルダにあるブランディング用アセット:
 - [`store-icon-1024.svg`](store-icon-1024.svg)

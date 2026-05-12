@@ -3,11 +3,9 @@ using System.Reflection;
 namespace Praxis.Core.Logic;
 
 /// <summary>
-/// Classifies whether a MAUI PointerEventArgs.PlatformArgs (or any of its nested
+/// Classifies whether a platform pointer payload (or any of its nested
 /// GestureRecognizer / Event / CurrentEvent payloads) describes a secondary
-/// (right) or middle (other-mouse) pointer press. Mirrors the reflection logic
-/// in MainPage.PointerAndSelection.cs so the placement-area grab-cursor behavior
-/// and other UI-side consumers can reuse the same test-covered rules.
+/// (right) or middle (other-mouse) pointer press.
 /// </summary>
 public static class PointerButtonClassifier
 {

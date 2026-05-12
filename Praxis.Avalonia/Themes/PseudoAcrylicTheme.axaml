@@ -1,0 +1,750 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <Styles.Resources>
+    <LinearGradientBrush x:Key="PraxisShellBackground" StartPoint="0%,0%" EndPoint="100%,100%">
+      <GradientStop Color="#F01A1F25" Offset="0" />
+      <GradientStop Color="#E8242C35" Offset="0.48" />
+      <GradientStop Color="#F014171D" Offset="1" />
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="PraxisLightShellBackground" StartPoint="0%,0%" EndPoint="100%,100%">
+      <GradientStop Color="#F2F5F5F5" Offset="0" />
+      <GradientStop Color="#E8E8ECEF" Offset="0.52" />
+      <GradientStop Color="#F4FAFAFA" Offset="1" />
+    </LinearGradientBrush>
+    <SolidColorBrush x:Key="PraxisSurfaceBrush" Color="#2A3038" Opacity="0.78" />
+    <SolidColorBrush x:Key="PraxisSurfaceStrongBrush" Color="#343C45" Opacity="0.9" />
+    <SolidColorBrush x:Key="PraxisTextPrimaryBrush" Color="#F3F6F8" />
+    <SolidColorBrush x:Key="PraxisTextSecondaryBrush" Color="#A8B3BC" />
+    <SolidColorBrush x:Key="PraxisPlaceholderBrush" Color="#8B949E" />
+    <SolidColorBrush x:Key="PraxisAccentBrush" Color="#7BC0A8" />
+    <LinearGradientBrush x:Key="PraxisGlassBackdropBrush" StartPoint="0%,0%" EndPoint="100%,100%">
+      <GradientStop Color="#B8181D22" Offset="0" />
+      <GradientStop Color="#A6303840" Offset="0.48" />
+      <GradientStop Color="#B4121518" Offset="1" />
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="PraxisLightGlassBackdropBrush" StartPoint="0%,0%" EndPoint="100%,100%">
+      <GradientStop Color="#BAF5F6F7" Offset="0" />
+      <GradientStop Color="#A8D7DDE2" Offset="0.5" />
+      <GradientStop Color="#BAFFFFFF" Offset="1" />
+    </LinearGradientBrush>
+  </Styles.Resources>
+
+  <Style Selector="Window.praxis-main">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="FontFamily" Value="Inter, Hiragino Sans, Yu Gothic, Meiryo, Segoe UI, -apple-system, BlinkMacSystemFont" />
+    <Setter Property="Foreground" Value="{StaticResource PraxisTextPrimaryBrush}" />
+  </Style>
+
+  <Style Selector="Window.praxis-main.light">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="Foreground" Value="#1A1A1A" />
+  </Style>
+
+  <Style Selector="Window.praxis-main.fullscreen">
+    <Setter Property="Background" Value="{StaticResource PraxisShellBackground}" />
+  </Style>
+
+  <Style Selector="Window.praxis-main.light.fullscreen">
+    <Setter Property="Background" Value="{StaticResource PraxisLightShellBackground}" />
+  </Style>
+
+  <Style Selector="Border.praxis-shell">
+    <Setter Property="Background" Value="{StaticResource PraxisShellBackground}" />
+    <Setter Property="CornerRadius" Value="8" />
+    <Setter Property="ClipToBounds" Value="True" />
+    <Setter Property="BorderBrush" Value="#30FFFFFF" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="BoxShadow" Value="0 18 46 0 #70000000, inset 0 1 0 0 #28FFFFFF" />
+  </Style>
+
+  <Style Selector="Border.praxis-acrylic-sheen">
+    <Setter Property="Background">
+      <Setter.Value>
+        <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,100%">
+          <GradientStop Color="#24FFFFFF" Offset="0" />
+          <GradientStop Color="#06000000" Offset="0.34" />
+          <GradientStop Color="#18FFFFFF" Offset="0.62" />
+          <GradientStop Color="#10000000" Offset="1" />
+        </LinearGradientBrush>
+      </Setter.Value>
+    </Setter>
+  </Style>
+
+  <Style Selector="Window.light Border.praxis-acrylic-sheen">
+    <Setter Property="Background">
+      <Setter.Value>
+        <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,100%">
+          <GradientStop Color="#B8FFFFFF" Offset="0" />
+          <GradientStop Color="#30B8C0C8" Offset="0.44" />
+          <GradientStop Color="#7AFFFFFF" Offset="0.72" />
+          <GradientStop Color="#20AAB2BA" Offset="1" />
+        </LinearGradientBrush>
+      </Setter.Value>
+    </Setter>
+  </Style>
+
+  <Style Selector="Window.praxis-main Border.praxis-shell">
+    <Setter Property="CornerRadius" Value="8" />
+  </Style>
+
+  <Style Selector="Window.fullscreen Border.praxis-shell">
+    <Setter Property="CornerRadius" Value="0" />
+  </Style>
+
+  <Style Selector="Window.light Border.praxis-shell">
+    <Setter Property="Background" Value="{StaticResource PraxisLightShellBackground}" />
+    <Setter Property="BorderBrush" Value="#80FFFFFF" />
+    <Setter Property="BoxShadow" Value="0 18 46 0 #40000000, inset 0 1 0 0 #CCFFFFFF" />
+  </Style>
+
+  <Style Selector="TextBox.praxis-input">
+    <Setter Property="Background" Value="{StaticResource PraxisSurfaceBrush}" />
+    <Setter Property="Foreground" Value="{StaticResource PraxisTextPrimaryBrush}" />
+    <Setter Property="BorderThickness" Value="2" />
+    <Setter Property="BorderBrush" Value="Transparent" />
+    <Setter Property="CornerRadius" Value="4" />
+    <Setter Property="Padding" Value="14,0" />
+    <Setter Property="Height" Value="42" />
+    <Setter Property="MinHeight" Value="42" />
+    <Setter Property="VerticalContentAlignment" Value="Center" />
+    <Setter Property="CaretBrush" Value="{StaticResource PraxisTextPrimaryBrush}" />
+    <Setter Property="SelectionBrush" Value="#55777777" />
+    <Setter Property="FocusAdorner" Value="{x:Null}" />
+  </Style>
+
+  <Style Selector="TextBox.praxis-input:focus">
+    <Setter Property="BorderThickness" Value="2" />
+    <Setter Property="BorderBrush" Value="#A0A0A0" />
+    <Setter Property="Padding" Value="14,0" />
+  </Style>
+
+  <Style Selector="TextBox.praxis-input /template/ Border#PART_BorderElement">
+    <Setter Property="BorderThickness" Value="2" />
+    <Setter Property="BorderBrush" Value="Transparent" />
+    <Setter Property="CornerRadius" Value="4" />
+  </Style>
+
+  <Style Selector="TextBox.praxis-input:focus /template/ Border#PART_BorderElement">
+    <Setter Property="BorderThickness" Value="2" />
+    <Setter Property="BorderBrush" Value="#A0A0A0" />
+  </Style>
+
+  <Style Selector="Window.light TextBox.praxis-input">
+    <Setter Property="Background" Value="#FFFFFF" />
+    <Setter Property="Foreground" Value="#111111" />
+    <Setter Property="CaretBrush" Value="#111111" />
+    <Setter Property="SelectionBrush" Value="#55999999" />
+  </Style>
+
+  <Style Selector="Grid.praxis-placeholder-icon">
+    <Setter Property="Width" Value="18" />
+    <Setter Property="Height" Value="18" />
+    <Setter Property="Margin" Value="13,0,0,0" />
+    <Setter Property="HorizontalAlignment" Value="Left" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+    <Setter Property="IsHitTestVisible" Value="False" />
+  </Style>
+
+  <Style Selector="Canvas.praxis-search-icon">
+    <Setter Property="Margin" Value="13,0,0,0" />
+    <Setter Property="HorizontalAlignment" Value="Left" />
+  </Style>
+
+  <Style Selector="Button.praxis-create">
+    <Setter Property="Background" Value="{StaticResource PraxisSurfaceStrongBrush}" />
+    <Setter Property="Foreground" Value="{StaticResource PraxisTextPrimaryBrush}" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="CornerRadius" Value="4" />
+    <Setter Property="Padding" Value="16,9" />
+    <Setter Property="MinHeight" Value="42" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border Background="{TemplateBinding Background}"
+                BorderBrush="{TemplateBinding BorderBrush}"
+                BorderThickness="{TemplateBinding BorderThickness}"
+                CornerRadius="{TemplateBinding CornerRadius}">
+          <ContentPresenter Content="{TemplateBinding Content}"
+                            ContentTemplate="{TemplateBinding ContentTemplate}"
+                            HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                            VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                            Margin="{TemplateBinding Padding}" />
+        </Border>
+      </ControlTemplate>
+    </Setter>
+  </Style>
+
+  <Style Selector="Button.praxis-create:pointerover">
+    <Setter Property="Background" Value="#4B5662" />
+  </Style>
+
+  <Style Selector="Window.light Button.praxis-create">
+    <Setter Property="Background" Value="#E0E0E0" />
+    <Setter Property="Foreground" Value="#6B727A" />
+  </Style>
+
+  <Style Selector="Window.light Button.praxis-create:pointerover">
+    <Setter Property="Background" Value="#DEDEDE" />
+    <Setter Property="Foreground" Value="#555D65" />
+  </Style>
+
+  <Style Selector="Button.praxis-traffic">
+    <Setter Property="Width" Value="13" />
+    <Setter Property="Height" Value="13" />
+    <Setter Property="MinWidth" Value="13" />
+    <Setter Property="MinHeight" Value="13" />
+    <Setter Property="Padding" Value="0" />
+    <Setter Property="CornerRadius" Value="7" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="RenderTransformOrigin" Value="50%,50%" />
+    <Setter Property="HorizontalContentAlignment" Value="Center" />
+    <Setter Property="VerticalContentAlignment" Value="Center" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border Background="{TemplateBinding Background}"
+                CornerRadius="{TemplateBinding CornerRadius}">
+          <ContentPresenter Content="{TemplateBinding Content}"
+                            ContentTemplate="{TemplateBinding ContentTemplate}"
+                            HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                            VerticalAlignment="{TemplateBinding VerticalContentAlignment}" />
+        </Border>
+      </ControlTemplate>
+    </Setter>
+  </Style>
+
+  <Style Selector="Button.praxis-traffic:pointerover">
+    <Setter Property="Opacity" Value="1" />
+  </Style>
+
+  <Style Selector="Button.praxis-close:pointerover">
+    <Setter Property="Background" Value="#FF5F57" />
+  </Style>
+
+  <Style Selector="Button.praxis-minimize:pointerover">
+    <Setter Property="Background" Value="#FEBC2E" />
+  </Style>
+
+  <Style Selector="Button.praxis-maximize:pointerover">
+    <Setter Property="Background" Value="#28C840" />
+  </Style>
+
+  <Style Selector="Button.praxis-traffic:pointerover /template/ ContentPresenter">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderBrush" Value="Transparent" />
+  </Style>
+
+  <Style Selector="Button.praxis-traffic:pointerover /template/ Border">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderBrush" Value="Transparent" />
+  </Style>
+
+  <Style Selector="Button.praxis-traffic:pressed /template/ Border">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderBrush" Value="Transparent" />
+  </Style>
+
+  <Style Selector="Button.praxis-traffic:focus /template/ ContentPresenter">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderBrush" Value="Transparent" />
+  </Style>
+
+  <Style Selector="Button.praxis-traffic:pressed">
+    <Setter Property="RenderTransform" Value="scale(0.88)" />
+  </Style>
+
+  <Style Selector="Grid.praxis-traffic-symbol">
+    <Setter Property="Opacity" Value="0" />
+    <Setter Property="Width" Value="13" />
+    <Setter Property="Height" Value="13" />
+    <Setter Property="HorizontalAlignment" Value="Center" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+    <Setter Property="IsHitTestVisible" Value="False" />
+  </Style>
+
+  <Style Selector="Grid.praxis-traffic-symbol Path">
+    <Setter Property="Stretch" Value="None" />
+  </Style>
+
+  <Style Selector="Grid.praxis-traffic-close-glyph Path">
+    <Setter Property="Stroke" Value="#7B1E22" />
+  </Style>
+
+  <Style Selector="Grid.praxis-traffic-minimize-glyph Path">
+    <Setter Property="Stroke" Value="#7A4E00" />
+  </Style>
+
+  <Style Selector="Grid.praxis-traffic-fullscreen-glyph Path">
+    <Setter Property="Stroke" Value="#0E5F22" />
+  </Style>
+
+  <Style Selector="StackPanel:pointerover Grid.praxis-traffic-symbol">
+    <Setter Property="Opacity" Value="1" />
+  </Style>
+
+  <Style Selector="Button.praxis-close">
+    <Setter Property="Background" Value="#FF5F57" />
+  </Style>
+
+  <Style Selector="Button.praxis-minimize">
+    <Setter Property="Background" Value="#FEBC2E" />
+  </Style>
+
+  <Style Selector="Button.praxis-minimize:disabled">
+    <Setter Property="Background" Value="#7A7A7A" />
+    <Setter Property="Opacity" Value="0.58" />
+  </Style>
+
+  <Style Selector="Button.praxis-minimize:disabled TextBlock.praxis-traffic-glyph">
+    <Setter Property="Foreground" Value="#555555" />
+  </Style>
+
+  <Style Selector="Button.praxis-minimize:disabled Grid.praxis-traffic-minimize-glyph Path">
+    <Setter Property="Stroke" Value="#555555" />
+  </Style>
+
+  <Style Selector="Button.praxis-maximize">
+    <Setter Property="Background" Value="#28C840" />
+  </Style>
+
+  <Style Selector="Button.praxis-caption">
+    <Setter Property="Width" Value="36" />
+    <Setter Property="Height" Value="28" />
+    <Setter Property="Padding" Value="0" />
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="Foreground" Value="{StaticResource PraxisTextPrimaryBrush}" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="CornerRadius" Value="4" />
+    <Setter Property="HorizontalContentAlignment" Value="Center" />
+    <Setter Property="VerticalContentAlignment" Value="Center" />
+  </Style>
+
+  <Style Selector="Button.praxis-caption:pointerover">
+    <Setter Property="Background" Value="#2E3640" />
+  </Style>
+
+  <Style Selector="Border.praxis-suggestion-panel">
+    <Setter Property="Background" Value="#20262D" />
+    <Setter Property="BorderBrush" Value="#3A424C" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="4" />
+    <Setter Property="Padding" Value="4" />
+  </Style>
+
+  <Style Selector="Window.light Border.praxis-suggestion-panel">
+    <Setter Property="Background" Value="#F5F5F5" />
+    <Setter Property="BorderBrush" Value="#D0D0D0" />
+  </Style>
+
+  <Style Selector="Button.praxis-suggestion">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="Foreground" Value="{StaticResource PraxisTextPrimaryBrush}" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="CornerRadius" Value="3" />
+    <Setter Property="Padding" Value="0" />
+    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+    <Setter Property="MinHeight" Value="38" />
+    <Setter Property="VerticalContentAlignment" Value="Center" />
+  </Style>
+
+  <Style Selector="Window.light Button.praxis-suggestion">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="Foreground" Value="#111111" />
+  </Style>
+
+  <Style Selector="Button.praxis-suggestion:pointerover">
+    <Setter Property="Background" Value="#4A535E" />
+  </Style>
+
+  <Style Selector="Window.light Button.praxis-suggestion:pointerover">
+    <Setter Property="Background" Value="#CFCFCF" />
+  </Style>
+
+  <Style Selector="Border.praxis-placement-frame">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="CornerRadius" Value="0" />
+    <Setter Property="ClipToBounds" Value="True" />
+  </Style>
+
+  <Style Selector="Button.praxis-launcher">
+    <Setter Property="Foreground" Value="{StaticResource PraxisTextPrimaryBrush}" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="CornerRadius" Value="4" />
+    <Setter Property="Padding" Value="12,8" />
+    <Setter Property="HorizontalContentAlignment" Value="Center" />
+    <Setter Property="VerticalContentAlignment" Value="Center" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border Background="{TemplateBinding Background}"
+                BorderBrush="{TemplateBinding BorderBrush}"
+                BorderThickness="{TemplateBinding BorderThickness}"
+                CornerRadius="{TemplateBinding CornerRadius}">
+          <ContentPresenter Content="{TemplateBinding Content}"
+                            ContentTemplate="{TemplateBinding ContentTemplate}"
+                            HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                            VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                            Margin="{TemplateBinding Padding}" />
+        </Border>
+      </ControlTemplate>
+    </Setter>
+  </Style>
+
+  <Style Selector="Button.praxis-launcher:pointerover">
+    <Setter Property="Opacity" Value="1" />
+  </Style>
+
+  <Style Selector="Border.praxis-selection-rect">
+    <Setter Property="Background" Value="#33777777" />
+    <Setter Property="BorderBrush" Value="#B0B0B0" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="2" />
+  </Style>
+
+  <Style Selector="Border.praxis-status-bar">
+    <Setter Property="CornerRadius" Value="4" />
+    <Setter Property="ClipToBounds" Value="True" />
+  </Style>
+
+  <Style Selector="Button.praxis-dock">
+    <Setter Property="Foreground" Value="{StaticResource PraxisTextPrimaryBrush}" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="CornerRadius" Value="4" />
+    <Setter Property="Padding" Value="12,8" />
+    <Setter Property="MinHeight" Value="40" />
+    <Setter Property="HorizontalContentAlignment" Value="Center" />
+    <Setter Property="VerticalContentAlignment" Value="Center" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border Background="{TemplateBinding Background}"
+                BorderBrush="{TemplateBinding BorderBrush}"
+                BorderThickness="{TemplateBinding BorderThickness}"
+                CornerRadius="{TemplateBinding CornerRadius}">
+          <ContentPresenter Content="{TemplateBinding Content}"
+                            ContentTemplate="{TemplateBinding ContentTemplate}"
+                            HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                            VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                            Margin="{TemplateBinding Padding}" />
+        </Border>
+      </ControlTemplate>
+    </Setter>
+  </Style>
+
+  <Style Selector="Button.praxis-dock:pointerover">
+    <Setter Property="Opacity" Value="1" />
+  </Style>
+
+  <Style Selector="ScrollViewer.praxis-dock-scroll">
+    <Setter Property="MinHeight" Value="70" />
+  </Style>
+
+  <Style Selector="Border.praxis-context-menu">
+    <Setter Property="Background" Value="#20262D" />
+    <Setter Property="BorderBrush" Value="#46505B" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="5" />
+    <Setter Property="Padding" Value="8" />
+  </Style>
+
+  <Style Selector="Window.light Border.praxis-context-menu">
+    <Setter Property="Background" Value="#F5F5F5" />
+    <Setter Property="BorderBrush" Value="#C6C6C6" />
+  </Style>
+
+  <Style Selector="Grid.praxis-glass-backdrop">
+    <Setter Property="Background" Value="{StaticResource PraxisGlassBackdropBrush}" />
+  </Style>
+
+  <Style Selector="Window.light Grid.praxis-glass-backdrop">
+    <Setter Property="Background" Value="{StaticResource PraxisLightGlassBackdropBrush}" />
+  </Style>
+
+  <Style Selector="Button.praxis-menu-button">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="Foreground" Value="{StaticResource PraxisTextPrimaryBrush}" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="CornerRadius" Value="4" />
+    <Setter Property="MinWidth" Value="128" />
+    <Setter Property="Padding" Value="12,7" />
+    <Setter Property="HorizontalContentAlignment" Value="Center" />
+    <Setter Property="FocusAdorner" Value="{x:Null}" />
+  </Style>
+
+  <Style Selector="Button.praxis-menu-button:pointerover">
+    <Setter Property="Background" Value="Transparent" />
+  </Style>
+
+  <Style Selector="Button.praxis-menu-button:pointerover /template/ ContentPresenter">
+    <Setter Property="Background" Value="Transparent" />
+  </Style>
+
+  <Style Selector="Button.praxis-menu-button:focus">
+    <Setter Property="Background" Value="{StaticResource PraxisSurfaceStrongBrush}" />
+    <Setter Property="BorderThickness" Value="0" />
+  </Style>
+
+  <Style Selector="Button.praxis-menu-button:focus:pointerover">
+    <Setter Property="Background" Value="{StaticResource PraxisSurfaceStrongBrush}" />
+  </Style>
+
+  <Style Selector="Button.praxis-menu-button:focus:pointerover /template/ ContentPresenter">
+    <Setter Property="Background" Value="{StaticResource PraxisSurfaceStrongBrush}" />
+  </Style>
+
+  <Style Selector="Window.light Button.praxis-menu-button">
+    <Setter Property="Foreground" Value="#1A1A1A" />
+  </Style>
+
+  <Style Selector="Window.light Button.praxis-menu-button:pointerover">
+    <Setter Property="Background" Value="Transparent" />
+  </Style>
+
+  <Style Selector="Window.light Button.praxis-menu-button:focus">
+    <Setter Property="Background" Value="#DADADA" />
+  </Style>
+
+  <Style Selector="Border.praxis-editor-modal">
+    <Setter Property="Background" Value="#20262D" />
+    <Setter Property="BorderBrush" Value="#46505B" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="6" />
+    <Setter Property="Padding" Value="16" />
+  </Style>
+
+  <Style Selector="Window.light Border.praxis-editor-modal">
+    <Setter Property="Background" Value="#F8F8F8" />
+    <Setter Property="BorderBrush" Value="#C6C6C6" />
+  </Style>
+
+  <Style Selector="TextBlock.praxis-editor-label">
+    <Setter Property="Foreground" Value="{StaticResource PraxisTextSecondaryBrush}" />
+    <Setter Property="FontSize" Value="12" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="Height" Value="38" />
+    <Setter Property="LineHeight" Value="38" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+    <Setter Property="TextAlignment" Value="Left" />
+  </Style>
+
+  <Style Selector="Grid.praxis-editor-field TextBox.praxis-input">
+    <Setter Property="Padding" Value="12,0" />
+    <Setter Property="Height" Value="38" />
+    <Setter Property="MinHeight" Value="38" />
+  </Style>
+
+  <Style Selector="Grid.praxis-editor-field TextBox.praxis-input:focus">
+    <Setter Property="Padding" Value="12,0" />
+    <Setter Property="BorderThickness" Value="2" />
+  </Style>
+
+  <Style Selector="Button.praxis-copy-button">
+    <Setter Property="Opacity" Value="0.001" />
+    <Setter Property="Width" Value="30" />
+    <Setter Property="Height" Value="38" />
+    <Setter Property="HorizontalAlignment" Value="Right" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+    <Setter Property="Padding" Value="0" />
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="Foreground" Value="#7B858E" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="CornerRadius" Value="4" />
+    <Setter Property="FontSize" Value="16" />
+    <Setter Property="IsTabStop" Value="False" />
+    <Setter Property="FocusAdorner" Value="{x:Null}" />
+  </Style>
+
+  <Style Selector="Button.praxis-copy-button:pointerover">
+    <Setter Property="Opacity" Value="0.72" />
+    <Setter Property="Background" Value="Transparent" />
+  </Style>
+
+  <Style Selector="Button.praxis-copy-button:pointerover /template/ ContentPresenter">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderBrush" Value="Transparent" />
+  </Style>
+
+  <Style Selector="Button.praxis-copy-button:pointerover /template/ Border">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderBrush" Value="Transparent" />
+  </Style>
+
+  <Style Selector="Button.praxis-copy-button:pressed">
+    <Setter Property="Background" Value="Transparent" />
+  </Style>
+
+  <Style Selector="Button.praxis-copy-button:pressed /template/ ContentPresenter">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderBrush" Value="Transparent" />
+  </Style>
+
+  <Style Selector="Button.praxis-copy-button:pressed /template/ Border">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderBrush" Value="Transparent" />
+  </Style>
+
+  <Style Selector="Button.praxis-copy-button Path">
+    <Setter Property="Width" Value="15" />
+    <Setter Property="Height" Value="15" />
+    <Setter Property="Stretch" Value="Uniform" />
+    <Setter Property="HorizontalAlignment" Value="Center" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+  </Style>
+
+  <Style Selector="Button.praxis-clear-button">
+    <Setter Property="Width" Value="22" />
+    <Setter Property="Height" Value="22" />
+    <Setter Property="HorizontalAlignment" Value="Right" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+    <Setter Property="Margin" Value="0,0,9,0" />
+    <Setter Property="Padding" Value="0" />
+    <Setter Property="Background" Value="#4A535E" />
+    <Setter Property="Foreground" Value="{StaticResource PraxisTextPrimaryBrush}" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="CornerRadius" Value="11" />
+    <Setter Property="HorizontalContentAlignment" Value="Center" />
+    <Setter Property="VerticalContentAlignment" Value="Center" />
+  </Style>
+
+  <Style Selector="Button.praxis-clear-button Path">
+    <Setter Property="Width" Value="8" />
+    <Setter Property="Height" Value="8" />
+    <Setter Property="HorizontalAlignment" Value="Center" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+  </Style>
+
+  <Style Selector="CheckBox.praxis-invert-check">
+    <Setter Property="Foreground" Value="{StaticResource PraxisTextPrimaryBrush}" />
+  </Style>
+
+  <Style Selector="Window.light CheckBox.praxis-invert-check">
+    <Setter Property="Foreground" Value="#1A1A1A" />
+  </Style>
+
+  <Style Selector="Grid.praxis-tooltip-grid">
+    <Setter Property="RowSpacing" Value="1" />
+    <Setter Property="ColumnSpacing" Value="0" />
+    <Setter Property="MaxWidth" Value="420" />
+  </Style>
+
+  <Style Selector="Grid.praxis-tooltip-grid TextBlock">
+    <Setter Property="FontFamily" Value="Inter, Hiragino Sans, Yu Gothic, Meiryo, Segoe UI, -apple-system, BlinkMacSystemFont" />
+  </Style>
+
+  <Style Selector="ToolTip">
+    <Setter Property="FontFamily" Value="Inter, Hiragino Sans, Yu Gothic, Meiryo, Segoe UI, -apple-system, BlinkMacSystemFont" />
+  </Style>
+
+  <Style Selector="TextBlock.praxis-tooltip-label">
+    <Setter Property="FontWeight" Value="Bold" />
+  </Style>
+
+  <Style Selector="MenuFlyoutPresenter">
+    <Setter Property="Background" Value="#20262D" />
+    <Setter Property="BorderBrush" Value="#46505B" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="6" />
+    <Setter Property="Padding" Value="8" />
+  </Style>
+
+  <Style Selector="Window.light MenuFlyoutPresenter">
+    <Setter Property="Background" Value="#F5F5F5" />
+    <Setter Property="BorderBrush" Value="#C6C6C6" />
+  </Style>
+
+  <Style Selector="MenuItem">
+    <Setter Property="MinHeight" Value="28" />
+    <Setter Property="Padding" Value="12,5" />
+    <Setter Property="Margin" Value="2" />
+    <Setter Property="CornerRadius" Value="4" />
+  </Style>
+
+  <Style Selector="Border.praxis-resize-edge">
+    <Setter Property="Background" Value="#01000000" />
+    <Setter Property="ZIndex" Value="2000" />
+  </Style>
+
+  <Style Selector="Border.praxis-resize-corner">
+    <Setter Property="Background" Value="#01000000" />
+    <Setter Property="ZIndex" Value="2100" />
+    <Setter Property="Width" Value="16" />
+    <Setter Property="Height" Value="16" />
+  </Style>
+
+  <Style Selector="Border.praxis-copy-toast">
+    <Setter Property="Width" Value="54" />
+    <Setter Property="Height" Value="42" />
+    <Setter Property="Background" Value="#D8273038" />
+    <Setter Property="BorderBrush" Value="#40FFFFFF" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="8" />
+    <Setter Property="Padding" Value="12" />
+    <Setter Property="BoxShadow" Value="0 12 28 0 #66000000, inset 0 1 0 0 #26FFFFFF" />
+  </Style>
+
+  <Style Selector="Border.praxis-copy-toast Path">
+    <Setter Property="Stretch" Value="Uniform" />
+    <Setter Property="Width" Value="18" />
+    <Setter Property="Height" Value="18" />
+    <Setter Property="HorizontalAlignment" Value="Center" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+  </Style>
+
+  <Style Selector="Window.light Border.praxis-copy-toast">
+    <Setter Property="Background" Value="#E8F4F4F4" />
+    <Setter Property="BorderBrush" Value="#AAFFFFFF" />
+  </Style>
+
+  <Style Selector="Border.praxis-resize-n">
+    <Setter Property="Height" Value="6" />
+    <Setter Property="Margin" Value="16,0,16,0" />
+    <Setter Property="VerticalAlignment" Value="Top" />
+    <Setter Property="HorizontalAlignment" Value="Stretch" />
+    <Setter Property="Cursor" Value="SizeNorthSouth" />
+  </Style>
+
+  <Style Selector="Border.praxis-resize-s">
+    <Setter Property="Height" Value="6" />
+    <Setter Property="Margin" Value="16,0,16,0" />
+    <Setter Property="VerticalAlignment" Value="Bottom" />
+    <Setter Property="HorizontalAlignment" Value="Stretch" />
+    <Setter Property="Cursor" Value="SizeNorthSouth" />
+  </Style>
+
+  <Style Selector="Border.praxis-resize-w">
+    <Setter Property="Width" Value="6" />
+    <Setter Property="Margin" Value="0,16,0,16" />
+    <Setter Property="HorizontalAlignment" Value="Left" />
+    <Setter Property="VerticalAlignment" Value="Stretch" />
+    <Setter Property="Cursor" Value="SizeWestEast" />
+  </Style>
+
+  <Style Selector="Border.praxis-resize-e">
+    <Setter Property="Width" Value="6" />
+    <Setter Property="Margin" Value="0,16,0,16" />
+    <Setter Property="HorizontalAlignment" Value="Right" />
+    <Setter Property="VerticalAlignment" Value="Stretch" />
+    <Setter Property="Cursor" Value="SizeWestEast" />
+  </Style>
+
+  <Style Selector="Border.praxis-resize-nw">
+    <Setter Property="HorizontalAlignment" Value="Left" />
+    <Setter Property="VerticalAlignment" Value="Top" />
+    <Setter Property="Cursor" Value="TopLeftCorner" />
+  </Style>
+
+  <Style Selector="Border.praxis-resize-ne">
+    <Setter Property="HorizontalAlignment" Value="Right" />
+    <Setter Property="VerticalAlignment" Value="Top" />
+    <Setter Property="Cursor" Value="TopRightCorner" />
+  </Style>
+
+  <Style Selector="Border.praxis-resize-sw">
+    <Setter Property="HorizontalAlignment" Value="Left" />
+    <Setter Property="VerticalAlignment" Value="Bottom" />
+    <Setter Property="Cursor" Value="BottomLeftCorner" />
+  </Style>
+
+  <Style Selector="Border.praxis-resize-se">
+    <Setter Property="HorizontalAlignment" Value="Right" />
+    <Setter Property="VerticalAlignment" Value="Bottom" />
+    <Setter Property="Cursor" Value="BottomRightCorner" />
+  </Style>
+</Styles>

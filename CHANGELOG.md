@@ -6,6 +6,26 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 
 ## [Unreleased]
 
+### Added
+- Started the v2.0.0 Avalonia migration branch with strict-MVVM Core model structure, an Avalonia desktop shell, and a migration plan covering platform abstractions, pseudo-acrylic UI direction, DB compatibility risks, and future Linux readiness
+- Added `Praxis.Data` with SQLite launcher-button persistence, platform-aware app data path resolution, v1 table-name compatibility, `praxis.db3` / existing `praxis.db` file support, and schema migration to version 5 for `ColorKey`, `ToolTip`, `LastExecutedAtUtc`, and `SortOrder`
+- Added a desktop launcher execution service for direct command execution and default-app opening on Windows, macOS, and Linux-ready `xdg-open` paths
+- Reintroduced command-input execution, command suggestions, persisted recent Dock order, button delete/move repository operations, and launch-log writes through Core/Data services
+- Added Avalonia window icon resources, a dedicated draggable chrome row, double-click maximize on the drag area, and custom minimize/maximize/close caption buttons
+
+### Changed
+- Switched the solution, CI, delivery, README, and developer/test docs to the Avalonia desktop app as the active runtime target; MAUI workloads are no longer required
+- Changed Avalonia startup to load launcher buttons from SQLite through `MainModel` and `ILauncherButtonRepository` instead of preview-only launcher data
+- Changed `MainWindow` code-behind to load XAML directly instead of keeping a generated-style `InitializeComponent` wrapper
+
+### Removed
+- Removed the former .NET MAUI app project and its MAUI app-layer linked-source tests so v2 development starts from the Avalonia shell and Core model/service contracts
+
+### Tests
+- Added focused xUnit coverage for `praxis.db3` / `praxis.db` storage selection, SQLite v4-to-v5 launcher schema migration, and v2 launcher-field persistence
+- Added focused xUnit coverage for command suggestions/execution, persisted Dock order, launch logs, button deletion, and snapped move persistence
+- Added source guards for direct XAML loading, embedded icon assets, draggable chrome, and caption button wiring
+
 ### [1.2.0] - 2026-05-11
 
 ### Added
