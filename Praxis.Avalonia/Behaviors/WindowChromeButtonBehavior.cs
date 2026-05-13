@@ -2,6 +2,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Interactivity;
+using Praxis.Avalonia.Behaviors;
 
 namespace Praxis.Avalonia.Behaviors;
 
@@ -61,10 +62,13 @@ public sealed class WindowChromeButtonBehavior
             case WindowChromeAction.ToggleMaximize:
                 if (OperatingSystem.IsMacOS())
                 {
-                    window.WindowState = window.WindowState == WindowState.FullScreen
-                        ? WindowState.Normal
-                        : WindowState.FullScreen;
+                    MainWindowInteractionBehavior.ToggleMacFullScreen(window);
                     break;
+                }
+
+                if (window.WindowState == WindowState.Normal)
+                {
+                    MainWindowInteractionBehavior.CaptureNormalBoundsBeforeMaximize(window);
                 }
 
                 window.WindowState = window.WindowState == WindowState.Maximized

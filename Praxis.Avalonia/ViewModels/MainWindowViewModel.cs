@@ -2,15 +2,25 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Avalonia.Threading;
 using Praxis.Core.Models;
+using Praxis.Core.Services;
 
 namespace Praxis.Avalonia.ViewModels;
 
 public sealed class MainWindowViewModel : ObservableObject
 {
-    public MainWindowViewModel(MainModel model)
+    private readonly IStateSyncNotifier? stateSyncNotifier;
+
+    public MainWindowViewModel(MainModel model, IStateSyncNotifier? stateSyncNotifier = null)
     {
         Model = model;
+        this.stateSyncNotifier = stateSyncNotifier;
+        if (this.stateSyncNotifier is not null)
+        {
+            this.stateSyncNotifier.ButtonsChanged += StateSyncNotifierOnButtonsChanged;
+        }
+
         Model.PropertyChanged += ModelOnPropertyChanged;
         Model.Status.PropertyChanged += StatusOnPropertyChanged;
         InitializeCommand = new AsyncRelayCommand(Model.InitializeAsync);
@@ -38,6 +48,9 @@ public sealed class MainWindowViewModel : ObservableObject
         UndoCommand = new AsyncRelayCommand(Model.UndoAsync);
         RedoCommand = new AsyncRelayCommand(Model.RedoAsync);
         ApplyThemeCommand = new RelayCommand<ThemeMode>(Model.ApplyTheme);
+        ReloadConflictCommand = new RelayCommand(Model.ReloadConflict);
+        OverwriteConflictCommand = new RelayCommand(Model.OverwriteConflict);
+        CancelConflictCommand = new RelayCommand(Model.CancelConflict);
     }
 
     internal MainModel Model { get; }
@@ -75,6 +88,12 @@ public sealed class MainWindowViewModel : ObservableObject
     public LauncherButtonModel? EditorButton => Model.EditorButton;
 
     public bool IsEditorCreatingNewButton => Model.IsEditorCreatingNewButton;
+
+    public bool IsConflictDialogOpen => Model.IsConflictDialogOpen;
+
+    public string ConflictTitle => Model.ConflictTitle;
+
+    public string ConflictMessage => Model.ConflictMessage;
 
     public IAsyncRelayCommand InitializeCommand { get; }
 
@@ -126,8 +145,17 @@ public sealed class MainWindowViewModel : ObservableObject
 
     public IRelayCommand<ThemeMode> ApplyThemeCommand { get; }
 
+    public IRelayCommand ReloadConflictCommand { get; }
+
+    public IRelayCommand OverwriteConflictCommand { get; }
+
+    public IRelayCommand CancelConflictCommand { get; }
+
     public Task InitializeAsync()
         => InitializeCommand.ExecuteAsync(null);
+
+    public void UpdatePlacementViewport(double scrollX, double scrollY, double width, double height)
+        => Model.UpdateViewport(scrollX, scrollY, width, height);
 
     private void ModelOnPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
@@ -143,5 +171,10 @@ public sealed class MainWindowViewModel : ObservableObject
     private void StatusOnPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
         OnPropertyChanged(nameof(Status));
+    }
+
+    private void StateSyncNotifierOnButtonsChanged(object? sender, StateSyncChangedEventArgs e)
+    {
+        Dispatcher.UIThread.Post(async () => await Model.ReloadFromExternalChangeAsync());
     }
 }

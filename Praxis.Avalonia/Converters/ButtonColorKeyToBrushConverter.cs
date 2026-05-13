@@ -10,12 +10,12 @@ public sealed class ButtonColorKeyToBrushConverter : IValueConverter
     public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
         => value switch
         {
-            LauncherButtonColorKey.Blue => Brush("#335A7D"),
-            LauncherButtonColorKey.Green => Brush("#386247"),
-            LauncherButtonColorKey.Red => Brush("#7A3F45"),
-            LauncherButtonColorKey.Purple => Brush("#5A4D82"),
-            LauncherButtonColorKey.Amber => Brush("#765F35"),
-            _ => Brush("#343A42"),
+            LauncherButtonColorKey.Blue => Brush("#444444"),
+            LauncherButtonColorKey.Green => Brush("#505050"),
+            LauncherButtonColorKey.Red => Brush("#5C5C5C"),
+            LauncherButtonColorKey.Purple => Brush("#686868"),
+            LauncherButtonColorKey.Amber => Brush("#747474"),
+            _ => Brush("#343434"),
         };
 
     public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)

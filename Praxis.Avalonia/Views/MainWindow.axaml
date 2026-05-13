@@ -19,6 +19,10 @@
   <Grid>
     <Border Classes="praxis-shell">
       <Grid>
+        <Border Height="18"
+                VerticalAlignment="Top"
+                Background="#01000000"
+                behaviors:WindowDragBehavior.IsDragArea="True" />
         <Border Classes="praxis-acrylic-sheen"
                 IsHitTestVisible="False" />
         <Grid x:Name="ShellContent"
@@ -28,8 +32,7 @@
           Grid.Row="0"
           ColumnDefinitions="Auto,*,Auto"
           MinHeight="36"
-          Background="Transparent"
-          WindowDecorationProperties.ElementRole="TitleBar"
+          Background="#01000000"
           behaviors:WindowDragBehavior.IsDragArea="True">
       <StackPanel x:Name="MacCaptionButtons"
                   Orientation="Horizontal"
@@ -61,10 +64,8 @@
                 ToolTip.Tip="Full Screen"
                 behaviors:WindowChromeButtonBehavior.Action="ToggleMaximize">
           <Grid Classes="praxis-traffic-symbol praxis-traffic-fullscreen-glyph">
-            <Path Data="M 4.1 9.1 L 4.1 4.1 L 9.9 4.1 L 9.9 9.9 L 4.1 9.9 M 9.9 4.1 L 4.1 9.9"
-                  StrokeThickness="1.3"
-                  StrokeLineCap="Round"
-                  StrokeJoin="Round" />
+            <Path Data="M 3.6 3.6 L 8.2 3.6 L 3.6 8.2 Z" />
+            <Path Data="M 9.4 4.8 L 9.4 9.4 L 4.8 9.4 Z" />
           </Grid>
         </Button>
       </StackPanel>
@@ -136,10 +137,11 @@
                   StrokeJoin="Round" />
           </Grid>
           <Button Classes="praxis-clear-button"
+                  IsTabStop="False"
                   IsVisible="{Binding #CommandBox.Text, Converter={StaticResource NotEmptyStringToBoolConverter}}"
                   Command="{Binding ClearCommandTextCommand}">
             <Path Data="M 1 1 L 7 7 M 7 1 L 1 7"
-                  Stroke="{StaticResource PraxisTextPrimaryBrush}"
+                  Stroke="{Binding $parent[Button].Foreground}"
                   StrokeThickness="1.7"
                   StrokeLineCap="Round" />
           </Button>
@@ -148,26 +150,31 @@
 
       <Button Grid.Column="1"
               Classes="praxis-create"
+              Height="40"
               Command="{Binding AddButtonCommand}"
               ToolTip.Tip="Create button">
-        <Viewbox Width="24"
-                 Height="24">
-          <Canvas Width="24"
-                  Height="24">
-            <Ellipse Width="18"
-                     Height="18"
-                     Canvas.Left="3"
-                     Canvas.Top="3"
+        <Viewbox Width="30"
+                 Height="30">
+          <Canvas Width="30"
+                  Height="30">
+            <Ellipse Width="22"
+                     Height="22"
+                     Canvas.Left="4"
+                     Canvas.Top="4"
                      Stroke="{Binding $parent[Button].Foreground}"
-                     StrokeThickness="1.3"
+                     StrokeThickness="0.6"
                      Fill="Transparent" />
-            <Polygon Points="12,1.6 21,6.8 21,17.2 12,22.4 3,17.2 3,6.8"
+            <Polygon Points="15,4 24.53,9.5 24.53,20.5 15,26 5.47,20.5 5.47,9.5"
                      Stroke="{Binding $parent[Button].Foreground}"
-                     StrokeThickness="1.3"
+                     StrokeThickness="0.6"
                      Fill="Transparent" />
-            <Path Data="M 12 8 L 12 16 M 8 12 L 16 12"
+            <Polygon Points="15,2 26.25,8.5 26.25,21.5 15,28 3.75,21.5 3.75,8.5"
+                     Stroke="{Binding $parent[Button].Foreground}"
+                     StrokeThickness="0.6"
+                     Fill="Transparent" />
+            <Path Data="M 15 10 L 15 20 M 10 15 L 20 15"
                   Stroke="{Binding $parent[Button].Foreground}"
-                  StrokeThickness="1.8"
+                  StrokeThickness="1.5"
                   StrokeLineCap="Round" />
           </Canvas>
         </Viewbox>
@@ -203,10 +210,11 @@
                 StrokeLineCap="Round" />
         </Canvas>
         <Button Classes="praxis-clear-button"
+                IsTabStop="False"
                 IsVisible="{Binding #SearchBox.Text, Converter={StaticResource NotEmptyStringToBoolConverter}}"
                 Command="{Binding ClearSearchTextCommand}">
           <Path Data="M 1 1 L 7 7 M 7 1 L 1 7"
-                Stroke="{StaticResource PraxisTextPrimaryBrush}"
+                Stroke="{Binding $parent[Button].Foreground}"
                 StrokeThickness="1.7"
                 StrokeLineCap="Round" />
         </Button>
@@ -301,19 +309,19 @@
                   <ToolTip.Tip>
                     <Grid Classes="praxis-tooltip-grid"
                           RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto"
-                          ColumnDefinitions="70,10,*">
+                          ColumnDefinitions="92,*">
                       <TextBlock Classes="praxis-tooltip-label" Text="Command" />
-                      <TextBlock Grid.Column="2" Text="{Binding Command}" />
+                      <TextBlock Grid.Column="1" Text="{Binding Command}" />
                       <TextBlock Grid.Row="1" Classes="praxis-tooltip-label" Text="ButtonText" />
-                      <TextBlock Grid.Row="1" Grid.Column="2" Text="{Binding Text}" />
+                      <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding Text}" />
                       <TextBlock Grid.Row="2" Classes="praxis-tooltip-label" Text="Tool" />
-                      <TextBlock Grid.Row="2" Grid.Column="2" Text="{Binding CommandPath}" />
+                      <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding CommandPath}" />
                       <TextBlock Grid.Row="3" Classes="praxis-tooltip-label" Text="Arguments" />
-                      <TextBlock Grid.Row="3" Grid.Column="2" Text="{Binding Arguments}" />
+                      <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding Arguments}" />
                       <TextBlock Grid.Row="4" Classes="praxis-tooltip-label" Text="Clip Word" />
-                      <TextBlock Grid.Row="4" Grid.Column="2" Text="{Binding ClipText}" />
+                      <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding ClipText}" />
                       <TextBlock Grid.Row="5" Classes="praxis-tooltip-label" Text="Note" />
-                      <TextBlock Grid.Row="5" Grid.Column="2" Text="{Binding Note}" />
+                      <TextBlock Grid.Row="5" Grid.Column="1" Text="{Binding Note}" />
                     </Grid>
                   </ToolTip.Tip>
                   <Button.Background>
@@ -374,25 +382,25 @@
               <ToolTip.Tip>
                 <Grid Classes="praxis-tooltip-grid"
                           RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto"
-                          ColumnDefinitions="70,10,*">
+                          ColumnDefinitions="92,*">
                       <TextBlock Classes="praxis-tooltip-label" Text="Command" />
-                      <TextBlock Grid.Column="2" Text="{Binding Command}" />
+                      <TextBlock Grid.Column="1" Text="{Binding Command}" />
                       <TextBlock Grid.Row="1" Classes="praxis-tooltip-label" Text="ButtonText" />
-                      <TextBlock Grid.Row="1" Grid.Column="2" Text="{Binding Text}" />
+                      <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding Text}" />
                       <TextBlock Grid.Row="2" Classes="praxis-tooltip-label" Text="Tool" />
-                      <TextBlock Grid.Row="2" Grid.Column="2" Text="{Binding CommandPath}" />
+                      <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding CommandPath}" />
                       <TextBlock Grid.Row="3" Classes="praxis-tooltip-label" Text="Arguments" />
-                      <TextBlock Grid.Row="3" Grid.Column="2" Text="{Binding Arguments}" />
+                      <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding Arguments}" />
                       <TextBlock Grid.Row="4" Classes="praxis-tooltip-label" Text="Clip Word" />
-                      <TextBlock Grid.Row="4" Grid.Column="2" Text="{Binding ClipText}" />
+                      <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding ClipText}" />
                       <TextBlock Grid.Row="5" Classes="praxis-tooltip-label" Text="Note" />
-                      <TextBlock Grid.Row="5" Grid.Column="2" Text="{Binding Note}" />
+                      <TextBlock Grid.Row="5" Grid.Column="1" Text="{Binding Note}" />
                     </Grid>
               </ToolTip.Tip>
               <Button.Background>
                 <MultiBinding Converter="{StaticResource LauncherButtonBackgroundConverter}">
                   <Binding Path="ColorKey" />
-                  <Binding Path="IsSelected" />
+                  <Binding Path="$self.IsKeyboardFocusWithin" />
                   <Binding Path="UseInvertedThemeColors" />
                   <Binding Path="$parent[Window].DataContext.SelectedTheme" />
                   <Binding Path="$self.IsPointerOver" />
@@ -505,7 +513,7 @@
             <Button Classes="praxis-copy-button"
                     Tag="{Binding EditorButton.Id}">
               <Path Data="M 8 5 L 15 5 L 15 14 L 8 14 Z M 5 8 L 5 17 L 12 17"
-                    Stroke="{StaticResource PraxisPlaceholderBrush}"
+                    Stroke="{Binding $parent[Button].Foreground}"
                     StrokeThickness="1.4"
                     StrokeLineCap="Round"
                     StrokeJoin="Round" />
@@ -527,9 +535,10 @@
                      ScrollViewer.VerticalScrollBarVisibility="Disabled"
                      Text="{Binding EditorButton.Text, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
             <Button Classes="praxis-copy-button"
+                    IsVisible="{Binding EditorButton.Text, Converter={StaticResource NotEmptyStringToBoolConverter}}"
                     Tag="{Binding EditorButton.Text}">
               <Path Data="M 8 5 L 15 5 L 15 14 L 8 14 Z M 5 8 L 5 17 L 12 17"
-                    Stroke="{StaticResource PraxisPlaceholderBrush}"
+                    Stroke="{Binding $parent[Button].Foreground}"
                     StrokeThickness="1.4"
                     StrokeLineCap="Round"
                     StrokeJoin="Round" />
@@ -551,9 +560,10 @@
                      ScrollViewer.VerticalScrollBarVisibility="Disabled"
                      Text="{Binding EditorButton.CommandPath, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
             <Button Classes="praxis-copy-button"
+                    IsVisible="{Binding EditorButton.CommandPath, Converter={StaticResource NotEmptyStringToBoolConverter}}"
                     Tag="{Binding EditorButton.CommandPath}">
               <Path Data="M 8 5 L 15 5 L 15 14 L 8 14 Z M 5 8 L 5 17 L 12 17"
-                    Stroke="{StaticResource PraxisPlaceholderBrush}"
+                    Stroke="{Binding $parent[Button].Foreground}"
                     StrokeThickness="1.4"
                     StrokeLineCap="Round"
                     StrokeJoin="Round" />
@@ -575,9 +585,10 @@
                      ScrollViewer.VerticalScrollBarVisibility="Disabled"
                      Text="{Binding EditorButton.Arguments, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
             <Button Classes="praxis-copy-button"
+                    IsVisible="{Binding EditorButton.Arguments, Converter={StaticResource NotEmptyStringToBoolConverter}}"
                     Tag="{Binding EditorButton.Arguments}">
               <Path Data="M 8 5 L 15 5 L 15 14 L 8 14 Z M 5 8 L 5 17 L 12 17"
-                    Stroke="{StaticResource PraxisPlaceholderBrush}"
+                    Stroke="{Binding $parent[Button].Foreground}"
                     StrokeThickness="1.4"
                     StrokeLineCap="Round"
                     StrokeJoin="Round" />
@@ -600,9 +611,10 @@
                      ScrollViewer.VerticalScrollBarVisibility="Auto"
                      Text="{Binding EditorButton.ClipText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
             <Button Classes="praxis-copy-button"
+                    IsVisible="{Binding EditorButton.ClipText, Converter={StaticResource NotEmptyStringToBoolConverter}}"
                     Tag="{Binding EditorButton.ClipText}">
               <Path Data="M 8 5 L 15 5 L 15 14 L 8 14 Z M 5 8 L 5 17 L 12 17"
-                    Stroke="{StaticResource PraxisPlaceholderBrush}"
+                    Stroke="{Binding $parent[Button].Foreground}"
                     StrokeThickness="1.4"
                     StrokeLineCap="Round"
                     StrokeJoin="Round" />
@@ -625,9 +637,10 @@
                      ScrollViewer.VerticalScrollBarVisibility="Auto"
                      Text="{Binding EditorButton.Note, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
             <Button Classes="praxis-copy-button"
+                    IsVisible="{Binding EditorButton.Note, Converter={StaticResource NotEmptyStringToBoolConverter}}"
                     Tag="{Binding EditorButton.Note}">
               <Path Data="M 8 5 L 15 5 L 15 14 L 8 14 Z M 5 8 L 5 17 L 12 17"
-                    Stroke="{StaticResource PraxisPlaceholderBrush}"
+                    Stroke="{Binding $parent[Button].Foreground}"
                     StrokeThickness="1.4"
                     StrokeLineCap="Round"
                     StrokeJoin="Round" />
@@ -652,13 +665,60 @@
                       Margin="0,8,0,0"
                       Spacing="8">
             <Button Classes="praxis-menu-button"
+                    x:Name="ModalCancelButton"
                     Content="Cancel"
                     TabIndex="5"
                     Command="{Binding CancelEditorCommand}" />
             <Button Classes="praxis-menu-button"
+                    x:Name="ModalSaveButton"
                     Content="Save"
                     TabIndex="6"
                     Command="{Binding SaveEditorCommand}" />
+          </StackPanel>
+        </Grid>
+      </Border>
+    </Grid>
+
+    <Grid Grid.RowSpan="5"
+          x:Name="ConflictOverlay"
+          Margin="-18"
+          IsVisible="{Binding IsConflictDialogOpen}"
+          Classes="praxis-glass-backdrop"
+          ZIndex="1100"
+          Focusable="True"
+          KeyboardNavigation.TabNavigation="Cycle">
+      <Border Classes="praxis-editor-modal praxis-conflict-modal"
+              Width="520"
+              HorizontalAlignment="Center"
+              VerticalAlignment="Center">
+        <Grid RowDefinitions="Auto,Auto,Auto"
+              RowSpacing="14">
+          <TextBlock Text="{Binding ConflictTitle}"
+                     FontSize="15"
+                     FontWeight="SemiBold"
+                     Foreground="{StaticResource PraxisTextPrimaryBrush}" />
+          <TextBlock Grid.Row="1"
+                     Text="{Binding ConflictMessage}"
+                     Foreground="{StaticResource PraxisTextSecondaryBrush}"
+                     TextWrapping="Wrap"
+                     LineHeight="20" />
+          <StackPanel Grid.Row="2"
+                      Orientation="Horizontal"
+                      HorizontalAlignment="Center"
+                      Spacing="8"
+                      KeyboardNavigation.TabNavigation="Cycle">
+            <Button x:Name="ConflictReloadButton"
+                    Classes="praxis-menu-button"
+                    Content="Reload"
+                    Command="{Binding ReloadConflictCommand}" />
+            <Button x:Name="ConflictOverwriteButton"
+                    Classes="praxis-menu-button"
+                    Content="Overwrite"
+                    Command="{Binding OverwriteConflictCommand}" />
+            <Button x:Name="ConflictCancelButton"
+                    Classes="praxis-menu-button"
+                    Content="Cancel"
+                    Command="{Binding CancelConflictCommand}" />
           </StackPanel>
         </Grid>
       </Border>
@@ -674,7 +734,6 @@
             IsHitTestVisible="False"
             ZIndex="1200">
       <Path Data="M 8 5 L 15 5 L 15 14 L 8 14 Z M 5 8 L 5 17 L 12 17"
-            Stroke="{StaticResource PraxisTextPrimaryBrush}"
             StrokeThickness="1.5"
             StrokeLineCap="Round"
             StrokeJoin="Round" />

@@ -16,7 +16,7 @@ public sealed class LauncherButtonForegroundConverter : IMultiValueConverter
         var light = ResolveLight(theme);
         return inverted
             ? Brush(light ? "#F2F2F2" : "#1A1A1A")
-            : Brush(light ? "#1A1A1A" : "#F3F6F8");
+            : Brush(light ? "#1A1A1A" : "#F4F4F4");
     }
 
     private static bool ResolveLight(ThemeMode theme)

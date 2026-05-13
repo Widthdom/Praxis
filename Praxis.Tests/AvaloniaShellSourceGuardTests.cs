@@ -23,6 +23,9 @@ public class AvaloniaShellSourceGuardTests
         Assert.DoesNotContain("praxis-title-icon", xaml, StringComparison.Ordinal);
         Assert.DoesNotContain("Text=\"Praxis\"", xaml, StringComparison.Ordinal);
         Assert.Contains("WindowDragBehavior.IsDragArea=\"True\"", xaml, StringComparison.Ordinal);
+        Assert.Contains("NotifyMoveDragStarted", ReadRepositoryFile("Praxis.Avalonia", "Behaviors", "WindowDragBehavior.cs"), StringComparison.Ordinal);
+        Assert.Contains("IsTitleBarDoubleClick", ReadRepositoryFile("Praxis.Avalonia", "Behaviors", "WindowDragBehavior.cs"), StringComparison.Ordinal);
+        Assert.Contains("WindowState.Maximized", ReadRepositoryFile("Praxis.Avalonia", "Behaviors", "WindowDragBehavior.cs"), StringComparison.Ordinal);
         Assert.Contains("x:Name=\"MacCaptionButtons\"", xaml, StringComparison.Ordinal);
         Assert.Contains("x:Name=\"WindowsCaptionButtons\"", xaml, StringComparison.Ordinal);
         Assert.Contains("WindowChromeButtonBehavior.Action=\"Minimize\"", xaml, StringComparison.Ordinal);
@@ -86,11 +89,19 @@ public class AvaloniaShellSourceGuardTests
     public void AvaloniaProject_EmbedsIconAssets()
     {
         var project = ReadRepositoryFile("Praxis.Avalonia", "Praxis.Avalonia.csproj");
+        var app = ReadRepositoryFile("Praxis.Avalonia", "App.axaml.cs");
+        var macDockIconService = ReadRepositoryFile("Praxis.Avalonia", "Services", "MacDockIconService.cs");
         var iconPath = Path.Combine(ResolveRepositoryRoot(), "Praxis.Avalonia", "Assets", "praxis-icon.ico");
+        var dockIconPath = Path.Combine(ResolveRepositoryRoot(), "Praxis.Avalonia", "Assets", "praxis-dock-icon.png");
 
         Assert.Contains("<ApplicationIcon>Assets/praxis-icon.ico</ApplicationIcon>", project, StringComparison.Ordinal);
         Assert.Contains("<AvaloniaResource Include=\"Assets\\**\" />", project, StringComparison.Ordinal);
+        Assert.Contains("<None Update=\"Assets\\praxis-dock-icon.png\" CopyToOutputDirectory=\"PreserveNewest\" />", project, StringComparison.Ordinal);
+        Assert.Contains("MacDockIconService.ApplyIfNeeded();", app, StringComparison.Ordinal);
+        Assert.Contains("OperatingSystem.IsMacOS()", macDockIconService, StringComparison.Ordinal);
+        Assert.Contains("setApplicationIconImage:", macDockIconService, StringComparison.Ordinal);
         Assert.True(File.Exists(iconPath));
+        Assert.True(File.Exists(dockIconPath));
     }
 
     private static string ReadRepositoryFile(params string[] path)

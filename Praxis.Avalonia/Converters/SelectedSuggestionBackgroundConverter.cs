@@ -26,6 +26,6 @@ public sealed class SelectedSuggestionBackgroundConverter : IMultiValueConverter
                 || Application.Current?.RequestedThemeVariant == ThemeVariant.Light,
         };
 
-        return new SolidColorBrush(Color.Parse(light ? "#CFCFCF" : "#4A535E"));
+        return new SolidColorBrush(Color.Parse(light ? "#CFCFCF" : "#555555"));
     }
 }

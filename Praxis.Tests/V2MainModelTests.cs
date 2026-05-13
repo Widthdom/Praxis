@@ -206,6 +206,27 @@ public class V2MainModelTests
     }
 
     [Fact]
+    public void UpdateViewport_LimitsVisibleButtonsToBufferedViewport()
+    {
+        var model = new MainModel(
+            new StubLauncherExecutionService(),
+            new InMemoryLauncherButtonRepository());
+        var near = new LauncherButtonModel { Text = "Item near", X = 20, Y = 20, Width = 100, Height = 40 };
+        var far = new LauncherButtonModel { Text = "Item far", X = 2000, Y = 20, Width = 100, Height = 40 };
+        model.Buttons.Add(near);
+        model.Buttons.Add(far);
+        model.SearchText = "item";
+
+        model.UpdateViewport(0, 0, 200, 200);
+
+        Assert.Same(near, Assert.Single(model.VisibleButtons));
+
+        model.UpdateViewport(1760, 0, 200, 200);
+
+        Assert.Same(far, Assert.Single(model.VisibleButtons));
+    }
+
+    [Fact]
     public async Task HandleButtonDragAsync_MovesSelectedButtonGroupAndPersists()
     {
         var repository = new InMemoryLauncherButtonRepository();

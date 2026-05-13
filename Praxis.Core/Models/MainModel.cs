@@ -12,9 +12,16 @@ public partial class MainModel : ObservableObject
 
     private readonly ILauncherExecutionService executionService;
     private readonly ILauncherButtonRepository repository;
+    private readonly IStateSyncNotifier? stateSyncNotifier;
     private readonly ActionHistory<ButtonHistoryAction> history = new();
     private readonly Dictionary<Guid, LauncherButtonRecord> dragStart = [];
     private readonly List<LauncherButtonModel> dragTargets = [];
+    private readonly List<LauncherButtonModel> filteredButtons = [];
+    private const double ViewportMargin = 240;
+    private double viewportX;
+    private double viewportY;
+    private double viewportWidth;
+    private double viewportHeight;
 
     [ObservableProperty]
     private string commandText = string.Empty;
@@ -49,14 +56,28 @@ public partial class MainModel : ObservableObject
     [ObservableProperty]
     private bool isEditorCreatingNewButton;
 
+    [ObservableProperty]
+    private bool isConflictDialogOpen;
+
+    [ObservableProperty]
+    private string conflictTitle = "Database conflict";
+
+    [ObservableProperty]
+    private string conflictMessage = "Another Praxis window changed this button. Reload the latest data or overwrite it with the current edit.";
+
     private bool editorCreatesNewButton;
+    private bool pendingExternalReload;
+    private int externalReloadInProgress;
+    private EditorConflictContext? pendingConflict;
 
     public MainModel(
         ILauncherExecutionService executionService,
-        ILauncherButtonRepository repository)
+        ILauncherButtonRepository repository,
+        IStateSyncNotifier? stateSyncNotifier = null)
     {
         this.executionService = executionService;
         this.repository = repository;
+        this.stateSyncNotifier = stateSyncNotifier;
     }
 
     public ObservableCollection<LauncherButtonModel> Buttons { get; } = [];
@@ -68,6 +89,20 @@ public partial class MainModel : ObservableObject
     public ObservableCollection<CommandSuggestionModel> CommandSuggestions { get; } = [];
 
     public StatusModel Status { get; } = new();
+
+    public void UpdateViewport(double scrollX, double scrollY, double width, double height)
+    {
+        if (width <= 0 || height <= 0)
+        {
+            return;
+        }
+
+        viewportX = Math.Max(0, scrollX);
+        viewportY = Math.Max(0, scrollY);
+        viewportWidth = width;
+        viewportHeight = height;
+        RefreshVisibleButtons();
+    }
 
     public async Task InitializeAsync(CancellationToken cancellationToken = default)
     {
@@ -326,6 +361,7 @@ public partial class MainModel : ObservableObject
             var before = LauncherButtonModelMapper.ToRecord(button);
             await repository.DeleteButtonAsync(button.Id, cancellationToken);
             Buttons.Remove(button);
+            filteredButtons.Remove(button);
             VisibleButtons.Remove(button);
             RecentButtons.Remove(button);
             history.Push(new ButtonHistoryAction
@@ -339,6 +375,7 @@ public partial class MainModel : ObservableObject
             }
 
             RefreshCommandSuggestions();
+            await TryNotifyButtonsChangedAsync(cancellationToken);
             Status.Set(LauncherStatusKind.Success, "Button deleted.");
         }
         catch (Exception ex)
@@ -500,6 +537,8 @@ public partial class MainModel : ObservableObject
                 }
             }
 
+            await TryNotifyButtonsChangedAsync(cancellationToken);
+
         }
         catch (Exception ex)
         {
@@ -552,9 +591,17 @@ public partial class MainModel : ObservableObject
         editorCreatesNewButton = false;
         IsEditorCreatingNewButton = false;
         IsEditorOpen = false;
+        if (pendingExternalReload)
+        {
+            pendingExternalReload = false;
+            _ = ReloadFromExternalChangeAsync();
+        }
     }
 
     public async Task SaveEditorAsync(CancellationToken cancellationToken = default)
+        => await SaveEditorCoreAsync(forceOverwrite: false, cancellationToken);
+
+    private async Task SaveEditorCoreAsync(bool forceOverwrite, CancellationToken cancellationToken = default)
     {
         if (EditorButton is null)
         {
@@ -564,10 +611,32 @@ public partial class MainModel : ObservableObject
         var draft = EditorButton;
         var existing = FindButtonById(draft.Id);
         var before = existing is null ? null : LauncherButtonModelMapper.ToRecord(existing);
+        var record = LauncherButtonModelMapper.ToRecord(draft);
+
+        if (!forceOverwrite && !editorCreatesNewButton)
+        {
+            var latest = await repository.GetByIdAsync(record.Id, forceReload: true, cancellationToken);
+            if (latest is null || (before is not null && RecordVersionComparer.HasConflict(before, latest)))
+            {
+                pendingConflict = new EditorConflictContext
+                {
+                    EditingRecord = record,
+                    LatestRecord = latest,
+                    ConflictType = latest is null ? EditorConflictType.DeletedByOtherWindow : EditorConflictType.UpdatedByOtherWindow,
+                };
+                ConflictTitle = latest is null ? "Button deleted in another window" : "Button changed in another window";
+                ConflictMessage = latest is null
+                    ? "This button was deleted in another Praxis window. Reload to close this editor, or overwrite to save it again."
+                    : "This button was changed in another Praxis window. Reload the latest data, or overwrite it with the current edit.";
+                IsConflictDialogOpen = true;
+                return;
+            }
+        }
+
         var target = existing;
         if (target is null)
         {
-            target = LauncherButtonModelMapper.FromRecord(LauncherButtonModelMapper.ToRecord(draft));
+            target = LauncherButtonModelMapper.FromRecord(record);
             Buttons.Add(target);
         }
         else
@@ -588,6 +657,7 @@ public partial class MainModel : ObservableObject
             });
             var message = editorCreatesNewButton ? "Button added." : "Button saved.";
             CancelEditor();
+            await TryNotifyButtonsChangedAsync(cancellationToken);
             Status.Set(LauncherStatusKind.Success, message);
         }
         catch (Exception ex)
@@ -600,6 +670,7 @@ public partial class MainModel : ObservableObject
     {
         SelectedTheme = mode;
         Status.Set(LauncherStatusKind.Success, $"Theme: {mode}");
+        _ = TryNotifyButtonsChangedAsync();
     }
 
     public async Task UndoAsync(CancellationToken cancellationToken = default)
@@ -612,6 +683,73 @@ public partial class MainModel : ObservableObject
 
         var applied = await ApplyHistoryUndoAsync(action, cancellationToken);
         history.CompleteUndo(action, applied);
+    }
+
+    public void ReloadConflict()
+    {
+        if (pendingConflict?.LatestRecord is { } latest)
+        {
+            EditorButton = LauncherButtonModelMapper.FromRecord(latest);
+            Status.Set(LauncherStatusKind.Success, "Reloaded latest changes.");
+        }
+        else
+        {
+            CancelEditor();
+            Status.Set(LauncherStatusKind.Success, "Record was deleted in another window.");
+        }
+
+        pendingConflict = null;
+        IsConflictDialogOpen = false;
+    }
+
+    public async void OverwriteConflict()
+    {
+        IsConflictDialogOpen = false;
+        pendingConflict = null;
+        await SaveEditorCoreAsync(forceOverwrite: true);
+    }
+
+    public void CancelConflict()
+    {
+        pendingConflict = null;
+        IsConflictDialogOpen = false;
+    }
+
+    public async Task ReloadFromExternalChangeAsync(CancellationToken cancellationToken = default)
+    {
+        if (IsEditorOpen)
+        {
+            pendingExternalReload = true;
+            return;
+        }
+
+        if (Interlocked.Exchange(ref externalReloadInProgress, 1) == 1)
+        {
+            return;
+        }
+
+        try
+        {
+            var records = await repository.ReloadButtonsAsync(cancellationToken);
+            Buttons.Clear();
+            foreach (var record in records)
+            {
+                Buttons.Add(LauncherButtonModelMapper.FromRecord(record));
+            }
+
+            ApplyFilter();
+            RefreshCommandSuggestions();
+            await RestoreDockAsync(cancellationToken);
+            Status.Set(LauncherStatusKind.Success, "Synced from another window.");
+        }
+        catch (Exception ex)
+        {
+            Status.Set(LauncherStatusKind.Error, $"Sync failed: {ex.Message}");
+        }
+        finally
+        {
+            Interlocked.Exchange(ref externalReloadInProgress, 0);
+        }
     }
 
     public async Task RedoAsync(CancellationToken cancellationToken = default)
@@ -732,6 +870,7 @@ public partial class MainModel : ObservableObject
         }
 
         await repository.SetDockButtonIdsAsync(RecentButtons.Select(static item => item.Id).ToList(), cancellationToken);
+        await TryNotifyButtonsChangedAsync(cancellationToken);
     }
 
     partial void OnSearchTextChanged(string value)
@@ -746,10 +885,68 @@ public partial class MainModel : ObservableObject
 
     private void ApplyFilter()
     {
-        VisibleButtons.Clear();
+        filteredButtons.Clear();
         foreach (var button in Buttons.Where(ButtonMatchesSearch))
         {
-            VisibleButtons.Add(button);
+            filteredButtons.Add(button);
+        }
+
+        RefreshVisibleButtons();
+    }
+
+    private void RefreshVisibleButtons()
+    {
+        IEnumerable<LauncherButtonModel> source = filteredButtons;
+        if (viewportWidth > 0 && viewportHeight > 0)
+        {
+            var left = Math.Max(0, viewportX - ViewportMargin);
+            var top = Math.Max(0, viewportY - ViewportMargin);
+            var right = viewportX + viewportWidth + ViewportMargin;
+            var bottom = viewportY + viewportHeight + ViewportMargin;
+
+            source = source.Where(button =>
+                button.X < right &&
+                button.X + button.Width > left &&
+                button.Y < bottom &&
+                button.Y + button.Height > top);
+        }
+
+        ApplyVisibleButtonsDiff(source.ToList());
+    }
+
+    private void ApplyVisibleButtonsDiff(IReadOnlyList<LauncherButtonModel> target)
+    {
+        var targetSet = new HashSet<LauncherButtonModel>(target);
+        for (var i = VisibleButtons.Count - 1; i >= 0; i--)
+        {
+            if (!targetSet.Contains(VisibleButtons[i]))
+            {
+                VisibleButtons.RemoveAt(i);
+            }
+        }
+
+        for (var i = 0; i < target.Count; i++)
+        {
+            var desired = target[i];
+            if (i < VisibleButtons.Count && ReferenceEquals(VisibleButtons[i], desired))
+            {
+                continue;
+            }
+
+            var existingIndex = VisibleButtons.IndexOf(desired);
+            if (existingIndex >= 0)
+            {
+                VisibleButtons.Move(existingIndex, i);
+            }
+            else
+            {
+                VisibleButtons.Insert(i, desired);
+            }
+        }
+
+        while (VisibleButtons.Count > target.Count)
+        {
+            VisibleButtons.RemoveAt(VisibleButtons.Count - 1);
         }
     }
 
@@ -927,6 +1124,7 @@ public partial class MainModel : ObservableObject
         if (model is not null)
         {
             Buttons.Remove(model);
+            filteredButtons.Remove(model);
             VisibleButtons.Remove(model);
             RecentButtons.Remove(model);
         }
@@ -970,6 +1168,22 @@ public partial class MainModel : ObservableObject
         }
     }
 
+    private async Task TryNotifyButtonsChangedAsync(CancellationToken cancellationToken = default)
+    {
+        if (stateSyncNotifier is null)
+        {
+            return;
+        }
+
+        try
+        {
+            await stateSyncNotifier.NotifyButtonsChangedAsync(cancellationToken);
+        }
+        catch
+        {
+        }
+    }
+
     private static void CopyButtonState(LauncherButtonModel source, LauncherButtonModel target)
     {
         target.Command = source.Command;
@@ -997,4 +1211,19 @@ public partial class MainModel : ObservableObject
     {
         await repository.UpsertButtonAsync(LauncherButtonModelMapper.ToRecord(button), cancellationToken);
     }
+}
+
+public enum EditorConflictType
+{
+    UpdatedByOtherWindow,
+    DeletedByOtherWindow,
+}
+
+public sealed class EditorConflictContext
+{
+    public required LauncherButtonRecord EditingRecord { get; init; }
+
+    public required LauncherButtonRecord? LatestRecord { get; init; }
+
+    public required EditorConflictType ConflictType { get; init; }
 }

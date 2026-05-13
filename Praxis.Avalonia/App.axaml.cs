@@ -19,6 +19,8 @@ public partial class App : Application
 
     public override void OnFrameworkInitializationCompleted()
     {
+        MacDockIconService.ApplyIfNeeded();
+
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
             var viewModel = CreateMainWindowViewModel();
@@ -34,9 +36,11 @@ public partial class App : Application
 
     private static MainWindowViewModel CreateMainWindowViewModel()
     {
+        var syncNotifier = new FileStateSyncNotifier();
         var model = new MainModel(
             new DesktopLauncherExecutionService(),
-            new SqliteLauncherButtonRepository());
-        return new MainWindowViewModel(model);
+            new SqliteLauncherButtonRepository(),
+            syncNotifier);
+        return new MainWindowViewModel(model, syncNotifier);
     }
 }

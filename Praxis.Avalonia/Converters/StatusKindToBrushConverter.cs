@@ -25,10 +25,10 @@ public sealed class StatusKindToBrushConverter : IMultiValueConverter
 
         return kind switch
         {
-            LauncherStatusKind.Success => Brush(light ? "#DCE8E0" : "#254A38"),
-            LauncherStatusKind.Error => Brush(light ? "#E9DDE0" : "#593038"),
-            LauncherStatusKind.Busy => Brush(light ? "#DDE1EB" : "#343D55"),
-            _ => Brush(light ? "#ECECEC" : "#22272D"),
+            LauncherStatusKind.Success => Brush(light ? "#CFEFD8" : "#1F5B3B"),
+            LauncherStatusKind.Error => Brush(light ? "#F2D1D1" : "#713333"),
+            LauncherStatusKind.Busy => Brush(light ? "#F0E5BC" : "#66572B"),
+            _ => Brush(light ? "#ECECEC" : "#282828"),
         };
     }
 
@@ -41,7 +41,7 @@ public sealed class StatusKindToBrushConverter : IMultiValueConverter
             _ => Application.Current?.ActualThemeVariant == ThemeVariant.Light
                 || Application.Current?.RequestedThemeVariant == ThemeVariant.Light,
         };
-        return Brush(light ? "#1A1A1A" : "#F3F6F8");
+        return Brush(light ? "#1A1A1A" : "#F4F4F4");
     }
 
     private static IBrush Brush(string color)

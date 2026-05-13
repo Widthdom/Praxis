@@ -41,6 +41,31 @@ The Avalonia app loads launcher buttons from SQLite at startup, executes registe
 
 The data layer keeps compatibility with existing `praxis.db3` files and also opens an existing `praxis.db` file in the same app data directory. Schema migration currently advances launcher databases to `PRAGMA user_version = 5`.
 
+### macOS Frameless Window Notes
+Praxis v2 uses a frameless Avalonia window with custom caption buttons on macOS. Most of the implementation lives in `Praxis.Avalonia/Behaviors/WindowDragBehavior.cs` and `Praxis.Avalonia/Behaviors/MainWindowInteractionBehavior.cs`, because code-behind must stay free of app-specific logic.
+
+The current macOS window behavior is the result of several attempted approaches:
+
+1. Manual working-area maximize by setting `Position`, `Width`, and `Height` directly.
+   This made double-click maximize appear to work at first, but it created fragile edge cases. After maximizing, manual resize could collapse the window into a very narrow shape or corrupt the shell bounds. Returning from pseudo-maximized states was also unreliable when the window was later moved or resized.
+2. Small-offset manual resize after pseudo-maximize.
+   We tried nudging the window a few pixels inside the working area before starting a resize. This did not fix the core issue because the window was still treated as a hand-built maximized rectangle, and resize math remained sensitive to display scale, grip direction, and the exact edge being dragged.
+3. Post-resize clamping to the current working area.
+   Clamping `Position`, `Width`, and `Height` after resize looked conservative, but it did not prevent the broken intermediate states. The bad geometry was already visible during the resize interaction.
+4. One-shot suppression of the next snap after resize.
+   This addressed a symptom where a window could snap back to maximized after being moved, but it did not solve the maximize/resize geometry problem and risked interfering with otherwise-good double-click behavior.
+5. Native `WindowState.Maximized` for normal maximize, plus explicit restore bounds.
+   This is the adopted approach. Title-bar double-click and top-edge snap both enter `WindowState.Maximized` instead of synthesizing a maximized rectangle. Before maximizing, the behavior captures normal bounds. Restoring leaves `WindowState.Maximized`, then restores the captured normal bounds through `RestoreWindowBoundsWithinCurrentScreen`. This proved stable for repeated maximize/restore cycles, top-edge snap restore, and resizing after maximize.
+
+Implementation rules that came out of this work:
+
+- Do not emulate normal maximization on macOS by writing working-area `Position`, `Width`, and `Height` directly.
+- Keep macOS FullScreen separate from normal maximize. The green caption button enters `WindowState.FullScreen`; title-bar double-click and top-edge snap use normal maximize.
+- Before normal maximize, capture restore bounds while the window is still normal.
+- When leaving normal maximize, restore captured bounds explicitly and clear stale restore state.
+- Snap-to-top should only maximize when the pointer is at the top edge. A window that merely still touches the top edge after a resize or drag must not auto-maximize on release.
+- Manual resize should clear normal maximize restore state, because resizing means the user is defining a new normal window geometry.
+
 ### Build
 ```bash
 dotnet restore Praxis.slnx
@@ -89,6 +114,31 @@ dotnet test Praxis.Tests/Praxis.Tests.csproj -c Release --nologo
 Avalonia アプリは起動時に SQLite から launcher button を読み込み、上部 command field から登録済み command を実行し、読み込んだ launcher record から command suggestion を作り、作成/実行/移動/削除した launcher record を SQLite に書き戻し、最近使った Dock 順と launch log を保存し、desktop execution service で直接コマンドまたは既定アプリ起動を行います。旧 MAUI アプリプロジェクトは削除済みです。ボタン編集 UI、ドラッグ UI wiring、テーマ設定、error logging、複数ウィンドウ同期は今後の移植対象であり、View ではなく共有 service abstraction の背後に戻します。
 
 data layer は既存の `praxis.db3` と互換で、同じ app data directory に既存の `praxis.db` がある場合も開きます。現在の schema migration は launcher DB を `PRAGMA user_version = 5` へ進めます。
+
+### macOS フレームレスウィンドウの知見
+Praxis v2 は macOS でフレームレス Avalonia window と独自 caption button を使います。code-behind にアプリ固有ロジックを書かない方針のため、実装の大半は `Praxis.Avalonia/Behaviors/WindowDragBehavior.cs` と `Praxis.Avalonia/Behaviors/MainWindowInteractionBehavior.cs` に置きます。
+
+現在の macOS window 挙動は、次の試行錯誤を経て決めたものです。
+
+1. `Position`、`Width`、`Height` を直接設定する working area 擬似最大化。
+   最初はダブルクリック最大化が動いているように見えましたが、境界条件が脆くなりました。最大化後に手動リサイズすると、ウィンドウが極端に細くなったり、shell bounds が壊れたりしました。擬似最大化後に移動やリサイズを挟むと、元のサイズへの復帰も不安定でした。
+2. 擬似最大化後の手動リサイズ開始時に数 px だけ内側へずらす案。
+   working area 境界から少し外してからリサイズすれば安定するか試しました。しかし、根本的には手作業で作った最大化矩形のままであり、display scale、つかんだ辺、角の種類にリサイズ計算が影響され続けるため、解決にはなりませんでした。
+3. リサイズ後に current working area へ clamp する案。
+   `Position`、`Width`、`Height` をリサイズ後に制限するのは保守的に見えましたが、壊れた中間状態がリサイズ操作中にすでに見えてしまうため、不十分でした。
+4. リサイズ後の次回 snap だけを抑止する案。
+   リサイズ後にウィンドウを少し動かして放すと再最大化する症状には関係しましたが、最大化/リサイズ時の geometry 崩れは直せませんでした。また、正常に動いていたダブルクリック挙動へ干渉するリスクがありました。
+5. 通常最大化は native の `WindowState.Maximized` を使い、復帰矩形だけ明示管理する案。
+   これを採用しています。タイトルバーダブルクリックと上辺 snap は、working area へ `Position`/`Width`/`Height` を直接貼り付けるのではなく `WindowState.Maximized` に入ります。最大化前に通常時の bounds を保存し、復帰時は `WindowState.Maximized` を解除してから `RestoreWindowBoundsWithinCurrentScreen` で保存済み bounds へ戻します。この方式で、最大化/復帰の反復、上辺 snap からの復帰、最大化後のリサイズが安定しました。
+
+この作業から得た実装ルール:
+
+- macOS の通常最大化を、working area の `Position`、`Width`、`Height` 直書きで再現しない。
+- macOS FullScreen と通常最大化は分ける。緑 caption button は `WindowState.FullScreen`、タイトルバーダブルクリックと上辺 snap は通常最大化を使う。
+- 通常最大化に入る前に、window が通常状態のうちに復帰用 bounds を保存する。
+- 通常最大化から戻るときは、最大化状態を解除したうえで保存済み bounds を明示復元し、古い復帰状態を消す。
+- 上辺 snap は pointer が上端にある場合だけ通常最大化する。リサイズやドラッグ後に window の上辺がたまたま画面上端に残っているだけでは、放した瞬間に再最大化してはいけない。
+- 手動リサイズはユーザーが新しい通常サイズを定義する操作なので、通常最大化の復帰状態をクリアする。
 
 ### ビルド
 ```bash

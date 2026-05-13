@@ -11,7 +11,6 @@ public sealed class LauncherButtonBackgroundConverter : IMultiValueConverter
 {
     public object Convert(IList<object?> values, Type targetType, object? parameter, CultureInfo culture)
     {
-        var color = values.Count > 0 && values[0] is LauncherButtonColorKey key ? key : LauncherButtonColorKey.Default;
         var selected = values.Count > 1 && values[1] is true;
         var inverted = values.Count > 2 && values[2] is true;
         var theme = values.Count > 3 && values[3] is ThemeMode mode ? mode : ThemeMode.System;
@@ -20,46 +19,30 @@ public sealed class LauncherButtonBackgroundConverter : IMultiValueConverter
 
         if (inverted && selected)
         {
-            return Brush(light ? "#787878" : "#A0A0A0");
+            return Brush(light ? "#404040" : "#C8C8C8");
         }
 
         if (inverted)
         {
             if (pointerOver)
             {
-                return Brush(light ? "#242424" : "#F2F2F2");
+                return Brush(light ? "#444444" : "#D0D0D0");
             }
 
-            return Brush(light ? "#363636" : "#FFFFFF");
+            return Brush(light ? "#565656" : "#F2F2F2");
         }
 
         if (selected)
         {
-            return Brush(light ? "#DCDCDC" : "#505050");
+            return Brush(light ? "#C8C8C8" : "#404040");
         }
 
         if (pointerOver)
         {
-            return color switch
-            {
-                LauncherButtonColorKey.Blue => Brush(light ? "#CAD6E0" : "#426C92"),
-                LauncherButtonColorKey.Green => Brush(light ? "#CEDBD2" : "#477557"),
-                LauncherButtonColorKey.Red => Brush(light ? "#DDCBCB" : "#8C4E55"),
-                LauncherButtonColorKey.Purple => Brush(light ? "#D7D0E3" : "#6D6096"),
-                LauncherButtonColorKey.Amber => Brush(light ? "#DCCFB9" : "#8A7043"),
-                _ => Brush(light ? "#C8C8C8" : "#566270"),
-            };
+            return Brush(light ? "#D0D0D0" : "#444444");
         }
 
-        return color switch
-        {
-            LauncherButtonColorKey.Blue => Brush(light ? "#D7E1EA" : "#335A7D"),
-            LauncherButtonColorKey.Green => Brush(light ? "#DCE7DF" : "#386247"),
-            LauncherButtonColorKey.Red => Brush(light ? "#EADADB" : "#7A3F45"),
-            LauncherButtonColorKey.Purple => Brush(light ? "#E4DEED" : "#5A4D82"),
-            LauncherButtonColorKey.Amber => Brush(light ? "#E9E0CF" : "#765F35"),
-            _ => Brush(light ? "#D4D4D4" : "#343A42"),
-        };
+        return Brush(light ? "#F2F2F2" : "#565656");
     }
 
     private static IBrush Brush(string color)
