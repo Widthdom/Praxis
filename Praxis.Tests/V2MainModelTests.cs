@@ -16,7 +16,8 @@ public class V2MainModelTests
 
         var button = Assert.Single(model.Buttons);
         Assert.Same(button, Assert.Single(model.VisibleButtons));
-        Assert.Equal("New 1", button.Text);
+        Assert.Equal("New", button.Text);
+        Assert.Equal(string.Empty, button.Command);
         Assert.Equal(LauncherButtonColorKey.Default, button.ColorKey);
         Assert.Equal(LauncherStatusKind.Success, model.Status.Kind);
     }
@@ -160,6 +161,57 @@ public class V2MainModelTests
         Assert.Empty(model.VisibleButtons);
         Assert.Empty(model.RecentButtons);
         Assert.Empty(await repository.GetDockButtonIdsAsync());
+    }
+
+    [Fact]
+    public async Task DeleteButtonAsync_RemovesSelectedGroupWhenTargetIsSelected()
+    {
+        var repository = new InMemoryLauncherButtonRepository();
+        var first = new LauncherButtonRecord { Command = "first", ButtonText = "First" };
+        var second = new LauncherButtonRecord { Command = "second", ButtonText = "Second" };
+        var third = new LauncherButtonRecord { Command = "third", ButtonText = "Third" };
+        await repository.UpsertButtonAsync(first);
+        await repository.UpsertButtonAsync(second);
+        await repository.UpsertButtonAsync(third);
+        await repository.SetDockButtonIdsAsync([first.Id, second.Id, third.Id]);
+        var model = new MainModel(new StubLauncherExecutionService(), repository);
+        await model.InitializeAsync();
+        var firstModel = model.Buttons.Single(button => button.Id == first.Id);
+        var secondModel = model.Buttons.Single(button => button.Id == second.Id);
+        firstModel.IsSelected = true;
+        secondModel.IsSelected = true;
+
+        await model.DeleteButtonAsync(firstModel);
+
+        Assert.DoesNotContain(model.Buttons, button => button.Id == first.Id);
+        Assert.DoesNotContain(model.Buttons, button => button.Id == second.Id);
+        Assert.Contains(model.Buttons, button => button.Id == third.Id);
+        Assert.Null(await repository.GetByIdAsync(first.Id, forceReload: true));
+        Assert.Null(await repository.GetByIdAsync(second.Id, forceReload: true));
+        Assert.NotNull(await repository.GetByIdAsync(third.Id, forceReload: true));
+        Assert.Equal([third.Id], await repository.GetDockButtonIdsAsync());
+    }
+
+    [Fact]
+    public async Task DeleteButtonAsync_RemovesOnlyTargetWhenTargetIsNotSelected()
+    {
+        var repository = new InMemoryLauncherButtonRepository();
+        var selected = new LauncherButtonRecord { Command = "selected", ButtonText = "Selected" };
+        var target = new LauncherButtonRecord { Command = "target", ButtonText = "Target" };
+        await repository.UpsertButtonAsync(selected);
+        await repository.UpsertButtonAsync(target);
+        var model = new MainModel(new StubLauncherExecutionService(), repository);
+        await model.InitializeAsync();
+        var selectedModel = model.Buttons.Single(button => button.Id == selected.Id);
+        var targetModel = model.Buttons.Single(button => button.Id == target.Id);
+        selectedModel.IsSelected = true;
+
+        await model.DeleteButtonAsync(targetModel);
+
+        Assert.Contains(model.Buttons, button => button.Id == selected.Id);
+        Assert.DoesNotContain(model.Buttons, button => button.Id == target.Id);
+        Assert.NotNull(await repository.GetByIdAsync(selected.Id, forceReload: true));
+        Assert.Null(await repository.GetByIdAsync(target.Id, forceReload: true));
     }
 
     [Fact]

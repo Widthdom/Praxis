@@ -31,6 +31,7 @@ public sealed class MainWindowInteractionBehavior
     private Grid? shellContent;
     private TextBox? modalGuidEntry;
     private TextBox? modalButtonTextEntry;
+    private TextBox? modalCommandEntry;
     private TextBox? modalToolEntry;
     private TextBox? modalArgumentsEntry;
     private TextBox? modalClipWordEditor;
@@ -230,6 +231,7 @@ public sealed class MainWindowInteractionBehavior
         shellContent = window.FindControl<Grid>("ShellContent");
         modalGuidEntry = window.FindControl<TextBox>("ModalGuidEntry");
         modalButtonTextEntry = window.FindControl<TextBox>("ModalButtonTextEntry");
+        modalCommandEntry = window.FindControl<TextBox>("ModalCommandEntry");
         modalToolEntry = window.FindControl<TextBox>("ModalToolEntry");
         modalArgumentsEntry = window.FindControl<TextBox>("ModalArgumentsEntry");
         modalClipWordEditor = window.FindControl<TextBox>("ModalClipWordEditor");
@@ -1591,6 +1593,7 @@ public sealed class MainWindowInteractionBehavior
         return new Control?[]
             {
                 modalButtonTextEntry,
+                modalCommandEntry,
                 modalToolEntry,
                 modalArgumentsEntry,
                 modalClipWordEditor,

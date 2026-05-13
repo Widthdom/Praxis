@@ -308,20 +308,18 @@
                         Height="{Binding Height}">
                   <ToolTip.Tip>
                     <Grid Classes="praxis-tooltip-grid"
-                          RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto"
+                          RowDefinitions="Auto,Auto,Auto,Auto,Auto"
                           ColumnDefinitions="92,*">
                       <TextBlock Classes="praxis-tooltip-label" Text="Command" />
                       <TextBlock Grid.Column="1" Text="{Binding Command}" />
-                      <TextBlock Grid.Row="1" Classes="praxis-tooltip-label" Text="ButtonText" />
-                      <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding Text}" />
-                      <TextBlock Grid.Row="2" Classes="praxis-tooltip-label" Text="Tool" />
-                      <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding CommandPath}" />
-                      <TextBlock Grid.Row="3" Classes="praxis-tooltip-label" Text="Arguments" />
-                      <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding Arguments}" />
-                      <TextBlock Grid.Row="4" Classes="praxis-tooltip-label" Text="Clip Word" />
-                      <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding ClipText}" />
-                      <TextBlock Grid.Row="5" Classes="praxis-tooltip-label" Text="Note" />
-                      <TextBlock Grid.Row="5" Grid.Column="1" Text="{Binding Note}" />
+                      <TextBlock Grid.Row="1" Classes="praxis-tooltip-label" Text="Tool" />
+                      <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding CommandPath}" />
+                      <TextBlock Grid.Row="2" Classes="praxis-tooltip-label" Text="Arguments" />
+                      <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding Arguments}" />
+                      <TextBlock Grid.Row="3" Classes="praxis-tooltip-label" Text="Clip Word" />
+                      <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding ClipText}" />
+                      <TextBlock Grid.Row="4" Classes="praxis-tooltip-label" Text="Note" />
+                      <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding Note}" />
                     </Grid>
                   </ToolTip.Tip>
                   <Button.Background>
@@ -381,20 +379,18 @@
                     Width="120">
               <ToolTip.Tip>
                 <Grid Classes="praxis-tooltip-grid"
-                          RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto"
+                          RowDefinitions="Auto,Auto,Auto,Auto,Auto"
                           ColumnDefinitions="92,*">
                       <TextBlock Classes="praxis-tooltip-label" Text="Command" />
                       <TextBlock Grid.Column="1" Text="{Binding Command}" />
-                      <TextBlock Grid.Row="1" Classes="praxis-tooltip-label" Text="ButtonText" />
-                      <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding Text}" />
-                      <TextBlock Grid.Row="2" Classes="praxis-tooltip-label" Text="Tool" />
-                      <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding CommandPath}" />
-                      <TextBlock Grid.Row="3" Classes="praxis-tooltip-label" Text="Arguments" />
-                      <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding Arguments}" />
-                      <TextBlock Grid.Row="4" Classes="praxis-tooltip-label" Text="Clip Word" />
-                      <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding ClipText}" />
-                      <TextBlock Grid.Row="5" Classes="praxis-tooltip-label" Text="Note" />
-                      <TextBlock Grid.Row="5" Grid.Column="1" Text="{Binding Note}" />
+                      <TextBlock Grid.Row="1" Classes="praxis-tooltip-label" Text="Tool" />
+                      <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding CommandPath}" />
+                      <TextBlock Grid.Row="2" Classes="praxis-tooltip-label" Text="Arguments" />
+                      <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding Arguments}" />
+                      <TextBlock Grid.Row="3" Classes="praxis-tooltip-label" Text="Clip Word" />
+                      <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding ClipText}" />
+                      <TextBlock Grid.Row="4" Classes="praxis-tooltip-label" Text="Note" />
+                      <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding Note}" />
                     </Grid>
               </ToolTip.Tip>
               <Button.Background>
@@ -504,7 +500,7 @@
                 Classes="praxis-editor-field">
             <TextBox Classes="praxis-input"
                      x:Name="ModalGuidEntry"
-                     TabIndex="7"
+                     TabIndex="8"
                      IsReadOnly="True"
                      TextWrapping="NoWrap"
                      ScrollViewer.HorizontalScrollBarVisibility="Disabled"
@@ -548,13 +544,38 @@
           <TextBlock Grid.Row="2"
                      Grid.Column="0"
                      Classes="praxis-editor-label"
-                     Text="Tool" />
+                     Text="Command" />
           <Grid Grid.Row="2"
                 Grid.Column="1"
                 Classes="praxis-editor-field">
             <TextBox Classes="praxis-input"
-                     x:Name="ModalToolEntry"
+                     x:Name="ModalCommandEntry"
                      TabIndex="1"
+                     TextWrapping="NoWrap"
+                     ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                     ScrollViewer.VerticalScrollBarVisibility="Disabled"
+                     Text="{Binding EditorButton.Command, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+            <Button Classes="praxis-copy-button"
+                    IsVisible="{Binding EditorButton.Command, Converter={StaticResource NotEmptyStringToBoolConverter}}"
+                    Tag="{Binding EditorButton.Command}">
+              <Path Data="M 8 5 L 15 5 L 15 14 L 8 14 Z M 5 8 L 5 17 L 12 17"
+                    Stroke="{Binding $parent[Button].Foreground}"
+                    StrokeThickness="1.4"
+                    StrokeLineCap="Round"
+                    StrokeJoin="Round" />
+            </Button>
+          </Grid>
+
+          <TextBlock Grid.Row="3"
+                     Grid.Column="0"
+                     Classes="praxis-editor-label"
+                     Text="Tool" />
+          <Grid Grid.Row="3"
+                Grid.Column="1"
+                Classes="praxis-editor-field">
+            <TextBox Classes="praxis-input"
+                     x:Name="ModalToolEntry"
+                     TabIndex="2"
                      TextWrapping="NoWrap"
                      ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                      ScrollViewer.VerticalScrollBarVisibility="Disabled"
@@ -570,16 +591,16 @@
             </Button>
           </Grid>
 
-          <TextBlock Grid.Row="3"
+          <TextBlock Grid.Row="4"
                      Grid.Column="0"
                      Classes="praxis-editor-label"
                      Text="Arguments" />
-          <Grid Grid.Row="3"
+          <Grid Grid.Row="4"
                 Grid.Column="1"
                 Classes="praxis-editor-field">
             <TextBox Classes="praxis-input"
                      x:Name="ModalArgumentsEntry"
-                     TabIndex="2"
+                     TabIndex="3"
                      TextWrapping="NoWrap"
                      ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                      ScrollViewer.VerticalScrollBarVisibility="Disabled"
@@ -595,16 +616,16 @@
             </Button>
           </Grid>
 
-          <TextBlock Grid.Row="4"
+          <TextBlock Grid.Row="5"
                      Grid.Column="0"
                      Classes="praxis-editor-label"
                      Text="Clip Word" />
-          <Grid Grid.Row="4"
+          <Grid Grid.Row="5"
                 Grid.Column="1"
                 Classes="praxis-editor-field">
             <TextBox Classes="praxis-input"
                      x:Name="ModalClipWordEditor"
-                     TabIndex="3"
+                     TabIndex="4"
                      AcceptsReturn="True"
                      MinHeight="38"
                      MaxHeight="126"
@@ -621,16 +642,16 @@
             </Button>
           </Grid>
 
-          <TextBlock Grid.Row="5"
+          <TextBlock Grid.Row="6"
                      Grid.Column="0"
                      Classes="praxis-editor-label"
                      Text="Note" />
-          <Grid Grid.Row="5"
+          <Grid Grid.Row="6"
                 Grid.Column="1"
                 Classes="praxis-editor-field">
             <TextBox Classes="praxis-input"
                      x:Name="ModalNoteEditor"
-                     TabIndex="4"
+                     TabIndex="5"
                      AcceptsReturn="True"
                      MinHeight="38"
                      MaxHeight="126"
@@ -647,11 +668,11 @@
             </Button>
           </Grid>
 
-          <TextBlock Grid.Row="6"
+          <TextBlock Grid.Row="7"
                      Grid.Column="0"
                      Classes="praxis-editor-label"
                      Text="Invert Theme" />
-          <CheckBox Grid.Row="6"
+          <CheckBox Grid.Row="7"
                     Grid.Column="1"
                     Classes="praxis-invert-check"
                     IsTabStop="False"
@@ -667,12 +688,12 @@
             <Button Classes="praxis-menu-button"
                     x:Name="ModalCancelButton"
                     Content="Cancel"
-                    TabIndex="5"
+                    TabIndex="6"
                     Command="{Binding CancelEditorCommand}" />
             <Button Classes="praxis-menu-button"
                     x:Name="ModalSaveButton"
                     Content="Save"
-                    TabIndex="6"
+                    TabIndex="7"
                     Command="{Binding SaveEditorCommand}" />
           </StackPanel>
         </Grid>

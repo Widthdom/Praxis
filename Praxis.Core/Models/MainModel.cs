@@ -137,11 +137,10 @@ public partial class MainModel : ObservableObject
         var ordinal = Buttons.Count + 1;
         var button = new LauncherButtonModel
         {
-            Text = $"New {ordinal}",
+            Text = "New",
             X = 48 + ((ordinal - 1) % 4) * 148,
             Y = 48 + ((ordinal - 1) / 4) * 76,
             ColorKey = LauncherButtonColorKey.Default,
-            Command = $"new-{ordinal}",
             ToolTip = "New launcher button",
         };
 
@@ -358,30 +357,48 @@ public partial class MainModel : ObservableObject
 
         try
         {
-            var before = LauncherButtonModelMapper.ToRecord(button);
-            await repository.DeleteButtonAsync(button.Id, cancellationToken);
-            Buttons.Remove(button);
-            filteredButtons.Remove(button);
-            VisibleButtons.Remove(button);
-            RecentButtons.Remove(button);
-            history.Push(new ButtonHistoryAction
+            var targets = ResolveDeleteTargets(button);
+            var beforeRecords = targets.Select(LauncherButtonModelMapper.ToRecord).ToList();
+            foreach (var target in targets)
             {
-                Kind = ButtonHistoryActionKind.Delete,
-                Before = before,
-            });
-            if (ReferenceEquals(ContextMenuTarget, button))
+                await repository.DeleteButtonAsync(target.Id, cancellationToken);
+                Buttons.Remove(target);
+                filteredButtons.Remove(target);
+                VisibleButtons.Remove(target);
+                RecentButtons.Remove(target);
+                history.Push(new ButtonHistoryAction
+                {
+                    Kind = ButtonHistoryActionKind.Delete,
+                    Before = beforeRecords.First(record => record.Id == target.Id),
+                });
+            }
+
+            if (ContextMenuTarget is not null && targets.Any(target => ReferenceEquals(ContextMenuTarget, target)))
             {
                 CloseContextMenu();
             }
 
             RefreshCommandSuggestions();
             await TryNotifyButtonsChangedAsync(cancellationToken);
-            Status.Set(LauncherStatusKind.Success, "Button deleted.");
+            Status.Set(
+                LauncherStatusKind.Success,
+                targets.Count == 1 ? "Button deleted." : $"{targets.Count} buttons deleted.");
         }
         catch (Exception ex)
         {
             Status.Set(LauncherStatusKind.Error, $"Delete failed: {ex.Message}");
         }
+    }
+
+    private IReadOnlyList<LauncherButtonModel> ResolveDeleteTargets(LauncherButtonModel button)
+    {
+        if (!button.IsSelected)
+        {
+            return [button];
+        }
+
+        var selected = Buttons.Where(static candidate => candidate.IsSelected).ToList();
+        return selected.Count == 0 ? [button] : selected;
     }
 
     public void OpenContextMenu(LauncherButtonModel? button)
@@ -572,9 +589,7 @@ public partial class MainModel : ObservableObject
         var y = payload?.HasPosition == true ? payload.Y : 48 + ((ordinal - 1) / 4) * 76;
         EditorButton = new LauncherButtonModel
         {
-            Text = $"New {ordinal}",
-            Command = $"new-{ordinal}",
-            ToolTip = $"new-{ordinal}",
+            Text = "New",
             X = Math.Max(0, GridSnapper.Snap(x)),
             Y = Math.Max(0, GridSnapper.Snap(y)),
             ColorKey = LauncherButtonColorKey.Default,

@@ -111,7 +111,7 @@
     <Setter Property="MinHeight" Value="42" />
     <Setter Property="VerticalContentAlignment" Value="Center" />
     <Setter Property="CaretBrush" Value="{StaticResource PraxisTextPrimaryBrush}" />
-    <Setter Property="SelectionBrush" Value="#55777777" />
+    <Setter Property="SelectionBrush" Value="#8A9A9A9A" />
     <Setter Property="FocusAdorner" Value="{x:Null}" />
   </Style>
 
@@ -770,6 +770,14 @@
 
   <Style Selector="ToolTip">
     <Setter Property="FontFamily" Value="Inter, Hiragino Sans, Yu Gothic, Meiryo, Segoe UI, -apple-system, BlinkMacSystemFont" />
+    <Setter Property="MinHeight" Value="32" />
+    <Setter Property="Padding" Value="8,8" />
+    <Setter Property="VerticalContentAlignment" Value="Center" />
+  </Style>
+
+  <Style Selector="ToolTip TextBlock">
+    <Setter Property="LineHeight" Value="16" />
+    <Setter Property="VerticalAlignment" Value="Center" />
   </Style>
 
   <Style Selector="TextBlock.praxis-tooltip-label">

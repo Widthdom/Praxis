@@ -26,6 +26,9 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - Added focused xUnit coverage for command suggestions/execution, persisted Dock order, launch logs, button deletion, and snapped move persistence
 - Added source guards for direct XAML loading, embedded icon assets, draggable chrome, and caption button wiring
 
+### Fixed
+- Context-menu Delete now removes the full selected launcher-button group when invoked from a selected button, while unselected button Delete still removes only the clicked button
+
 ### [1.2.0] - 2026-05-11
 
 ### Added
@@ -539,6 +542,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - ライトモードの Windows caption button は glyph を濃くし、hover background を中立色のまま少し強く見えるよう調整
 - 編集モーダルは context menu の Edit を含む通常編集時に `ButtonText` 末尾へ caret を置き、新規ボタン時だけ `ButtonText` を全選択
 - 新規ボタンの初期値は番号付きの placeholder text / command ではなく、固定の `New` と空の command に変更
+- context menu の Delete は、選択中 button から実行した場合に選択中 launcher-button 全体を削除し、未選択 button から実行した場合は従来どおりクリックした button だけを削除するよう修正
 
 ### [1.2.0] - 2026-05-11
 
