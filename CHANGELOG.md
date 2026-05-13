@@ -512,6 +512,34 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 
 ## [Unreleased]
 
+### 追加
+- strict MVVM の Core model 構成、Avalonia デスクトップシェル、プラットフォーム抽象化・擬似アクリル UI 方針・DB 互換リスク・将来の Linux 対応を含む移行計画を持つ v2.0.0 Avalonia 移行ブランチを開始
+- SQLite launcher-button 永続化、プラットフォーム対応 app data path 解決、v1 テーブル名互換、`praxis.db3` / 既存 `praxis.db` ファイル対応、`ColorKey` / `ToolTip` / `LastExecutedAtUtc` / `SortOrder` 用の schema version 5 migration を備えた `Praxis.Data` を追加
+- Windows、macOS、および Linux-ready な `xdg-open` 経路で、直接 command 実行と既定アプリ起動を行う desktop launcher execution service を追加
+- command input 実行、command suggestion、永続化された recent Dock order、button delete/move repository 操作、Core/Data service 経由の launch-log 書き込みを再導入
+- Avalonia window icon resource、専用 draggable chrome row、drag area の double-click maximize、カスタム minimize/maximize/close caption button を追加
+
+### 変更
+- solution、CI、delivery、README、developer/test docs の active runtime target を Avalonia desktop app へ切り替え、MAUI workload を不要化
+- Avalonia startup は preview-only launcher data ではなく、`MainModel` と `ILauncherButtonRepository` 経由で SQLite から launcher button を読み込むよう変更
+- `MainWindow` code-behind は generated-style の `InitializeComponent` wrapper を持たず、XAML を直接読み込むよう変更
+
+### 削除
+- 旧 .NET MAUI app project と MAUI app-layer linked-source tests を削除し、v2 開発を Avalonia shell と Core model/service contract から開始する構成に変更
+
+### テスト
+- `praxis.db3` / `praxis.db` storage selection、SQLite v4-to-v5 launcher schema migration、v2 launcher-field persistence の focused xUnit coverage を追加
+- command suggestion/execution、永続化された Dock order、launch log、button deletion、snapped move persistence の focused xUnit coverage を追加
+- direct XAML loading、embedded icon assets、draggable chrome、caption button wiring の source guard を追加
+
+### 修正
+- Windows Avalonia shell は taskbar / jump-list surface 向けに透明背景の app icon を使い、custom caption button を window 上端へ詰め、擬似アクリル shell の角丸を強化
+- Windows caption button は上端で見切れる分を考慮して視覚的に中央配置し、caption tooltip の文字切れを避け、擬似アクリル shell の透明度を上げ、custom title-bar drag の edge snap に対応
+- Avalonia editor modal に button `Command` 欄を追加し、配置領域 / Dock の tooltip から重複する `ButtonText` を削除し、Windows caption hit test を native title-bar 経路に寄せて Aero Snap に対応し、小さい window icon を alpha DIB ICO frame として出力
+- ライトモードの Windows caption button は glyph を濃くし、hover background を中立色のまま少し強く見えるよう調整
+- 編集モーダルは context menu の Edit を含む通常編集時に `ButtonText` 末尾へ caret を置き、新規ボタン時だけ `ButtonText` を全選択
+- 新規ボタンの初期値は番号付きの placeholder text / command ではなく、固定の `New` と空の command に変更
+
 ### [1.2.0] - 2026-05-11
 
 ### 追加
