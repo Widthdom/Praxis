@@ -23,16 +23,16 @@ jobs:
         include:
           - name: windows
             os: windows-latest
-            tfm: net10.0-windows10.0.19041.0
-            rid: ""
-            props: -p:WindowsPackageType=None
+            rid: win-x64
             output: artifacts/windows
-          - name: maccatalyst
+          - name: macos
             os: macos-latest
-            tfm: net10.0-maccatalyst
-            rid: maccatalyst-x64
-            props: -p:EnableCodeSigning=false -p:CodesignRequireProvisioningProfile=false
-            output: artifacts/maccatalyst
+            rid: osx-x64
+            output: artifacts/macos
+          - name: linux
+            os: ubuntu-latest
+            rid: linux-x64
+            output: artifacts/linux
 
     steps:
       - name: Checkout
@@ -46,45 +46,9 @@ jobs:
           dotnet-version: 10.0.x
           dotnet-quality: ga
 
-      - name: Install MAUI workload
-        run: dotnet workload install maui
-
-      - name: Initialize Xcode
-        if: matrix.name == 'maccatalyst'
-        run: sudo xcodebuild -runFirstLaunch
-
-      - name: Check Xcode compatibility (Mac Catalyst)
-        id: xcode_check
-        if: matrix.name == 'maccatalyst'
-        shell: bash
-        run: |
-          set -euo pipefail
-          XCODE_VERSION="$(xcodebuild -version | awk '/Xcode/ {print $2}')"
-          echo "Detected Xcode: ${XCODE_VERSION}"
-          MAJOR="$(echo "${XCODE_VERSION}" | cut -d. -f1)"
-          MINOR="$(echo "${XCODE_VERSION}" | cut -d. -f2)"
-          if [[ "${MAJOR}" -gt 26 ]] || [[ "${MAJOR}" -eq 26 && "${MINOR}" -ge 2 ]]; then
-            echo "compatible=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "compatible=false" >> "$GITHUB_OUTPUT"
-            echo "::warning::Skipping Mac Catalyst publish. .NET 10 MAUI requires Xcode 26.2+, runner has Xcode ${XCODE_VERSION}."
-          fi
-
       - name: Publish app
-        if: matrix.name != 'maccatalyst' || steps.xcode_check.outputs.compatible == 'true'
         shell: bash
-        run: |
-          RID_FLAG=""
-          if [ -n "${{ matrix.rid }}" ]; then
-            RID_FLAG="-r ${{ matrix.rid }}"
-          fi
-          dotnet publish Praxis/Praxis.csproj -c Release -f ${{ matrix.tfm }} $RID_FLAG -o ${{ matrix.output }} -v minimal ${{ matrix.props }}
-
-      - name: Mac publish skipped
-        if: matrix.name == 'maccatalyst' && steps.xcode_check.outputs.compatible != 'true'
-        run: |
-          mkdir -p ${{ matrix.output }}
-          echo "Skipped due to runner Xcode version." > ${{ matrix.output }}/SKIPPED.txt
+        run: dotnet publish Praxis.Avalonia/Praxis.Avalonia.csproj -c Release -r ${{ matrix.rid }} --self-contained false -o ${{ matrix.output }} -v minimal
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
@@ -117,4 +81,5 @@ jobs:
           generate_release_notes: true
           files: |
             praxis-windows.zip
-            praxis-maccatalyst.zip
+            praxis-macos.zip
+            praxis-linux.zip

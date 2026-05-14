@@ -1,5 +1,6 @@
 <Solution>
   <Project Path="Praxis.Core/Praxis.Core.csproj" />
+  <Project Path="Praxis.Data/Praxis.Data.csproj" />
   <Project Path="Praxis.Tests/Praxis.Tests.csproj" />
-  <Project Path="Praxis/Praxis.csproj" />
+  <Project Path="Praxis.Avalonia/Praxis.Avalonia.csproj" />
 </Solution>

@@ -1,0 +1,811 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:chrome="using:Avalonia.Controls.Chrome"
+        xmlns:behaviors="using:Praxis.Avalonia.Behaviors"
+        x:Class="Praxis.Avalonia.Views.MainWindow"
+        x:Name="Root"
+        Title="Praxis"
+        Icon="/Assets/praxis-icon.ico"
+        Width="1060"
+        Height="720"
+        MinWidth="860"
+        MinHeight="600"
+        CanResize="True"
+        TransparencyLevelHint="Transparent,AcrylicBlur"
+        ExtendClientAreaToDecorationsHint="True"
+        WindowDecorations="None"
+        Classes="praxis-main"
+        behaviors:MainWindowInteractionBehavior.IsEnabled="True"
+        x:CompileBindings="False">
+  <Grid>
+    <Border Classes="praxis-shell">
+      <Grid>
+        <Border Height="18"
+                VerticalAlignment="Top"
+                Background="#01000000"
+                chrome:WindowDecorationProperties.ElementRole="TitleBar"
+                behaviors:WindowDragBehavior.IsDragArea="True" />
+        <Border Classes="praxis-acrylic-sheen"
+                IsHitTestVisible="False" />
+        <Grid x:Name="ShellContent"
+              RowDefinitions="Auto,Auto,*,Auto,Auto"
+              Margin="18">
+    <Grid x:Name="ChromeRow"
+          Grid.Row="0"
+          ColumnDefinitions="Auto,*,Auto"
+          MinHeight="36"
+          Background="#01000000"
+          chrome:WindowDecorationProperties.ElementRole="TitleBar"
+          behaviors:WindowDragBehavior.IsDragArea="True">
+      <StackPanel x:Name="MacCaptionButtons"
+                  Orientation="Horizontal"
+                  Spacing="8"
+                  VerticalAlignment="Top">
+        <Button Classes="praxis-traffic praxis-close"
+                IsTabStop="False"
+                ToolTip.Tip="Close"
+                behaviors:WindowChromeButtonBehavior.Action="Close">
+          <Grid Classes="praxis-traffic-symbol praxis-traffic-close-glyph">
+            <Path Data="M 4.4 4.4 L 8.6 8.6 M 8.6 4.4 L 4.4 8.6"
+                  StrokeThickness="1.3"
+                  StrokeLineCap="Round" />
+          </Grid>
+        </Button>
+        <Button Classes="praxis-traffic praxis-minimize"
+                x:Name="MacMinimizeButton"
+                IsTabStop="False"
+                ToolTip.Tip="Minimize"
+                behaviors:WindowChromeButtonBehavior.Action="Minimize">
+          <Grid Classes="praxis-traffic-symbol praxis-traffic-minimize-glyph">
+            <Path Data="M 4 6.5 L 9 6.5"
+                  StrokeThickness="1.4"
+                  StrokeLineCap="Round" />
+          </Grid>
+        </Button>
+        <Button Classes="praxis-traffic praxis-maximize"
+                IsTabStop="False"
+                ToolTip.Tip="Full Screen"
+                behaviors:WindowChromeButtonBehavior.Action="ToggleMaximize">
+          <Grid Classes="praxis-traffic-symbol praxis-traffic-fullscreen-glyph">
+            <Path Data="M 3.6 3.6 L 8.2 3.6 L 3.6 8.2 Z" />
+            <Path Data="M 9.4 4.8 L 9.4 9.4 L 4.8 9.4 Z" />
+          </Grid>
+        </Button>
+      </StackPanel>
+
+      <StackPanel x:Name="WindowsCaptionButtons"
+                  Grid.Column="2"
+                  Orientation="Horizontal"
+                  Spacing="0"
+                  VerticalAlignment="Stretch">
+        <Button Classes="praxis-caption"
+                IsTabStop="False"
+                chrome:WindowDecorationProperties.ElementRole="MinimizeButton"
+                behaviors:WindowChromeButtonBehavior.Action="Minimize">
+          <ToolTip.Tip>
+            <TextBlock Classes="praxis-caption-tooltip" Text="Minimize" />
+          </ToolTip.Tip>
+          <TextBlock Text="&#xE921;"
+                     FontFamily="Segoe Fluent Icons, Segoe UI Symbol"
+                     FontSize="10" />
+        </Button>
+        <Button x:Name="WindowsMaximizeButton"
+                Classes="praxis-caption"
+                IsTabStop="False"
+                chrome:WindowDecorationProperties.ElementRole="MaximizeButton"
+                behaviors:WindowChromeButtonBehavior.Action="ToggleMaximize">
+          <ToolTip.Tip>
+            <TextBlock x:Name="WindowsMaximizeTooltip"
+                       Classes="praxis-caption-tooltip"
+                       Text="Maximize" />
+          </ToolTip.Tip>
+          <TextBlock x:Name="WindowsMaximizeGlyph"
+                     Text="&#xE922;"
+                     FontFamily="Segoe Fluent Icons, Segoe UI Symbol"
+                     FontSize="10" />
+        </Button>
+        <Button Classes="praxis-caption"
+                IsTabStop="False"
+                chrome:WindowDecorationProperties.ElementRole="CloseButton"
+                behaviors:WindowChromeButtonBehavior.Action="Close">
+          <ToolTip.Tip>
+            <TextBlock Classes="praxis-caption-tooltip" Text="Close" />
+          </ToolTip.Tip>
+          <TextBlock Text="&#xE8BB;"
+                     FontFamily="Segoe Fluent Icons, Segoe UI Symbol"
+                     FontSize="10" />
+        </Button>
+      </StackPanel>
+    </Grid>
+
+    <Grid Grid.Row="1"
+          x:Name="TopInputRow"
+          ColumnDefinitions="2*,Auto,2*"
+          ColumnSpacing="8"
+          Background="Transparent">
+      <Grid>
+        <Grid>
+          <TextBox x:Name="CommandBox"
+                   Classes="praxis-input"
+                   Padding="14,10,36,10"
+                   PlaceholderText=""
+                   TextWrapping="NoWrap"
+                   ScrollViewer.HorizontalScrollBarVisibility="Hidden"
+                   ScrollViewer.VerticalScrollBarVisibility="Disabled"
+                   Text="{Binding CommandText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+            <TextBox.KeyBindings>
+              <KeyBinding Gesture="Enter"
+                          Command="{Binding ExecuteCommandInputCommand}" />
+              <KeyBinding Gesture="Escape"
+                          Command="{Binding CloseCommandSuggestionsCommand}" />
+            </TextBox.KeyBindings>
+          </TextBox>
+          <Grid Classes="praxis-placeholder-icon">
+            <Grid.IsVisible>
+              <MultiBinding Converter="{StaticResource InputPlaceholderVisibleConverter}">
+                <Binding ElementName="CommandBox" Path="Text" />
+                <Binding ElementName="CommandBox" Path="IsKeyboardFocusWithin" />
+              </MultiBinding>
+            </Grid.IsVisible>
+            <Path Data="M 3.5 4 L 7.5 8 L 3.5 12 M 8.5 12.5 L 13.5 12.5"
+                  Stroke="{StaticResource PraxisPlaceholderBrush}"
+                  StrokeThickness="1.4"
+                  StrokeLineCap="Round"
+                  StrokeJoin="Round" />
+          </Grid>
+          <Button Classes="praxis-clear-button"
+                  IsTabStop="False"
+                  IsVisible="{Binding #CommandBox.Text, Converter={StaticResource NotEmptyStringToBoolConverter}}"
+                  Command="{Binding ClearCommandTextCommand}">
+            <Path Data="M 1 1 L 7 7 M 7 1 L 1 7"
+                  Stroke="{Binding $parent[Button].Foreground}"
+                  StrokeThickness="1.7"
+                  StrokeLineCap="Round" />
+          </Button>
+        </Grid>
+      </Grid>
+
+      <Button Grid.Column="1"
+              Classes="praxis-create"
+              Height="40"
+              Command="{Binding AddButtonCommand}"
+              ToolTip.Tip="Create button">
+        <Viewbox Width="30"
+                 Height="30">
+          <Canvas Width="30"
+                  Height="30">
+            <Ellipse Width="22"
+                     Height="22"
+                     Canvas.Left="4"
+                     Canvas.Top="4"
+                     Stroke="{Binding $parent[Button].Foreground}"
+                     StrokeThickness="0.6"
+                     Fill="Transparent" />
+            <Polygon Points="15,4 24.53,9.5 24.53,20.5 15,26 5.47,20.5 5.47,9.5"
+                     Stroke="{Binding $parent[Button].Foreground}"
+                     StrokeThickness="0.6"
+                     Fill="Transparent" />
+            <Polygon Points="15,2 26.25,8.5 26.25,21.5 15,28 3.75,21.5 3.75,8.5"
+                     Stroke="{Binding $parent[Button].Foreground}"
+                     StrokeThickness="0.6"
+                     Fill="Transparent" />
+            <Path Data="M 15 10 L 15 20 M 10 15 L 20 15"
+                  Stroke="{Binding $parent[Button].Foreground}"
+                  StrokeThickness="1.5"
+                  StrokeLineCap="Round" />
+          </Canvas>
+        </Viewbox>
+      </Button>
+
+      <Grid Grid.Column="2">
+        <TextBox x:Name="SearchBox"
+                 Classes="praxis-input"
+                 Padding="14,10,36,10"
+                 PlaceholderText=""
+                 TextWrapping="NoWrap"
+                 ScrollViewer.HorizontalScrollBarVisibility="Hidden"
+                 ScrollViewer.VerticalScrollBarVisibility="Disabled"
+                 Text="{Binding SearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+        <Canvas Classes="praxis-placeholder-icon praxis-search-icon"
+                Width="18"
+                Height="18">
+          <Canvas.IsVisible>
+            <MultiBinding Converter="{StaticResource InputPlaceholderVisibleConverter}">
+              <Binding ElementName="SearchBox" Path="Text" />
+              <Binding ElementName="SearchBox" Path="IsKeyboardFocusWithin" />
+            </MultiBinding>
+          </Canvas.IsVisible>
+          <Ellipse Width="9"
+                   Height="9"
+                   Canvas.Left="3"
+                   Canvas.Top="3"
+                   Stroke="{StaticResource PraxisPlaceholderBrush}"
+                   StrokeThickness="1.4" />
+          <Path Data="M 10.9 10.9 L 13.4 13.4"
+                Stroke="{StaticResource PraxisPlaceholderBrush}"
+                StrokeThickness="1.4"
+                StrokeLineCap="Round" />
+        </Canvas>
+        <Button Classes="praxis-clear-button"
+                IsTabStop="False"
+                IsVisible="{Binding #SearchBox.Text, Converter={StaticResource NotEmptyStringToBoolConverter}}"
+                Command="{Binding ClearSearchTextCommand}">
+          <Path Data="M 1 1 L 7 7 M 7 1 L 1 7"
+                Stroke="{Binding $parent[Button].Foreground}"
+                StrokeThickness="1.7"
+                StrokeLineCap="Round" />
+        </Button>
+      </Grid>
+    </Grid>
+
+    <Border Grid.Row="1"
+            x:Name="CommandSuggestionPanel"
+            Grid.RowSpan="2"
+            Classes="praxis-suggestion-panel"
+            MaxHeight="260"
+            Margin="0,50,0,0"
+            HorizontalAlignment="Stretch"
+            VerticalAlignment="Top"
+            ZIndex="500"
+            IsVisible="{Binding IsCommandSuggestionOpen}">
+      <ScrollViewer VerticalScrollBarVisibility="Auto"
+                    HorizontalScrollBarVisibility="Disabled">
+        <ItemsControl ItemsSource="{Binding CommandSuggestions}">
+          <ItemsControl.ItemsPanel>
+            <ItemsPanelTemplate>
+              <StackPanel Spacing="2" />
+            </ItemsPanelTemplate>
+          </ItemsControl.ItemsPanel>
+          <ItemsControl.ItemTemplate>
+            <DataTemplate>
+              <Button Classes="praxis-suggestion"
+                      IsTabStop="False"
+                      HorizontalAlignment="Stretch"
+                      Width="{Binding #CommandSuggestionPanel.Bounds.Width}"
+                      Command="{Binding $parent[Window].DataContext.PickSuggestionCommand}"
+                      CommandParameter="{Binding}">
+                <Button.Background>
+                  <MultiBinding Converter="{StaticResource SelectedSuggestionBackgroundConverter}">
+                    <Binding Path="IsSelected" />
+                    <Binding Path="$parent[Window].DataContext.SelectedTheme" />
+                  </MultiBinding>
+                </Button.Background>
+                <Grid ColumnDefinitions="160,160,*"
+                      ColumnSpacing="10"
+                      Margin="10,0,22,0"
+                      VerticalAlignment="Center">
+                  <TextBlock Text="{Binding Command}"
+                             FontWeight="SemiBold"
+                             TextTrimming="CharacterEllipsis" />
+                  <TextBlock Grid.Column="1"
+                             Text="{Binding ButtonText}"
+                             TextTrimming="CharacterEllipsis" />
+                  <TextBlock Grid.Column="2"
+                             Text="{Binding ToolArguments}"
+                             Foreground="{StaticResource PraxisTextSecondaryBrush}"
+                             TextTrimming="CharacterEllipsis" />
+                </Grid>
+              </Button>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+      </ScrollViewer>
+    </Border>
+
+    <Border Grid.Row="2"
+            x:Name="PlacementFrame"
+            Classes="praxis-placement-frame"
+            Margin="0,8,0,0">
+      <ScrollViewer x:Name="PlacementScroll"
+                    HorizontalScrollBarVisibility="Auto"
+                    VerticalScrollBarVisibility="Auto">
+        <Canvas x:Name="PlacementSurface"
+                MinWidth="1600"
+                MinHeight="880"
+                Background="Transparent">
+          <ItemsControl ItemsSource="{Binding VisibleButtons}"
+                        Canvas.Left="0"
+                        Canvas.Top="0">
+            <ItemsControl.ItemsPanel>
+              <ItemsPanelTemplate>
+                <Canvas MinWidth="1600"
+                        MinHeight="880" />
+              </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+            <ItemsControl.Styles>
+              <Style Selector="ContentPresenter">
+                <Setter Property="Canvas.Left" Value="{Binding X}" />
+                <Setter Property="Canvas.Top" Value="{Binding Y}" />
+              </Style>
+            </ItemsControl.Styles>
+            <ItemsControl.ItemTemplate>
+              <DataTemplate>
+                <Button Classes="praxis-launcher"
+                        IsTabStop="False"
+                        Width="{Binding Width}"
+                        Height="{Binding Height}">
+                  <ToolTip.Tip>
+                    <Grid Classes="praxis-tooltip-grid"
+                          RowDefinitions="Auto,Auto,Auto,Auto,Auto"
+                          ColumnDefinitions="92,*">
+                      <TextBlock Classes="praxis-tooltip-label" Text="Command" />
+                      <TextBlock Grid.Column="1" Text="{Binding Command}" />
+                      <TextBlock Grid.Row="1" Classes="praxis-tooltip-label" Text="Tool" />
+                      <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding CommandPath}" />
+                      <TextBlock Grid.Row="2" Classes="praxis-tooltip-label" Text="Arguments" />
+                      <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding Arguments}" />
+                      <TextBlock Grid.Row="3" Classes="praxis-tooltip-label" Text="Clip Word" />
+                      <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding ClipText}" />
+                      <TextBlock Grid.Row="4" Classes="praxis-tooltip-label" Text="Note" />
+                      <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding Note}" />
+                    </Grid>
+                  </ToolTip.Tip>
+                  <Button.Background>
+                    <MultiBinding Converter="{StaticResource LauncherButtonBackgroundConverter}">
+                      <Binding Path="ColorKey" />
+                      <Binding Path="IsSelected" />
+                      <Binding Path="UseInvertedThemeColors" />
+                      <Binding Path="$parent[Window].DataContext.SelectedTheme" />
+                      <Binding Path="$self.IsPointerOver" />
+                    </MultiBinding>
+                  </Button.Background>
+                  <TextBlock Text="{Binding Text}"
+                             TextTrimming="CharacterEllipsis"
+                             HorizontalAlignment="Center"
+                             VerticalAlignment="Center">
+                    <TextBlock.Foreground>
+                      <MultiBinding Converter="{StaticResource LauncherButtonForegroundConverter}">
+                        <Binding Path="UseInvertedThemeColors" />
+                        <Binding Path="$parent[Window].DataContext.SelectedTheme" />
+                      </MultiBinding>
+                    </TextBlock.Foreground>
+                  </TextBlock>
+                </Button>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+
+          <Border x:Name="SelectionRect"
+                  Classes="praxis-selection-rect"
+                  IsVisible="False"
+                  Width="0"
+                  Height="0"
+                  Canvas.Left="0"
+                  Canvas.Top="0"
+                  IsHitTestVisible="False" />
+        </Canvas>
+      </ScrollViewer>
+    </Border>
+
+    <ScrollViewer Grid.Row="3"
+                  x:Name="DockScroll"
+                  Classes="praxis-dock-scroll"
+                  HorizontalScrollBarVisibility="Auto"
+                  VerticalScrollBarVisibility="Disabled"
+                  Padding="0,0,0,24"
+                  Margin="0,8,0,0">
+      <ItemsControl ItemsSource="{Binding RecentButtons}">
+        <ItemsControl.ItemsPanel>
+          <ItemsPanelTemplate>
+            <StackPanel Orientation="Horizontal"
+                        Spacing="8" />
+          </ItemsPanelTemplate>
+        </ItemsControl.ItemsPanel>
+        <ItemsControl.ItemTemplate>
+          <DataTemplate>
+            <Button Classes="praxis-dock"
+                    IsTabStop="False"
+                    Width="120">
+              <ToolTip.Tip>
+                <Grid Classes="praxis-tooltip-grid"
+                          RowDefinitions="Auto,Auto,Auto,Auto,Auto"
+                          ColumnDefinitions="92,*">
+                      <TextBlock Classes="praxis-tooltip-label" Text="Command" />
+                      <TextBlock Grid.Column="1" Text="{Binding Command}" />
+                      <TextBlock Grid.Row="1" Classes="praxis-tooltip-label" Text="Tool" />
+                      <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding CommandPath}" />
+                      <TextBlock Grid.Row="2" Classes="praxis-tooltip-label" Text="Arguments" />
+                      <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding Arguments}" />
+                      <TextBlock Grid.Row="3" Classes="praxis-tooltip-label" Text="Clip Word" />
+                      <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding ClipText}" />
+                      <TextBlock Grid.Row="4" Classes="praxis-tooltip-label" Text="Note" />
+                      <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding Note}" />
+                    </Grid>
+              </ToolTip.Tip>
+              <Button.Background>
+                <MultiBinding Converter="{StaticResource LauncherButtonBackgroundConverter}">
+                  <Binding Path="ColorKey" />
+                  <Binding Path="$self.IsKeyboardFocusWithin" />
+                  <Binding Path="UseInvertedThemeColors" />
+                  <Binding Path="$parent[Window].DataContext.SelectedTheme" />
+                  <Binding Path="$self.IsPointerOver" />
+                </MultiBinding>
+              </Button.Background>
+              <TextBlock Text="{Binding Text}"
+                         TextTrimming="CharacterEllipsis"
+                         HorizontalAlignment="Center"
+                         VerticalAlignment="Center">
+                <TextBlock.Foreground>
+                  <MultiBinding Converter="{StaticResource LauncherButtonForegroundConverter}">
+                    <Binding Path="UseInvertedThemeColors" />
+                    <Binding Path="$parent[Window].DataContext.SelectedTheme" />
+                  </MultiBinding>
+                </TextBlock.Foreground>
+              </TextBlock>
+            </Button>
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
+    </ScrollViewer>
+
+    <Border Grid.Row="4"
+            x:Name="StatusBar"
+            Classes="praxis-status-bar"
+            MinHeight="30"
+            Margin="0,8,0,0"
+            Opacity="0">
+      <Border.Background>
+        <MultiBinding Converter="{StaticResource StatusKindToBrushConverter}">
+          <Binding Path="Status.Kind" />
+          <Binding Path="SelectedTheme" />
+        </MultiBinding>
+      </Border.Background>
+      <Border.Transitions>
+        <Transitions>
+          <DoubleTransition Property="Opacity"
+                            Duration="0:0:0.25" />
+        </Transitions>
+      </Border.Transitions>
+      <TextBlock Text="{Binding Status.Message}"
+                 HorizontalAlignment="Center"
+                 VerticalAlignment="Center"
+                 Foreground="{Binding SelectedTheme, Converter={StaticResource StatusForegroundConverter}}"
+                 FontSize="12" />
+    </Border>
+
+    <Grid Grid.RowSpan="5"
+          x:Name="ContextMenuOverlay"
+          Margin="-18"
+          IsVisible="{Binding IsContextMenuOpen}"
+          Classes="praxis-glass-backdrop"
+          ZIndex="900"
+          Focusable="True"
+          IsHitTestVisible="True">
+      <Border Classes="praxis-context-menu"
+              HorizontalAlignment="Center"
+              VerticalAlignment="Center">
+        <StackPanel Spacing="8"
+                    KeyboardNavigation.TabNavigation="Cycle">
+          <Button x:Name="ContextEditButton"
+                  Classes="praxis-menu-button"
+                  Content="Edit"
+                  TabIndex="0"
+                  HorizontalContentAlignment="Center"
+                  Command="{Binding OpenEditorCommand}"
+                  CommandParameter="{Binding ContextMenuTarget}" />
+          <Button x:Name="ContextDeleteButton"
+                  Classes="praxis-menu-button"
+                  Content="Delete"
+                  TabIndex="1"
+                  HorizontalContentAlignment="Center"
+                  Command="{Binding DeleteButtonCommand}"
+                  CommandParameter="{Binding ContextMenuTarget}" />
+        </StackPanel>
+      </Border>
+    </Grid>
+
+    <Grid Grid.RowSpan="5"
+          x:Name="EditorOverlay"
+          Margin="-18"
+          IsVisible="{Binding IsEditorOpen}"
+          Classes="praxis-glass-backdrop"
+          ZIndex="1000"
+          Focusable="True"
+          KeyboardNavigation.TabNavigation="Cycle">
+      <Border Classes="praxis-editor-modal"
+              Width="620"
+              HorizontalAlignment="Center"
+              VerticalAlignment="Center">
+        <Grid ColumnDefinitions="112,*"
+              RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto"
+              ColumnSpacing="6"
+              RowSpacing="8">
+          <TextBlock Grid.Row="0"
+                     Grid.Column="0"
+                     Classes="praxis-editor-label"
+                     Text="GUID" />
+          <Grid Grid.Row="0"
+                Grid.Column="1"
+                Classes="praxis-editor-field">
+            <TextBox Classes="praxis-input"
+                     x:Name="ModalGuidEntry"
+                     TabIndex="8"
+                     IsReadOnly="True"
+                     TextWrapping="NoWrap"
+                     ScrollViewer.HorizontalScrollBarVisibility="Hidden"
+                     ScrollViewer.VerticalScrollBarVisibility="Disabled"
+                     Text="{Binding EditorButton.Id}" />
+            <Button Classes="praxis-copy-button"
+                    Tag="{Binding EditorButton.Id}">
+              <Path Data="M 8 5 L 15 5 L 15 14 L 8 14 Z M 5 8 L 5 17 L 12 17"
+                    Stroke="{Binding $parent[Button].Foreground}"
+                    StrokeThickness="1.4"
+                    StrokeLineCap="Round"
+                    StrokeJoin="Round" />
+            </Button>
+          </Grid>
+
+          <TextBlock Grid.Row="1"
+                     Grid.Column="0"
+                     Classes="praxis-editor-label"
+                     Text="ButtonText" />
+          <Grid Grid.Row="1"
+                Grid.Column="1"
+                Classes="praxis-editor-field">
+            <TextBox Classes="praxis-input"
+                     x:Name="ModalButtonTextEntry"
+                     TabIndex="0"
+                     TextWrapping="NoWrap"
+                     ScrollViewer.HorizontalScrollBarVisibility="Hidden"
+                     ScrollViewer.VerticalScrollBarVisibility="Disabled"
+                     Text="{Binding EditorButton.Text, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+            <Button Classes="praxis-copy-button"
+                    IsVisible="{Binding EditorButton.Text, Converter={StaticResource NotEmptyStringToBoolConverter}}"
+                    Tag="{Binding EditorButton.Text}">
+              <Path Data="M 8 5 L 15 5 L 15 14 L 8 14 Z M 5 8 L 5 17 L 12 17"
+                    Stroke="{Binding $parent[Button].Foreground}"
+                    StrokeThickness="1.4"
+                    StrokeLineCap="Round"
+                    StrokeJoin="Round" />
+            </Button>
+          </Grid>
+
+          <TextBlock Grid.Row="2"
+                     Grid.Column="0"
+                     Classes="praxis-editor-label"
+                     Text="Command" />
+          <Grid Grid.Row="2"
+                Grid.Column="1"
+                Classes="praxis-editor-field">
+            <TextBox Classes="praxis-input"
+                     x:Name="ModalCommandEntry"
+                     TabIndex="1"
+                     TextWrapping="NoWrap"
+                     ScrollViewer.HorizontalScrollBarVisibility="Hidden"
+                     ScrollViewer.VerticalScrollBarVisibility="Disabled"
+                     Text="{Binding EditorButton.Command, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+            <Button Classes="praxis-copy-button"
+                    IsVisible="{Binding EditorButton.Command, Converter={StaticResource NotEmptyStringToBoolConverter}}"
+                    Tag="{Binding EditorButton.Command}">
+              <Path Data="M 8 5 L 15 5 L 15 14 L 8 14 Z M 5 8 L 5 17 L 12 17"
+                    Stroke="{Binding $parent[Button].Foreground}"
+                    StrokeThickness="1.4"
+                    StrokeLineCap="Round"
+                    StrokeJoin="Round" />
+            </Button>
+          </Grid>
+
+          <TextBlock Grid.Row="3"
+                     Grid.Column="0"
+                     Classes="praxis-editor-label"
+                     Text="Tool" />
+          <Grid Grid.Row="3"
+                Grid.Column="1"
+                Classes="praxis-editor-field">
+            <TextBox Classes="praxis-input"
+                     x:Name="ModalToolEntry"
+                     TabIndex="2"
+                     TextWrapping="NoWrap"
+                     ScrollViewer.HorizontalScrollBarVisibility="Hidden"
+                     ScrollViewer.VerticalScrollBarVisibility="Disabled"
+                     Text="{Binding EditorButton.CommandPath, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+            <Button Classes="praxis-copy-button"
+                    IsVisible="{Binding EditorButton.CommandPath, Converter={StaticResource NotEmptyStringToBoolConverter}}"
+                    Tag="{Binding EditorButton.CommandPath}">
+              <Path Data="M 8 5 L 15 5 L 15 14 L 8 14 Z M 5 8 L 5 17 L 12 17"
+                    Stroke="{Binding $parent[Button].Foreground}"
+                    StrokeThickness="1.4"
+                    StrokeLineCap="Round"
+                    StrokeJoin="Round" />
+            </Button>
+          </Grid>
+
+          <TextBlock Grid.Row="4"
+                     Grid.Column="0"
+                     Classes="praxis-editor-label"
+                     Text="Arguments" />
+          <Grid Grid.Row="4"
+                Grid.Column="1"
+                Classes="praxis-editor-field">
+            <TextBox Classes="praxis-input"
+                     x:Name="ModalArgumentsEntry"
+                     TabIndex="3"
+                     TextWrapping="NoWrap"
+                     ScrollViewer.HorizontalScrollBarVisibility="Hidden"
+                     ScrollViewer.VerticalScrollBarVisibility="Disabled"
+                     Text="{Binding EditorButton.Arguments, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+            <Button Classes="praxis-copy-button"
+                    IsVisible="{Binding EditorButton.Arguments, Converter={StaticResource NotEmptyStringToBoolConverter}}"
+                    Tag="{Binding EditorButton.Arguments}">
+              <Path Data="M 8 5 L 15 5 L 15 14 L 8 14 Z M 5 8 L 5 17 L 12 17"
+                    Stroke="{Binding $parent[Button].Foreground}"
+                    StrokeThickness="1.4"
+                    StrokeLineCap="Round"
+                    StrokeJoin="Round" />
+            </Button>
+          </Grid>
+
+          <TextBlock Grid.Row="5"
+                     Grid.Column="0"
+                     Classes="praxis-editor-label"
+                     Text="Clip Word" />
+          <Grid Grid.Row="5"
+                Grid.Column="1"
+                Classes="praxis-editor-field">
+            <TextBox Classes="praxis-input"
+                     x:Name="ModalClipWordEditor"
+                     TabIndex="4"
+                     AcceptsReturn="True"
+                     MinHeight="38"
+                     MaxHeight="126"
+                     ScrollViewer.VerticalScrollBarVisibility="Auto"
+                     Text="{Binding EditorButton.ClipText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+            <Button Classes="praxis-copy-button"
+                    IsVisible="{Binding EditorButton.ClipText, Converter={StaticResource NotEmptyStringToBoolConverter}}"
+                    Tag="{Binding EditorButton.ClipText}">
+              <Path Data="M 8 5 L 15 5 L 15 14 L 8 14 Z M 5 8 L 5 17 L 12 17"
+                    Stroke="{Binding $parent[Button].Foreground}"
+                    StrokeThickness="1.4"
+                    StrokeLineCap="Round"
+                    StrokeJoin="Round" />
+            </Button>
+          </Grid>
+
+          <TextBlock Grid.Row="6"
+                     Grid.Column="0"
+                     Classes="praxis-editor-label"
+                     Text="Note" />
+          <Grid Grid.Row="6"
+                Grid.Column="1"
+                Classes="praxis-editor-field">
+            <TextBox Classes="praxis-input"
+                     x:Name="ModalNoteEditor"
+                     TabIndex="5"
+                     AcceptsReturn="True"
+                     MinHeight="38"
+                     MaxHeight="126"
+                     ScrollViewer.VerticalScrollBarVisibility="Auto"
+                     Text="{Binding EditorButton.Note, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+            <Button Classes="praxis-copy-button"
+                    IsVisible="{Binding EditorButton.Note, Converter={StaticResource NotEmptyStringToBoolConverter}}"
+                    Tag="{Binding EditorButton.Note}">
+              <Path Data="M 8 5 L 15 5 L 15 14 L 8 14 Z M 5 8 L 5 17 L 12 17"
+                    Stroke="{Binding $parent[Button].Foreground}"
+                    StrokeThickness="1.4"
+                    StrokeLineCap="Round"
+                    StrokeJoin="Round" />
+            </Button>
+          </Grid>
+
+          <TextBlock Grid.Row="7"
+                     Grid.Column="0"
+                     Classes="praxis-editor-label"
+                     Text="Invert Theme" />
+          <CheckBox Grid.Row="7"
+                    Grid.Column="1"
+                    Classes="praxis-invert-check"
+                    IsTabStop="False"
+                    IsChecked="{Binding EditorButton.UseInvertedThemeColors, Mode=TwoWay}"
+                    Content="Use inverted theme colors for this button" />
+
+          <StackPanel Grid.Row="8"
+                      Grid.ColumnSpan="3"
+                      Orientation="Horizontal"
+                      HorizontalAlignment="Center"
+                      Margin="0,8,0,0"
+                      Spacing="8">
+            <Button Classes="praxis-menu-button"
+                    x:Name="ModalCancelButton"
+                    Content="Cancel"
+                    TabIndex="6"
+                    Command="{Binding CancelEditorCommand}" />
+            <Button Classes="praxis-menu-button"
+                    x:Name="ModalSaveButton"
+                    Content="Save"
+                    TabIndex="7"
+                    Command="{Binding SaveEditorCommand}" />
+          </StackPanel>
+        </Grid>
+      </Border>
+    </Grid>
+
+    <Grid Grid.RowSpan="5"
+          x:Name="ConflictOverlay"
+          Margin="-18"
+          IsVisible="{Binding IsConflictDialogOpen}"
+          Classes="praxis-glass-backdrop"
+          ZIndex="1100"
+          Focusable="True"
+          KeyboardNavigation.TabNavigation="Cycle">
+      <Border Classes="praxis-editor-modal praxis-conflict-modal"
+              Width="520"
+              HorizontalAlignment="Center"
+              VerticalAlignment="Center">
+        <Grid RowDefinitions="Auto,Auto,Auto"
+              RowSpacing="14">
+          <TextBlock Text="{Binding ConflictTitle}"
+                     FontSize="15"
+                     FontWeight="SemiBold"
+                     Foreground="{StaticResource PraxisTextPrimaryBrush}" />
+          <TextBlock Grid.Row="1"
+                     Text="{Binding ConflictMessage}"
+                     Foreground="{StaticResource PraxisTextSecondaryBrush}"
+                     TextWrapping="Wrap"
+                     LineHeight="20" />
+          <StackPanel Grid.Row="2"
+                      Orientation="Horizontal"
+                      HorizontalAlignment="Center"
+                      Spacing="8"
+                      KeyboardNavigation.TabNavigation="Cycle">
+            <Button x:Name="ConflictReloadButton"
+                    Classes="praxis-menu-button"
+                    Content="Reload"
+                    Command="{Binding ReloadConflictCommand}" />
+            <Button x:Name="ConflictOverwriteButton"
+                    Classes="praxis-menu-button"
+                    Content="Overwrite"
+                    Command="{Binding OverwriteConflictCommand}" />
+            <Button x:Name="ConflictCancelButton"
+                    Classes="praxis-menu-button"
+                    Content="Cancel"
+                    Command="{Binding CancelConflictCommand}" />
+          </StackPanel>
+        </Grid>
+      </Border>
+    </Grid>
+
+    <Border Grid.RowSpan="5"
+            x:Name="CopyToast"
+            Classes="praxis-copy-toast"
+            IsVisible="False"
+            Opacity="0"
+            HorizontalAlignment="Center"
+            VerticalAlignment="Center"
+            IsHitTestVisible="False"
+            ZIndex="1200">
+      <Path Data="M 8 5 L 15 5 L 15 14 L 8 14 Z M 5 8 L 5 17 L 12 17"
+            StrokeThickness="1.5"
+            StrokeLineCap="Round"
+            StrokeJoin="Round" />
+    </Border>
+
+        </Grid>
+      </Grid>
+    </Border>
+
+    <Border Grid.RowSpan="5"
+            Classes="praxis-resize-edge praxis-resize-n"
+            Tag="North" />
+    <Border Grid.RowSpan="5"
+            Classes="praxis-resize-edge praxis-resize-s"
+            Tag="South" />
+    <Border Grid.RowSpan="5"
+            Classes="praxis-resize-edge praxis-resize-w"
+            Tag="West" />
+    <Border Grid.RowSpan="5"
+            Classes="praxis-resize-edge praxis-resize-e"
+            Tag="East" />
+    <Border Grid.RowSpan="5"
+            Classes="praxis-resize-corner praxis-resize-nw"
+            Tag="NorthWest" />
+    <Border Grid.RowSpan="5"
+            Classes="praxis-resize-corner praxis-resize-ne"
+            Tag="NorthEast" />
+    <Border Grid.RowSpan="5"
+            Classes="praxis-resize-corner praxis-resize-sw"
+            Tag="SouthWest" />
+    <Border Grid.RowSpan="5"
+            Classes="praxis-resize-corner praxis-resize-se"
+            Tag="SouthEast" />
+  </Grid>
+</Window>

@@ -3,7 +3,7 @@ namespace Praxis.Core.Logic;
 public static class DatabaseSchemaVersionPolicy
 {
     public const int InitialVersion = 0;
-    public const int CurrentVersion = 4;
+    public const int CurrentVersion = 5;
 
     public static IReadOnlyList<int> ResolvePendingUpgradeVersions(int currentVersion)
     {

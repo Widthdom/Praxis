@@ -21,6 +21,10 @@ public sealed class LauncherButtonRecord
         Width = source.Width;
         Height = source.Height;
         UseInvertedThemeColors = source.UseInvertedThemeColors;
+        ColorKey = source.ColorKey;
+        ToolTip = source.ToolTip;
+        LastExecutedAtUtc = source.LastExecutedAtUtc;
+        SortOrder = source.SortOrder;
         CreatedAtUtc = source.CreatedAtUtc;
         UpdatedAtUtc = source.UpdatedAtUtc;
     }
@@ -37,6 +41,10 @@ public sealed class LauncherButtonRecord
     public double Width { get; set; } = Logic.ButtonLayoutDefaults.Width;
     public double Height { get; set; } = Logic.ButtonLayoutDefaults.Height;
     public bool UseInvertedThemeColors { get; set; }
+    public LauncherButtonColorKey ColorKey { get; set; } = LauncherButtonColorKey.Default;
+    public string ToolTip { get; set; } = string.Empty;
+    public DateTime? LastExecutedAtUtc { get; set; }
+    public int SortOrder { get; set; }
     public DateTime CreatedAtUtc { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAtUtc { get; set; } = DateTime.UtcNow;
 

@@ -6,6 +6,50 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 
 ## [Unreleased]
 
+### Added
+- Started the v2.0.0 Avalonia migration branch with strict-MVVM Core model structure, an Avalonia desktop shell, and a migration plan covering platform abstractions, pseudo-acrylic UI direction, DB compatibility risks, and future Linux readiness
+- Added `Praxis.Data` with SQLite launcher-button persistence, platform-aware app data path resolution, v1 table-name compatibility, `praxis.db3` / existing `praxis.db` file support, and schema migration to version 5 for `ColorKey`, `ToolTip`, `LastExecutedAtUtc`, and `SortOrder`
+- Added a desktop launcher execution service for direct command execution and default-app opening on Windows, macOS, and Linux-ready `xdg-open` paths
+- Reintroduced command-input execution, command suggestions, persisted recent Dock order, button delete/move repository operations, and launch-log writes through Core/Data services
+- Added app-local file-backed launcher-button state sync through `IStateSyncNotifier` / `FileStateSyncNotifier`, including external reload deferral while the editor is open
+- Added Avalonia window icon resources, a dedicated draggable chrome row, double-click maximize on the drag area, and custom minimize/maximize/close caption buttons
+
+### Changed
+- Switched the solution, CI, delivery, README, and developer/test docs to the Avalonia desktop app as the active runtime target; MAUI workloads are no longer required
+- Changed Avalonia startup to load launcher buttons from SQLite through `MainModel` and `ILauncherButtonRepository` instead of preview-only launcher data
+- Changed `MainWindow` code-behind to load XAML directly instead of keeping a generated-style `InitializeComponent` wrapper
+
+### Removed
+- Removed the former .NET MAUI app project and its MAUI app-layer linked-source tests so v2 development starts from the Avalonia shell and Core model/service contracts
+
+### Tests
+- Added focused xUnit coverage for `praxis.db3` / `praxis.db` storage selection, SQLite v4-to-v5 launcher schema migration, and v2 launcher-field persistence
+- Added focused xUnit coverage for command suggestions/execution, persisted Dock order, launch logs, button deletion, and snapped move persistence
+- Added focused xUnit coverage for state-sync payload parsing, successful save notifications, external reload, and editor conflict detection when another window updates or deletes a button
+- Added source guards for direct XAML loading, embedded icon assets, draggable chrome, and caption button wiring
+
+### Fixed
+- Context-menu Delete now removes the full selected launcher-button group when invoked from a selected button, while unselected button Delete still removes only the clicked button
+- Windows Avalonia shell now uses a transparent-background app icon for taskbar and jump-list surfaces, tightens the custom caption buttons to the window top edge, and strengthens the rounded pseudo-acrylic shell corners
+- Windows caption buttons use the OS chrome path for native minimize/maximize/restore animations, caption tooltips avoid clipped text, the pseudo-acrylic shell is more translucent, and custom title-bar dragging supports edge snap
+- The Avalonia editor modal now exposes the button `Command` field, placement and Dock tooltips omit duplicate `ButtonText`, Windows caption hit testing uses the native title-bar path for Aero Snap, and small window icons are emitted as alpha DIB ICO frames
+- Windows placement-area and Dock button tooltips now use fixed button-edge placement instead of pointer placement, so the tooltip does not appear under the cursor and intercept the first click
+- Light-mode Windows caption buttons now use darker glyphs with a stronger but still neutral hover background
+- Editor focus now places the caret at the end of `ButtonText` for normal edits, including context-menu Edit, and selects all `ButtonText` only for new buttons
+- New buttons now default to fixed `New` button text with an empty command instead of numbered placeholder text and commands
+- Windows jump-list relaunch icon metadata now points at the transparent small icon resource so the taskbar right-click menu can avoid the stale white-background executable icon
+- Windows rounded corners now rely on DWM-managed clipping instead of a GDI region, smoothing the light-mode window corners
+- Removed the Windows-only editor `ButtonText` focus stabilization experiments after they proved unreliable and could steal focus back from other modal controls; the remaining Windows caret-at-start race is now documented in the developer guide
+- Windows shell corners now avoid drawing an inner rounded shell on top of the DWM-managed window corner, preventing doubled corner arcs and malformed snapped-window corners
+- Windows now hides the custom Avalonia caption-button stack and clears the runtime title when using the OS chrome path for animated minimize/maximize/restore, avoiding duplicate caption buttons and the extra title text
+- Windows hides Avalonia's drawn full-screen caption glyph while keeping the OS chrome path, so minimize/maximize/close remain visible without the extra button beside minimize
+- `Ctrl+Shift+L`, `Ctrl+Shift+D`, and `Ctrl+Shift+H` now explicitly switch Avalonia between Light, Dark, and System theme modes
+- `Ctrl+Shift+H` now returns Avalonia to the system theme instead of leaving an in-between fixed palette; window light/dark classes and theme-dependent bindings are refreshed from the actual OS-selected theme
+- Windows editor `ButtonText` now uses the shared initial-focus path instead of pointer hit-test suppression or repeated caret/selection timers
+- Windows launcher and Dock button labels are optically lowered to sit at the vertical center, and the pseudo-acrylic background uses a softer low-contrast blur-style sheen for environments where true window transparency is unavailable
+- Single-line Avalonia text boxes now keep the caret visible at the right edge by allowing hidden horizontal scrolling instead of disabling horizontal scroll behavior, with modest extra right padding for Command/Search clear buttons
+- README and developer/database/testing docs now describe the current Avalonia editing, drag, theme-switching, and file-backed button sync behavior instead of pointing at removed migration-plan notes or calling those flows unimplemented
+
 ### [1.2.0] - 2026-05-11
 
 ### Added
@@ -491,6 +535,50 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 形式は Keep a Changelog に準拠し、バージョン管理は Semantic Versioning に従います。
 
 ## [Unreleased]
+
+### 追加
+- strict MVVM の Core model 構成、Avalonia デスクトップシェル、プラットフォーム抽象化・擬似アクリル UI 方針・DB 互換リスク・将来の Linux 対応を含む移行計画を持つ v2.0.0 Avalonia 移行ブランチを開始
+- SQLite launcher-button 永続化、プラットフォーム対応 app data path 解決、v1 テーブル名互換、`praxis.db3` / 既存 `praxis.db` ファイル対応、`ColorKey` / `ToolTip` / `LastExecutedAtUtc` / `SortOrder` 用の schema version 5 migration を備えた `Praxis.Data` を追加
+- Windows、macOS、および Linux-ready な `xdg-open` 経路で、直接 command 実行と既定アプリ起動を行う desktop launcher execution service を追加
+- command input 実行、command suggestion、永続化された recent Dock order、button delete/move repository 操作、Core/Data service 経由の launch-log 書き込みを再導入
+- `IStateSyncNotifier` / `FileStateSyncNotifier` による app-local なファイルベース launcher-button state sync を追加し、editor が開いている間は外部変更 reload を遅延するようにした
+- Avalonia window icon resource、専用 draggable chrome row、drag area の double-click maximize、カスタム minimize/maximize/close caption button を追加
+
+### 変更
+- solution、CI、delivery、README、developer/test docs の active runtime target を Avalonia desktop app へ切り替え、MAUI workload を不要化
+- Avalonia startup は preview-only launcher data ではなく、`MainModel` と `ILauncherButtonRepository` 経由で SQLite から launcher button を読み込むよう変更
+- `MainWindow` code-behind は generated-style の `InitializeComponent` wrapper を持たず、XAML を直接読み込むよう変更
+
+### 削除
+- 旧 .NET MAUI app project と MAUI app-layer linked-source tests を削除し、v2 開発を Avalonia shell と Core model/service contract から開始する構成に変更
+
+### テスト
+- `praxis.db3` / `praxis.db` storage selection、SQLite v4-to-v5 launcher schema migration、v2 launcher-field persistence の focused xUnit coverage を追加
+- command suggestion/execution、永続化された Dock order、launch log、button deletion、snapped move persistence の focused xUnit coverage を追加
+- state-sync payload parsing、保存成功時の通知、外部変更 reload、他 window が button を更新または削除した場合の editor conflict 検出の focused xUnit coverage を追加
+- direct XAML loading、embedded icon assets、draggable chrome、caption button wiring の source guard を追加
+
+### 修正
+- Windows Avalonia shell は taskbar / jump-list surface 向けに透明背景の app icon を使い、custom caption button を window 上端へ詰め、擬似アクリル shell の角丸を強化
+- Windows caption button は native の minimize / maximize / restore animation を維持するため OS chrome 経路を使い、caption tooltip の文字切れを避け、擬似アクリル shell の透明度を上げ、custom title-bar drag の edge snap に対応
+- Avalonia editor modal に button `Command` 欄を追加し、配置領域 / Dock の tooltip から重複する `ButtonText` を削除し、Windows caption hit test を native title-bar 経路に寄せて Aero Snap に対応し、小さい window icon を alpha DIB ICO frame として出力
+- Windows の配置領域 / Dock button tooltip は pointer 追従ではなく button edge 基準の固定配置にし、tooltip が cursor 下に出て初回 click を奪う状況を避けるよう修正
+- ライトモードの Windows caption button は glyph を濃くし、hover background を中立色のまま少し強く見えるよう調整
+- 編集モーダルは context menu の Edit を含む通常編集時に `ButtonText` 末尾へ caret を置き、新規ボタン時だけ `ButtonText` を全選択
+- 新規ボタンの初期値は番号付きの placeholder text / command ではなく、固定の `New` と空の command に変更
+- context menu の Delete は、選択中 button から実行した場合に選択中 launcher-button 全体を削除し、未選択 button から実行した場合は従来どおりクリックした button だけを削除するよう修正
+- Windows jump-list の relaunch icon metadata は透明背景の小アイコン resource を指すようにし、taskbar 右クリックメニューで古い白背景の実行ファイル icon が使われにくいよう調整
+- Windows の角丸は GDI region ではなく DWM 管理の clipping に寄せ、ライトモードで目立っていた角の粗さを滑らかに調整
+- Windows 専用の編集モーダル `ButtonText` focus 安定化策は、不安定で他の modal control から focus を奪い返す副作用があったため削除し、残る Windows の caret 先頭戻り race は開発者ガイドの未解決課題として記録
+- Windows shell の角は DWM 管理の window corner に重ねて内側の角丸を描かないようにし、二重の弧や snap 時の不自然な角描画を避けるよう調整
+- Windows は animated minimize / maximize / restore のために OS chrome 経路を使う場合、自前の Avalonia caption-button stack を隠し runtime title を空にして、caption button の二重表示と余計な title text を避けるよう調整
+- Windows は OS chrome 経路を維持しつつ Avalonia drawn full-screen caption glyph だけを隠し、minimize / maximize / close を残したまま minimize button 左側の余計なボタンを消すよう調整
+- `Ctrl+Shift+L` / `Ctrl+Shift+D` / `Ctrl+Shift+H` で Avalonia を Light / Dark / System theme mode へ明示的に切り替えられるよう修正
+- `Ctrl+Shift+H` は固定の中間 palette ではなく system theme へ戻し、OS が選んだ実際の light / dark から window class と theme 依存 binding を再評価するよう修正
+- Windows の編集モーダル `ButtonText` は pointer hit-test 抑止や caret / selection の反復 timer ではなく、Windows / macOS 共通の初期 focus 経路を使うよう変更
+- Windows の launcher / Dock button label は縦方向の見た目中央へ下げ、真の window 透過が効かない環境でも blur 風に見えるよう擬似アクリル背景を低コントラストで柔らかい sheen に調整
+- 単一行の Avalonia text box は水平スクロール動作を無効化せず非表示スクロールにし、Command / Search の clear button 用に控えめな右余白を確保したうえで、入力が表示幅を超えても caret が右端に残って文字列が左へ流れるよう修正
+- README と developer/database/testing docs は、削除済みの移行計画メモへのリンクや未実装扱いの記述を外し、現在の Avalonia editing、drag、theme switching、file-backed button sync の挙動に合わせて更新
 
 ### [1.2.0] - 2026-05-11
 

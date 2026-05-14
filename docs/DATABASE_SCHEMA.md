@@ -1,267 +1,89 @@
 # Database Schema
 
-## Scope
-This document defines the SQLite table design used by Praxis.
+## English
 
-Authoritative implementation points:
-- [`Praxis/Services/SqliteAppRepository.cs`](../Praxis/Services/SqliteAppRepository.cs)
-- [`Praxis/Models/LauncherButtonEntity.cs`](../Praxis/Models/LauncherButtonEntity.cs)
-- [`Praxis/Models/LaunchLogEntity.cs`](../Praxis/Models/LaunchLogEntity.cs)
-- [`Praxis/Models/ErrorLogEntity.cs`](../Praxis/Models/ErrorLogEntity.cs)
-- [`Praxis/Models/AppSettingEntity.cs`](../Praxis/Models/AppSettingEntity.cs)
+Praxis v2 uses `Praxis.Data` for SQLite persistence. The Avalonia runtime currently loads and saves launcher buttons, persists recent Dock order, and writes launch logs through `SqliteLauncherButtonRepository`. Cross-window launcher-button sync uses a sidecar `buttons.sync` signal file through `FileStateSyncNotifier`; that file is not part of the SQLite schema. Persisted theme settings and runtime error-log writes are still migration follow-up work.
 
-## Database File Location
-- Logical path source: [`Praxis/Services/AppStoragePaths.cs`](../Praxis/Services/AppStoragePaths.cs)
-- Current file name: `praxis.db3`
-- Current resolved locations:
-  - Windows: `%USERPROFILE%/AppData/Local/Praxis/praxis.db3`
-  - macOS (Mac Catalyst): `~/Library/Application Support/Praxis/praxis.db3`
+### Storage Path
 
-Notes:
-- `SqliteAppRepository.InitializeAsync` manages schema version by `PRAGMA user_version`.
-- Startup applies each pending migration step in order (`current + 1 .. CurrentVersion`) and bumps `user_version` after each step completes.
-- Current schema version: `4`
-- Version `1` migration creates the initial three tables with `CreateTableAsync<T>()`.
-- Version `2` migration adds `UseInvertedThemeColors` column to `LauncherButtonEntity` (safe on already-updated/newly-created tables).
-- Version `3` migration creates `ErrorLogEntity` table for application error logging.
-- Version `4` migration adds `Level` column to `ErrorLogEntity` (`TEXT NOT NULL DEFAULT 'Error'`).
-- Automatic startup migration examples:
-  - `user_version=0` -> apply `v1`, then `v2`, then `v3`, then `v4`
-  - `user_version=1` -> apply `v2`, then `v3`, then `v4`
-  - `user_version=2` -> apply `v3`, then `v4`
-  - `user_version=3` -> apply `v4`
-  - `user_version=4` -> no migration
-- `DateTime` columns are mapped by `sqlite-net-pcl` with provider default settings used by `SQLiteAsyncConnection(dbPath)`.
-- `buttons.sync` is stored separately for multi-window signaling:
-  - Windows: `%USERPROFILE%/AppData/Local/Praxis/buttons.sync`
-  - macOS (Mac Catalyst): `~/Library/Application Support/Praxis/buttons.sync`
-- `crash.log` is stored in the same directory for crash-safe file-based logging (see [Crash Log File](#crash-log-file) section below).
+- Windows: `%LOCALAPPDATA%\Praxis`
+- macOS: `~/Library/Application Support/Praxis`
+- Linux: `$XDG_DATA_HOME/Praxis`, falling back to `~/.local/share/Praxis`
 
-## Table List
-- `LauncherButtonEntity`
-- `LaunchLogEntity`
-- `ErrorLogEntity`
-- `AppSettingEntity`
+The preferred database file name remains `praxis.db3` for v1 compatibility. If `praxis.db3` is not present but `praxis.db` exists in the same app data directory, v2 opens `praxis.db` in place and applies the same migrations.
 
-## ER Diagram (Mermaid)
-```mermaid
-erDiagram
-    LauncherButtonEntity {
-        varchar Id PK
-        varchar Command
-        varchar ButtonText
-        varchar Tool
-        varchar Arguments
-        varchar ClipText
-        varchar Note
-        float X
-        float Y
-        float Width
-        float Height
-        integer UseInvertedThemeColors
-        datetime CreatedAtUtc
-        datetime UpdatedAtUtc
-    }
+For development and smoke tests, `PRAXIS_APP_DATA_DIR` can point the app at an alternate absolute app data directory.
 
-    LaunchLogEntity {
-        varchar Id PK
-        varchar ButtonId
-        varchar Source
-        varchar Tool
-        varchar Arguments
-        integer Succeeded
-        varchar Message
-        datetime TimestampUtc
-    }
+`buttons.sync` is also stored in the app data directory. It contains the source instance id and UTC ticks for the latest launcher-button change notification, allowing other running Praxis windows to reload or defer reload while an editor is open.
 
-    ErrorLogEntity {
-        varchar Id PK
-        varchar Level
-        varchar Context
-        varchar ExceptionType
-        varchar Message
-        varchar StackTrace
-        datetime TimestampUtc
-    }
+### Version
 
-    AppSettingEntity {
-        varchar Key PK
-        varchar Value
-    }
+`PRAGMA user_version` is `5`.
 
-    LauncherButtonEntity ||--o{ LaunchLogEntity : "ButtonId (logical relation, no FK constraint)"
-```
+Migration history:
 
-## Table: LauncherButtonEntity
-Purpose: launcher button master records (placement, command, metadata).
+1. Create `LauncherButtonEntity`, `LaunchLogEntity`, and `AppSettingEntity`.
+2. Add `LauncherButtonEntity.UseInvertedThemeColors`.
+3. Create `ErrorLogEntity`.
+4. Add `ErrorLogEntity.Level`.
+5. Add launcher v2 fields: `ColorKey`, `ToolTip`, `LastExecutedAtUtc`, and `SortOrder`.
 
-| Column | SQLite type | Null | PK | Description |
-|---|---|---|---|---|
-| `Id` | `varchar` | No | Yes | GUID string (`LauncherButtonRecord.Id`) |
-| `Command` | `varchar` | Yes | No | Command match key for launcher execution |
-| `ButtonText` | `varchar` | Yes | No | Label shown on launcher button |
-| `Tool` | `varchar` | Yes | No | Executable target |
-| `Arguments` | `varchar` | Yes | No | Arguments / fallback launch target |
-| `ClipText` | `varchar` | Yes | No | Clip word text shown in editor |
-| `Note` | `varchar` | Yes | No | Free-form note text |
-| `X` | `float` | Yes | No | Canvas X position |
-| `Y` | `float` | Yes | No | Canvas Y position |
-| `Width` | `float` | Yes | No | Button width |
-| `Height` | `float` | Yes | No | Button height |
-| `UseInvertedThemeColors` | `integer` | Yes | No | Per-button theme inversion flag (`0`=normal, `1`=inverted) |
-| `CreatedAtUtc` | `datetime` | Yes | No | Created timestamp (UTC) |
-| `UpdatedAtUtc` | `datetime` | Yes | No | Last updated timestamp (UTC) |
+### Tables
 
-Application-level behavior:
-- `UpdatedAtUtc` is overwritten on save (`UpsertButtonAsync`) for optimistic conflict checks.
-- Conflict resolution uses `UpdatedAtUtc` as the primary version signal, but treats rows as non-conflicting when only timestamp differs and all content fields match.
-- `Command` lookup optimization is handled by in-memory case-insensitive cache, not DB index.
+`LauncherButtonEntity`
 
-## Table: LaunchLogEntity
-Purpose: execution history logs.
+- `Id` text primary key
+- `Command`, `ButtonText`, `Tool`, `Arguments`, `ClipText`, `Note` text
+- `X`, `Y`, `Width`, `Height` numeric placement values
+- `UseInvertedThemeColors` boolean/integer
+- `ColorKey` text, default `Default`
+- `ToolTip` text, default empty
+- `LastExecutedAtUtc` nullable datetime
+- `SortOrder` integer, default `0`
+- `CreatedAtUtc`, `UpdatedAtUtc` datetime
 
-| Column | SQLite type | Null | PK | Description |
-|---|---|---|---|---|
-| `Id` | `varchar` | No | Yes | GUID string (`LaunchLogEntry.Id`) |
-| `ButtonId` | `varchar` | Yes | No | Related launcher button id (optional) |
-| `Source` | `varchar` | Yes | No | Trigger source (current implementation: `button` / `command`) |
-| `Tool` | `varchar` | Yes | No | Executed tool |
-| `Arguments` | `varchar` | Yes | No | Executed arguments |
-| `Succeeded` | `integer` | Yes | No | Success flag (bool mapped to integer) |
-| `Message` | `varchar` | Yes | No | Execution message / error text |
-| `TimestampUtc` | `datetime` | Yes | No | Execution timestamp (UTC) |
+`LaunchLogEntity` is used for command/button execution records. `AppSettingEntity` currently stores Dock order under `dock_order`. `ErrorLogEntity` keeps the v1 table and column names for compatibility and will be wired back into runtime error logging in a later migration slice.
 
-Application-level behavior:
-- Retention cleanup is executed by:
-  - `DELETE FROM LaunchLogEntity WHERE TimestampUtc < threshold`
+## 日本語
 
-## Table: ErrorLogEntity
-Purpose: application error logs (exception, warning, and info logging).
+Praxis v2 は SQLite 永続化に `Praxis.Data` を使います。Avalonia runtime は現在 `SqliteLauncherButtonRepository` 経由で launcher button を読み書きし、最近使った Dock 順を保存し、launch log を書き込みます。複数ウィンドウ間の launcher-button 同期は、`FileStateSyncNotifier` が sidecar の `buttons.sync` signal file を使います。このファイルは SQLite schema には含まれません。テーマ設定の永続化と runtime error-log 書き込みは今後の移植対象です。
 
-| Column | SQLite type | Null | PK | Description |
-|---|---|---|---|---|
-| `Id` | `varchar` | No | Yes | GUID string (`ErrorLogEntry.Id`) |
-| `Level` | `varchar` | No | No | Severity level (`Error` / `Warning` / `Info`) |
-| `Context` | `varchar` | Yes | No | Code context where the entry was logged (e.g. method name) |
-| `ExceptionType` | `varchar` | Yes | No | Full exception type chain (e.g. `InvalidOperationException -> NullReferenceException`; empty for Info/Warning entries) |
-| `Message` | `varchar` | Yes | No | Exception message chain or info/warning message |
-| `StackTrace` | `varchar` | Yes | No | Bounded stack serialization built from per-exception `Exception.StackTrace` frames with aggregate child labels (empty for Info/Warning entries) |
-| `TimestampUtc` | `datetime` | Yes | No | Timestamp when the entry was logged (UTC) |
+### 保存先
 
-Application-level behavior:
-- Error entries written by `DbErrorLogger` via `IErrorLogger.Log(exception, context)`. Exception type chains, concatenated single-line inner messages, and bounded stack output (including nested inner exceptions inside `AggregateException`, aggregate child index labels, duplicate-collapse markers, and middle/tail sampling markers for very wide aggregates) are captured. Context is normalized to a single line, and a null exception payload is persisted as an Error entry with the placeholder message `(no exception payload)` instead of throwing from the logger. Custom `Message` / `StackTrace` getters that throw degrade to inline fallback markers instead of aborting logging.
-- Warning entries written by `DbErrorLogger` via `IErrorLogger.LogWarning(message, context)`. Context and message payload are normalized to a single line before both crash-file and DB persistence; null/blank payloads become `(unknown context)` and `(no message payload)`.
-- Info entries written by `DbErrorLogger` via `IErrorLogger.LogInfo(message, context)`. Context and message payload are normalized to a single line before both crash-file and DB persistence; null/blank payloads become `(unknown context)` and `(no message payload)`.
-- All log calls first write synchronously to a file-based crash log (`CrashFileLogger` → `crash.log`) for crash-safe persistence, then enqueue for async DB write.
-- `FlushAsync(timeout)` is the graceful-shutdown path: it waits for both queued entries and already-dequeued in-flight DB writes until the timeout elapses.
-- Retention cleanup: `DELETE FROM ErrorLogEntity WHERE TimestampUtc < threshold` (30-day retention; cleanup is triggered only when Error entries are written, and deletes all rows older than the threshold regardless of Level).
-- DB write failures are written to `crash.log` as both full exception bodies and warning breadcrumbs (the crash file already has the original entry), and purge failures or `FlushAsync(timeout)` timeout/unexpected failures also leave full exception details plus warning breadcrumbs instead of failing silently.
+- Windows: `%LOCALAPPDATA%\Praxis`
+- macOS: `~/Library/Application Support/Praxis`
+- Linux: `$XDG_DATA_HOME/Praxis`、未設定時は `~/.local/share/Praxis`
 
-## Crash Log File
-Purpose: synchronous file-based fallback for crash-safe logging (not stored in SQLite).
+v1 互換のため、優先する DB ファイル名は引き続き `praxis.db3` です。同じ app data directory に `praxis.db3` がなく、既存の `praxis.db` がある場合は、v2 は `praxis.db` をそのまま開いて同じ migration を適用します。
 
-- File name: `crash.log`
-- Resolved locations:
-  - Windows: `%LOCALAPPDATA%\Praxis\crash.log`
-  - macOS (Mac Catalyst): `~/Library/Application Support/Praxis/crash.log`
-- Written synchronously by `CrashFileLogger` on every `IErrorLogger` call (Error/Warning/Info levels).
-- Automatic rotation at 512 KB (`crash.log` → `crash.log.old`).
-- Contains timestamped entries with full exception chains, stack traces, and `Exception.Data` dictionaries; breadcrumb-style source/context/message fields are normalized to a single line and use placeholders when blank, exception messages are flattened to one line, and `Exception.Data` key/value formatting failures are replaced with inline fallback markers instead of aborting the crash record.
-- Intended as a diagnostic fallback when the SQLite database is unavailable or the process terminates before async DB writes complete.
+開発や smoke test では、`PRAXIS_APP_DATA_DIR` に絶対パスを指定すると別の app data directory を使えます。
 
-## Table: AppSettingEntity
-Purpose: key-value app settings.
+`buttons.sync` も app data directory に保存されます。最新の launcher-button 変更通知について、source instance id と UTC ticks を書き込み、他の起動中 Praxis window が即時 reload するか、editor が開いている間は reload を遅延できるようにします。
 
-| Column | SQLite type | Null | PK | Description |
-|---|---|---|---|---|
-| `Key` | `varchar` | No | Yes | Setting key |
-| `Value` | `varchar` | Yes | No | Setting value |
+### バージョン
 
-Known keys used by current code:
-- `theme`
-  - Values: `Light` / `Dark` / `System` (parsed to `ThemeMode`; numeric enum strings are rejected and fall back to `System`, and out-of-range enum values are normalized to `System` before persistence)
-- `dock_order`
-  - Comma-separated GUID list for dock ordering
-  - On load/save, duplicate GUIDs and `Guid.Empty` are discarded while preserving the first valid occurrence order
+`PRAGMA user_version` は `5` です。
 
-## Constraints, Indexes, Relations
-- Primary keys only (SQLite auto-index for PK).
-- No explicit foreign key constraint between `LaunchLogEntity.ButtonId` and `LauncherButtonEntity.Id`.
-- No additional secondary indexes currently.
+Migration 履歴:
 
-## Compatibility Notes
-- Old database files may contain legacy tables (for example `LauncherItems`).
-- Current repository code reads/writes only the four tables listed above.
+1. `LauncherButtonEntity`、`LaunchLogEntity`、`AppSettingEntity` を作成。
+2. `LauncherButtonEntity.UseInvertedThemeColors` を追加。
+3. `ErrorLogEntity` を作成。
+4. `ErrorLogEntity.Level` を追加。
+5. launcher v2 field として `ColorKey`、`ToolTip`、`LastExecutedAtUtc`、`SortOrder` を追加。
 
----
+### テーブル
 
-# データベース設計（日本語）
+`LauncherButtonEntity`
 
-## 目的
-Praxis が使う SQLite テーブル設計を明文化します。
+- `Id` text primary key
+- `Command`、`ButtonText`、`Tool`、`Arguments`、`ClipText`、`Note` text
+- `X`、`Y`、`Width`、`Height` numeric placement value
+- `UseInvertedThemeColors` boolean/integer
+- `ColorKey` text、default `Default`
+- `ToolTip` text、default empty
+- `LastExecutedAtUtc` nullable datetime
+- `SortOrder` integer、default `0`
+- `CreatedAtUtc`、`UpdatedAtUtc` datetime
 
-実装上の正本:
-- [`Praxis/Services/SqliteAppRepository.cs`](../Praxis/Services/SqliteAppRepository.cs)
-- [`Praxis/Models/LauncherButtonEntity.cs`](../Praxis/Models/LauncherButtonEntity.cs)
-- [`Praxis/Models/LaunchLogEntity.cs`](../Praxis/Models/LaunchLogEntity.cs)
-- [`Praxis/Models/ErrorLogEntity.cs`](../Praxis/Models/ErrorLogEntity.cs)
-- [`Praxis/Models/AppSettingEntity.cs`](../Praxis/Models/AppSettingEntity.cs)
-
-## DB ファイル
-- パス定義: [`Praxis/Services/AppStoragePaths.cs`](../Praxis/Services/AppStoragePaths.cs)
-- ファイル名: `praxis.db3`
-- 現在の実解決先:
-  - Windows: `%USERPROFILE%/AppData/Local/Praxis/praxis.db3`
-  - macOS（Mac Catalyst）: `~/Library/Application Support/Praxis/praxis.db3`
-
-補足:
-- `InitializeAsync` は `PRAGMA user_version` でスキーマバージョンを管理します。
-- 起動時に未適用バージョン（`current + 1 .. CurrentVersion`）を順次適用し、各ステップ完了後に `user_version` を更新します。
-- 現在のスキーマバージョン: `4`
-- バージョン `1` のマイグレーションで初期 3 テーブルを `CreateTableAsync<T>()` で作成します。
-- バージョン `2` のマイグレーションで `LauncherButtonEntity` に `UseInvertedThemeColors` 列を追加します（既存/新規DBのどちらでも安全に適用）。
-- バージョン `3` のマイグレーションでアプリエラーログ用の `ErrorLogEntity` テーブルを作成します。
-- バージョン `4` のマイグレーションで `ErrorLogEntity` に `Level` 列（`TEXT NOT NULL DEFAULT 'Error'`）を追加します。
-- 起動時の自動移行例:
-  - `user_version=0` -> `v1`、`v2`、`v3`、`v4` を順に適用
-  - `user_version=1` -> `v2`、`v3`、`v4` を順に適用
-  - `user_version=2` -> `v3`、`v4` を順に適用
-  - `user_version=3` -> `v4` のみ適用
-  - `user_version=4` -> 移行なし
-- `DateTime` 列は `SQLiteAsyncConnection(dbPath)` の既定設定に従って `sqlite-net-pcl` 側でマップされます。
-- `buttons.sync` は複数ウィンドウ通知用の別ファイルとして保存します。
-  - Windows: `%USERPROFILE%/AppData/Local/Praxis/buttons.sync`
-  - macOS（Mac Catalyst）: `~/Library/Application Support/Praxis/buttons.sync`
-
-## テーブル一覧
-- `LauncherButtonEntity`: ボタン定義のマスタ
-- `LaunchLogEntity`: 実行ログ
-- `ErrorLogEntity`: アプリエラーログ（例外記録）
-- `AppSettingEntity`: アプリ設定（Key-Value）
-
-## ER 図（Mermaid）
-- 上記 ER 図（`ER Diagram (Mermaid)`）を参照。
-
-## 主要仕様
-- `LauncherButtonEntity.UpdatedAtUtc` は保存時に更新し、編集競合判定の一次シグナルとして使います。
-- `UpdatedAtUtc` だけが異なり内容が一致する場合は非競合として扱います。
-- `LaunchLogEntity.Source` の現行値は `button` / `command` です。
-- `LaunchLogEntity` は保持期間超過分を `TimestampUtc` 条件で一括削除します。
-- `ErrorLogEntity` は `IErrorLogger.Log(exception, context)`（Error）、`IErrorLogger.LogWarning(message, context)`（Warning）、および `IErrorLogger.LogInfo(message, context)`（Info）経由で `DbErrorLogger` が書き込みます。全ログ呼び出しはまず `CrashFileLogger` でファイルに同期書き込みし、その後 DB への非同期書き込みをキューイングします。例外 payload が `null` でもロガー自体は落ちず、`(no exception payload)` を持つ Error エントリとして扱います。Warning/Info の message payload が `null` の場合も空値のままにせず `(no message payload)` へ正規化して `crash.log` と DB の双方へ残します。例外メッセージは単一行へ正規化され、`Message` / `StackTrace` getter を投げる custom exception でも inline fallback marker に劣化して記録を落としません。`AggregateException` 配下にさらに InnerException がネストしている場合も、型チェーンとメッセージチェーンに含めます。StackTrace 列は `Exception.ToString()` 丸ごとではなく、各例外ノードの `Exception.StackTrace` を基に aggregate 子 index ラベル、duplicate 集約マーカー、very wide aggregate 向け middle/tail sampling マーカー付きで構築した有界出力です。`FlushAsync(timeout)` はグレースフルシャットダウン経路として、保留キューだけでなくすでに dequeue 済みの in-flight DB 書き込みもタイムアウトまで待機し、timeout や予期しない flush 失敗でも `crash.log` に例外本体と warning breadcrumb を残します。保持期間クリーンアップは Error エントリ書き込み時にのみ発動し、Level を問わず閾値より古い全行を削除します（30 日保持）。Error/Warning/Info いずれの DB 書き込み失敗でも、また purge 失敗でも、クラッシュファイルに記録済みの本体を残したまま `crash.log` に例外本体と warning breadcrumb の両方を追加します。
-- `crash.log` はクラッシュ安全ロギング用の同期ファイルベースフォールバックです（SQLite 外）:
-  - Windows: `%LOCALAPPDATA%\Praxis\crash.log`
-  - macOS（Mac Catalyst）: `~/Library/Application Support/Praxis/crash.log`
-  - 512 KB で自動ローテーション（`crash.log` → `crash.log.old`）
-  - source/context/message の行内項目と exception message は単一行へ正規化し、`Exception.Data` の key/value `ToString()` や custom exception getter が投げても inline fallback marker に置き換えて crash record 自体は残します
-  - SQLite が利用不可、または非同期 DB 書き込み完了前にプロセスが終了した場合の診断用フォールバックです。
-- `AppSettingEntity` の既知キー:
-  - `theme`（`Light` / `Dark` / `System`。数値 enum 文字列は無効として扱い `System` にフォールバックし、範囲外 enum 値の保存も `System` に正規化する）
-  - `dock_order`（GUID の CSV。読込/保存時に重複 GUID と `Guid.Empty` は除外し、最初の有効順序を維持）
-
-## 制約と関連
-- 明示制約は主キー中心（追加インデックスなし）。
-- `LaunchLogEntity.ButtonId` は論理的にはボタンID参照ですが、DB上の外部キー制約はありません。
-
-## 互換性メモ
-- 既存環境には旧テーブル（例: `LauncherItems`）が残る場合があります。
-- 現行コードがアクセスするのは本ドキュメント記載の 4 テーブルのみです。
+`LaunchLogEntity` は command/button 実行履歴に使います。`AppSettingEntity` は現在 `dock_order` として Dock 順を保存します。`ErrorLogEntity` は v1 の table 名と column 名を維持しており、runtime error logging への再接続は後続の migration slice で行います。
