@@ -5,6 +5,7 @@ using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Input.Platform;
 using Avalonia.Interactivity;
+using Avalonia.Media;
 using Avalonia.Styling;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
@@ -16,6 +17,44 @@ namespace Praxis.Avalonia.Behaviors;
 public sealed class MainWindowInteractionBehavior
 {
     private const string CoreGraphicsLibrary = "/System/Library/Frameworks/CoreGraphics.framework/CoreGraphics";
+    private const string DwmApiLibrary = "dwmapi.dll";
+    private const string Shell32Library = "shell32.dll";
+    private const string User32Library = "user32.dll";
+    private static readonly Guid PropertyStoreInterfaceId = new("886D8EEB-8CF2-4446-8D02-CDBA1DBDCF99");
+    private static readonly PROPERTYKEY AppUserModelRelaunchIconResourceKey = new()
+    {
+        FormatId = new Guid("9F4C2855-9F79-4B39-A8D0-E1D42DE1D5F3"),
+        PropertyId = 3,
+    };
+    private static readonly PROPERTYKEY AppUserModelIdKey = new()
+    {
+        FormatId = new Guid("9F4C2855-9F79-4B39-A8D0-E1D42DE1D5F3"),
+        PropertyId = 5,
+    };
+    private const string WindowsAppUserModelId = "Widthdom.Praxis.Avalonia";
+    private const int DwmWindowCornerPreference = 33;
+    private const int DwmWindowCornerPreferenceDefault = 0;
+    private const int DwmWindowCornerPreferenceRound = 2;
+    private const int IconSmall = 0;
+    private const int IconBig = 1;
+    private const int IconSmall2 = 2;
+    private const int ImageIcon = 1;
+    private const int LoadFromFile = 0x00000010;
+    private const int ShcneAssocChanged = 0x08000000;
+    private const int ShcnfIdList = 0x0000;
+    private const int WmSetIcon = 0x0080;
+    private const int WmNcHitTest = 0x0084;
+    private const int HtCaption = 2;
+    private const int GclpHIcon = -14;
+    private const int GclpHIconSmall = -34;
+    private const int GwlStyle = -16;
+    private const int GwlpWndProc = -4;
+    private const int WsThickFrame = 0x00040000;
+    private const int WsMinimizeBox = 0x00020000;
+    private const int WsMaximizeBox = 0x00010000;
+    private const double WindowsCornerRadiusDip = 10;
+    private const double WindowsCaptionHitHeightDip = 32;
+    private const double WindowsCaptionButtonWidthDip = 108;
     private const double DragThreshold = 3;
     private const int MacEdgeSnapThresholdPixels = 16;
     private const double MacCornerSnapZoneRatio = 0.30;
@@ -29,6 +68,10 @@ public sealed class MainWindowInteractionBehavior
     private Border? statusBar;
     private Border? copyToast;
     private Grid? shellContent;
+    private Grid? topInputRow;
+    private Border? commandSuggestionPanel;
+    private Border? placementFrame;
+    private ScrollViewer? dockScroll;
     private TextBox? modalGuidEntry;
     private TextBox? modalButtonTextEntry;
     private TextBox? modalCommandEntry;
@@ -39,7 +82,11 @@ public sealed class MainWindowInteractionBehavior
     private Button? modalCancelButton;
     private Button? modalSaveButton;
     private Grid? contextMenuOverlay;
+    private Grid? editorOverlay;
     private Button? macMinimizeButton;
+    private Button? windowsMaximizeButton;
+    private TextBlock? windowsMaximizeGlyph;
+    private TextBlock? windowsMaximizeTooltip;
     private Button? contextEditButton;
     private Button? contextDeleteButton;
     private Button? conflictReloadButton;
@@ -79,6 +126,10 @@ public sealed class MainWindowInteractionBehavior
     private WindowBounds? macNormalZoomRestoreBounds;
     private double? defaultMinWidth;
     private double? defaultMinHeight;
+    private IntPtr windowsSmallIcon;
+    private IntPtr windowsBigIcon;
+    private IntPtr originalWindowsWndProc;
+    private WndProcDelegate? windowsWndProc;
 
     public static readonly AttachedProperty<bool> IsEnabledProperty =
         AvaloniaProperty.RegisterAttached<MainWindowInteractionBehavior, Window, bool>("IsEnabled");
@@ -193,11 +244,18 @@ public sealed class MainWindowInteractionBehavior
 
     private void Attach()
     {
+        ApplyWindowsWindowChromeHints();
         window.Opened += WindowOnOpened;
         window.Closed += WindowOnClosed;
+        window.SizeChanged += WindowOnSizeChanged;
         window.PositionChanged += WindowOnPositionChanged;
         window.DataContextChanged += WindowOnDataContextChanged;
         window.PropertyChanged += WindowOnPropertyChanged;
+        if (Application.Current is not null)
+        {
+            Application.Current.ActualThemeVariantChanged += ApplicationOnActualThemeVariantChanged;
+        }
+
         window.AddHandler(InputElement.KeyDownEvent, Window_KeyDown, RoutingStrategies.Tunnel, handledEventsToo: true);
         window.AddHandler(InputElement.PointerPressedEvent, Window_PointerPressed, RoutingStrategies.Tunnel, handledEventsToo: true);
         window.AddHandler(InputElement.PointerMovedEvent, Window_PointerMoved, RoutingStrategies.Tunnel, handledEventsToo: true);
@@ -210,9 +268,15 @@ public sealed class MainWindowInteractionBehavior
         UnobserveModel();
         window.Opened -= WindowOnOpened;
         window.Closed -= WindowOnClosed;
+        window.SizeChanged -= WindowOnSizeChanged;
         window.PositionChanged -= WindowOnPositionChanged;
         window.DataContextChanged -= WindowOnDataContextChanged;
         window.PropertyChanged -= WindowOnPropertyChanged;
+        if (Application.Current is not null)
+        {
+            Application.Current.ActualThemeVariantChanged -= ApplicationOnActualThemeVariantChanged;
+        }
+
         window.RemoveHandler(InputElement.KeyDownEvent, Window_KeyDown);
         window.RemoveHandler(InputElement.PointerPressedEvent, Window_PointerPressed);
         window.RemoveHandler(InputElement.PointerMovedEvent, Window_PointerMoved);
@@ -229,6 +293,10 @@ public sealed class MainWindowInteractionBehavior
         statusBar = window.FindControl<Border>("StatusBar");
         copyToast = window.FindControl<Border>("CopyToast");
         shellContent = window.FindControl<Grid>("ShellContent");
+        topInputRow = window.FindControl<Grid>("TopInputRow");
+        commandSuggestionPanel = window.FindControl<Border>("CommandSuggestionPanel");
+        placementFrame = window.FindControl<Border>("PlacementFrame");
+        dockScroll = window.FindControl<ScrollViewer>("DockScroll");
         modalGuidEntry = window.FindControl<TextBox>("ModalGuidEntry");
         modalButtonTextEntry = window.FindControl<TextBox>("ModalButtonTextEntry");
         modalCommandEntry = window.FindControl<TextBox>("ModalCommandEntry");
@@ -239,7 +307,11 @@ public sealed class MainWindowInteractionBehavior
         modalCancelButton = window.FindControl<Button>("ModalCancelButton");
         modalSaveButton = window.FindControl<Button>("ModalSaveButton");
         contextMenuOverlay = window.FindControl<Grid>("ContextMenuOverlay");
+        editorOverlay = window.FindControl<Grid>("EditorOverlay");
         macMinimizeButton = window.FindControl<Button>("MacMinimizeButton");
+        windowsMaximizeButton = window.FindControl<Button>("WindowsMaximizeButton");
+        windowsMaximizeGlyph = window.FindControl<TextBlock>("WindowsMaximizeGlyph");
+        windowsMaximizeTooltip = window.FindControl<TextBlock>("WindowsMaximizeTooltip");
         contextEditButton = window.FindControl<Button>("ContextEditButton");
         contextDeleteButton = window.FindControl<Button>("ContextDeleteButton");
         conflictReloadButton = window.FindControl<Button>("ConflictReloadButton");
@@ -293,7 +365,18 @@ public sealed class MainWindowInteractionBehavior
         }
 
         ObserveModel();
+        ApplyWindowsAppUserModelId();
+        ApplyWindowsWindowChromeHints();
+        ApplyWindowsWindowIcons();
+        ApplyWindowsSnapWindowStyles();
+        InstallWindowsCaptionHitTest();
         UpdateMacMinimizeState();
+        SyncWindowThemeClasses();
+        ApplyWindowsRoundedCorners();
+        Dispatcher.UIThread.Post(ApplyWindowsWindowIcons, DispatcherPriority.Loaded);
+        Dispatcher.UIThread.Post(ApplyWindowsSnapWindowStyles, DispatcherPriority.Loaded);
+        Dispatcher.UIThread.Post(InstallWindowsCaptionHitTest, DispatcherPriority.Loaded);
+        Dispatcher.UIThread.Post(ApplyWindowsRoundedCorners, DispatcherPriority.Loaded);
     }
 
     private void ArmMoveDragSnap()
@@ -328,6 +411,8 @@ public sealed class MainWindowInteractionBehavior
     private void WindowOnClosed(object? sender, EventArgs e)
     {
         StopMacEdgeSnapMonitor(restoreMinSize: false);
+        UninstallWindowsCaptionHitTest();
+        ReleaseWindowsWindowIcons();
 
         if (placementScroll is not null)
         {
@@ -353,6 +438,11 @@ public sealed class MainWindowInteractionBehavior
         }
 
         StartMacEdgeSnapMonitor();
+    }
+
+    private void WindowOnSizeChanged(object? sender, SizeChangedEventArgs e)
+    {
+        ApplyWindowsRoundedCorners();
     }
 
     private void StartMacEdgeSnapMonitor()
@@ -741,10 +831,15 @@ public sealed class MainWindowInteractionBehavior
     private void UpdateMacMinimizeState()
     {
         window.Classes.Set("fullscreen", window.WindowState == WindowState.FullScreen);
+        window.Classes.Set("maximized", window.WindowState == WindowState.Maximized);
+        ApplyWindowsRoundedCorners();
         if (shellContent is not null)
         {
-            shellContent.Margin = window.WindowState == WindowState.FullScreen ? new Thickness(10) : new Thickness(18);
+            shellContent.Margin = ResolveShellContentMargin();
         }
+
+        ApplyWindowsContentMargins();
+        UpdateWindowsMaximizeCaption();
 
         if (OperatingSystem.IsMacOS())
         {
@@ -766,6 +861,30 @@ public sealed class MainWindowInteractionBehavior
         if (macMinimizeButton is not null && OperatingSystem.IsMacOS())
         {
             macMinimizeButton.IsEnabled = window.WindowState != WindowState.FullScreen;
+        }
+    }
+
+    private void UpdateWindowsMaximizeCaption()
+    {
+        if (!OperatingSystem.IsWindows())
+        {
+            return;
+        }
+
+        var isMaximized = window.WindowState == WindowState.Maximized;
+        if (windowsMaximizeGlyph is not null)
+        {
+            windowsMaximizeGlyph.Text = isMaximized ? "\uE923" : "\uE922";
+        }
+
+        if (windowsMaximizeTooltip is not null)
+        {
+            windowsMaximizeTooltip.Text = isMaximized ? "Restore" : "Maximize";
+        }
+
+        if (windowsMaximizeButton is not null)
+        {
+            ToolTip.SetTip(windowsMaximizeButton, windowsMaximizeTooltip ?? (object)(isMaximized ? "Restore" : "Maximize"));
         }
     }
 
@@ -877,8 +996,292 @@ public sealed class MainWindowInteractionBehavior
 
     private void ConfigurePlatformCaptionButtons()
     {
-        window.FindControl<StackPanel>("MacCaptionButtons")!.IsVisible = OperatingSystem.IsMacOS();
-        window.FindControl<StackPanel>("WindowsCaptionButtons")!.IsVisible = !OperatingSystem.IsMacOS();
+        var isMac = OperatingSystem.IsMacOS();
+        var isWindows = OperatingSystem.IsWindows();
+        window.Classes.Set("macos", isMac);
+        window.Classes.Set("windows", isWindows);
+        if (isWindows)
+        {
+            window.Title = string.Empty;
+        }
+
+        window.FindControl<StackPanel>("MacCaptionButtons")!.IsVisible = isMac;
+        window.FindControl<StackPanel>("WindowsCaptionButtons")!.IsVisible = !isMac && !isWindows;
+    }
+
+    private Thickness ResolveShellContentMargin()
+    {
+        if (window.WindowState == WindowState.FullScreen)
+        {
+            return new Thickness(10);
+        }
+
+        return OperatingSystem.IsWindows()
+            ? new Thickness(0, 0, 0, 18)
+            : new Thickness(18);
+    }
+
+    private void ApplyWindowsContentMargins()
+    {
+        if (!OperatingSystem.IsWindows())
+        {
+            return;
+        }
+
+        var contentMargin = new Thickness(18, 0, 18, 0);
+        if (topInputRow is not null)
+        {
+            topInputRow.Margin = contentMargin;
+        }
+
+        if (commandSuggestionPanel is not null)
+        {
+            commandSuggestionPanel.Margin = new Thickness(18, 50, 18, 0);
+        }
+
+        if (placementFrame is not null)
+        {
+            placementFrame.Margin = new Thickness(18, 8, 18, 0);
+        }
+
+        if (dockScroll is not null)
+        {
+            dockScroll.Margin = new Thickness(18, 8, 18, 0);
+        }
+
+        if (statusBar is not null)
+        {
+            statusBar.Margin = new Thickness(18, 8, 18, 0);
+        }
+    }
+
+    private void ApplyWindowsWindowChromeHints()
+    {
+        if (!OperatingSystem.IsWindows())
+        {
+            return;
+        }
+
+        window.WindowDecorations = WindowDecorations.Full;
+        window.ExtendClientAreaToDecorationsHint = true;
+        window.TransparencyLevelHint =
+        [
+            WindowTransparencyLevel.AcrylicBlur,
+            WindowTransparencyLevel.Blur,
+            WindowTransparencyLevel.Transparent,
+        ];
+        window.ExtendClientAreaTitleBarHeightHint = WindowsCaptionHitHeightDip;
+    }
+
+    private void ApplyWindowsRoundedCorners()
+    {
+        if (!OperatingSystem.IsWindows())
+        {
+            return;
+        }
+
+        var handle = window.TryGetPlatformHandle();
+        if (handle is null || handle.Handle == IntPtr.Zero)
+        {
+            return;
+        }
+
+        var preference = window.WindowState == WindowState.Normal
+            ? DwmWindowCornerPreferenceRound
+            : DwmWindowCornerPreferenceDefault;
+        _ = DwmSetWindowAttribute(
+            handle.Handle,
+            DwmWindowCornerPreference,
+            ref preference,
+            sizeof(int));
+
+        if (window.WindowState != WindowState.Normal)
+        {
+            _ = SetWindowRgn(handle.Handle, IntPtr.Zero, true);
+            return;
+        }
+
+        _ = SetWindowRgn(handle.Handle, IntPtr.Zero, true);
+    }
+
+    private void ApplyWindowsWindowIcons()
+    {
+        if (!OperatingSystem.IsWindows())
+        {
+            return;
+        }
+
+        var handle = window.TryGetPlatformHandle();
+        if (handle is null || handle.Handle == IntPtr.Zero)
+        {
+            return;
+        }
+
+        var bigIconPath = Path.Combine(AppContext.BaseDirectory, "Assets", "praxis-icon.ico");
+        var smallIconPath = Path.Combine(AppContext.BaseDirectory, "Assets", "praxis-window-small.ico");
+        if (!File.Exists(bigIconPath))
+        {
+            return;
+        }
+
+        if (windowsSmallIcon == IntPtr.Zero)
+        {
+            var path = File.Exists(smallIconPath) ? smallIconPath : bigIconPath;
+            windowsSmallIcon = LoadImage(IntPtr.Zero, path, ImageIcon, 16, 16, LoadFromFile);
+        }
+
+        if (windowsBigIcon == IntPtr.Zero)
+        {
+            windowsBigIcon = LoadImage(IntPtr.Zero, bigIconPath, ImageIcon, 32, 32, LoadFromFile);
+        }
+
+        if (windowsSmallIcon != IntPtr.Zero)
+        {
+            _ = SendMessage(handle.Handle, WmSetIcon, (IntPtr)IconSmall, windowsSmallIcon);
+            _ = SendMessage(handle.Handle, WmSetIcon, (IntPtr)IconSmall2, windowsSmallIcon);
+            _ = SetClassLongPtr(handle.Handle, GclpHIconSmall, windowsSmallIcon);
+        }
+
+        if (windowsBigIcon != IntPtr.Zero)
+        {
+            _ = SendMessage(handle.Handle, WmSetIcon, (IntPtr)IconBig, windowsBigIcon);
+            _ = SetClassLongPtr(handle.Handle, GclpHIcon, windowsBigIcon);
+        }
+
+        ApplyWindowsRelaunchIconResource(handle.Handle, smallIconPath);
+        SHChangeNotify(ShcneAssocChanged, ShcnfIdList, IntPtr.Zero, IntPtr.Zero);
+    }
+
+    private static void ApplyWindowsRelaunchIconResource(IntPtr hwnd, string smallIconPath)
+    {
+        var propertyStoreId = PropertyStoreInterfaceId;
+        if (!File.Exists(smallIconPath)
+            || SHGetPropertyStoreForWindow(hwnd, ref propertyStoreId, out var propertyStore) != 0
+            || propertyStore is null)
+        {
+            return;
+        }
+
+        var appUserModelIdKey = AppUserModelIdKey;
+        using var appUserModelId = new PropVariant(WindowsAppUserModelId);
+        _ = propertyStore.SetValue(ref appUserModelIdKey, appUserModelId);
+
+        var iconResourceKey = AppUserModelRelaunchIconResourceKey;
+        using var iconResource = new PropVariant($"{smallIconPath},0");
+        _ = propertyStore.SetValue(ref iconResourceKey, iconResource);
+        _ = propertyStore.Commit();
+    }
+
+    private static void ApplyWindowsAppUserModelId()
+    {
+        if (!OperatingSystem.IsWindows())
+        {
+            return;
+        }
+
+        _ = SetCurrentProcessExplicitAppUserModelID(WindowsAppUserModelId);
+    }
+
+    private void InstallWindowsCaptionHitTest()
+    {
+        if (!OperatingSystem.IsWindows() || originalWindowsWndProc != IntPtr.Zero)
+        {
+            return;
+        }
+
+        var handle = window.TryGetPlatformHandle();
+        if (handle is null || handle.Handle == IntPtr.Zero)
+        {
+            return;
+        }
+
+        windowsWndProc = WindowsWndProc;
+        originalWindowsWndProc = SetWindowLongPtr(handle.Handle, GwlpWndProc, Marshal.GetFunctionPointerForDelegate(windowsWndProc));
+    }
+
+    private void ApplyWindowsSnapWindowStyles()
+    {
+        if (!OperatingSystem.IsWindows())
+        {
+            return;
+        }
+
+        var handle = window.TryGetPlatformHandle();
+        if (handle is null || handle.Handle == IntPtr.Zero)
+        {
+            return;
+        }
+
+        var style = GetWindowLongPtr(handle.Handle, GwlStyle);
+        var nextStyle = (IntPtr)(style.ToInt64() | WsThickFrame | WsMinimizeBox | WsMaximizeBox);
+        if (nextStyle != style)
+        {
+            _ = SetWindowLongPtr(handle.Handle, GwlStyle, nextStyle);
+        }
+    }
+
+    private void UninstallWindowsCaptionHitTest()
+    {
+        if (!OperatingSystem.IsWindows() || originalWindowsWndProc == IntPtr.Zero)
+        {
+            return;
+        }
+
+        var handle = window.TryGetPlatformHandle();
+        if (handle is not null && handle.Handle != IntPtr.Zero)
+        {
+            _ = SetWindowLongPtr(handle.Handle, GwlpWndProc, originalWindowsWndProc);
+        }
+
+        originalWindowsWndProc = IntPtr.Zero;
+        windowsWndProc = null;
+    }
+
+    private IntPtr WindowsWndProc(IntPtr hwnd, int message, IntPtr wParam, IntPtr lParam)
+    {
+        if (message == WmNcHitTest && IsWindowsCaptionHit(hwnd, lParam))
+        {
+            return (IntPtr)HtCaption;
+        }
+
+        return CallWindowProc(originalWindowsWndProc, hwnd, message, wParam, lParam);
+    }
+
+    private bool IsWindowsCaptionHit(IntPtr hwnd, IntPtr lParam)
+    {
+        if (!GetWindowRect(hwnd, out var rect))
+        {
+            return false;
+        }
+
+        var x = unchecked((short)((long)lParam & 0xFFFF));
+        var y = unchecked((short)(((long)lParam >> 16) & 0xFFFF));
+        var scaling = window.Screens.ScreenFromWindow(window)?.Scaling ?? 1;
+        var localX = x - rect.Left;
+        var localY = y - rect.Top;
+        var width = rect.Right - rect.Left;
+        var captionHeight = (int)Math.Round(WindowsCaptionHitHeightDip * scaling);
+        var captionButtonsWidth = (int)Math.Round(WindowsCaptionButtonWidthDip * scaling);
+
+        return localY >= 0
+            && localY < captionHeight
+            && localX >= 0
+            && localX < width - captionButtonsWidth;
+    }
+
+    private void ReleaseWindowsWindowIcons()
+    {
+        if (windowsSmallIcon != IntPtr.Zero)
+        {
+            _ = DestroyIcon(windowsSmallIcon);
+            windowsSmallIcon = IntPtr.Zero;
+        }
+
+        if (windowsBigIcon != IntPtr.Zero)
+        {
+            _ = DestroyIcon(windowsBigIcon);
+            windowsBigIcon = IntPtr.Zero;
+        }
     }
 
     private void LauncherButton_PointerPressed(object? sender, PointerPressedEventArgs e)
@@ -1442,6 +1845,75 @@ public sealed class MainWindowInteractionBehavior
         public readonly double Y;
     }
 
+    [StructLayout(LayoutKind.Sequential)]
+    private readonly struct PROPERTYKEY
+    {
+        public Guid FormatId { get; init; }
+
+        public int PropertyId { get; init; }
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private readonly struct RECT
+    {
+        public readonly int Left;
+        public readonly int Top;
+        public readonly int Right;
+        public readonly int Bottom;
+    }
+
+    private delegate IntPtr WndProcDelegate(IntPtr hwnd, int message, IntPtr wParam, IntPtr lParam);
+
+    [ComImport]
+    [Guid("886D8EEB-8CF2-4446-8D02-CDBA1DBDCF99")]
+    [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+    private interface IPropertyStore
+    {
+        int GetCount(out uint count);
+
+        int GetAt(uint index, out PROPERTYKEY key);
+
+        int GetValue(ref PROPERTYKEY key, IntPtr value);
+
+        int SetValue(ref PROPERTYKEY key, PropVariant value);
+
+        int Commit();
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private sealed class PropVariant : IDisposable
+    {
+        private const ushort VtLpwstr = 31;
+
+        private readonly ushort valueType = VtLpwstr;
+        private readonly ushort reserved1;
+        private readonly ushort reserved2;
+        private readonly ushort reserved3;
+        private IntPtr value;
+
+        public PropVariant(string text)
+        {
+            value = Marshal.StringToCoTaskMemUni(text);
+        }
+
+        ~PropVariant()
+        {
+            Dispose();
+        }
+
+        public void Dispose()
+        {
+            if (value == IntPtr.Zero)
+            {
+                return;
+            }
+
+            Marshal.FreeCoTaskMem(value);
+            value = IntPtr.Zero;
+            GC.SuppressFinalize(this);
+        }
+    }
+
     [DllImport(CoreGraphicsLibrary)]
     private static extern IntPtr CGEventCreate(IntPtr source);
 
@@ -1450,6 +1922,48 @@ public sealed class MainWindowInteractionBehavior
 
     [DllImport("/System/Library/Frameworks/CoreFoundation.framework/CoreFoundation")]
     private static extern void CFRelease(IntPtr cf);
+
+    [DllImport(DwmApiLibrary)]
+    private static extern int DwmSetWindowAttribute(IntPtr hwnd, int attribute, ref int attributeValue, int attributeSize);
+
+    [DllImport(User32Library)]
+    private static extern int SetWindowRgn(IntPtr hwnd, IntPtr region, bool redraw);
+
+    [DllImport(User32Library, CharSet = CharSet.Unicode, SetLastError = true)]
+    private static extern IntPtr LoadImage(IntPtr instance, string name, int type, int desiredWidth, int desiredHeight, int load);
+
+    [DllImport(User32Library)]
+    private static extern IntPtr SendMessage(IntPtr hwnd, int message, IntPtr wParam, IntPtr lParam);
+
+    [DllImport(User32Library, EntryPoint = "SetClassLongPtrW", SetLastError = true)]
+    private static extern IntPtr SetClassLongPtr(IntPtr hwnd, int index, IntPtr newLong);
+
+    [DllImport(User32Library, EntryPoint = "SetWindowLongPtrW", SetLastError = true)]
+    private static extern IntPtr SetWindowLongPtr(IntPtr hwnd, int index, IntPtr newLong);
+
+    [DllImport(User32Library, EntryPoint = "GetWindowLongPtrW", SetLastError = true)]
+    private static extern IntPtr GetWindowLongPtr(IntPtr hwnd, int index);
+
+    [DllImport(User32Library)]
+    private static extern IntPtr CallWindowProc(IntPtr previousWndProc, IntPtr hwnd, int message, IntPtr wParam, IntPtr lParam);
+
+    [DllImport(User32Library)]
+    private static extern bool GetWindowRect(IntPtr hwnd, out RECT rect);
+
+    [DllImport(User32Library, SetLastError = true)]
+    private static extern bool DestroyIcon(IntPtr icon);
+
+    [DllImport(Shell32Library)]
+    private static extern void SHChangeNotify(int eventId, int flags, IntPtr item1, IntPtr item2);
+
+    [DllImport(Shell32Library, CharSet = CharSet.Unicode, SetLastError = true)]
+    private static extern int SetCurrentProcessExplicitAppUserModelID(string appId);
+
+    [DllImport(Shell32Library)]
+    private static extern int SHGetPropertyStoreForWindow(
+        IntPtr hwnd,
+        ref Guid iid,
+        [MarshalAs(UnmanagedType.Interface)] out IPropertyStore? propertyStore);
 
     private void UpdateSelectionRect(Point start, Point current)
     {
@@ -1485,7 +1999,12 @@ public sealed class MainWindowInteractionBehavior
             return;
         }
 
-        if (e.PropertyName != nameof(MainWindowViewModel.IsEditorOpen) || ViewModel?.IsEditorOpen != true)
+        if (e.PropertyName != nameof(MainWindowViewModel.IsEditorOpen))
+        {
+            return;
+        }
+
+        if (ViewModel?.IsEditorOpen != true)
         {
             return;
         }
@@ -1552,14 +2071,16 @@ public sealed class MainWindowInteractionBehavior
             }
         }
 
-        if ((e.KeyModifiers & commandModifier) == 0)
+        var hasCommandModifier = (e.KeyModifiers & commandModifier) != 0;
+        var hasShiftModifier = (e.KeyModifiers & KeyModifiers.Shift) != 0;
+        if (!hasCommandModifier)
         {
             return;
         }
 
         switch (e.Key)
         {
-            case Key.Z when (e.KeyModifiers & KeyModifiers.Shift) == 0:
+            case Key.Z when !hasShiftModifier:
                 ViewModel?.UndoCommand.Execute(null);
                 e.Handled = true;
                 break;
@@ -1567,15 +2088,15 @@ public sealed class MainWindowInteractionBehavior
                 ViewModel?.RedoCommand.Execute(null);
                 e.Handled = true;
                 break;
-            case Key.L:
+            case Key.L when hasShiftModifier:
                 ApplyTheme(ThemeMode.Light);
                 e.Handled = true;
                 break;
-            case Key.D:
+            case Key.D when hasShiftModifier:
                 ApplyTheme(ThemeMode.Dark);
                 e.Handled = true;
                 break;
-            case Key.H:
+            case Key.H when hasShiftModifier:
                 ApplyTheme(ThemeMode.System);
                 e.Handled = true;
                 break;
@@ -1693,10 +2214,9 @@ public sealed class MainWindowInteractionBehavior
     private void ApplyTheme(ThemeMode mode)
     {
         ViewModel?.ApplyThemeCommand.Execute(mode);
-        window.Classes.Set("light", mode == ThemeMode.Light);
-        window.Classes.Set("dark", mode == ThemeMode.Dark);
         if (Application.Current is null)
         {
+            SyncWindowThemeClasses(mode);
             return;
         }
 
@@ -1706,6 +2226,31 @@ public sealed class MainWindowInteractionBehavior
             ThemeMode.Dark => ThemeVariant.Dark,
             _ => ThemeVariant.Default,
         };
+        SyncWindowThemeClasses(mode);
+        Dispatcher.UIThread.Post(() => SyncWindowThemeClasses(mode), DispatcherPriority.Background);
+    }
+
+    private void ApplicationOnActualThemeVariantChanged(object? sender, EventArgs e)
+    {
+        SyncWindowThemeClasses();
+    }
+
+    private void SyncWindowThemeClasses()
+    {
+        SyncWindowThemeClasses(ViewModel?.SelectedTheme ?? ThemeMode.System);
+    }
+
+    private void SyncWindowThemeClasses(ThemeMode mode)
+    {
+        var isLight = mode switch
+        {
+            ThemeMode.Light => true,
+            ThemeMode.Dark => false,
+            _ => Application.Current?.ActualThemeVariant == ThemeVariant.Light,
+        };
+        window.Classes.Set("light", isLight);
+        window.Classes.Set("dark", !isLight);
+        ViewModel?.RefreshThemeBindings();
     }
 
     private static Button? FindButtonFromEvent(object? sender, object? source, string requiredClass)

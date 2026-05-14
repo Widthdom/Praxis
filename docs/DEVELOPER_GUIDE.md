@@ -66,6 +66,31 @@ Implementation rules that came out of this work:
 - Snap-to-top should only maximize when the pointer is at the top edge. A window that merely still touches the top edge after a resize or drag must not auto-maximize on release.
 - Manual resize should clear normal maximize restore state, because resizing means the user is defining a new normal window geometry.
 
+### Known Windows Editor Focus Issue
+The Avalonia editor modal still has an unresolved Windows-only focus instability around the `ButtonText` text box. The expected behavior is:
+
+- Existing-button edit opened by middle-clicking a placement-area button: put the caret at the end of `ButtonText`.
+- Existing-button edit opened by middle-clicking a Dock button: put the caret at the end of `ButtonText`.
+- Existing-button edit opened by right-clicking a placement-area or Dock button and choosing Edit: put the caret at the end of `ButtonText`.
+- New-button creation opened from the placement area or the create button: select all `ButtonText`.
+
+The new-button select-all path has been stable. The existing-button caret-at-end path on Windows has intermittently fallen back to a caret at the start. Several Windows-specific workarounds were attempted and then removed because they created worse behavior:
+
+1. Delaying editor opening after the initiating pointer input.
+   This reduced some races, but it did not eliminate the caret occasionally moving to the start.
+2. Tracking a Windows-only editor focus mode (`CaretAtEnd` versus `SelectAll`).
+   This made open paths explicit, but it did not solve the underlying focus/caret race.
+3. Starting a `DispatcherTimer` when `IsEditorOpen` became true and repeatedly reapplying `Focus()`, `SelectionStart`, `SelectionEnd`, and `CaretIndex`.
+   This sometimes repaired the caret after open, but it also repeatedly fought normal user focus movement.
+4. Suppressing `ModalButtonTextEntry` pointer hit testing during an initial stabilization window.
+   This blocked delayed opener clicks, but it introduced a regression where focus could be pulled back to `ButtonText` after the user moved focus elsewhere.
+5. Adding a staged async stabilization sequence that reapplied focus/selection at multiple delays up to several seconds.
+   This still did not fully stabilize the Windows caret behavior and made the focus-stealing regression more noticeable, including during new-button creation.
+
+Because these approaches caused the modal to snap focus back to `ButtonText` when users clicked other fields or action buttons, all Windows-specific `ButtonText` focus handling has been removed from `MainWindowInteractionBehavior`. The current implementation uses the same simple initial-focus path on Windows and macOS: focus `ButtonText`, select all only for new buttons, otherwise set the caret to the end once.
+
+Future work should avoid reintroducing repeated focus timers or pointer hit-test suppression on `ButtonText`. If this issue is revisited, prefer investigating Avalonia TextBox focus/caret ordering on Windows, modal overlay focus scope behavior, or a smaller change at the editor-open command/model boundary.
+
 ### Build
 ```bash
 dotnet restore Praxis.slnx
@@ -139,6 +164,31 @@ Praxis v2 は macOS でフレームレス Avalonia window と独自 caption butt
 - 通常最大化から戻るときは、最大化状態を解除したうえで保存済み bounds を明示復元し、古い復帰状態を消す。
 - 上辺 snap は pointer が上端にある場合だけ通常最大化する。リサイズやドラッグ後に window の上辺がたまたま画面上端に残っているだけでは、放した瞬間に再最大化してはいけない。
 - 手動リサイズはユーザーが新しい通常サイズを定義する操作なので、通常最大化の復帰状態をクリアする。
+
+### Windows 編集モーダルの未解決フォーカス課題
+Avalonia 編集モーダルには、Windows のみ `ButtonText` テキストボックス周辺で未解決のフォーカス不安定性があります。期待挙動は次のとおりです。
+
+- 配置領域の既存ボタンを中央クリックして編集モーダルを開く場合、`ButtonText` 末尾に caret を置く。
+- Dock の既存ボタンを中央クリックして編集モーダルを開く場合、`ButtonText` 末尾に caret を置く。
+- 配置領域または Dock の既存ボタンを右クリックし、Edit から編集モーダルを開く場合、`ButtonText` 末尾に caret を置く。
+- 配置領域または新規追加ボタンから新規作成モーダルを開く場合、`ButtonText` を全選択する。
+
+新規作成時の全選択は安定しています。一方、Windows の既存編集時に `ButtonText` 末尾へ置いた caret が、まれに先頭へ戻る問題が残っています。これに対していくつかの Windows 専用対策を試しましたが、より悪い副作用が出たため削除しています。
+
+1. 起点となる pointer input が落ち着くまで editor open を遅延する案。
+   一部の race は減りましたが、caret が先頭へ戻る事象は解消しませんでした。
+2. Windows 専用の editor focus mode (`CaretAtEnd` / `SelectAll`) を保持する案。
+   open 経路ごとの意図は明確になりましたが、根本の focus/caret race は解消しませんでした。
+3. `IsEditorOpen` が true になった時点で `DispatcherTimer` を開始し、`Focus()`、`SelectionStart`、`SelectionEnd`、`CaretIndex` を繰り返し再適用する案。
+   開いた直後の caret を修復できる場合はありましたが、通常のユーザー操作によるフォーカス移動と競合しました。
+4. 初期安定化 window 中に `ModalButtonTextEntry` の pointer hit testing を抑止する案。
+   遅れて届く opener click の影響は抑えられましたが、ユーザーが他のフィールドやボタンへフォーカスを移しても `ButtonText` に戻される regression を生みました。
+5. 数秒間にわたり段階的に focus / selection を再適用する async stabilization 案。
+   Windows の caret 挙動は完全には安定せず、新規作成時も含めて `ButtonText` にフォーカスを奪い返す副作用が目立ちました。
+
+このため、`MainWindowInteractionBehavior` から Windows 専用の `ButtonText` focus 処理はすべて削除しています。現在は Windows / macOS 共通の単純な初期フォーカス処理だけを使います。すなわち、`ButtonText` に focus し、新規作成時だけ全選択し、通常編集時は一度だけ末尾に caret を置きます。
+
+今後この課題を再調査する場合も、`ButtonText` に対する繰り返し focus timer や pointer hit-test 抑止を戻すのは避けてください。Avalonia の Windows TextBox における focus/caret 適用順、modal overlay の focus scope、または editor open command/model 境界でのより小さい変更を調べる方針が望ましいです。
 
 ### ビルド
 ```bash

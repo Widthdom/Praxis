@@ -1,8 +1,8 @@
+using System.Runtime.InteropServices;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Interactivity;
-using Praxis.Avalonia.Behaviors;
 
 namespace Praxis.Avalonia.Behaviors;
 
@@ -16,6 +16,11 @@ public enum WindowChromeAction
 
 public sealed class WindowChromeButtonBehavior
 {
+    private const int ShowWindowMaximize = 3;
+    private const int ShowWindowMinimize = 6;
+    private const int ShowWindowRestore = 9;
+    private const string User32Library = "user32.dll";
+
     private WindowChromeButtonBehavior()
     {
     }
@@ -57,7 +62,11 @@ public sealed class WindowChromeButtonBehavior
         switch (GetAction(button))
         {
             case WindowChromeAction.Minimize:
-                window.WindowState = WindowState.Minimized;
+                if (!TryShowWindowsWindow(window, ShowWindowMinimize))
+                {
+                    window.WindowState = WindowState.Minimized;
+                }
+
                 break;
             case WindowChromeAction.ToggleMaximize:
                 if (OperatingSystem.IsMacOS())
@@ -71,9 +80,18 @@ public sealed class WindowChromeButtonBehavior
                     MainWindowInteractionBehavior.CaptureNormalBoundsBeforeMaximize(window);
                 }
 
-                window.WindowState = window.WindowState == WindowState.Maximized
-                    ? WindowState.Normal
-                    : WindowState.Maximized;
+                if (OperatingSystem.IsWindows())
+                {
+                    var command = window.WindowState == WindowState.Maximized
+                        ? ShowWindowRestore
+                        : ShowWindowMaximize;
+                    if (TryShowWindowsWindow(window, command))
+                    {
+                        break;
+                    }
+                }
+
+                window.WindowState = window.WindowState == WindowState.Maximized ? WindowState.Normal : WindowState.Maximized;
                 break;
             case WindowChromeAction.Close:
                 window.Close();
@@ -82,4 +100,20 @@ public sealed class WindowChromeButtonBehavior
 
         e.Handled = true;
     }
+
+    private static bool TryShowWindowsWindow(Window window, int command)
+    {
+        if (!OperatingSystem.IsWindows())
+        {
+            return false;
+        }
+
+        var handle = window.TryGetPlatformHandle();
+        return handle is not null
+            && handle.Handle != IntPtr.Zero
+            && ShowWindow(handle.Handle, command);
+    }
+
+    [DllImport(User32Library)]
+    private static extern bool ShowWindow(IntPtr hwnd, int command);
 }

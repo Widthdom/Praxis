@@ -157,6 +157,15 @@ public sealed class MainWindowViewModel : ObservableObject
     public void UpdatePlacementViewport(double scrollX, double scrollY, double width, double height)
         => Model.UpdateViewport(scrollX, scrollY, width, height);
 
+    public void RefreshThemeBindings()
+    {
+        OnPropertyChanged(nameof(SelectedTheme));
+        OnPropertyChanged(nameof(VisibleButtons));
+        OnPropertyChanged(nameof(RecentButtons));
+        OnPropertyChanged(nameof(CommandSuggestions));
+        OnPropertyChanged(nameof(Status));
+    }
+
     private void ModelOnPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
         if (string.IsNullOrEmpty(e.PropertyName))

@@ -25,6 +25,8 @@
 
   <ItemGroup>
     <AvaloniaResource Include="Assets\**" />
+    <None Update="Assets\praxis-icon.ico" CopyToOutputDirectory="PreserveNewest" />
+    <None Update="Assets\praxis-window-small.ico" CopyToOutputDirectory="PreserveNewest" />
     <None Update="Assets\praxis-dock-icon.png" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>

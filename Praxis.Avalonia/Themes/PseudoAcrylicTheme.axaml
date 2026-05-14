@@ -1,4 +1,5 @@
 <Styles xmlns="https://github.com/avaloniaui"
+        xmlns:chrome="using:Avalonia.Controls.Chrome"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
   <Styles.Resources>
     <LinearGradientBrush x:Key="PraxisShellBackground" StartPoint="0%,0%" EndPoint="100%,100%">
@@ -6,6 +7,12 @@
       <GradientStop Color="#E2323232" Offset="0.42" />
       <GradientStop Color="#DC191919" Offset="0.72" />
       <GradientStop Color="#EE262626" Offset="1" />
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="PraxisWindowsShellBackground" StartPoint="0%,0%" EndPoint="100%,100%">
+      <GradientStop Color="#74222222" Offset="0" />
+      <GradientStop Color="#6A303030" Offset="0.36" />
+      <GradientStop Color="#70292929" Offset="0.66" />
+      <GradientStop Color="#661E1E1E" Offset="1" />
     </LinearGradientBrush>
     <LinearGradientBrush x:Key="PraxisLightShellBackground" StartPoint="0%,0%" EndPoint="100%,100%">
       <GradientStop Color="#B8FFFFFF" Offset="0" />
@@ -34,6 +41,10 @@
     <Setter Property="Background" Value="Transparent" />
     <Setter Property="FontFamily" Value="Inter, Hiragino Sans, Yu Gothic, Meiryo, Segoe UI, -apple-system, BlinkMacSystemFont" />
     <Setter Property="Foreground" Value="{StaticResource PraxisTextPrimaryBrush}" />
+  </Style>
+
+  <Style Selector="Window.praxis-main.windows">
+    <Setter Property="FontFamily" Value="Segoe UI Variable Text, Segoe UI, Yu Gothic UI, Meiryo" />
   </Style>
 
   <Style Selector="Window.praxis-main.light">
@@ -72,6 +83,20 @@
     </Setter>
   </Style>
 
+  <Style Selector="Window.windows Border.praxis-acrylic-sheen">
+    <Setter Property="Background">
+      <Setter.Value>
+        <LinearGradientBrush StartPoint="4%,0%" EndPoint="100%,100%">
+          <GradientStop Color="#08FFFFFF" Offset="0" />
+          <GradientStop Color="#18FFFFFF" Offset="0.32" />
+          <GradientStop Color="#26FFFFFF" Offset="0.48" />
+          <GradientStop Color="#10FFFFFF" Offset="0.66" />
+          <GradientStop Color="#06FFFFFF" Offset="1" />
+        </LinearGradientBrush>
+      </Setter.Value>
+    </Setter>
+  </Style>
+
   <Style Selector="Window.light Border.praxis-acrylic-sheen">
     <Setter Property="Background">
       <Setter.Value>
@@ -90,7 +115,18 @@
     <Setter Property="CornerRadius" Value="8" />
   </Style>
 
+  <Style Selector="Window.praxis-main.windows Border.praxis-shell">
+    <Setter Property="Background" Value="{StaticResource PraxisWindowsShellBackground}" />
+    <Setter Property="CornerRadius" Value="0" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="BoxShadow" Value="0 0 0 0 Transparent" />
+  </Style>
+
   <Style Selector="Window.fullscreen Border.praxis-shell">
+    <Setter Property="CornerRadius" Value="0" />
+  </Style>
+
+  <Style Selector="Window.windows.maximized Border.praxis-shell">
     <Setter Property="CornerRadius" Value="0" />
   </Style>
 
@@ -144,30 +180,30 @@
   </Style>
 
   <Style Selector="Window.light TextBox.praxis-input">
-    <Setter Property="Background" Value="#F2F2F2" />
+    <Setter Property="Background" Value="#FFFFFF" />
     <Setter Property="Foreground" Value="#111111" />
     <Setter Property="CaretBrush" Value="#111111" />
     <Setter Property="SelectionBrush" Value="#55999999" />
   </Style>
 
   <Style Selector="Window.light TextBox.praxis-input:focus">
-    <Setter Property="Background" Value="#F2F2F2" />
+    <Setter Property="Background" Value="#FFFFFF" />
   </Style>
 
   <Style Selector="Window.light TextBox.praxis-input /template/ Border#PART_BorderElement">
-    <Setter Property="Background" Value="#F2F2F2" />
+    <Setter Property="Background" Value="#FFFFFF" />
   </Style>
 
   <Style Selector="Window.light TextBox.praxis-input:focus /template/ Border#PART_BorderElement">
-    <Setter Property="Background" Value="#F2F2F2" />
+    <Setter Property="Background" Value="#FFFFFF" />
   </Style>
 
   <Style Selector="Window.light TextBox.praxis-input:pointerover">
-    <Setter Property="Background" Value="#F2F2F2" />
+    <Setter Property="Background" Value="#FFFFFF" />
   </Style>
 
   <Style Selector="Window.light TextBox.praxis-input:pointerover /template/ Border#PART_BorderElement">
-    <Setter Property="Background" Value="#F2F2F2" />
+    <Setter Property="Background" Value="#FFFFFF" />
   </Style>
 
   <Style Selector="Grid.praxis-placeholder-icon">
@@ -213,7 +249,7 @@
   </Style>
 
   <Style Selector="Window.light Button.praxis-create">
-    <Setter Property="Background" Value="#F2F2F2" />
+    <Setter Property="Background" Value="#FFFFFF" />
     <Setter Property="Foreground" Value="#777777" />
   </Style>
 
@@ -328,7 +364,7 @@
 
   <Style Selector="Button.praxis-caption">
     <Setter Property="Width" Value="36" />
-    <Setter Property="Height" Value="28" />
+    <Setter Property="Height" Value="26" />
     <Setter Property="Padding" Value="0" />
     <Setter Property="Background" Value="Transparent" />
     <Setter Property="Foreground" Value="{StaticResource PraxisTextPrimaryBrush}" />
@@ -340,6 +376,68 @@
 
   <Style Selector="Button.praxis-caption:pointerover">
     <Setter Property="Background" Value="#363636" />
+  </Style>
+
+  <Style Selector="Window.windows Grid#ChromeRow">
+    <Setter Property="MinHeight" Value="32" />
+  </Style>
+
+  <Style Selector="Window.windows StackPanel#WindowsCaptionButtons">
+    <Setter Property="VerticalAlignment" Value="Top" />
+    <Setter Property="Margin" Value="0,-10,0,0" />
+  </Style>
+
+  <Style Selector="Window.windows Button.praxis-caption">
+    <Setter Property="Height" Value="42" />
+    <Setter Property="CornerRadius" Value="0" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border Background="{TemplateBinding Background}"
+                CornerRadius="{TemplateBinding CornerRadius}">
+          <ContentPresenter Content="{TemplateBinding Content}"
+                            ContentTemplate="{TemplateBinding ContentTemplate}"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center" />
+        </Border>
+      </ControlTemplate>
+    </Setter>
+  </Style>
+
+  <Style Selector="Button#PART_FullScreenButton">
+    <Setter Property="IsVisible" Value="False" />
+    <Setter Property="IsHitTestVisible" Value="False" />
+    <Setter Property="Width" Value="0" />
+    <Setter Property="MinWidth" Value="0" />
+  </Style>
+
+  <Style Selector="Button#PART_PopoverFullScreenButton">
+    <Setter Property="IsVisible" Value="False" />
+    <Setter Property="IsHitTestVisible" Value="False" />
+    <Setter Property="Width" Value="0" />
+    <Setter Property="MinWidth" Value="0" />
+  </Style>
+
+  <Style Selector="Window.light Button.praxis-caption">
+    <Setter Property="Foreground" Value="#2A2A2A" />
+  </Style>
+
+  <Style Selector="Window.light Button.praxis-caption:pointerover">
+    <Setter Property="Background" Value="#8A8A8A" />
+    <Setter Property="Foreground" Value="#111111" />
+  </Style>
+
+  <Style Selector="Window.windows Button.praxis-caption TextBlock">
+    <Setter Property="LineHeight" Value="10" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+    <Setter Property="RenderTransform">
+      <Setter.Value>
+        <TranslateTransform Y="3" />
+      </Setter.Value>
+    </Setter>
+  </Style>
+
+  <Style Selector="Window.windows StackPanel#WindowsCaptionButtons Button.praxis-caption:last-child">
+    <Setter Property="CornerRadius" Value="0,10,0,0" />
   </Style>
 
   <Style Selector="Border.praxis-suggestion-panel">
@@ -413,6 +511,17 @@
     <Setter Property="Opacity" Value="1" />
   </Style>
 
+  <Style Selector="Window.windows Button.praxis-launcher TextBlock">
+    <Setter Property="LineHeight" Value="16" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+  </Style>
+
+  <Style Selector="Window.windows Button.praxis-launcher">
+    <Setter Property="ToolTip.Placement" Value="Bottom" />
+    <Setter Property="ToolTip.VerticalOffset" Value="12" />
+    <Setter Property="ToolTip.HorizontalOffset" Value="0" />
+  </Style>
+
   <Style Selector="Border.praxis-selection-rect">
     <Setter Property="Background" Value="#33777777" />
     <Setter Property="BorderBrush" Value="#B0B0B0" />
@@ -451,6 +560,17 @@
 
   <Style Selector="Button.praxis-dock:pointerover">
     <Setter Property="Opacity" Value="1" />
+  </Style>
+
+  <Style Selector="Window.windows Button.praxis-dock TextBlock">
+    <Setter Property="LineHeight" Value="16" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+  </Style>
+
+  <Style Selector="Window.windows Button.praxis-dock">
+    <Setter Property="ToolTip.Placement" Value="Top" />
+    <Setter Property="ToolTip.VerticalOffset" Value="-12" />
+    <Setter Property="ToolTip.HorizontalOffset" Value="0" />
   </Style>
 
   <Style Selector="ScrollViewer.praxis-dock-scroll">
@@ -768,6 +888,10 @@
     <Setter Property="FontFamily" Value="Inter, Hiragino Sans, Yu Gothic, Meiryo, Segoe UI, -apple-system, BlinkMacSystemFont" />
   </Style>
 
+  <Style Selector="Window.windows Grid.praxis-tooltip-grid TextBlock">
+    <Setter Property="FontFamily" Value="Segoe UI Variable Text, Segoe UI, Yu Gothic UI, Meiryo" />
+  </Style>
+
   <Style Selector="ToolTip">
     <Setter Property="FontFamily" Value="Inter, Hiragino Sans, Yu Gothic, Meiryo, Segoe UI, -apple-system, BlinkMacSystemFont" />
     <Setter Property="MinHeight" Value="32" />
@@ -775,8 +899,18 @@
     <Setter Property="VerticalContentAlignment" Value="Center" />
   </Style>
 
+  <Style Selector="Window.windows ToolTip">
+    <Setter Property="FontFamily" Value="Segoe UI Variable Text, Segoe UI, Yu Gothic UI, Meiryo" />
+  </Style>
+
   <Style Selector="ToolTip TextBlock">
     <Setter Property="LineHeight" Value="16" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+  </Style>
+
+  <Style Selector="TextBlock.praxis-caption-tooltip">
+    <Setter Property="LineHeight" Value="16" />
+    <Setter Property="Margin" Value="0,1,0,2" />
     <Setter Property="VerticalAlignment" Value="Center" />
   </Style>
 

@@ -1,5 +1,6 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:chrome="using:Avalonia.Controls.Chrome"
         xmlns:behaviors="using:Praxis.Avalonia.Behaviors"
         x:Class="Praxis.Avalonia.Views.MainWindow"
         x:Name="Root"
@@ -22,6 +23,7 @@
         <Border Height="18"
                 VerticalAlignment="Top"
                 Background="#01000000"
+                chrome:WindowDecorationProperties.ElementRole="TitleBar"
                 behaviors:WindowDragBehavior.IsDragArea="True" />
         <Border Classes="praxis-acrylic-sheen"
                 IsHitTestVisible="False" />
@@ -33,6 +35,7 @@
           ColumnDefinitions="Auto,*,Auto"
           MinHeight="36"
           Background="#01000000"
+          chrome:WindowDecorationProperties.ElementRole="TitleBar"
           behaviors:WindowDragBehavior.IsDragArea="True">
       <StackPanel x:Name="MacCaptionButtons"
                   Orientation="Horizontal"
@@ -77,24 +80,37 @@
                   VerticalAlignment="Stretch">
         <Button Classes="praxis-caption"
                 IsTabStop="False"
-                ToolTip.Tip="Minimize"
+                chrome:WindowDecorationProperties.ElementRole="MinimizeButton"
                 behaviors:WindowChromeButtonBehavior.Action="Minimize">
+          <ToolTip.Tip>
+            <TextBlock Classes="praxis-caption-tooltip" Text="Minimize" />
+          </ToolTip.Tip>
           <TextBlock Text="&#xE921;"
                      FontFamily="Segoe Fluent Icons, Segoe UI Symbol"
                      FontSize="10" />
         </Button>
-        <Button Classes="praxis-caption"
+        <Button x:Name="WindowsMaximizeButton"
+                Classes="praxis-caption"
                 IsTabStop="False"
-                ToolTip.Tip="Maximize"
+                chrome:WindowDecorationProperties.ElementRole="MaximizeButton"
                 behaviors:WindowChromeButtonBehavior.Action="ToggleMaximize">
-          <TextBlock Text="&#xE922;"
+          <ToolTip.Tip>
+            <TextBlock x:Name="WindowsMaximizeTooltip"
+                       Classes="praxis-caption-tooltip"
+                       Text="Maximize" />
+          </ToolTip.Tip>
+          <TextBlock x:Name="WindowsMaximizeGlyph"
+                     Text="&#xE922;"
                      FontFamily="Segoe Fluent Icons, Segoe UI Symbol"
                      FontSize="10" />
         </Button>
         <Button Classes="praxis-caption"
                 IsTabStop="False"
-                ToolTip.Tip="Close"
+                chrome:WindowDecorationProperties.ElementRole="CloseButton"
                 behaviors:WindowChromeButtonBehavior.Action="Close">
+          <ToolTip.Tip>
+            <TextBlock Classes="praxis-caption-tooltip" Text="Close" />
+          </ToolTip.Tip>
           <TextBlock Text="&#xE8BB;"
                      FontFamily="Segoe Fluent Icons, Segoe UI Symbol"
                      FontSize="10" />
@@ -103,6 +119,7 @@
     </Grid>
 
     <Grid Grid.Row="1"
+          x:Name="TopInputRow"
           ColumnDefinitions="2*,Auto,2*"
           ColumnSpacing="8"
           Background="Transparent">
@@ -276,6 +293,7 @@
     </Border>
 
     <Border Grid.Row="2"
+            x:Name="PlacementFrame"
             Classes="praxis-placement-frame"
             Margin="0,8,0,0">
       <ScrollViewer x:Name="PlacementScroll"
@@ -360,6 +378,7 @@
     </Border>
 
     <ScrollViewer Grid.Row="3"
+                  x:Name="DockScroll"
                   Classes="praxis-dock-scroll"
                   HorizontalScrollBarVisibility="Auto"
                   VerticalScrollBarVisibility="Disabled"

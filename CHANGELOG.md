@@ -28,6 +28,23 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 
 ### Fixed
 - Context-menu Delete now removes the full selected launcher-button group when invoked from a selected button, while unselected button Delete still removes only the clicked button
+- Windows Avalonia shell now uses a transparent-background app icon for taskbar and jump-list surfaces, tightens the custom caption buttons to the window top edge, and strengthens the rounded pseudo-acrylic shell corners
+- Windows caption buttons use the OS chrome path for native minimize/maximize/restore animations, caption tooltips avoid clipped text, the pseudo-acrylic shell is more translucent, and custom title-bar dragging supports edge snap
+- The Avalonia editor modal now exposes the button `Command` field, placement and Dock tooltips omit duplicate `ButtonText`, Windows caption hit testing uses the native title-bar path for Aero Snap, and small window icons are emitted as alpha DIB ICO frames
+- Windows placement-area and Dock button tooltips now use fixed button-edge placement instead of pointer placement, so the tooltip does not appear under the cursor and intercept the first click
+- Light-mode Windows caption buttons now use darker glyphs with a stronger but still neutral hover background
+- Editor focus now places the caret at the end of `ButtonText` for normal edits, including context-menu Edit, and selects all `ButtonText` only for new buttons
+- New buttons now default to fixed `New` button text with an empty command instead of numbered placeholder text and commands
+- Windows jump-list relaunch icon metadata now points at the transparent small icon resource so the taskbar right-click menu can avoid the stale white-background executable icon
+- Windows rounded corners now rely on DWM-managed clipping instead of a GDI region, smoothing the light-mode window corners
+- Removed the Windows-only editor `ButtonText` focus stabilization experiments after they proved unreliable and could steal focus back from other modal controls; the remaining Windows caret-at-start race is now documented in the developer guide
+- Windows shell corners now avoid drawing an inner rounded shell on top of the DWM-managed window corner, preventing doubled corner arcs and malformed snapped-window corners
+- Windows now hides the custom Avalonia caption-button stack and clears the runtime title when using the OS chrome path for animated minimize/maximize/restore, avoiding duplicate caption buttons and the extra title text
+- Windows hides Avalonia's drawn full-screen caption glyph while keeping the OS chrome path, so minimize/maximize/close remain visible without the extra button beside minimize
+- `Ctrl+Shift+L`, `Ctrl+Shift+D`, and `Ctrl+Shift+H` now explicitly switch Avalonia between Light, Dark, and System theme modes
+- `Ctrl+Shift+H` now returns Avalonia to the system theme instead of leaving an in-between fixed palette; window light/dark classes and theme-dependent bindings are refreshed from the actual OS-selected theme
+- Windows editor `ButtonText` now uses the shared initial-focus path instead of pointer hit-test suppression or repeated caret/selection timers
+- Windows launcher and Dock button labels are optically lowered to sit at the vertical center, and the pseudo-acrylic background uses a softer low-contrast blur-style sheen for environments where true window transparency is unavailable
 
 ### [1.2.0] - 2026-05-11
 
@@ -537,12 +554,23 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 
 ### 修正
 - Windows Avalonia shell は taskbar / jump-list surface 向けに透明背景の app icon を使い、custom caption button を window 上端へ詰め、擬似アクリル shell の角丸を強化
-- Windows caption button は上端で見切れる分を考慮して視覚的に中央配置し、caption tooltip の文字切れを避け、擬似アクリル shell の透明度を上げ、custom title-bar drag の edge snap に対応
+- Windows caption button は native の minimize / maximize / restore animation を維持するため OS chrome 経路を使い、caption tooltip の文字切れを避け、擬似アクリル shell の透明度を上げ、custom title-bar drag の edge snap に対応
 - Avalonia editor modal に button `Command` 欄を追加し、配置領域 / Dock の tooltip から重複する `ButtonText` を削除し、Windows caption hit test を native title-bar 経路に寄せて Aero Snap に対応し、小さい window icon を alpha DIB ICO frame として出力
+- Windows の配置領域 / Dock button tooltip は pointer 追従ではなく button edge 基準の固定配置にし、tooltip が cursor 下に出て初回 click を奪う状況を避けるよう修正
 - ライトモードの Windows caption button は glyph を濃くし、hover background を中立色のまま少し強く見えるよう調整
 - 編集モーダルは context menu の Edit を含む通常編集時に `ButtonText` 末尾へ caret を置き、新規ボタン時だけ `ButtonText` を全選択
 - 新規ボタンの初期値は番号付きの placeholder text / command ではなく、固定の `New` と空の command に変更
 - context menu の Delete は、選択中 button から実行した場合に選択中 launcher-button 全体を削除し、未選択 button から実行した場合は従来どおりクリックした button だけを削除するよう修正
+- Windows jump-list の relaunch icon metadata は透明背景の小アイコン resource を指すようにし、taskbar 右クリックメニューで古い白背景の実行ファイル icon が使われにくいよう調整
+- Windows の角丸は GDI region ではなく DWM 管理の clipping に寄せ、ライトモードで目立っていた角の粗さを滑らかに調整
+- Windows 専用の編集モーダル `ButtonText` focus 安定化策は、不安定で他の modal control から focus を奪い返す副作用があったため削除し、残る Windows の caret 先頭戻り race は開発者ガイドの未解決課題として記録
+- Windows shell の角は DWM 管理の window corner に重ねて内側の角丸を描かないようにし、二重の弧や snap 時の不自然な角描画を避けるよう調整
+- Windows は animated minimize / maximize / restore のために OS chrome 経路を使う場合、自前の Avalonia caption-button stack を隠し runtime title を空にして、caption button の二重表示と余計な title text を避けるよう調整
+- Windows は OS chrome 経路を維持しつつ Avalonia drawn full-screen caption glyph だけを隠し、minimize / maximize / close を残したまま minimize button 左側の余計なボタンを消すよう調整
+- `Ctrl+Shift+L` / `Ctrl+Shift+D` / `Ctrl+Shift+H` で Avalonia を Light / Dark / System theme mode へ明示的に切り替えられるよう修正
+- `Ctrl+Shift+H` は固定の中間 palette ではなく system theme へ戻し、OS が選んだ実際の light / dark から window class と theme 依存 binding を再評価するよう修正
+- Windows の編集モーダル `ButtonText` は pointer hit-test 抑止や caret / selection の反復 timer ではなく、Windows / macOS 共通の初期 focus 経路を使うよう変更
+- Windows の launcher / Dock button label は縦方向の見た目中央へ下げ、真の window 透過が効かない環境でも blur 風に見えるよう擬似アクリル背景を低コントラストで柔らかい sheen に調整
 
 ### [1.2.0] - 2026-05-11
 

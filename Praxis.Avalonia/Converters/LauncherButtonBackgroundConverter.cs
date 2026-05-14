@@ -42,7 +42,7 @@ public sealed class LauncherButtonBackgroundConverter : IMultiValueConverter
             return Brush(light ? "#D0D0D0" : "#444444");
         }
 
-        return Brush(light ? "#F2F2F2" : "#565656");
+        return Brush(light ? "#FFFFFF" : "#565656");
     }
 
     private static IBrush Brush(string color)
