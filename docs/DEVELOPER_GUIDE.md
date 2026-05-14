@@ -17,9 +17,10 @@ This guide describes the current Praxis v2 Avalonia architecture. Test-specific 
 - `Praxis.Core.Models.MainModel` owns command/search text, launcher buttons, recent buttons, and status state.
 - `Praxis.Core.Models.LauncherButtonModel` owns per-button state and exposes only UI-independent values.
 - `Praxis.Core.Services.ILauncherButtonRepository` keeps Core storage-neutral while allowing the Avalonia app to use SQLite for launcher buttons, Dock order, and launch logs.
+- `Praxis.Core.Services.IStateSyncNotifier` keeps cross-window launcher-button change notifications behind a service contract. The Avalonia app currently uses `FileStateSyncNotifier`, which writes a small `buttons.sync` signal file in the app data directory.
 - `Praxis.Data.Repositories.SqliteLauncherButtonRepository` owns database schema migration and launcher-button persistence.
-- `Praxis.Avalonia.ViewModels.MainWindowViewModel` is intentionally thin. It exposes `MainModel` and commands that delegate to Model operations.
-- `Praxis.Avalonia.Views.MainWindow` has no app-specific code-behind logic beyond `InitializeComponent()`.
+- `Praxis.Avalonia.ViewModels.MainWindowViewModel` is intentionally thin. It exposes `MainModel`, commands that delegate to Model operations, and the state-sync subscription that asks the Model to reload external changes.
+- `Praxis.Avalonia.Views.MainWindow` has no app-specific code-behind logic; it only loads XAML directly.
 - Behaviors, converters, themes, and platform services may contain UI infrastructure logic.
 - OS-specific command execution belongs behind service contracts such as `ILauncherExecutionService`.
 
@@ -28,7 +29,7 @@ This guide describes the current Praxis v2 Avalonia architecture. Test-specific 
 - `Praxis.Avalonia/Behaviors/` - UI infrastructure behaviors such as frameless-window drag support
 - `Praxis.Avalonia/Converters/` - UI-only value conversion from Core enum values to Avalonia types
 - `Praxis.Avalonia/Themes/` - pseudo-acrylic dark theme resources
-- `Praxis.Avalonia/Services/` - app-local desktop services such as command/default-app execution
+- `Praxis.Avalonia/Services/` - app-local desktop services such as command/default-app execution, macOS Dock icon setup, and file-backed state sync
 - `Praxis.Core/Models/` - UI-independent state models and records
 - `Praxis.Core/Logic/` - pure policy and resolver logic
 - `Praxis.Core/Services/` - platform/service contracts
@@ -37,7 +38,9 @@ This guide describes the current Praxis v2 Avalonia architecture. Test-specific 
 - `Praxis.Data/Storage/` - platform-aware app data path resolution
 
 ### Current Migration State
-The Avalonia app loads launcher buttons from SQLite at startup, executes registered commands from the top command field, maintains command suggestions from loaded launcher records, writes newly created/executed/moved/deleted launcher records back to SQLite, persists recent Dock order, writes launch logs, and uses a desktop execution service for direct commands or default-app opening. The former MAUI app project has been removed. Button editing UI, drag UI wiring, theme settings, error logging, and cross-window sync remain migration follow-up work and should be reintroduced behind shared service abstractions rather than view code.
+The Avalonia app loads launcher buttons from SQLite at startup, executes registered commands from the top command field, maintains command suggestions from loaded launcher records, writes newly created/edited/executed/moved/deleted launcher records back to SQLite, persists recent Dock order, writes launch logs, and uses a desktop execution service for direct commands or default-app opening. The former MAUI app project has been removed.
+
+Launcher-button editing, drag/multi-select wiring, theme mode switching, and app-local cross-window launcher-button sync have been reintroduced. `MainModel` detects edit conflicts when a record was changed or deleted by another window, exposes Reload/Overwrite/Cancel state for the Avalonia conflict dialog, reloads immediately when no editor is open, and defers external reloads while the editor is open. Persisted theme settings and runtime error-log writes remain migration follow-up work and should be reintroduced behind shared service abstractions rather than view code.
 
 The data layer keeps compatibility with existing `praxis.db3` files and also opens an existing `praxis.db` file in the same app data directory. Schema migration currently advances launcher databases to `PRAGMA user_version = 5`.
 
@@ -116,9 +119,10 @@ dotnet test Praxis.Tests/Praxis.Tests.csproj -c Release --nologo
 - `Praxis.Core.Models.MainModel` が command/search text、launcher button、recent button、status state を所有します。
 - `Praxis.Core.Models.LauncherButtonModel` はボタンごとの状態を持ち、UI 非依存の値だけを公開します。
 - `Praxis.Core.Services.ILauncherButtonRepository` により、Core は storage-neutral のまま Avalonia app から launcher button、Dock 順、launch log 用の SQLite を使えます。
+- `Praxis.Core.Services.IStateSyncNotifier` により、複数ウィンドウ間の launcher-button 変更通知を service contract の背後に置きます。Avalonia app は現在 `FileStateSyncNotifier` を使い、app data directory の小さな `buttons.sync` signal file を更新します。
 - `Praxis.Data.Repositories.SqliteLauncherButtonRepository` が DB schema migration と launcher button 永続化を担当します。
-- `Praxis.Avalonia.ViewModels.MainWindowViewModel` は薄く保ち、`MainModel` と Model 操作へ委譲する command だけを公開します。
-- `Praxis.Avalonia.Views.MainWindow` の code-behind は `InitializeComponent()` に留めます。
+- `Praxis.Avalonia.ViewModels.MainWindowViewModel` は薄く保ち、`MainModel`、Model 操作へ委譲する command、外部変更時に Model へ reload を依頼する state-sync subscription だけを公開します。
+- `Praxis.Avalonia.Views.MainWindow` の code-behind はアプリ固有ロジックを持たず、XAML を直接読み込むだけにします。
 - Behavior、Converter、Theme、Platform service は UI infrastructure logic を持ってよいです。
 - OS 別のコマンド実行は `ILauncherExecutionService` などの service contract の背後に置きます。
 
@@ -127,7 +131,7 @@ dotnet test Praxis.Tests/Praxis.Tests.csproj -c Release --nologo
 - `Praxis.Avalonia/Behaviors/` - フレームレスウィンドウのドラッグなどの UI infrastructure behavior
 - `Praxis.Avalonia/Converters/` - Core enum から Avalonia 型への UI 専用変換
 - `Praxis.Avalonia/Themes/` - 擬似アクリル風ダークテーマ
-- `Praxis.Avalonia/Services/` - コマンド/既定アプリ起動などの app-local desktop service
+- `Praxis.Avalonia/Services/` - コマンド/既定アプリ起動、macOS Dock icon 設定、ファイルベース state sync などの app-local desktop service
 - `Praxis.Core/Models/` - UI 非依存の状態 Model / record
 - `Praxis.Core/Logic/` - 純粋な policy / resolver
 - `Praxis.Core/Services/` - platform/service contract
@@ -136,7 +140,9 @@ dotnet test Praxis.Tests/Praxis.Tests.csproj -c Release --nologo
 - `Praxis.Data/Storage/` - platform-aware な app data path 解決
 
 ### 現在の移行状態
-Avalonia アプリは起動時に SQLite から launcher button を読み込み、上部 command field から登録済み command を実行し、読み込んだ launcher record から command suggestion を作り、作成/実行/移動/削除した launcher record を SQLite に書き戻し、最近使った Dock 順と launch log を保存し、desktop execution service で直接コマンドまたは既定アプリ起動を行います。旧 MAUI アプリプロジェクトは削除済みです。ボタン編集 UI、ドラッグ UI wiring、テーマ設定、error logging、複数ウィンドウ同期は今後の移植対象であり、View ではなく共有 service abstraction の背後に戻します。
+Avalonia アプリは起動時に SQLite から launcher button を読み込み、上部 command field から登録済み command を実行し、読み込んだ launcher record から command suggestion を作り、作成/編集/実行/移動/削除した launcher record を SQLite に書き戻し、最近使った Dock 順と launch log を保存し、desktop execution service で直接コマンドまたは既定アプリ起動を行います。旧 MAUI アプリプロジェクトは削除済みです。
+
+launcher-button 編集、ドラッグ/複数選択 wiring、テーマモード切り替え、app-local な複数ウィンドウ間 launcher-button 同期は再導入済みです。`MainModel` は、他のウィンドウで record が変更または削除された状態で編集を保存しようとした場合に競合を検出し、Avalonia の競合ダイアログ向けに Reload / Overwrite / Cancel の状態を公開します。外部変更は editor が開いていなければ即時 reload し、editor が開いている間は reload を遅延します。テーマ設定の永続化と runtime error-log 書き込みは今後の移行対象であり、View ではなく共有 service abstraction の背後に戻します。
 
 data layer は既存の `praxis.db3` と互換で、同じ app data directory に既存の `praxis.db` がある場合も開きます。現在の schema migration は launcher DB を `PRAGMA user_version = 5` へ進めます。
 

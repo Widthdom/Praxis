@@ -2,7 +2,7 @@
 
 ## English
 
-Praxis v2 uses `Praxis.Data` for SQLite persistence. The Avalonia runtime currently loads and saves launcher buttons, persists recent Dock order, and writes launch logs through `SqliteLauncherButtonRepository`; theme settings, error log writes, and sync flows are still migration follow-up work.
+Praxis v2 uses `Praxis.Data` for SQLite persistence. The Avalonia runtime currently loads and saves launcher buttons, persists recent Dock order, and writes launch logs through `SqliteLauncherButtonRepository`. Cross-window launcher-button sync uses a sidecar `buttons.sync` signal file through `FileStateSyncNotifier`; that file is not part of the SQLite schema. Persisted theme settings and runtime error-log writes are still migration follow-up work.
 
 ### Storage Path
 
@@ -13,6 +13,8 @@ Praxis v2 uses `Praxis.Data` for SQLite persistence. The Avalonia runtime curren
 The preferred database file name remains `praxis.db3` for v1 compatibility. If `praxis.db3` is not present but `praxis.db` exists in the same app data directory, v2 opens `praxis.db` in place and applies the same migrations.
 
 For development and smoke tests, `PRAXIS_APP_DATA_DIR` can point the app at an alternate absolute app data directory.
+
+`buttons.sync` is also stored in the app data directory. It contains the source instance id and UTC ticks for the latest launcher-button change notification, allowing other running Praxis windows to reload or defer reload while an editor is open.
 
 ### Version
 
@@ -44,7 +46,7 @@ Migration history:
 
 ## 日本語
 
-Praxis v2 は SQLite 永続化に `Praxis.Data` を使います。Avalonia runtime は現在 `SqliteLauncherButtonRepository` 経由で launcher button を読み書きし、最近使った Dock 順を保存し、launch log を書き込みます。テーマ設定、error log 書き込み、同期フローは今後の移植対象です。
+Praxis v2 は SQLite 永続化に `Praxis.Data` を使います。Avalonia runtime は現在 `SqliteLauncherButtonRepository` 経由で launcher button を読み書きし、最近使った Dock 順を保存し、launch log を書き込みます。複数ウィンドウ間の launcher-button 同期は、`FileStateSyncNotifier` が sidecar の `buttons.sync` signal file を使います。このファイルは SQLite schema には含まれません。テーマ設定の永続化と runtime error-log 書き込みは今後の移植対象です。
 
 ### 保存先
 
@@ -55,6 +57,8 @@ Praxis v2 は SQLite 永続化に `Praxis.Data` を使います。Avalonia runti
 v1 互換のため、優先する DB ファイル名は引き続き `praxis.db3` です。同じ app data directory に `praxis.db3` がなく、既存の `praxis.db` がある場合は、v2 は `praxis.db` をそのまま開いて同じ migration を適用します。
 
 開発や smoke test では、`PRAXIS_APP_DATA_DIR` に絶対パスを指定すると別の app data directory を使えます。
+
+`buttons.sync` も app data directory に保存されます。最新の launcher-button 変更通知について、source instance id と UTC ticks を書き込み、他の起動中 Praxis window が即時 reload するか、editor が開いている間は reload を遅延できるようにします。
 
 ### バージョン
 

@@ -11,6 +11,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - Added `Praxis.Data` with SQLite launcher-button persistence, platform-aware app data path resolution, v1 table-name compatibility, `praxis.db3` / existing `praxis.db` file support, and schema migration to version 5 for `ColorKey`, `ToolTip`, `LastExecutedAtUtc`, and `SortOrder`
 - Added a desktop launcher execution service for direct command execution and default-app opening on Windows, macOS, and Linux-ready `xdg-open` paths
 - Reintroduced command-input execution, command suggestions, persisted recent Dock order, button delete/move repository operations, and launch-log writes through Core/Data services
+- Added app-local file-backed launcher-button state sync through `IStateSyncNotifier` / `FileStateSyncNotifier`, including external reload deferral while the editor is open
 - Added Avalonia window icon resources, a dedicated draggable chrome row, double-click maximize on the drag area, and custom minimize/maximize/close caption buttons
 
 ### Changed
@@ -24,6 +25,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 ### Tests
 - Added focused xUnit coverage for `praxis.db3` / `praxis.db` storage selection, SQLite v4-to-v5 launcher schema migration, and v2 launcher-field persistence
 - Added focused xUnit coverage for command suggestions/execution, persisted Dock order, launch logs, button deletion, and snapped move persistence
+- Added focused xUnit coverage for state-sync payload parsing, successful save notifications, external reload, and editor conflict detection when another window updates or deletes a button
 - Added source guards for direct XAML loading, embedded icon assets, draggable chrome, and caption button wiring
 
 ### Fixed
@@ -46,6 +48,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - Windows editor `ButtonText` now uses the shared initial-focus path instead of pointer hit-test suppression or repeated caret/selection timers
 - Windows launcher and Dock button labels are optically lowered to sit at the vertical center, and the pseudo-acrylic background uses a softer low-contrast blur-style sheen for environments where true window transparency is unavailable
 - Single-line Avalonia text boxes now keep the caret visible at the right edge by allowing hidden horizontal scrolling instead of disabling horizontal scroll behavior, with modest extra right padding for Command/Search clear buttons
+- README and developer/database/testing docs now describe the current Avalonia editing, drag, theme-switching, and file-backed button sync behavior instead of pointing at removed migration-plan notes or calling those flows unimplemented
 
 ### [1.2.0] - 2026-05-11
 
@@ -538,6 +541,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - SQLite launcher-button 永続化、プラットフォーム対応 app data path 解決、v1 テーブル名互換、`praxis.db3` / 既存 `praxis.db` ファイル対応、`ColorKey` / `ToolTip` / `LastExecutedAtUtc` / `SortOrder` 用の schema version 5 migration を備えた `Praxis.Data` を追加
 - Windows、macOS、および Linux-ready な `xdg-open` 経路で、直接 command 実行と既定アプリ起動を行う desktop launcher execution service を追加
 - command input 実行、command suggestion、永続化された recent Dock order、button delete/move repository 操作、Core/Data service 経由の launch-log 書き込みを再導入
+- `IStateSyncNotifier` / `FileStateSyncNotifier` による app-local なファイルベース launcher-button state sync を追加し、editor が開いている間は外部変更 reload を遅延するようにした
 - Avalonia window icon resource、専用 draggable chrome row、drag area の double-click maximize、カスタム minimize/maximize/close caption button を追加
 
 ### 変更
@@ -551,6 +555,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 ### テスト
 - `praxis.db3` / `praxis.db` storage selection、SQLite v4-to-v5 launcher schema migration、v2 launcher-field persistence の focused xUnit coverage を追加
 - command suggestion/execution、永続化された Dock order、launch log、button deletion、snapped move persistence の focused xUnit coverage を追加
+- state-sync payload parsing、保存成功時の通知、外部変更 reload、他 window が button を更新または削除した場合の editor conflict 検出の focused xUnit coverage を追加
 - direct XAML loading、embedded icon assets、draggable chrome、caption button wiring の source guard を追加
 
 ### 修正
@@ -573,6 +578,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - Windows の編集モーダル `ButtonText` は pointer hit-test 抑止や caret / selection の反復 timer ではなく、Windows / macOS 共通の初期 focus 経路を使うよう変更
 - Windows の launcher / Dock button label は縦方向の見た目中央へ下げ、真の window 透過が効かない環境でも blur 風に見えるよう擬似アクリル背景を低コントラストで柔らかい sheen に調整
 - 単一行の Avalonia text box は水平スクロール動作を無効化せず非表示スクロールにし、Command / Search の clear button 用に控えめな右余白を確保したうえで、入力が表示幅を超えても caret が右端に残って文字列が左へ流れるよう修正
+- README と developer/database/testing docs は、削除済みの移行計画メモへのリンクや未実装扱いの記述を外し、現在の Avalonia editing、drag、theme switching、file-backed button sync の挙動に合わせて更新
 
 ### [1.2.0] - 2026-05-11
 

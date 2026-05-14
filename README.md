@@ -14,9 +14,9 @@
 License: MIT (see [`LICENSE`](LICENSE)).
 
 ## Overview
-Praxis v2 is an Avalonia desktop launcher migration. The app uses strict-MVVM Core models with model-owned launcher button state, a pseudo-acrylic frameless shell, command execution with suggestions, search, free-positioned launcher buttons, a persisted recent Dock, a model-driven status bar, SQLite-backed launcher persistence, launch logging, and basic desktop command/default-app execution.
+Praxis v2 is an Avalonia desktop launcher migration. The app uses strict-MVVM Core models with model-owned launcher button state, a pseudo-acrylic frameless shell, command execution with suggestions, search, free-positioned launcher buttons, a persisted recent Dock, a model-driven status bar, SQLite-backed launcher persistence, launch logging, button editing, drag/multi-select operations, file-backed launcher-button sync, and basic desktop command/default-app execution.
 
-The former .NET MAUI app project has been removed. Existing v1 launcher databases remain readable through the shared data layer: v2 uses the existing `praxis.db3` file when present, also accepts an existing `praxis.db`, and migrates launcher-button schema to version 5. Editing UI, drag UI wiring, theme settings, error logging, and sync flows are still being reintroduced during the v2 migration.
+The former .NET MAUI app project has been removed. Existing v1 launcher databases remain readable through the shared data layer: v2 uses the existing `praxis.db3` file when present, also accepts an existing `praxis.db`, and migrates launcher-button schema to version 5. Theme mode switching is available in the Avalonia shell; persisted theme settings and runtime error-log writes remain migration follow-up work.
 
 ## Supported Platforms
 - Windows: Avalonia desktop on .NET 10
@@ -55,14 +55,13 @@ dotnet build Praxis.Avalonia/Praxis.Avalonia.csproj -c Release --nologo
 - `Praxis.Core/` - UI-independent models, records, policies, and service contracts
 - `Praxis.Data/` - SQLite entities, storage path resolution, and repository implementations
 - `Praxis.Tests/` - xUnit tests for Core policies, v2 model behavior, storage paths, and repository migrations
-- `docs/` - developer, testing, database, branding, and migration notes
+- `docs/` - developer, testing, database, and branding notes
 - `.github/workflows/` - CI and delivery workflows for Avalonia builds
 
 ## Documentation
 - Developer guide: [`docs/DEVELOPER_GUIDE.md`](docs/DEVELOPER_GUIDE.md)
 - Testing guide: [`docs/TESTING_GUIDE.md`](docs/TESTING_GUIDE.md)
 - Database status: [`docs/DATABASE_SCHEMA.md`](docs/DATABASE_SCHEMA.md)
-- v2 migration plan: [`docs/V2_AVALONIA_MIGRATION_PLAN.md`](docs/V2_AVALONIA_MIGRATION_PLAN.md)
 - Branding assets: [`docs/branding/README.md`](docs/branding/README.md)
 
 ---
@@ -74,9 +73,9 @@ dotnet build Praxis.Avalonia/Praxis.Avalonia.csproj -c Release --nologo
 ライセンス: MIT（[`LICENSE`](LICENSE) を参照）。
 
 ## 概要
-Praxis v2 は Avalonia へのデスクトップランチャー移行版です。strict MVVM の Core model がランチャーボタン状態を所有し、擬似アクリル風のフレームレス shell、候補付き Command 実行、Search、自由配置ボタン、永続化される最近使った Dock、Model 駆動のステータスバー、SQLite 永続化、launch log、基本的なデスクトップコマンド/既定アプリ起動を持ちます。
+Praxis v2 は Avalonia へのデスクトップランチャー移行版です。strict MVVM の Core model がランチャーボタン状態を所有し、擬似アクリル風のフレームレス shell、候補付き Command 実行、Search、自由配置ボタン、永続化される最近使った Dock、Model 駆動のステータスバー、SQLite 永続化、launch log、ボタン編集、ドラッグ/複数選択操作、ファイルベースの launcher-button 同期、基本的なデスクトップコマンド/既定アプリ起動を持ちます。
 
-旧 .NET MAUI アプリプロジェクトは削除済みです。既存 v1 の launcher DB は共有 data layer から読み込めます。v2 は既存の `praxis.db3` を優先し、既存の `praxis.db` も受け入れ、launcher button schema を version 5 へ移行します。編集 UI、ドラッグ UI wiring、テーマ設定、error log、同期フローは v2 移行中に戻していきます。
+旧 .NET MAUI アプリプロジェクトは削除済みです。既存 v1 の launcher DB は共有 data layer から読み込めます。v2 は既存の `praxis.db3` を優先し、既存の `praxis.db` も受け入れ、launcher button schema を version 5 へ移行します。Avalonia shell ではテーマモード切り替えを利用できます。テーマ設定の永続化と runtime error-log 書き込みは今後の移行対象です。
 
 ## 対応プラットフォーム
 - Windows: .NET 10 上の Avalonia desktop
@@ -115,12 +114,11 @@ dotnet build Praxis.Avalonia/Praxis.Avalonia.csproj -c Release --nologo
 - `Praxis.Core/` - UI 非依存の Model、record、policy、service contract
 - `Praxis.Data/` - SQLite entity、保存先解決、repository 実装
 - `Praxis.Tests/` - Core policy、v2 Model、保存先、repository migration の xUnit テスト
-- `docs/` - 開発者向け、テスト、DB、ブランディング、移行メモ
+- `docs/` - 開発者向け、テスト、DB、ブランディングのメモ
 - `.github/workflows/` - Avalonia build 用 CI / delivery workflow
 
 ## ドキュメント
 - 開発者ガイド: [`docs/DEVELOPER_GUIDE.md`](docs/DEVELOPER_GUIDE.md)
 - テストガイド: [`docs/TESTING_GUIDE.md`](docs/TESTING_GUIDE.md)
 - DB 状態: [`docs/DATABASE_SCHEMA.md`](docs/DATABASE_SCHEMA.md)
-- v2 移行計画: [`docs/V2_AVALONIA_MIGRATION_PLAN.md`](docs/V2_AVALONIA_MIGRATION_PLAN.md)
 - ブランディング素材: [`docs/branding/README.md`](docs/branding/README.md)

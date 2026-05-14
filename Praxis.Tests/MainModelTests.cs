@@ -3,7 +3,7 @@ using Praxis.Core.Services;
 
 namespace Praxis.Tests;
 
-public class V2MainModelTests
+public class MainModelTests
 {
     [Fact]
     public void AddButton_AddsModelOwnedButtonState()
@@ -335,6 +335,113 @@ public class V2MainModelTests
     }
 
     [Fact]
+    public async Task SaveEditorAsync_NotifiesStateSyncAfterSuccessfulSave()
+    {
+        var repository = new InMemoryLauncherButtonRepository();
+        var stateSyncNotifier = new RecordingStateSyncNotifier();
+        var model = new MainModel(new StubLauncherExecutionService(), repository, stateSyncNotifier);
+        model.OpenNewButtonEditor(new NewButtonPayload { X = 40, Y = 40, HasPosition = true });
+        Assert.NotNull(model.EditorButton);
+        model.EditorButton.Text = "Docs";
+        model.EditorButton.Command = "docs";
+
+        await model.SaveEditorAsync();
+
+        Assert.Equal(1, stateSyncNotifier.NotifyCount);
+    }
+
+    [Fact]
+    public async Task SaveEditorAsync_OpensConflictDialogWhenButtonChangedExternally()
+    {
+        var repository = new InMemoryLauncherButtonRepository();
+        var record = new LauncherButtonRecord
+        {
+            Command = "docs",
+            ButtonText = "Docs",
+        };
+        await repository.UpsertButtonAsync(record);
+        var model = new MainModel(new StubLauncherExecutionService(), repository);
+        await model.InitializeAsync();
+        var button = model.Buttons.Single();
+        model.OpenEditor(button);
+        Assert.NotNull(model.EditorButton);
+        model.EditorButton.Text = "Local Docs";
+
+        await Task.Delay(20);
+        var remote = LauncherButtonModelMapper.ToRecord(button);
+        remote.ButtonText = "Remote Docs";
+        await repository.UpsertButtonAsync(remote);
+
+        await model.SaveEditorAsync();
+
+        Assert.True(model.IsConflictDialogOpen);
+        Assert.True(model.IsEditorOpen);
+        Assert.Equal("Button changed in another window", model.ConflictTitle);
+        Assert.Equal("Remote Docs", (await repository.GetByIdAsync(button.Id, forceReload: true))?.ButtonText);
+
+        model.ReloadConflict();
+
+        Assert.False(model.IsConflictDialogOpen);
+        Assert.Equal("Remote Docs", model.EditorButton?.Text);
+    }
+
+    [Fact]
+    public async Task SaveEditorAsync_OpensConflictDialogWhenButtonWasDeletedExternally()
+    {
+        var repository = new InMemoryLauncherButtonRepository();
+        var record = new LauncherButtonRecord
+        {
+            Command = "docs",
+            ButtonText = "Docs",
+        };
+        await repository.UpsertButtonAsync(record);
+        var model = new MainModel(new StubLauncherExecutionService(), repository);
+        await model.InitializeAsync();
+        var button = model.Buttons.Single();
+        model.OpenEditor(button);
+        Assert.NotNull(model.EditorButton);
+        model.EditorButton.Text = "Local Docs";
+        await repository.DeleteButtonAsync(button.Id);
+
+        await model.SaveEditorAsync();
+
+        Assert.True(model.IsConflictDialogOpen);
+        Assert.True(model.IsEditorOpen);
+        Assert.Equal("Button deleted in another window", model.ConflictTitle);
+
+        model.ReloadConflict();
+
+        Assert.False(model.IsConflictDialogOpen);
+        Assert.False(model.IsEditorOpen);
+        Assert.Null(model.EditorButton);
+    }
+
+    [Fact]
+    public async Task ReloadFromExternalChangeAsync_ReloadsButtonsAndDockOrder()
+    {
+        var repository = new InMemoryLauncherButtonRepository();
+        var first = new LauncherButtonRecord { Command = "first", ButtonText = "First" };
+        var second = new LauncherButtonRecord { Command = "second", ButtonText = "Second" };
+        await repository.UpsertButtonAsync(first);
+        await repository.UpsertButtonAsync(second);
+        var model = new MainModel(new StubLauncherExecutionService(), repository);
+        await model.InitializeAsync();
+
+        var remoteFirst = new LauncherButtonRecord(first)
+        {
+            ButtonText = "First remote",
+        };
+        await repository.UpsertButtonAsync(remoteFirst);
+        await repository.SetDockButtonIdsAsync([first.Id]);
+
+        await model.ReloadFromExternalChangeAsync();
+
+        Assert.Equal("First remote", model.Buttons.Single(button => button.Id == first.Id).Text);
+        Assert.Equal([first.Id], model.RecentButtons.Select(static button => button.Id));
+        Assert.Equal(LauncherStatusKind.Success, model.Status.Kind);
+    }
+
+    [Fact]
     public async Task UndoAsync_RevertsSavedAdd()
     {
         var repository = new InMemoryLauncherButtonRepository();
@@ -391,6 +498,27 @@ public class V2MainModelTests
         {
             ExecutedButtons.Add(button);
             return Task.FromResult(result);
+        }
+    }
+
+    private sealed class RecordingStateSyncNotifier : IStateSyncNotifier
+    {
+        public event EventHandler<StateSyncChangedEventArgs>? ButtonsChanged
+        {
+            add { }
+            remove { }
+        }
+
+        public int NotifyCount { get; private set; }
+
+        public Task NotifyButtonsChangedAsync(CancellationToken cancellationToken = default)
+        {
+            NotifyCount++;
+            return Task.CompletedTask;
+        }
+
+        public void Dispose()
+        {
         }
     }
 }

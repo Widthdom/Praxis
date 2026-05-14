@@ -21,11 +21,12 @@ dotnet build Praxis.slnx -c Debug --nologo
 
 ### Current Coverage Focus
 - `Praxis.Core/Logic`: UI-independent policies and resolvers.
-- `Praxis.Core/Models`: v2 Model-owned state and service contracts.
+- `Praxis.Core/Models`: v2 Model-owned state, editor conflict handling, external reload behavior, and service contracts.
 - `Praxis.Data`: storage path selection, `praxis.db3` / `praxis.db` compatibility, SQLite schema migration, v2 launcher field persistence, Dock order, and launch logs.
+- `Praxis.Avalonia`: source guards for direct XAML loading, caption-button wiring, embedded icons, and app-local services that are otherwise hard to cover without UI automation.
 - `.github/workflows`: CI/delivery guards for Avalonia builds and coverage artifacts.
 
-The former MAUI app-layer linked-source tests were removed with the MAUI project. New Avalonia behavior should be tested by moving reusable state and policy into `Praxis.Core` or `Praxis.Data`, then adding focused xUnit coverage there. View-only behavior should be covered by narrow source guards or UI-level checks when the Avalonia surface becomes stable enough for that.
+The former MAUI app-layer linked-source tests were removed with the MAUI project. New Avalonia behavior should be tested by moving reusable state and policy into `Praxis.Core` or `Praxis.Data`, then adding focused xUnit coverage there. View-only behavior should be covered by narrow source guards or UI-level checks when the Avalonia surface becomes stable enough for that. Cross-window launcher-button sync is split this way: payload parsing and Model reload/conflict behavior are covered in Core tests, while `FileStateSyncNotifier` integration is guarded by source tests.
 
 ## 日本語
 
@@ -48,8 +49,9 @@ dotnet build Praxis.slnx -c Debug --nologo
 
 ### 現在のカバレッジ方針
 - `Praxis.Core/Logic`: UI 非依存の policy / resolver。
-- `Praxis.Core/Models`: v2 の Model 所有状態と service contract。
+- `Praxis.Core/Models`: v2 の Model 所有状態、editor conflict 処理、外部変更 reload、service contract。
 - `Praxis.Data`: 保存先選択、`praxis.db3` / `praxis.db` 互換、SQLite schema migration、v2 launcher field 永続化、Dock 順、launch log。
+- `Praxis.Avalonia`: direct XAML loading、caption button wiring、embedded icon、UI automation なしでは扱いにくい app-local service の source guard。
 - `.github/workflows`: Avalonia build と coverage artifact の workflow guard。
 
-旧 MAUI app-layer の linked-source tests は MAUI プロジェクト削除に合わせて削除しました。新しい Avalonia 挙動は、再利用可能な状態や policy を `Praxis.Core` または `Praxis.Data` へ寄せ、そこで focused xUnit coverage を追加してください。View-only の挙動は、Avalonia surface が安定してから narrow source guard または UI-level check で保護します。
+旧 MAUI app-layer の linked-source tests は MAUI プロジェクト削除に合わせて削除しました。新しい Avalonia 挙動は、再利用可能な状態や policy を `Praxis.Core` または `Praxis.Data` へ寄せ、そこで focused xUnit coverage を追加してください。View-only の挙動は、Avalonia surface が安定してから narrow source guard または UI-level check で保護します。複数ウィンドウ間 launcher-button 同期はこの方針で分割し、payload parsing と Model の reload / conflict 挙動は Core test で、`FileStateSyncNotifier` の組み込みは source guard で保護します。
