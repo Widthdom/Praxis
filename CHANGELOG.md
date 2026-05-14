@@ -45,6 +45,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - `Ctrl+Shift+H` now returns Avalonia to the system theme instead of leaving an in-between fixed palette; window light/dark classes and theme-dependent bindings are refreshed from the actual OS-selected theme
 - Windows editor `ButtonText` now uses the shared initial-focus path instead of pointer hit-test suppression or repeated caret/selection timers
 - Windows launcher and Dock button labels are optically lowered to sit at the vertical center, and the pseudo-acrylic background uses a softer low-contrast blur-style sheen for environments where true window transparency is unavailable
+- Single-line Avalonia text boxes now keep the caret visible at the right edge by allowing hidden horizontal scrolling instead of disabling horizontal scroll behavior, with modest extra right padding for Command/Search clear buttons
 
 ### [1.2.0] - 2026-05-11
 
@@ -571,6 +572,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - `Ctrl+Shift+H` は固定の中間 palette ではなく system theme へ戻し、OS が選んだ実際の light / dark から window class と theme 依存 binding を再評価するよう修正
 - Windows の編集モーダル `ButtonText` は pointer hit-test 抑止や caret / selection の反復 timer ではなく、Windows / macOS 共通の初期 focus 経路を使うよう変更
 - Windows の launcher / Dock button label は縦方向の見た目中央へ下げ、真の window 透過が効かない環境でも blur 風に見えるよう擬似アクリル背景を低コントラストで柔らかい sheen に調整
+- 単一行の Avalonia text box は水平スクロール動作を無効化せず非表示スクロールにし、Command / Search の clear button 用に控えめな右余白を確保したうえで、入力が表示幅を超えても caret が右端に残って文字列が左へ流れるよう修正
 
 ### [1.2.0] - 2026-05-11
 

@@ -127,10 +127,10 @@
         <Grid>
           <TextBox x:Name="CommandBox"
                    Classes="praxis-input"
-                   Padding="14,10,32,10"
+                   Padding="14,10,36,10"
                    PlaceholderText=""
                    TextWrapping="NoWrap"
-                   ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                   ScrollViewer.HorizontalScrollBarVisibility="Hidden"
                    ScrollViewer.VerticalScrollBarVisibility="Disabled"
                    Text="{Binding CommandText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
             <TextBox.KeyBindings>
@@ -200,10 +200,10 @@
       <Grid Grid.Column="2">
         <TextBox x:Name="SearchBox"
                  Classes="praxis-input"
-                 Padding="14,10,32,10"
+                 Padding="14,10,36,10"
                  PlaceholderText=""
                  TextWrapping="NoWrap"
-                 ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                 ScrollViewer.HorizontalScrollBarVisibility="Hidden"
                  ScrollViewer.VerticalScrollBarVisibility="Disabled"
                  Text="{Binding SearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
         <Canvas Classes="praxis-placeholder-icon praxis-search-icon"
@@ -522,7 +522,7 @@
                      TabIndex="8"
                      IsReadOnly="True"
                      TextWrapping="NoWrap"
-                     ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                     ScrollViewer.HorizontalScrollBarVisibility="Hidden"
                      ScrollViewer.VerticalScrollBarVisibility="Disabled"
                      Text="{Binding EditorButton.Id}" />
             <Button Classes="praxis-copy-button"
@@ -546,7 +546,7 @@
                      x:Name="ModalButtonTextEntry"
                      TabIndex="0"
                      TextWrapping="NoWrap"
-                     ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                     ScrollViewer.HorizontalScrollBarVisibility="Hidden"
                      ScrollViewer.VerticalScrollBarVisibility="Disabled"
                      Text="{Binding EditorButton.Text, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
             <Button Classes="praxis-copy-button"
@@ -571,7 +571,7 @@
                      x:Name="ModalCommandEntry"
                      TabIndex="1"
                      TextWrapping="NoWrap"
-                     ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                     ScrollViewer.HorizontalScrollBarVisibility="Hidden"
                      ScrollViewer.VerticalScrollBarVisibility="Disabled"
                      Text="{Binding EditorButton.Command, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
             <Button Classes="praxis-copy-button"
@@ -596,7 +596,7 @@
                      x:Name="ModalToolEntry"
                      TabIndex="2"
                      TextWrapping="NoWrap"
-                     ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                     ScrollViewer.HorizontalScrollBarVisibility="Hidden"
                      ScrollViewer.VerticalScrollBarVisibility="Disabled"
                      Text="{Binding EditorButton.CommandPath, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
             <Button Classes="praxis-copy-button"
@@ -621,7 +621,7 @@
                      x:Name="ModalArgumentsEntry"
                      TabIndex="3"
                      TextWrapping="NoWrap"
-                     ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                     ScrollViewer.HorizontalScrollBarVisibility="Hidden"
                      ScrollViewer.VerticalScrollBarVisibility="Disabled"
                      Text="{Binding EditorButton.Arguments, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
             <Button Classes="praxis-copy-button"

@@ -146,6 +146,7 @@
     <Setter Property="Height" Value="42" />
     <Setter Property="MinHeight" Value="42" />
     <Setter Property="VerticalContentAlignment" Value="Center" />
+    <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Hidden" />
     <Setter Property="CaretBrush" Value="{StaticResource PraxisTextPrimaryBrush}" />
     <Setter Property="SelectionBrush" Value="#8A9A9A9A" />
     <Setter Property="FocusAdorner" Value="{x:Null}" />
