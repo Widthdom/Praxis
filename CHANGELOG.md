@@ -6,6 +6,8 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 
 ## [Unreleased]
 
+### [2.0.0] - 2026-05-14
+
 ### Added
 - Started the v2.0.0 Avalonia migration branch with strict-MVVM Core model structure, an Avalonia desktop shell, and a migration plan covering platform abstractions, pseudo-acrylic UI direction, DB compatibility risks, and future Linux readiness
 - Added `Praxis.Data` with SQLite launcher-button persistence, platform-aware app data path resolution, v1 table-name compatibility, `praxis.db3` / existing `praxis.db` file support, and schema migration to version 5 for `ColorKey`, `ToolTip`, `LastExecutedAtUtc`, and `SortOrder`
@@ -536,6 +538,8 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 
 ## [Unreleased]
 
+### [2.0.0] - 2026-05-14
+
 ### 追加
 - strict MVVM の Core model 構成、Avalonia デスクトップシェル、プラットフォーム抽象化・擬似アクリル UI 方針・DB 互換リスク・将来の Linux 対応を含む移行計画を持つ v2.0.0 Avalonia 移行ブランチを開始
 - SQLite launcher-button 永続化、プラットフォーム対応 app data path 解決、v1 テーブル名互換、`praxis.db3` / 既存 `praxis.db` ファイル対応、`ColorKey` / `ToolTip` / `LastExecutedAtUtc` / `SortOrder` 用の schema version 5 migration を備えた `Praxis.Data` を追加
@@ -934,7 +938,8 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - 重複 `using` ディレクティブの削除と `using` 順序の正規化
 - `MainViewModel` と各 partial クラスに主要ライフサイクルイベントの `LogInfo` 呼び出しを追加
 
-[Unreleased]: https://github.com/Widthdom/Praxis/compare/v1.2.0...HEAD
+[Unreleased]: https://github.com/Widthdom/Praxis/compare/v2.0.0...HEAD
+[2.0.0]: https://github.com/Widthdom/Praxis/compare/v1.2.0...v2.0.0
 [1.2.0]: https://github.com/Widthdom/Praxis/compare/v1.1.13...v1.2.0
 [1.1.13]: https://github.com/Widthdom/Praxis/compare/v1.1.12...v1.1.13
 [1.1.12]: https://github.com/Widthdom/Praxis/compare/v1.1.11...v1.1.12
