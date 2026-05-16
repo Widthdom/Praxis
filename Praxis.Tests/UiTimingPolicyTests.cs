@@ -10,7 +10,11 @@ public class UiTimingPolicyTests
         Assert.Equal(TimeSpan.FromMilliseconds(24), UiTimingPolicy.WindowsFocusRestorePrimaryDelay);
         Assert.Equal(TimeSpan.FromMilliseconds(120), UiTimingPolicy.WindowsFocusRestoreSecondaryDelay);
         Assert.Equal(TimeSpan.FromMilliseconds(900), UiTimingPolicy.MacActivationFocusWindow);
+        Assert.Equal(TimeSpan.FromMilliseconds(45), UiTimingPolicy.MacActivationFocusRequestCoalesceDelay);
         Assert.Equal(TimeSpan.FromMilliseconds(800), UiTimingPolicy.MacSearchFocusUserIntentWindow);
+        Assert.Equal(TimeSpan.FromMilliseconds(20), UiTimingPolicy.MacActivationFocusRetryFirstDelay);
+        Assert.Equal(TimeSpan.FromMilliseconds(160), UiTimingPolicy.MacActivationFocusRetrySecondDelay);
+        Assert.Equal(TimeSpan.FromMilliseconds(420), UiTimingPolicy.MacActivationFocusRetryThirdDelay);
         Assert.Equal(TimeSpan.FromMilliseconds(60), UiTimingPolicy.ModalOpenInitialFocusDelay);
         Assert.Equal(TimeSpan.FromMilliseconds(16), UiTimingPolicy.MacMiddleButtonPollingInterval);
         Assert.Equal((uint)110, UiTimingPolicy.SelectionRectFadeOutDurationMs);

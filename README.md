@@ -14,7 +14,7 @@
 License: MIT (see [`LICENSE`](LICENSE)).
 
 ## Overview
-Praxis v2 is an Avalonia desktop launcher migration. The app uses strict-MVVM Core models with model-owned launcher button state, a pseudo-acrylic frameless shell, command execution with suggestions, search, free-positioned launcher buttons on a dynamically sized placement surface, a persisted recent Dock, a model-driven status bar, SQLite-backed launcher persistence, launch logging, button editing, drag/multi-select operations, file-backed launcher-button sync, and basic desktop command/default-app execution.
+Praxis v2 is an Avalonia desktop launcher migration. The app uses strict-MVVM Core models with model-owned launcher button state, a pseudo-acrylic frameless shell, command execution with suggestions, search, free-positioned launcher buttons on a dynamically sized placement surface, a persisted recent Dock, a model-driven status bar, SQLite-backed launcher persistence, launch logging, button editing, drag/multi-select operations, file-backed launcher-button sync, and basic desktop command/default-app execution. When the Praxis window becomes active, the Command field is focused automatically so command execution is ready immediately.
 
 The former .NET MAUI app project has been removed. Existing v1 launcher databases remain readable through the shared data layer: v2 uses the existing `praxis.db3` file when present, also accepts an existing `praxis.db`, and migrates launcher-button schema to version 5. Theme mode switching is available in the Avalonia shell; persisted theme settings and runtime error-log writes remain migration follow-up work.
 
@@ -73,7 +73,7 @@ dotnet build Praxis.Avalonia/Praxis.Avalonia.csproj -c Release --nologo
 ライセンス: MIT（[`LICENSE`](LICENSE) を参照）。
 
 ## 概要
-Praxis v2 は Avalonia へのデスクトップランチャー移行版です。strict MVVM の Core model がランチャーボタン状態を所有し、擬似アクリル風のフレームレス shell、候補付き Command 実行、Search、動的に広がる配置面上の自由配置ボタン、永続化される最近使った Dock、Model 駆動のステータスバー、SQLite 永続化、launch log、ボタン編集、ドラッグ/複数選択操作、ファイルベースの launcher-button 同期、基本的なデスクトップコマンド/既定アプリ起動を持ちます。
+Praxis v2 は Avalonia へのデスクトップランチャー移行版です。strict MVVM の Core model がランチャーボタン状態を所有し、擬似アクリル風のフレームレス shell、候補付き Command 実行、Search、動的に広がる配置面上の自由配置ボタン、永続化される最近使った Dock、Model 駆動のステータスバー、SQLite 永続化、launch log、ボタン編集、ドラッグ/複数選択操作、ファイルベースの launcher-button 同期、基本的なデスクトップコマンド/既定アプリ起動を持ちます。Praxis ウィンドウがアクティブになると Command 欄へ自動フォーカスし、すぐに Command 実行できる状態にします。
 
 旧 .NET MAUI アプリプロジェクトは削除済みです。既存 v1 の launcher DB は共有 data layer から読み込めます。v2 は既存の `praxis.db3` を優先し、既存の `praxis.db` も受け入れ、launcher button schema を version 5 へ移行します。Avalonia shell ではテーマモード切り替えを利用できます。テーマ設定の永続化と runtime error-log 書き込みは今後の移行対象です。
 
