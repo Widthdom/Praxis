@@ -43,6 +43,10 @@ public class AvaloniaShellSourceGuardTests
         Assert.Contains("praxis-placeholder-icon", xaml, StringComparison.Ordinal);
         Assert.DoesNotContain("Content=\"&gt;\"", xaml, StringComparison.Ordinal);
         Assert.Contains("HorizontalScrollBarVisibility=\"Auto\"", xaml, StringComparison.Ordinal);
+        Assert.Contains("Width=\"{Binding PlacementSurfaceWidth}\"", xaml, StringComparison.Ordinal);
+        Assert.Contains("Height=\"{Binding PlacementSurfaceHeight}\"", xaml, StringComparison.Ordinal);
+        Assert.DoesNotContain("MinWidth=\"1600\"", xaml, StringComparison.Ordinal);
+        Assert.DoesNotContain("MinHeight=\"880\"", xaml, StringComparison.Ordinal);
         Assert.Contains("IsTabStop=\"False\"", xaml, StringComparison.Ordinal);
         Assert.DoesNotContain("PointerPressed=\"", xaml, StringComparison.Ordinal);
         Assert.DoesNotContain("KeyDown=\"", xaml, StringComparison.Ordinal);

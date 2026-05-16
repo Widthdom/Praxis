@@ -164,6 +164,25 @@ public class MainModelTests
     }
 
     [Fact]
+    public async Task DeleteButtonAsync_ShrinksPlacementSurfaceAfterRemovingFarButton()
+    {
+        var repository = new InMemoryLauncherButtonRepository();
+        var near = new LauncherButtonRecord { Command = "near", ButtonText = "Near", X = 20, Y = 20 };
+        var far = new LauncherButtonRecord { Command = "far", ButtonText = "Far", X = 1000, Y = 260 };
+        await repository.UpsertButtonAsync(near);
+        await repository.UpsertButtonAsync(far);
+        var model = new MainModel(new StubLauncherExecutionService(), repository);
+        await model.InitializeAsync();
+        model.UpdateViewport(0, 0, 500, 300);
+        Assert.True(model.PlacementSurfaceWidth > 500);
+
+        await model.DeleteButtonAsync(model.Buttons.Single(button => button.Id == far.Id));
+
+        Assert.Equal(500, model.PlacementSurfaceWidth);
+        Assert.Equal(300, model.PlacementSurfaceHeight);
+    }
+
+    [Fact]
     public async Task DeleteButtonAsync_RemovesSelectedGroupWhenTargetIsSelected()
     {
         var repository = new InMemoryLauncherButtonRepository();
@@ -276,6 +295,57 @@ public class MainModelTests
         model.UpdateViewport(1760, 0, 200, 200);
 
         Assert.Same(far, Assert.Single(model.VisibleButtons));
+    }
+
+    [Fact]
+    public void UpdateViewport_SizesPlacementSurfaceToViewportWhenVisibleButtonsFit()
+    {
+        var model = new MainModel(
+            new StubLauncherExecutionService(),
+            new InMemoryLauncherButtonRepository());
+        model.Buttons.Add(new LauncherButtonModel { Text = "Fit", X = 20, Y = 30, Width = 120, Height = 40 });
+        model.SearchText = "fit";
+
+        model.UpdateViewport(0, 0, 500, 300);
+
+        Assert.Equal(500, model.PlacementSurfaceWidth);
+        Assert.Equal(300, model.PlacementSurfaceHeight);
+    }
+
+    [Fact]
+    public void UpdateViewport_ExpandsPlacementSurfaceToVisibleButtonRightAndBottomEdges()
+    {
+        var model = new MainModel(
+            new StubLauncherExecutionService(),
+            new InMemoryLauncherButtonRepository());
+        model.Buttons.Add(new LauncherButtonModel { Text = "Far", X = 480, Y = 260, Width = 120, Height = 50 });
+        model.SearchText = "far";
+
+        model.UpdateViewport(0, 0, 500, 300);
+
+        Assert.Equal(600, model.PlacementSurfaceWidth);
+        Assert.Equal(310, model.PlacementSurfaceHeight);
+    }
+
+    [Fact]
+    public void SearchFilter_ClampsViewportWhenPlacementSurfaceShrinks()
+    {
+        var model = new MainModel(
+            new StubLauncherExecutionService(),
+            new InMemoryLauncherButtonRepository());
+        var near = new LauncherButtonModel { Text = "Near", X = 20, Y = 20, Width = 120, Height = 40 };
+        var far = new LauncherButtonModel { Text = "Far", X = 1000, Y = 20, Width = 120, Height = 40 };
+        model.Buttons.Add(near);
+        model.Buttons.Add(far);
+        model.SearchText = "ar";
+        model.UpdateViewport(900, 0, 300, 200);
+        Assert.Same(far, Assert.Single(model.VisibleButtons));
+
+        model.SearchText = "near";
+
+        Assert.Equal(300, model.PlacementSurfaceWidth);
+        Assert.Equal(200, model.PlacementSurfaceHeight);
+        Assert.Same(near, Assert.Single(model.VisibleButtons));
     }
 
     [Fact]

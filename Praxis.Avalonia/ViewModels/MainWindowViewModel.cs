@@ -95,6 +95,10 @@ public sealed class MainWindowViewModel : ObservableObject
 
     public string ConflictMessage => Model.ConflictMessage;
 
+    public double PlacementSurfaceWidth => Model.PlacementSurfaceWidth;
+
+    public double PlacementSurfaceHeight => Model.PlacementSurfaceHeight;
+
     public IAsyncRelayCommand InitializeCommand { get; }
 
     public IAsyncRelayCommand AddButtonCommand { get; }

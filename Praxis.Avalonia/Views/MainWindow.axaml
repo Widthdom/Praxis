@@ -300,16 +300,16 @@
                     HorizontalScrollBarVisibility="Auto"
                     VerticalScrollBarVisibility="Auto">
         <Canvas x:Name="PlacementSurface"
-                MinWidth="1600"
-                MinHeight="880"
+                Width="{Binding PlacementSurfaceWidth}"
+                Height="{Binding PlacementSurfaceHeight}"
                 Background="Transparent">
           <ItemsControl ItemsSource="{Binding VisibleButtons}"
                         Canvas.Left="0"
                         Canvas.Top="0">
             <ItemsControl.ItemsPanel>
               <ItemsPanelTemplate>
-                <Canvas MinWidth="1600"
-                        MinHeight="880" />
+                <Canvas Width="{Binding $parent[Window].DataContext.PlacementSurfaceWidth}"
+                        Height="{Binding $parent[Window].DataContext.PlacementSurfaceHeight}" />
               </ItemsPanelTemplate>
             </ItemsControl.ItemsPanel>
             <ItemsControl.Styles>
