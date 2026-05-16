@@ -6,6 +6,8 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 
 ## [Unreleased]
 
+### [2.0.1] - 2026-05-16
+
 ### Fixed
 - Windows top-edge hit testing now prioritizes native vertical resize over the custom caption drag region, so grabbing the top window edge can resize the Praxis window vertically
 - Avalonia Windows and macOS windows now restore focus to the Command field, with the text selected, when the Praxis window becomes active and no editor/conflict dialog is open
@@ -543,6 +545,8 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 
 ## [Unreleased]
 
+### [2.0.1] - 2026-05-16
+
 ### 修正
 - Windows の上辺 hit test で custom caption drag 領域より native の縦方向リサイズを優先し、Praxis ウィンドウ上辺をつかんで縦方向にリサイズできるようになりました
 - Avalonia 版の Windows/macOS で、editor や conflict dialog が開いていない時に Praxis ウィンドウがアクティブになると Command 欄へフォーカスし、テキストを選択するようになりました
@@ -948,7 +952,8 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - 重複 `using` ディレクティブの削除と `using` 順序の正規化
 - `MainViewModel` と各 partial クラスに主要ライフサイクルイベントの `LogInfo` 呼び出しを追加
 
-[Unreleased]: https://github.com/Widthdom/Praxis/compare/v2.0.0...HEAD
+[Unreleased]: https://github.com/Widthdom/Praxis/compare/v2.0.1...HEAD
+[2.0.1]: https://github.com/Widthdom/Praxis/compare/v2.0.0...v2.0.1
 [2.0.0]: https://github.com/Widthdom/Praxis/compare/v1.2.0...v2.0.0
 [1.2.0]: https://github.com/Widthdom/Praxis/compare/v1.1.13...v1.2.0
 [1.1.13]: https://github.com/Widthdom/Praxis/compare/v1.1.12...v1.1.13
