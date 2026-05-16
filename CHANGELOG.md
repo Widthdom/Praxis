@@ -7,6 +7,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 ## [Unreleased]
 
 ### Fixed
+- Windows top-edge hit testing now prioritizes native vertical resize over the custom caption drag region, so grabbing the top window edge can resize the Praxis window vertically
 - Avalonia Windows and macOS windows now restore focus to the Command field, with the text selected, when the Praxis window becomes active and no editor/conflict dialog is open
 - The Avalonia placement surface now grows from the visible launcher-button bounds instead of keeping a fixed 1600x880 extent, so Windows and macOS no longer show placement scrollbars while all visible buttons fit in the current viewport
 
@@ -543,6 +544,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 ## [Unreleased]
 
 ### 修正
+- Windows の上辺 hit test で custom caption drag 領域より native の縦方向リサイズを優先し、Praxis ウィンドウ上辺をつかんで縦方向にリサイズできるようになりました
 - Avalonia 版の Windows/macOS で、editor や conflict dialog が開いていない時に Praxis ウィンドウがアクティブになると Command 欄へフォーカスし、テキストを選択するようになりました
 - Avalonia の配置面は固定 1600x880 ではなく表示中のランチャーボタンの範囲から広がるようになり、Windows/macOS で表示中ボタンが現在の viewport に収まっている時は配置面のスクロールバーが出なくなりました
 
