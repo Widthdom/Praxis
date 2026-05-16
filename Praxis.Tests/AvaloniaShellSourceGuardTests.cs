@@ -34,6 +34,19 @@ public class AvaloniaShellSourceGuardTests
     }
 
     [Fact]
+    public void MainWindow_WindowsHitTest_PrioritizesTopResizeBeforeCaptionDrag()
+    {
+        var behavior = ReadRepositoryFile("Praxis.Avalonia", "Behaviors", "MainWindowInteractionBehavior.cs");
+
+        Assert.Contains("WindowsTopResizeHeightDip", behavior, StringComparison.Ordinal);
+        Assert.Contains("WindowsWindowHitTestPolicy.ResolveTopBandHit", behavior, StringComparison.Ordinal);
+        Assert.Contains("WindowsWindowHitTestZone.Top => (IntPtr)HtTop", behavior, StringComparison.Ordinal);
+        Assert.Contains("WindowsWindowHitTestZone.TopLeft => (IntPtr)HtTopLeft", behavior, StringComparison.Ordinal);
+        Assert.Contains("WindowsWindowHitTestZone.TopRight => (IntPtr)HtTopRight", behavior, StringComparison.Ordinal);
+        Assert.Contains("WindowsWindowHitTestZone.Caption => (IntPtr)HtCaption", behavior, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void MainWindow_UsesIconPlaceholdersAndPointerSurface()
     {
         var xaml = ReadRepositoryFile("Praxis.Avalonia", "Views", "MainWindow.axaml");

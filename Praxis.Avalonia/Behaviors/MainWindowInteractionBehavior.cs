@@ -46,6 +46,9 @@ public sealed class MainWindowInteractionBehavior
     private const int WmSetIcon = 0x0080;
     private const int WmNcHitTest = 0x0084;
     private const int HtCaption = 2;
+    private const int HtTop = 12;
+    private const int HtTopLeft = 13;
+    private const int HtTopRight = 14;
     private const int GclpHIcon = -14;
     private const int GclpHIconSmall = -34;
     private const int GwlStyle = -16;
@@ -61,6 +64,8 @@ public sealed class MainWindowInteractionBehavior
     private const double MacCornerSnapZoneRatio = 0.30;
     private const int MacEdgeSnapRetryLimit = 50;
     private const int MacNormalMaximizeTolerancePixels = 12;
+    private const double WindowsTopResizeHeightDip = 6;
+    private const double WindowsTopResizeCornerWidthDip = 10;
 
     private readonly Window window;
     private Canvas? placementSurface;
@@ -1310,16 +1315,17 @@ public sealed class MainWindowInteractionBehavior
 
     private IntPtr WindowsWndProc(IntPtr hwnd, int message, IntPtr wParam, IntPtr lParam)
     {
-        if (message == WmNcHitTest && IsWindowsCaptionHit(hwnd, lParam))
+        if (message == WmNcHitTest && TryResolveWindowsTopBandHit(hwnd, lParam, out var hitTest))
         {
-            return (IntPtr)HtCaption;
+            return hitTest;
         }
 
         return CallWindowProc(originalWindowsWndProc, hwnd, message, wParam, lParam);
     }
 
-    private bool IsWindowsCaptionHit(IntPtr hwnd, IntPtr lParam)
+    private bool TryResolveWindowsTopBandHit(IntPtr hwnd, IntPtr lParam, out IntPtr hitTest)
     {
+        hitTest = IntPtr.Zero;
         if (!GetWindowRect(hwnd, out var rect))
         {
             return false;
@@ -1333,11 +1339,26 @@ public sealed class MainWindowInteractionBehavior
         var width = rect.Right - rect.Left;
         var captionHeight = (int)Math.Round(WindowsCaptionHitHeightDip * scaling);
         var captionButtonsWidth = (int)Math.Round(WindowsCaptionButtonWidthDip * scaling);
+        var topResizeHeight = (int)Math.Round(WindowsTopResizeHeightDip * scaling);
+        var topCornerWidth = (int)Math.Round(WindowsTopResizeCornerWidthDip * scaling);
 
-        return localY >= 0
-            && localY < captionHeight
-            && localX >= 0
-            && localX < width - captionButtonsWidth;
+        hitTest = WindowsWindowHitTestPolicy.ResolveTopBandHit(
+            localX,
+            localY,
+            width,
+            captionHeight,
+            captionButtonsWidth,
+            topResizeHeight,
+            topCornerWidth) switch
+        {
+            WindowsWindowHitTestZone.Caption => (IntPtr)HtCaption,
+            WindowsWindowHitTestZone.Top => (IntPtr)HtTop,
+            WindowsWindowHitTestZone.TopLeft => (IntPtr)HtTopLeft,
+            WindowsWindowHitTestZone.TopRight => (IntPtr)HtTopRight,
+            _ => IntPtr.Zero,
+        };
+
+        return hitTest != IntPtr.Zero;
     }
 
     private void ReleaseWindowsWindowIcons()
