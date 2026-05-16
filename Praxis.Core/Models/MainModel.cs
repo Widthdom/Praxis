@@ -65,6 +65,12 @@ public partial class MainModel : ObservableObject
     [ObservableProperty]
     private string conflictMessage = "Another Praxis window changed this button. Reload the latest data or overwrite it with the current edit.";
 
+    [ObservableProperty]
+    private double placementSurfaceWidth;
+
+    [ObservableProperty]
+    private double placementSurfaceHeight;
+
     private bool editorCreatesNewButton;
     private bool pendingExternalReload;
     private int externalReloadInProgress;
@@ -101,6 +107,7 @@ public partial class MainModel : ObservableObject
         viewportY = Math.Max(0, scrollY);
         viewportWidth = width;
         viewportHeight = height;
+        RefreshPlacementSurfaceExtent();
         RefreshVisibleButtons();
     }
 
@@ -378,6 +385,7 @@ public partial class MainModel : ObservableObject
                 CloseContextMenu();
             }
 
+            ApplyFilter();
             RefreshCommandSuggestions();
             await TryNotifyButtonsChangedAsync(cancellationToken);
             Status.Set(
@@ -906,7 +914,30 @@ public partial class MainModel : ObservableObject
             filteredButtons.Add(button);
         }
 
+        RefreshPlacementSurfaceExtent();
         RefreshVisibleButtons();
+    }
+
+    private void RefreshPlacementSurfaceExtent()
+    {
+        var extent = PlacementSurfaceExtentPolicy.Resolve(
+            filteredButtons,
+            viewportWidth,
+            viewportHeight);
+
+        PlacementSurfaceWidth = extent.Width;
+        PlacementSurfaceHeight = extent.Height;
+        ClampViewportToPlacementSurface();
+    }
+
+    private void ClampViewportToPlacementSurface()
+    {
+        viewportX = Math.Min(
+            viewportX,
+            Math.Max(0, PlacementSurfaceWidth - viewportWidth));
+        viewportY = Math.Min(
+            viewportY,
+            Math.Max(0, PlacementSurfaceHeight - viewportHeight));
     }
 
     private void RefreshVisibleButtons()
@@ -1145,6 +1176,7 @@ public partial class MainModel : ObservableObject
         }
 
         await repository.DeleteButtonAsync(id, cancellationToken);
+        ApplyFilter();
         RefreshCommandSuggestions();
     }
 

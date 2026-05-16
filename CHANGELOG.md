@@ -6,6 +6,9 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 
 ## [Unreleased]
 
+### Fixed
+- The Avalonia placement surface now grows from the visible launcher-button bounds instead of keeping a fixed 1600x880 extent, so Windows and macOS no longer show placement scrollbars while all visible buttons fit in the current viewport
+
 ### [2.0.0] - 2026-05-14
 
 ### Added
@@ -537,6 +540,9 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 形式は Keep a Changelog に準拠し、バージョン管理は Semantic Versioning に従います。
 
 ## [Unreleased]
+
+### 修正
+- Avalonia の配置面は固定 1600x880 ではなく表示中のランチャーボタンの範囲から広がるようになり、Windows/macOS で表示中ボタンが現在の viewport に収まっている時は配置面のスクロールバーが出なくなりました
 
 ### [2.0.0] - 2026-05-14
 
