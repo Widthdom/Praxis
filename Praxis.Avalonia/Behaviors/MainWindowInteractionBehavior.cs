@@ -816,13 +816,12 @@ public sealed class MainWindowInteractionBehavior
         if (macNormalZoomRestoreBounds is { } bounds)
         {
             RestoreWindowBoundsWithinCurrentScreen(bounds.Position, bounds.Width, bounds.Height);
-        }
-        else
-        {
-            RestoreFallbackMacNormalBounds();
+            ClearMaximizeRestoreBounds();
+            macNormalZoomRestoreBounds = null;
+            return;
         }
 
-        macNormalZoomRestoreBounds = null;
+        RestoreCapturedNormalMaximizeBounds();
     }
 
     private void RestoreCapturedNormalMaximizeBounds()
@@ -1082,6 +1081,7 @@ public sealed class MainWindowInteractionBehavior
         }
 
         window.FindControl<StackPanel>("MacCaptionButtons")!.IsVisible = isMac;
+        window.FindControl<Border>("MacTitleBarDragSurface")!.IsVisible = isMac;
         window.FindControl<StackPanel>("WindowsCaptionButtons")!.IsVisible = !isMac && !isWindows;
     }
 

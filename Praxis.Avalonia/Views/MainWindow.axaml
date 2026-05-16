@@ -73,6 +73,11 @@
         </Button>
       </StackPanel>
 
+      <Border x:Name="MacTitleBarDragSurface"
+              Grid.Column="1"
+              Background="#01000000"
+              behaviors:WindowDragBehavior.IsDragArea="True" />
+
       <StackPanel x:Name="WindowsCaptionButtons"
                   Grid.Column="2"
                   Orientation="Horizontal"

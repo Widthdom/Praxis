@@ -71,7 +71,7 @@ public sealed class WindowDragBehavior
         if (TopLevel.GetTopLevel(dragArea) is Window window)
         {
             var windowPoint = e.GetPosition(window);
-            if (IsTitleBarDoubleClick(window, windowPoint))
+            if (IsTitleBarDoubleClick(window, windowPoint, e.ClickCount))
             {
                 ToggleNormalMaximize(window);
                 ClearTitleBarClick();
@@ -91,8 +91,13 @@ public sealed class WindowDragBehavior
         }
     }
 
-    private static bool IsTitleBarDoubleClick(Window window, Point position)
+    private static bool IsTitleBarDoubleClick(Window window, Point position, int clickCount)
     {
+        if (clickCount >= 2)
+        {
+            return true;
+        }
+
         var now = DateTimeOffset.UtcNow;
         if (!ReferenceEquals(lastClickWindow, window)
             || now - lastClickTime > DoubleClickWindow)

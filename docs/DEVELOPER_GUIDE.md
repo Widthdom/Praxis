@@ -65,7 +65,7 @@ Implementation rules that came out of this work:
 - Do not emulate normal maximization on macOS by writing working-area `Position`, `Width`, and `Height` directly.
 - Keep macOS FullScreen separate from normal maximize. The green caption button enters `WindowState.FullScreen`; title-bar double-click and top-edge snap use normal maximize.
 - Before normal maximize, capture restore bounds while the window is still normal.
-- When leaving normal maximize, restore captured bounds explicitly and clear stale restore state.
+- When leaving normal maximize, restore captured bounds explicitly and clear stale restore state. This also applies when Avalonia reports the window as `WindowState.Normal` while its bounds still match the macOS normal-maximized working area.
 - Snap-to-top should only maximize when the pointer is at the top edge. A window that merely still touches the top edge after a resize or drag must not auto-maximize on release.
 - Manual resize should clear normal maximize restore state, because resizing means the user is defining a new normal window geometry.
 
@@ -167,7 +167,7 @@ Praxis v2 は macOS でフレームレス Avalonia window と独自 caption butt
 - macOS の通常最大化を、working area の `Position`、`Width`、`Height` 直書きで再現しない。
 - macOS FullScreen と通常最大化は分ける。緑 caption button は `WindowState.FullScreen`、タイトルバーダブルクリックと上辺 snap は通常最大化を使う。
 - 通常最大化に入る前に、window が通常状態のうちに復帰用 bounds を保存する。
-- 通常最大化から戻るときは、最大化状態を解除したうえで保存済み bounds を明示復元し、古い復帰状態を消す。
+- 通常最大化から戻るときは、最大化状態を解除したうえで保存済み bounds を明示復元し、古い復帰状態を消す。Avalonia が `WindowState.Normal` と報告していても、bounds が macOS の通常最大化 working area と一致している場合は同じ復元経路を使う。
 - 上辺 snap は pointer が上端にある場合だけ通常最大化する。リサイズやドラッグ後に window の上辺がたまたま画面上端に残っているだけでは、放した瞬間に再最大化してはいけない。
 - 手動リサイズはユーザーが新しい通常サイズを定義する操作なので、通常最大化の復帰状態をクリアする。
 
