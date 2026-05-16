@@ -10,6 +10,7 @@ using Avalonia.Styling;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
 using Praxis.Avalonia.ViewModels;
+using Praxis.Core.Logic;
 using Praxis.Core.Models;
 
 namespace Praxis.Avalonia.Behaviors;
@@ -64,6 +65,7 @@ public sealed class MainWindowInteractionBehavior
     private readonly Window window;
     private Canvas? placementSurface;
     private ScrollViewer? placementScroll;
+    private TextBox? commandBox;
     private Border? selectionRect;
     private Border? statusBar;
     private Border? copyToast;
@@ -108,6 +110,7 @@ public sealed class MainWindowInteractionBehavior
     private DispatcherTimer? statusDismissTimer;
     private DispatcherTimer? copyToastDismissTimer;
     private DispatcherTimer? copyToastHideTimer;
+    private int activationCommandFocusRequestId;
     private StatusModel? observedStatus;
     private MainWindowViewModel? observedModel;
     private Border? activeResizeGrip;
@@ -245,6 +248,7 @@ public sealed class MainWindowInteractionBehavior
     private void Attach()
     {
         ApplyWindowsWindowChromeHints();
+        window.Activated += WindowOnActivated;
         window.Opened += WindowOnOpened;
         window.Closed += WindowOnClosed;
         window.SizeChanged += WindowOnSizeChanged;
@@ -266,6 +270,7 @@ public sealed class MainWindowInteractionBehavior
     private void Detach()
     {
         UnobserveModel();
+        window.Activated -= WindowOnActivated;
         window.Opened -= WindowOnOpened;
         window.Closed -= WindowOnClosed;
         window.SizeChanged -= WindowOnSizeChanged;
@@ -287,6 +292,7 @@ public sealed class MainWindowInteractionBehavior
     private void WindowOnOpened(object? sender, EventArgs e)
     {
         ConfigurePlatformCaptionButtons();
+        commandBox = window.FindControl<TextBox>("CommandBox");
         placementSurface = window.FindControl<Canvas>("PlacementSurface");
         placementScroll = window.FindControl<ScrollViewer>("PlacementScroll");
         selectionRect = window.FindControl<Border>("SelectionRect");
@@ -343,7 +349,7 @@ public sealed class MainWindowInteractionBehavior
             contextMenuOverlay.PointerPressed += ContextOverlay_PointerPressed;
         }
 
-        window.FindControl<TextBox>("CommandBox")?.AddHandler(InputElement.KeyDownEvent, CommandBox_KeyDown, RoutingStrategies.Tunnel, handledEventsToo: true);
+        commandBox?.AddHandler(InputElement.KeyDownEvent, CommandBox_KeyDown, RoutingStrategies.Tunnel, handledEventsToo: true);
         foreach (var textBox in new[] { modalClipWordEditor, modalNoteEditor })
         {
             if (textBox is not null)
@@ -377,6 +383,7 @@ public sealed class MainWindowInteractionBehavior
         Dispatcher.UIThread.Post(ApplyWindowsSnapWindowStyles, DispatcherPriority.Loaded);
         Dispatcher.UIThread.Post(InstallWindowsCaptionHitTest, DispatcherPriority.Loaded);
         Dispatcher.UIThread.Post(ApplyWindowsRoundedCorners, DispatcherPriority.Loaded);
+        ScheduleCommandFocusAfterActivation();
     }
 
     private void ArmMoveDragSnap()
@@ -421,8 +428,17 @@ public sealed class MainWindowInteractionBehavior
             placementScroll = null;
         }
 
+        if (commandBox is not null)
+        {
+            commandBox.RemoveHandler(InputElement.KeyDownEvent, CommandBox_KeyDown);
+            commandBox = null;
+        }
+
         Detach();
     }
+
+    private void WindowOnActivated(object? sender, EventArgs e)
+        => ScheduleCommandFocusAfterActivation();
 
     private void WindowOnDataContextChanged(object? sender, EventArgs e)
     {
@@ -641,6 +657,61 @@ public sealed class MainWindowInteractionBehavior
 
     private void PlacementScroll_SizeChanged(object? sender, SizeChangedEventArgs e)
         => SyncPlacementViewport();
+
+    private void ScheduleCommandFocusAfterActivation()
+    {
+        var requestId = ++activationCommandFocusRequestId;
+        if (OperatingSystem.IsMacOS())
+        {
+            var baseDelay = UiTimingPolicy.MacActivationFocusRequestCoalesceDelay;
+            ScheduleCommandFocusAttempt(requestId, baseDelay);
+            ScheduleCommandFocusAttempt(requestId, baseDelay + UiTimingPolicy.MacActivationFocusRetryFirstDelay);
+            ScheduleCommandFocusAttempt(requestId, baseDelay + UiTimingPolicy.MacActivationFocusRetrySecondDelay);
+            ScheduleCommandFocusAttempt(requestId, baseDelay + UiTimingPolicy.MacActivationFocusRetryThirdDelay);
+            return;
+        }
+
+        Dispatcher.UIThread.Post(
+            () => FocusCommandBoxAfterActivation(requestId),
+            DispatcherPriority.Input);
+        ScheduleCommandFocusAttempt(requestId, UiTimingPolicy.WindowsFocusRestorePrimaryDelay);
+        ScheduleCommandFocusAttempt(requestId, UiTimingPolicy.WindowsFocusRestoreSecondaryDelay);
+    }
+
+    private void ScheduleCommandFocusAttempt(int requestId, TimeSpan delay)
+    {
+        var timer = new DispatcherTimer { Interval = delay };
+        timer.Tick += (_, _) =>
+        {
+            timer.Stop();
+            FocusCommandBoxAfterActivation(requestId);
+        };
+        timer.Start();
+    }
+
+    private void FocusCommandBoxAfterActivation(int requestId)
+    {
+        if (requestId != activationCommandFocusRequestId
+            || !ShouldFocusCommandBoxAfterActivation())
+        {
+            return;
+        }
+
+        commandBox ??= window.FindControl<TextBox>("CommandBox");
+        if (commandBox is null)
+        {
+            return;
+        }
+
+        commandBox.Focus();
+        commandBox.SelectAll();
+    }
+
+    private bool ShouldFocusCommandBoxAfterActivation()
+        => ViewModel is { } viewModel
+           && WindowActivationCommandFocusPolicy.ShouldFocusMainCommand(
+               viewModel.IsEditorOpen,
+               viewModel.IsConflictDialogOpen);
 
     private void SyncPlacementViewport()
     {

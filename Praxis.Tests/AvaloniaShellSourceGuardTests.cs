@@ -90,6 +90,22 @@ public class AvaloniaShellSourceGuardTests
     }
 
     [Fact]
+    public void MainWindow_RestoresCommandFocusOnWindowActivation()
+    {
+        var behavior = ReadRepositoryFile("Praxis.Avalonia", "Behaviors", "MainWindowInteractionBehavior.cs");
+
+        Assert.Contains("window.Activated += WindowOnActivated;", behavior, StringComparison.Ordinal);
+        Assert.Contains("window.Activated -= WindowOnActivated;", behavior, StringComparison.Ordinal);
+        Assert.Contains("ScheduleCommandFocusAfterActivation", behavior, StringComparison.Ordinal);
+        Assert.Contains("FocusCommandBoxAfterActivation", behavior, StringComparison.Ordinal);
+        Assert.Contains("commandBox.Focus();", behavior, StringComparison.Ordinal);
+        Assert.Contains("commandBox.SelectAll();", behavior, StringComparison.Ordinal);
+        Assert.Contains("WindowActivationCommandFocusPolicy.ShouldFocusMainCommand", behavior, StringComparison.Ordinal);
+        Assert.Contains("UiTimingPolicy.MacActivationFocusRequestCoalesceDelay", behavior, StringComparison.Ordinal);
+        Assert.Contains("UiTimingPolicy.WindowsFocusRestorePrimaryDelay", behavior, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void AvaloniaProject_EmbedsIconAssets()
     {
         var project = ReadRepositoryFile("Praxis.Avalonia", "Praxis.Avalonia.csproj");
