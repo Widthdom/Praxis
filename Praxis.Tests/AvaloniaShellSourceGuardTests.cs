@@ -23,8 +23,11 @@ public class AvaloniaShellSourceGuardTests
         Assert.DoesNotContain("praxis-title-icon", xaml, StringComparison.Ordinal);
         Assert.DoesNotContain("Text=\"Praxis\"", xaml, StringComparison.Ordinal);
         Assert.Contains("WindowDragBehavior.IsDragArea=\"True\"", xaml, StringComparison.Ordinal);
+        Assert.Contains("x:Name=\"MacTitleBarDragSurface\"", xaml, StringComparison.Ordinal);
+        Assert.Contains("window.FindControl<Border>(\"MacTitleBarDragSurface\")!.IsVisible = isMac;", ReadRepositoryFile("Praxis.Avalonia", "Behaviors", "MainWindowInteractionBehavior.cs"), StringComparison.Ordinal);
         Assert.Contains("NotifyMoveDragStarted", ReadRepositoryFile("Praxis.Avalonia", "Behaviors", "WindowDragBehavior.cs"), StringComparison.Ordinal);
         Assert.Contains("IsTitleBarDoubleClick", ReadRepositoryFile("Praxis.Avalonia", "Behaviors", "WindowDragBehavior.cs"), StringComparison.Ordinal);
+        Assert.Contains("e.ClickCount", ReadRepositoryFile("Praxis.Avalonia", "Behaviors", "WindowDragBehavior.cs"), StringComparison.Ordinal);
         Assert.Contains("WindowState.Maximized", ReadRepositoryFile("Praxis.Avalonia", "Behaviors", "WindowDragBehavior.cs"), StringComparison.Ordinal);
         Assert.Contains("x:Name=\"MacCaptionButtons\"", xaml, StringComparison.Ordinal);
         Assert.Contains("x:Name=\"WindowsCaptionButtons\"", xaml, StringComparison.Ordinal);
@@ -44,6 +47,16 @@ public class AvaloniaShellSourceGuardTests
         Assert.Contains("WindowsWindowHitTestZone.TopLeft => (IntPtr)HtTopLeft", behavior, StringComparison.Ordinal);
         Assert.Contains("WindowsWindowHitTestZone.TopRight => (IntPtr)HtTopRight", behavior, StringComparison.Ordinal);
         Assert.Contains("WindowsWindowHitTestZone.Caption => (IntPtr)HtCaption", behavior, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void MainWindow_MacNormalMaximize_RestoresCapturedBoundsWhenReportedAsNormal()
+    {
+        var behavior = ReadRepositoryFile("Praxis.Avalonia", "Behaviors", "MainWindowInteractionBehavior.cs");
+
+        Assert.Contains("IsAtMacNormalMaximizedBounds()", behavior, StringComparison.Ordinal);
+        Assert.Contains("RestoreCapturedNormalMaximizeBounds();", behavior, StringComparison.Ordinal);
+        Assert.DoesNotContain("else\n        {\n            RestoreFallbackMacNormalBounds();\n        }\n\n        macNormalZoomRestoreBounds = null;", behavior, StringComparison.Ordinal);
     }
 
     [Fact]

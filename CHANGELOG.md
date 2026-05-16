@@ -6,6 +6,11 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 
 ## [Unreleased]
 
+### Fixed
+- macOS title-bar double-click normal maximize now restores the previous window bounds when double-clicked again, including the path where Avalonia reports the maximized geometry as `WindowState.Normal`.
+- macOS now keeps a dedicated title-bar drag surface active after normal maximize, so double-click restore works across the title-bar center instead of only a narrow top strip.
+- Title-bar double-click handling now also honors Avalonia's click count, making macOS maximize/restore less sensitive to small pointer movement between clicks.
+
 ### [2.0.1] - 2026-05-16
 
 ### Fixed
