@@ -6,6 +6,9 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 
 ## [Unreleased]
 
+### Fixed
+- Launcher and Dock button tooltips now show `ButtonText` above `Command`, making the display label visible alongside the execution details.
+
 ## [2.0.2] - 2026-05-17
 
 ### Fixed
@@ -551,6 +554,9 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 形式は Keep a Changelog に準拠し、バージョン管理は Semantic Versioning に従います。
 
 ## [Unreleased]
+
+### 修正
+- ランチャーと Dock のボタン ToolTip で `Command` の上に `ButtonText` を表示し、実行情報とあわせて表示ラベルも確認できるようになりました。
 
 ## [2.0.2] - 2026-05-17
 
