@@ -6,6 +6,8 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 
 ## [Unreleased]
 
+## [2.0.3] - 2026-05-17
+
 ### Changed
 - Updated the AI-agent `cdidx` code-search rules to match CodeIndex v1.22.3, including `status --check --json` as the freshness gate, scoped index refreshes, exact search/name options, and `inspect` / `find` / `excerpt` / `outline` usage guidance.
 
@@ -558,6 +560,8 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 
 ## [Unreleased]
 
+## [2.0.3] - 2026-05-17
+
 ### 変更
 - AI agent 向けの `cdidx` code search rule を CodeIndex v1.22.3 に合わせて更新し、`status --check --json` を freshness gate とすること、scoped index refresh、exact search/name option、`inspect` / `find` / `excerpt` / `outline` の使い分けを明記しました。
 
@@ -978,7 +982,8 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - 重複 `using` ディレクティブの削除と `using` 順序の正規化
 - `MainViewModel` と各 partial クラスに主要ライフサイクルイベントの `LogInfo` 呼び出しを追加
 
-[Unreleased]: https://github.com/Widthdom/Praxis/compare/v2.0.2...HEAD
+[Unreleased]: https://github.com/Widthdom/Praxis/compare/v2.0.3...HEAD
+[2.0.3]: https://github.com/Widthdom/Praxis/compare/v2.0.2...v2.0.3
 [2.0.2]: https://github.com/Widthdom/Praxis/compare/v2.0.1...v2.0.2
 [2.0.1]: https://github.com/Widthdom/Praxis/compare/v2.0.0...v2.0.1
 [2.0.0]: https://github.com/Widthdom/Praxis/compare/v1.2.0...v2.0.0
