@@ -6,6 +6,9 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 
 ## [Unreleased]
 
+### Changed
+- Updated the AI-agent `cdidx` code-search rules to match CodeIndex v1.22.3, including `status --check --json` as the freshness gate, scoped index refreshes, exact search/name options, and `inspect` / `find` / `excerpt` / `outline` usage guidance.
+
 ### Fixed
 - Launcher and Dock button tooltips now show `ButtonText` above `Command`, making the display label visible alongside the execution details.
 
@@ -554,6 +557,9 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 形式は Keep a Changelog に準拠し、バージョン管理は Semantic Versioning に従います。
 
 ## [Unreleased]
+
+### 変更
+- AI agent 向けの `cdidx` code search rule を CodeIndex v1.22.3 に合わせて更新し、`status --check --json` を freshness gate とすること、scoped index refresh、exact search/name option、`inspect` / `find` / `excerpt` / `outline` の使い分けを明記しました。
 
 ### 修正
 - ランチャーと Dock のボタン ToolTip で `Command` の上に `ButtonText` を表示し、実行情報とあわせて表示ラベルも確認できるようになりました。

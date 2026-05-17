@@ -48,21 +48,27 @@ No MAUI workload is required.
 ### Code Search Rules
 
 This repository uses `cdidx` for fast code search via `.cdidx/codeindex.db`.
-Use `cdidx` before falling back to shell search.
+Use `cdidx` for repeated repository searches before falling back to shell search.
+Use `rg` for zero-setup one-off scans only.
 
-Check freshness before searches where correctness matters:
+At the start of AI-agent work, and before searches where correctness matters, check whether the index can be trusted:
 
 ```bash
 cdidx status --check --json
 ```
 
-If the index is stale, update it:
+If the index is stale, refresh it. Prefer scoped refreshes after edits when the touched files or Git range are known:
 
 ```bash
-cdidx .
+cdidx index .
+cdidx index . --files path/to/file.cs
+cdidx index . --commits HEAD
+cdidx index . --changed-between old-ref new-ref
 ```
 
-After editing source files, run `cdidx status --check --json` before the next search. If it reports a mismatch, run `cdidx .` or a scoped update.
+Use `cdidx index . --rebuild` only when the database schema/content appears corrupted or a full checkout purge is required.
+
+After editing source files, run `cdidx status --check --json` before the next search. If it reports changed, missing, unindexed, or otherwise stale files, run `cdidx index .` or a scoped update. `status --check --json` is the freshness gate; inspect `workspace_check.changed_files`, `missing_files`, `unindexed_files`, `scan_errors`, `head_changed`, and readiness flags such as `fold_ready`, `graph_table_available`, and `csharp_symbol_name_ready`.
 
 Useful commands:
 
@@ -71,10 +77,18 @@ cdidx map --json
 cdidx files --path Praxis.Avalonia
 cdidx files --path Praxis.Core
 cdidx search "MainModel" --path Praxis.Core --snippet-lines 6 --max-line-width 160
-cdidx symbols --lang csharp --name MainModel --exact
+cdidx search "Foo.Bar" --lang csharp --exact-substring
+cdidx search --query "--open-reports" --path README.md
+cdidx symbols --lang csharp --name MainModel --exact-name
+cdidx definition MainModel --body --json
+cdidx inspect MainModel --exclude-tests --json
+cdidx find "graph table" --path Praxis.Core/MainModel.cs --before 2 --after 2 --json
+cdidx excerpt Praxis.Core/MainModel.cs --start 1 --end 80 --json
 cdidx outline Praxis.Avalonia/Views/MainWindow.axaml --json
 cdidx validate
 ```
+
+Prefer `inspect` for symbol-oriented investigation that needs definition, nearby symbols, references, callers, callees, file metadata, and freshness metadata in one round trip. Use `outline` to understand a single file's structure, `excerpt` for known line ranges, and `find` when the target file is already known. For unsupported graph languages, fall back to `search`.
 
 ### Cross-Cutting Consistency
 
@@ -135,22 +149,47 @@ MAUI workload は不要です。
 
 ### コード検索ルール
 
-このリポジトリでは `.cdidx/codeindex.db` を使う `cdidx` を優先します。
-shell search に戻る前に `cdidx` を使ってください。
+このリポジトリでは `.cdidx/codeindex.db` を使う `cdidx` を、繰り返し行う repository search で優先します。
+`rg` は zero-setup の一回限りの scan にだけ使います。
 
-検索前に freshness を確認します。
+AI agent 作業の開始時と、正確性が重要な検索前に、インデックスを信頼できるか確認します。
 
 ```bash
 cdidx status --check --json
 ```
 
-古い場合は更新します。
+古い場合は更新します。編集済みファイルや Git range が分かっている場合は scoped refresh を優先します。
 
 ```bash
-cdidx .
+cdidx index .
+cdidx index . --files path/to/file.cs
+cdidx index . --commits HEAD
+cdidx index . --changed-between old-ref new-ref
 ```
 
-source file 変更後、次の検索前に `cdidx status --check --json` を実行し、mismatch なら `cdidx .` または scoped update を実行してください。
+`cdidx index . --rebuild` は database schema/content が壊れていそうな場合、または checkout 全体の stale path purge が必要な場合だけ使います。
+
+source file 変更後、次の検索前に `cdidx status --check --json` を実行します。changed / missing / unindexed / stale file が報告された場合は `cdidx index .` または scoped update を実行してください。`status --check --json` を freshness gate とし、`workspace_check.changed_files`、`missing_files`、`unindexed_files`、`scan_errors`、`head_changed`、`fold_ready`、`graph_table_available`、`csharp_symbol_name_ready` などの readiness flag を確認します。
+
+よく使うコマンド:
+
+```bash
+cdidx map --json
+cdidx files --path Praxis.Avalonia
+cdidx files --path Praxis.Core
+cdidx search "MainModel" --path Praxis.Core --snippet-lines 6 --max-line-width 160
+cdidx search "Foo.Bar" --lang csharp --exact-substring
+cdidx search --query "--open-reports" --path README.md
+cdidx symbols --lang csharp --name MainModel --exact-name
+cdidx definition MainModel --body --json
+cdidx inspect MainModel --exclude-tests --json
+cdidx find "graph table" --path Praxis.Core/MainModel.cs --before 2 --after 2 --json
+cdidx excerpt Praxis.Core/MainModel.cs --start 1 --end 80 --json
+cdidx outline Praxis.Avalonia/Views/MainWindow.axaml --json
+cdidx validate
+```
+
+symbol 中心の調査で definition、nearby symbols、references、callers、callees、file metadata、freshness metadata を一度に見たい場合は `inspect` を優先します。単一ファイルの構造把握には `outline`、既知の行範囲には `excerpt`、対象ファイルが分かっている場合の文字列検索には `find` を使います。graph 非対応言語では `search` に戻ります。
 
 ### 横断的な整合
 
