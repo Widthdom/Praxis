@@ -6,6 +6,9 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 
 ## [Unreleased]
 
+### Fixed
+- Launcher and Dock button tooltip `ButtonText` rows now bind to the launcher label value so the row no longer appears blank.
+
 ## [2.0.3] - 2026-05-17
 
 ### Changed
@@ -559,6 +562,9 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 形式は Keep a Changelog に準拠し、バージョン管理は Semantic Versioning に従います。
 
 ## [Unreleased]
+
+### 修正
+- ランチャーと Dock のボタン ToolTip の `ButtonText` 行がランチャーの表示ラベル値に bind され、空欄で表示されないようになりました。
 
 ## [2.0.3] - 2026-05-17
 

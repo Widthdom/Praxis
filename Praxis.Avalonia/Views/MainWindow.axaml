@@ -334,7 +334,7 @@
                           RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto"
                           ColumnDefinitions="92,*">
                       <TextBlock Classes="praxis-tooltip-label" Text="ButtonText" />
-                      <TextBlock Grid.Column="1" Text="{Binding ButtonText}" />
+                      <TextBlock Grid.Column="1" Text="{Binding Text}" />
                       <TextBlock Grid.Row="1" Classes="praxis-tooltip-label" Text="Command" />
                       <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding Command}" />
                       <TextBlock Grid.Row="2" Classes="praxis-tooltip-label" Text="Tool" />
@@ -408,7 +408,7 @@
                           RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto"
                           ColumnDefinitions="92,*">
                       <TextBlock Classes="praxis-tooltip-label" Text="ButtonText" />
-                      <TextBlock Grid.Column="1" Text="{Binding ButtonText}" />
+                      <TextBlock Grid.Column="1" Text="{Binding Text}" />
                       <TextBlock Grid.Row="1" Classes="praxis-tooltip-label" Text="Command" />
                       <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding Command}" />
                       <TextBlock Grid.Row="2" Classes="praxis-tooltip-label" Text="Tool" />
