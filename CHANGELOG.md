@@ -6,6 +6,8 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 
 ## [Unreleased]
 
+## [2.0.4] - 2026-05-18
+
 ### Fixed
 - Launcher and Dock button tooltip `ButtonText` rows now bind to the launcher label value so the row no longer appears blank.
 
@@ -563,6 +565,8 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 
 ## [Unreleased]
 
+## [2.0.4] - 2026-05-18
+
 ### 修正
 - ランチャーと Dock のボタン ToolTip の `ButtonText` 行がランチャーの表示ラベル値に bind され、空欄で表示されないようになりました。
 
@@ -988,7 +992,8 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - 重複 `using` ディレクティブの削除と `using` 順序の正規化
 - `MainViewModel` と各 partial クラスに主要ライフサイクルイベントの `LogInfo` 呼び出しを追加
 
-[Unreleased]: https://github.com/Widthdom/Praxis/compare/v2.0.3...HEAD
+[Unreleased]: https://github.com/Widthdom/Praxis/compare/v2.0.4...HEAD
+[2.0.4]: https://github.com/Widthdom/Praxis/compare/v2.0.3...v2.0.4
 [2.0.3]: https://github.com/Widthdom/Praxis/compare/v2.0.2...v2.0.3
 [2.0.2]: https://github.com/Widthdom/Praxis/compare/v2.0.1...v2.0.2
 [2.0.1]: https://github.com/Widthdom/Praxis/compare/v2.0.0...v2.0.1
