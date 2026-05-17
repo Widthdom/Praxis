@@ -550,6 +550,11 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 
 ## [Unreleased]
 
+### 修正
+- macOS の title-bar double-click normal maximize は、再度 double-click した時に以前の window bounds を復元するようになりました。Avalonia が最大化後の geometry を `WindowState.Normal` として報告する経路も含みます
+- macOS は normal maximize 後も専用の title-bar drag surface を有効に保ち、title-bar 中央でも double-click restore が効くようになりました
+- title-bar double-click 処理は Avalonia の click count も見るようになり、click 間の小さな pointer 移動で macOS の maximize / restore が不安定になりにくくなりました
+
 ## [2.0.1] - 2026-05-16
 
 ### 修正
