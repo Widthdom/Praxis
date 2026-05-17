@@ -6,6 +6,8 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 
 ## [Unreleased]
 
+## [2.0.2] - 2026-05-17
+
 ### Fixed
 - macOS title-bar double-click normal maximize now restores the previous window bounds when double-clicked again, including the path where Avalonia reports the maximized geometry as `WindowState.Normal`.
 - macOS now keeps a dedicated title-bar drag surface active after normal maximize, so double-click restore works across the title-bar center instead of only a narrow top strip.
@@ -550,6 +552,8 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 
 ## [Unreleased]
 
+## [2.0.2] - 2026-05-17
+
 ### 修正
 - macOS の title-bar double-click normal maximize は、再度 double-click した時に以前の window bounds を復元するようになりました。Avalonia が最大化後の geometry を `WindowState.Normal` として報告する経路も含みます
 - macOS は normal maximize 後も専用の title-bar drag surface を有効に保ち、title-bar 中央でも double-click restore が効くようになりました
@@ -962,7 +966,8 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - 重複 `using` ディレクティブの削除と `using` 順序の正規化
 - `MainViewModel` と各 partial クラスに主要ライフサイクルイベントの `LogInfo` 呼び出しを追加
 
-[Unreleased]: https://github.com/Widthdom/Praxis/compare/v2.0.1...HEAD
+[Unreleased]: https://github.com/Widthdom/Praxis/compare/v2.0.2...HEAD
+[2.0.2]: https://github.com/Widthdom/Praxis/compare/v2.0.1...v2.0.2
 [2.0.1]: https://github.com/Widthdom/Praxis/compare/v2.0.0...v2.0.1
 [2.0.0]: https://github.com/Widthdom/Praxis/compare/v1.2.0...v2.0.0
 [1.2.0]: https://github.com/Widthdom/Praxis/compare/v1.1.13...v1.2.0
