@@ -11,14 +11,14 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - macOS now keeps a dedicated title-bar drag surface active after normal maximize, so double-click restore works across the title-bar center instead of only a narrow top strip.
 - Title-bar double-click handling now also honors Avalonia's click count, making macOS maximize/restore less sensitive to small pointer movement between clicks.
 
-### [2.0.1] - 2026-05-16
+## [2.0.1] - 2026-05-16
 
 ### Fixed
 - Windows top-edge hit testing now prioritizes native vertical resize over the custom caption drag region, so grabbing the top window edge can resize the Praxis window vertically
 - Avalonia Windows and macOS windows now restore focus to the Command field, with the text selected, when the Praxis window becomes active and no editor/conflict dialog is open
 - The Avalonia placement surface now grows from the visible launcher-button bounds instead of keeping a fixed 1600x880 extent, so Windows and macOS no longer show placement scrollbars while all visible buttons fit in the current viewport
 
-### [2.0.0] - 2026-05-14
+## [2.0.0] - 2026-05-14
 
 ### Added
 - Started the v2.0.0 Avalonia migration branch with strict-MVVM Core model structure, an Avalonia desktop shell, and a migration plan covering platform abstractions, pseudo-acrylic UI direction, DB compatibility risks, and future Linux readiness
@@ -64,7 +64,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - Single-line Avalonia text boxes now keep the caret visible at the right edge by allowing hidden horizontal scrolling instead of disabling horizontal scroll behavior, with modest extra right padding for Command/Search clear buttons
 - README and developer/database/testing docs now describe the current Avalonia editing, drag, theme-switching, and file-backed button sync behavior instead of pointing at removed migration-plan notes or calling those flows unimplemented
 
-### [1.2.0] - 2026-05-11
+## [1.2.0] - 2026-05-11
 
 ### Added
 - The `Command` and `Search` text inputs render their placeholder as small SVG-style icons inside the field at the left edge — a `>_` chevron + underscore for `Command`, a magnifying glass for `Search`. The icons fade out once the field has any text, mirroring how the literal placeholder strings used to disappear, and use a muted gray (`Light=#A0A0A0, Dark=#7C7C7C`) so they read as a hint rather than a visible control
@@ -97,7 +97,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - The modal editor's Invert Theme checkbox indicator and its accompanying label now use the pointing-hand hover cursor, matching the modal Cancel / Save buttons rather than leaving the cursor on the default arrow
 - The main window now enforces `MinimumWidth=860` and `MinimumHeight=600` so the editor modal (`WidthRequest=760` plus padding) always fits, and individual UI elements stop overflowing their containers when the window is shrunk to extreme small sizes
 
-### [1.1.13] - 2026-04-30
+## [1.1.13] - 2026-04-30
 
 ### Changed
 - Placement-area launcher buttons now keep the default arrow cursor on hover (instead of the pointing-hand cursor) and switch to a closed-hand "grab" cursor only while the primary pointer is pressed, so drag-to-reposition reads as a grabbed object while idle hover stops implying a click target. Dock launcher buttons intentionally keep the existing hover-hand cursor so the Dock still signals "click to launch"
@@ -112,7 +112,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - Expanded `AppLayerSourceGuardTests` to lock the new `GrabHandCursorBehavior` platform wiring and to guard that placement-area launcher buttons in `MainPage.xaml` attach the grab-cursor behavior while the hover-hand count drops to 16 (Dock, top-bar Create, modal copy/action, context, and conflict buttons still share `HoverHandCursorBehavior`). Also guards that the behavior subscribes to `PointerMoved`, delegates Mac primary-only detection to `PointerButtonClassifier.IsPrimaryOnly(...)`, clears the grab cursor through the `PointerMoved`/`PointerExited` primary-release fallback, verifies the Mac `Draggable_PointerMoved` / `Draggable_PointerReleased` fallbacks, and restores the default cursor during `OnDetachingFrom` before gesture recognizers are removed
 - Added `PointerButtonClassifierTests` to cover Mac-style platform-args detection with fake objects exercising `Type = "OtherMouseDown"`, `ButtonNumber` variations, `ButtonMask` bits for middle (`0x4` / `0x8` / `0x10`) and secondary (`0x2`), `IsMiddleButtonPressed` / `IsRightButtonPressed`, textual `PressedButton` / `Button` / `Buttons` markers, and `CurrentEvent` / `GestureRecognizer` / `Event` chain traversal
 
-### [1.1.12] - 2026-04-21
+## [1.1.12] - 2026-04-21
 
 ### Fixed
 - Windows and Mac Catalyst now switch the top-bar create action, modal copy/action buttons, and placement/Dock launcher buttons to a pointing-hand cursor on hover instead of leaving those clickable targets on the arrow cursor
@@ -202,14 +202,14 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - Expanded `AppLayerSourceGuardTests` to lock command-lookup fallback warnings to the input length
 - Expanded `AppLayerSourceGuardTests` to lock in-thread command-suggestion refresh warnings to the input length
 
-### [1.1.11] - 2026-04-17
+## [1.1.11] - 2026-04-17
 
 ### Changed
 - `MainViewModel` now records an explicit `ClearCommandInput` breadcrumb (cleared-length or no-op) and an `ExecuteCommandInputAsync` breadcrumb (command length plus whether a suggestion was selected), so diagnosing a crash that follows the command-input path no longer requires reconstructing intent from the surrounding handler-side tap log
 - `MainPage.FocusEntryAfterClearButtonTap` / `ApplyEntryFocusAfterClearButtonTap` now emit entry/retry and target/outcome markers to `crash.log`, and `Entry.Focus()` itself is wrapped in try/catch so a failure inside the MAUI handler surfaces as a crash-file exception instead of a silent process termination
 - `MainViewModel.ClearSearchText` now mirrors the `ClearCommandInput` breadcrumb (cleared-length vs. no-op), so the search-side X-button path has the same ViewModel-level evidence as the command-side path when a crash follows the tap
 
-### [1.1.10] - 2026-04-15
+## [1.1.10] - 2026-04-15
 
 ### Fixed
 - `CommandWorkingDirectoryPolicy` now treats Windows shell executable names case-insensitively, so uppercase or mixed-case `cmd.exe` / `powershell.exe` / `pwsh.exe` / `wt.exe` paths still switch `WorkingDirectory` to the user profile instead of inheriting the Praxis process directory
@@ -289,7 +289,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - Expanded `FileStateSyncNotifierTests` and `AppLayerSourceGuardTests` to cover malformed/observed sync payload normalization before those fragments reach warning/info crash-log lines
 - Expanded `FileStateSyncNotifierTests` to cover direct null sync-payload normalization inside `NormalizePayloadForLog(...)`
 - Expanded `AppLayerSourceGuardTests` to cover sync-file path normalization before write-success/write-failure breadcrumbs are written
-### [1.1.9] - 2026-04-14
+## [1.1.9] - 2026-04-14
 
 ### Fixed
 - `CrashFileLogger` and `DbErrorLogger` now normalize null Warning/Info message payloads to `(no message payload)` before writing to `crash.log` or persisting `ErrorLogEntity` rows, so degraded logging paths keep explicit evidence instead of blank message fields
@@ -301,7 +301,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - Expanded logging regression coverage for persistence-failure breadcrumbs and null Warning/Info payload normalization in `CrashFileLoggerTests` and `DbErrorLoggerTests`
 - Updated `AppLayerSourceGuardTests` so the file-first logger ordering guard matches the normalized Warning/Info logging path
 
-### [1.1.8] - 2026-04-13
+## [1.1.8] - 2026-04-13
 
 ### Fixed
 - `CrashFileLogger.AppendExceptionChain` and `DbErrorLogger`'s exception-type / message builders now cap recursion at depth 32 and emit an explicit truncation marker, protecting the last-resort crash logger from StackOverflow on pathological inner-exception chains
@@ -338,7 +338,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - Scoped `CiCoverageWorkflowPolicyTests` assertions to individual jobs (`core-tests`, `windows-build`, `mac-build`, delivery `package` + matrix entries) so a regression dropping an invariant from one job cannot pass green just because a sibling job still contains the same string
 - `CiCoverageWorkflowPolicyTests` now parses workflow steps structurally (name/if/run/uses/id) for the critical Xcode-gate invariants. The delivery `Initialize Xcode` / `Check Xcode compatibility` / `Publish app` step guards are asserted against their actual `if:` expressions and `run:` bodies, so a comment or mis-scoped step condition cannot satisfy the test
 
-### [1.1.7] - 2026-04-12
+## [1.1.7] - 2026-04-12
 
 ### Fixed
 - UI event handlers, sync notifiers, dock/QuickLook timers, command-suggestion debounce, clipboard helpers, and conflict callbacks now persist unhandled exceptions to `crash.log` so crash evidence survives abrupt termination
@@ -354,7 +354,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - Expanded `AppLayerSourceGuardTests` to cover newly hardened partial classes
 - Added `DbErrorLogger` detail-preservation tests
 
-### [1.1.6] - 2026-04-12
+## [1.1.6] - 2026-04-12
 
 ### Fixed
 - `ThemeModeParser.ParseOrDefault()` now sanitizes invalid caller-supplied fallback enum values back to `System` instead of returning an out-of-range theme when both the input string and default are invalid
@@ -391,7 +391,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - `GridSnapper` and `ModalEditorScrollHeightResolver` now sanitize non-finite numeric inputs instead of propagating `NaN` / infinity through layout calculations
 - Windows startup-log append failures and `MainPage` copy-notice animation failures now leave `crash.log` breadcrumbs instead of being swallowed silently
 
-### [1.1.5] - 2026-04-11
+## [1.1.5] - 2026-04-11
 
 ### Fixed
 - `MainViewModel.CommandSuggestions` now warning-logs failures to dispatch popup close/refresh work onto the main thread instead of letting those scheduling errors vanish silently
@@ -433,7 +433,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - Launch-log write/purge, dock persistence, undo/redo dock restore, and theme persistence failures are now treated as non-fatal after local success, with warning logs instead of surfacing as user-action exceptions
 - Initialization and external reload now tolerate non-critical theme/dock read failures with warning logs and safe fallbacks, and command lookup fallback errors now degrade to `Command not found` instead of bubbling exceptions
 
-### [1.1.4] - 2026-04-09
+## [1.1.4] - 2026-04-09
 
 ### Added
 - add .codex & CLAUDE.md
@@ -441,12 +441,12 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 ### Fixed
 - .NET 10 preview runtime package restore failure (`NU1102: Unable to find package Microsoft.NETCore.App.Runtime.Mono.win-x64 with version (= 10.0.5)`) in CI and Delivery workflows — replaced pinned `dotnet-version: 10.0.100` with `10.0.x` + `dotnet-quality: preview` to enable the preview NuGet feed
 
-### [1.1.3] - 2026-04-05
+## [1.1.3] - 2026-04-05
 
 ### Added
 - Automatic GitHub Release creation on `v*` tag push — delivery workflow now zips OS-specific artifacts (Windows / macOS) and publishes them with auto-generated release notes
 
-### [1.1.2] - 2026-03-31
+## [1.1.2] - 2026-03-31
 
 ### Added
 - Synchronous file-based crash logger (`CrashFileLogger`) that writes to `crash.log` immediately on every log call, surviving abrupt process termination where async DB writes would be lost
@@ -467,7 +467,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - `ErrorLogEntity.Level` column now accepts `Warning` in addition to `Error` and `Info`
 - `ResolveRootPage` failure now logged via `IErrorLogger` (was silently swallowed)
 
-### [1.1.1] - 2026-03-28
+## [1.1.1] - 2026-03-28
 
 ### Fixed
 - GitHub Actions checkout now fetches full history so Nerdbank.GitVersioning can calculate version height in CI and release packaging jobs
@@ -476,7 +476,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 ### Changed
 - Added README header badges for CI, CodeQL, Delivery, .NET 10, .NET MAUI, supported platforms, SQLite, and MIT license
 
-### [1.1.0] - 2026-03-28
+## [1.1.0] - 2026-03-28
 
 ### Added
 - Per-button inverted colors with auto DB schema migration (v1 → v2)
@@ -550,14 +550,14 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 
 ## [Unreleased]
 
-### [2.0.1] - 2026-05-16
+## [2.0.1] - 2026-05-16
 
 ### 修正
 - Windows の上辺 hit test で custom caption drag 領域より native の縦方向リサイズを優先し、Praxis ウィンドウ上辺をつかんで縦方向にリサイズできるようになりました
 - Avalonia 版の Windows/macOS で、editor や conflict dialog が開いていない時に Praxis ウィンドウがアクティブになると Command 欄へフォーカスし、テキストを選択するようになりました
 - Avalonia の配置面は固定 1600x880 ではなく表示中のランチャーボタンの範囲から広がるようになり、Windows/macOS で表示中ボタンが現在の viewport に収まっている時は配置面のスクロールバーが出なくなりました
 
-### [2.0.0] - 2026-05-14
+## [2.0.0] - 2026-05-14
 
 ### 追加
 - strict MVVM の Core model 構成、Avalonia デスクトップシェル、プラットフォーム抽象化・擬似アクリル UI 方針・DB 互換リスク・将来の Linux 対応を含む移行計画を持つ v2.0.0 Avalonia 移行ブランチを開始
@@ -603,7 +603,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - 単一行の Avalonia text box は水平スクロール動作を無効化せず非表示スクロールにし、Command / Search の clear button 用に控えめな右余白を確保したうえで、入力が表示幅を超えても caret が右端に残って文字列が左へ流れるよう修正
 - README と developer/database/testing docs は、削除済みの移行計画メモへのリンクや未実装扱いの記述を外し、現在の Avalonia editing、drag、theme switching、file-backed button sync の挙動に合わせて更新
 
-### [1.2.0] - 2026-05-11
+## [1.2.0] - 2026-05-11
 
 ### 追加
 - `Command` と `Search` 入力欄の placeholder を、欄内左端に配置する SVG 風アイコンに置き換え。`Command` は `>_`（chevron + underscore のターミナルプロンプト形）、`Search` はよくある虫眼鏡。文字列が入ると placeholder と同じくフェードアウトし、色は `Light=#A0A0A0, Dark=#7C7C7C` の控えめなグレーで「主張しない hint」として読ませる
@@ -635,7 +635,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - モーダル編集画面の Invert Theme チェックボックスとその横のラベルにも、Cancel / Save ボタンと同じ pointing-hand ホバーカーソルを適用
 - メインウィンドウに `MinimumWidth=860` / `MinimumHeight=600` を設定し、編集モーダル（`WidthRequest=760` + padding）が常に収まるサイズを保証。ウィンドウを極端に小さくしても UI 要素がコンテナからはみ出さない
 
-### [1.1.13] - 2026-04-30
+## [1.1.13] - 2026-04-30
 
 ### 変更
 - 配置領域のランチャーボタンは hover 時に既定の矢印カーソルのままとなり（従来の pointing-hand ではなく）、主ポインタが押下されている間だけ「掴んだ手」の grab カーソルへ切り替えるよう変更。これによりボタンのドラッグ移動が「掴んで動かす」操作として読み取れるようになり、ただ hover しているだけのときはクリック可能に見えすぎない挙動になる。Dock ボタンは意図的に従来の hover-hand カーソルのまま維持する（「Dock クリックで起動」のサイン）
@@ -650,7 +650,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - `AppLayerSourceGuardTests` に `GrabHandCursorBehavior` のプラットフォーム配線ガードと、配置領域のランチャーボタンが grab-cursor behavior を貼っていることを固定するアサーションを追加し、hover-hand の XAML 出現数は 16 まで下がる（Dock・上部 Create・モーダルの copy/action・context・conflict の各ボタンは引き続き `HoverHandCursorBehavior` を共有）。加えて `PointerMoved` 購読、Mac の primary-only 判定を `PointerButtonClassifier.IsPrimaryOnly(...)` に委譲していること、`PointerMoved` / `PointerExited` 経由の primary-release fallback、`OnDetachingFrom` で gesture recognizer 解除より前に（grab 中なら）カーソルを戻すこともソースレベルで固定する
 - `PointerButtonClassifierTests` を追加し、`Type = "OtherMouseDown"`・`ButtonNumber` の値域・middle (`0x4` / `0x8` / `0x10`) と secondary (`0x2`) の `ButtonMask` ビット・`IsMiddleButtonPressed` / `IsRightButtonPressed`・`PressedButton` / `Button` / `Buttons` のテキスト判定・`CurrentEvent` / `GestureRecognizer` / `Event` チェーン走査までを fake object を使った policy テストで固定する
 
-### [1.1.12] - 2026-04-21
+## [1.1.12] - 2026-04-21
 
 ### 修正
 - `SecondaryFailureLogger` は二次 fallback sink root を `Praxis/secondary-failures.log` の組み立て前に絶対パスへ正規化するようになり、quote 付き絶対パス override は引き続き使える一方、空や相対 root は誤って相対診断パスを作らないよう無視するよう修正
@@ -663,14 +663,14 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - `FileStateSyncNotifierTests` と `AppLayerSourceGuardTests` を拡張し、読込リトライ枯渇 warning に入る正規化済み sync-file path prefix を固定
 - `AppLayerSourceGuardTests` を拡張し、`MauiThemeService` の Mac dispatch-failure breadcrumb が要求された `AppTheme` を含むことを固定
 - `FileAppConfigServiceTests` と `AppLayerSourceGuardTests` を拡張し、invalid theme の skipped-config warning に入る正規化済み `theme` 値を固定
-### [1.1.11] - 2026-04-17
+## [1.1.11] - 2026-04-17
 
 ### 変更
 - `MainViewModel` は `ClearCommandInput` でクリア文字数／no-op を、`ExecuteCommandInputAsync` で実行コマンド長と候補選択フラグを明示的に `LogInfo` するようになった。コマンド入力経路の直後にクラッシュした際に、ハンドラ側のタップログだけから意図を逆算する必要がなくなり、ViewModel 側でも breadcrumb が確実に残る
 - `MainViewModel.ClearSearchText` も `ClearCommandInput` と同形の breadcrumb（クリア文字数／no-op）を記録するようになり、検索欄 X ボタンのタップ経路でクラッシュが続いた場合も、コマンド側と同等の ViewModel 側 evidence が残るようになった
 - `MainPage.FocusEntryAfterClearButtonTap` / `ApplyEntryFocusAfterClearButtonTap` は対象 Entry と retry 件数、および完了マーカーを `crash.log` に出力し、`Entry.Focus()` 自体も try/catch で包んで MAUI ハンドラ内の失敗を crash-file 例外として顕在化するようになり、クリア直後のフォーカス復帰経路で落ちても無言のプロセス終了にならないようにした
 
-### [1.1.10] - 2026-04-15
+## [1.1.10] - 2026-04-15
 
 ### 修正
 - `CommandWorkingDirectoryPolicy` は Windows のシェル実行ファイル名を大文字小文字を区別せず判定するようになり、大文字・混在表記の `cmd.exe` / `powershell.exe` / `pwsh.exe` / `wt.exe` パスでも Praxis プロセスディレクトリを継承せず `WorkingDirectory` をユーザープロファイルに切り替えるよう修正
@@ -751,7 +751,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - `FileStateSyncNotifierTests` を拡張し、`NormalizePayloadForLog(...)` 内の null 同期ペイロード正規化の直接挙動をカバー
 - `AppLayerSourceGuardTests` を拡張し、write-success/write-failure breadcrumb 書き込み前の sync ファイルパス正規化をカバー
 
-### [1.1.9] - 2026-04-14
+## [1.1.9] - 2026-04-14
 
 ### 修正
 - `CrashFileLogger` と `DbErrorLogger` は、Warning / Info の message payload が `null` の場合でも `crash.log` と `ErrorLogEntity` へ書き込む前に `(no message payload)` へ正規化するようにし、劣化時のログ経路でも空欄ではなく明示的な診断証跡を残すよう修正
@@ -763,7 +763,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - `CrashFileLoggerTests` / `DbErrorLoggerTests` の logging 回帰カバレッジを拡充し、永続化失敗 breadcrumb と Warning / Info の null payload 正規化を検証するよう追加
 - `AppLayerSourceGuardTests` を更新し、Warning / Info の正規化後も file-first logging 順序ガードが現在の実装と一致するよう追従
 
-### [1.1.8] - 2026-04-13
+## [1.1.8] - 2026-04-13
 
 ### 修正
 - `CrashFileLogger.AppendExceptionChain` と `DbErrorLogger` の例外型/メッセージ構築を深さ 32 で上限化し、明示的な truncation マーカーを出力するよう修正。病的に深い inner exception チェーンで last-resort クラッシュロガーが StackOverflow に至らないよう保護
@@ -771,7 +771,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 ### テスト
 - `CrashFileLogger.WriteException` と `DbErrorLogger.Log` に深い inner exception チェーン安全性テストを追加
 
-### [1.1.7] - 2026-04-12
+## [1.1.7] - 2026-04-12
 
 ### 修正
 - UI イベントハンドラ、同期通知、Dock/QuickLook タイマー、コマンド候補 debounce、クリップボードヘルパー、競合コールバックで未捕捉例外を `crash.log` に永続化するようにし、異常終了時のクラッシュ証跡を確保
@@ -787,7 +787,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - `AppLayerSourceGuardTests` を拡充し、新たに例外永続化対応した partial class を網羅
 - `DbErrorLogger` の failure detail 保持テストを追加
 
-### [1.1.6] - 2026-04-12
+## [1.1.6] - 2026-04-12
 
 ### 修正
 - `DockOrderValueCodec.Parse()` は CSV 全体や各 GUID 要素を囲む quote も除去するようにし、quote 付きで保存された Dock 順序でも意図した並びを復元できるよう修正
@@ -821,7 +821,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - `GridSnapper` と `ModalEditorScrollHeightResolver` は非有限数値入力を安全化するようにし、`NaN` / infinity がレイアウト計算へ伝播しないよう修正
 - Windows startup-log 追記失敗と `MainPage` copy notice animation 失敗は、無言で握りつぶさず `crash.log` に breadcrumb を残すよう修正
 
-### [1.1.5] - 2026-04-11
+## [1.1.5] - 2026-04-11
 
 ### 修正
 - `MainViewModel.CommandSuggestions` は候補ポップアップ close / refresh の main-thread dispatch 失敗も warning ログに残すようにし、スケジューリング失敗を無言で消さないよう修正
@@ -850,7 +850,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - 起動、外部同期、実行リクエスト、クリップボード反映、クリアボタン、sync signal の境界に低コストな Info breadcrumb を追加し、GUI ハング/abort 時に最後に成功していた段階を追いやすくした
 - clipboard と sync notifier の失敗を主処理から分離し、clipboard 引数読込は空文字へフォールバック、コピー失敗は warning/status 化、clipboard 反映失敗後も実行ログを保持し、save/delete/theme/dock/history は同期通知失敗で巻き戻らないようにした
 
-### [1.1.4] - 2026-04-09
+## [1.1.4] - 2026-04-09
 
 ### 追加
 - .codex および CLAUDE.md を追加
@@ -858,12 +858,12 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 ### 修正
 - CI および Delivery ワークフローで .NET 10 プレビューランタイムパッケージの復元が失敗する問題を修正（`NU1102: Unable to find package Microsoft.NETCore.App.Runtime.Mono.win-x64 with version (= 10.0.5)`）— 固定指定の `dotnet-version: 10.0.100` を `10.0.x` + `dotnet-quality: preview` に変更しプレビュー NuGet フィードを有効化
 
-### [1.1.3] - 2026-04-05
+## [1.1.3] - 2026-04-05
 
 ### 追加
 - `v*` タグ push 時に GitHub Release を自動作成 — delivery ワークフローが OS 別アーティファクト（Windows / macOS）を zip 化し、自動生成リリースノート付きで公開
 
-### [1.1.2] - 2026-03-31
+## [1.1.2] - 2026-03-31
 
 ### 追加
 - 同期ファイルベースのクラッシュロガー（`CrashFileLogger`）: 全ログ呼び出しで `crash.log` に即座に同期書き込みし、非同期 DB 書き込みが完了しないまま異常終了してもログを保持
@@ -884,7 +884,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - `ErrorLogEntity.Level` 列が `Error`・`Info` に加えて `Warning` を受容
 - `ResolveRootPage` の失敗を `IErrorLogger` でログ出力（従来は無言で握り潰し）
 
-### [1.1.1] - 2026-03-28
+## [1.1.1] - 2026-03-28
 
 ### 修正
 - GitHub Actions の checkout で履歴をフル取得するようにし、CI と配布ジョブで Nerdbank.GitVersioning の version height 計算が shallow clone で失敗しないよう修正
@@ -893,7 +893,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 ### 変更
 - README 冒頭に CI / CodeQL / Delivery / .NET 10 / .NET MAUI / 対応プラットフォーム / SQLite / MIT License のバッジを追加
 
-### [1.1.0] - 2026-03-28
+## [1.1.0] - 2026-03-28
 
 ### 追加
 - ボタン単位の色反転（インバート）機能、DB スキーマ自動マイグレーション付き（v1 → v2）
