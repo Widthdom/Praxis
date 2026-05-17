@@ -331,18 +331,20 @@
                         Height="{Binding Height}">
                   <ToolTip.Tip>
                     <Grid Classes="praxis-tooltip-grid"
-                          RowDefinitions="Auto,Auto,Auto,Auto,Auto"
+                          RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto"
                           ColumnDefinitions="92,*">
-                      <TextBlock Classes="praxis-tooltip-label" Text="Command" />
-                      <TextBlock Grid.Column="1" Text="{Binding Command}" />
-                      <TextBlock Grid.Row="1" Classes="praxis-tooltip-label" Text="Tool" />
-                      <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding CommandPath}" />
-                      <TextBlock Grid.Row="2" Classes="praxis-tooltip-label" Text="Arguments" />
-                      <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding Arguments}" />
-                      <TextBlock Grid.Row="3" Classes="praxis-tooltip-label" Text="Clip Word" />
-                      <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding ClipText}" />
-                      <TextBlock Grid.Row="4" Classes="praxis-tooltip-label" Text="Note" />
-                      <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding Note}" />
+                      <TextBlock Classes="praxis-tooltip-label" Text="ButtonText" />
+                      <TextBlock Grid.Column="1" Text="{Binding ButtonText}" />
+                      <TextBlock Grid.Row="1" Classes="praxis-tooltip-label" Text="Command" />
+                      <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding Command}" />
+                      <TextBlock Grid.Row="2" Classes="praxis-tooltip-label" Text="Tool" />
+                      <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding CommandPath}" />
+                      <TextBlock Grid.Row="3" Classes="praxis-tooltip-label" Text="Arguments" />
+                      <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding Arguments}" />
+                      <TextBlock Grid.Row="4" Classes="praxis-tooltip-label" Text="Clip Word" />
+                      <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding ClipText}" />
+                      <TextBlock Grid.Row="5" Classes="praxis-tooltip-label" Text="Note" />
+                      <TextBlock Grid.Row="5" Grid.Column="1" Text="{Binding Note}" />
                     </Grid>
                   </ToolTip.Tip>
                   <Button.Background>
@@ -403,18 +405,20 @@
                     Width="120">
               <ToolTip.Tip>
                 <Grid Classes="praxis-tooltip-grid"
-                          RowDefinitions="Auto,Auto,Auto,Auto,Auto"
+                          RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto"
                           ColumnDefinitions="92,*">
-                      <TextBlock Classes="praxis-tooltip-label" Text="Command" />
-                      <TextBlock Grid.Column="1" Text="{Binding Command}" />
-                      <TextBlock Grid.Row="1" Classes="praxis-tooltip-label" Text="Tool" />
-                      <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding CommandPath}" />
-                      <TextBlock Grid.Row="2" Classes="praxis-tooltip-label" Text="Arguments" />
-                      <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding Arguments}" />
-                      <TextBlock Grid.Row="3" Classes="praxis-tooltip-label" Text="Clip Word" />
-                      <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding ClipText}" />
-                      <TextBlock Grid.Row="4" Classes="praxis-tooltip-label" Text="Note" />
-                      <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding Note}" />
+                      <TextBlock Classes="praxis-tooltip-label" Text="ButtonText" />
+                      <TextBlock Grid.Column="1" Text="{Binding ButtonText}" />
+                      <TextBlock Grid.Row="1" Classes="praxis-tooltip-label" Text="Command" />
+                      <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding Command}" />
+                      <TextBlock Grid.Row="2" Classes="praxis-tooltip-label" Text="Tool" />
+                      <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding CommandPath}" />
+                      <TextBlock Grid.Row="3" Classes="praxis-tooltip-label" Text="Arguments" />
+                      <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding Arguments}" />
+                      <TextBlock Grid.Row="4" Classes="praxis-tooltip-label" Text="Clip Word" />
+                      <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding ClipText}" />
+                      <TextBlock Grid.Row="5" Classes="praxis-tooltip-label" Text="Note" />
+                      <TextBlock Grid.Row="5" Grid.Column="1" Text="{Binding Note}" />
                     </Grid>
               </ToolTip.Tip>
               <Button.Background>
