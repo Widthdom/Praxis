@@ -26,6 +26,7 @@ public sealed class MainWindowViewModel : ObservableObject
         InitializeCommand = new AsyncRelayCommand(Model.InitializeAsync);
         AddButtonCommand = new AsyncRelayCommand(Model.AddButtonAsync);
         ExecuteButtonCommand = new AsyncRelayCommand<LauncherButtonModel>(Model.ExecuteButtonAsync);
+        ExecuteDockButtonCommand = new AsyncRelayCommand<LauncherButtonModel>(Model.ExecuteDockButtonAsync);
         ExecuteCommandInputCommand = new AsyncRelayCommand(Model.ExecuteCommandInputAsync);
         PickSuggestionCommand = new AsyncRelayCommand<CommandSuggestionModel>(Model.PickSuggestionAsync);
         DeleteButtonCommand = new AsyncRelayCommand<LauncherButtonModel>(Model.DeleteButtonAsync);
@@ -104,6 +105,8 @@ public sealed class MainWindowViewModel : ObservableObject
     public IAsyncRelayCommand AddButtonCommand { get; }
 
     public IAsyncRelayCommand<LauncherButtonModel> ExecuteButtonCommand { get; }
+
+    public IAsyncRelayCommand<LauncherButtonModel> ExecuteDockButtonCommand { get; }
 
     public IAsyncRelayCommand ExecuteCommandInputCommand { get; }
 

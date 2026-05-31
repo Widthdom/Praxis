@@ -6,6 +6,9 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 
 ## [Unreleased]
 
+### Fixed
+- Command-field execution and Dock-button execution no longer add or move entries in the persisted Dock order; only placement-area launcher-button clicks promote the button into the Dock.
+
 ## [2.0.4] - 2026-05-18
 
 ### Fixed

@@ -1537,7 +1537,7 @@ public sealed class MainWindowInteractionBehavior
 
         if (point.Properties.IsLeftButtonPressed)
         {
-            ViewModel?.ExecuteButtonCommand.Execute(button);
+            ViewModel?.ExecuteDockButtonCommand.Execute(button);
             e.Handled = true;
         }
     }

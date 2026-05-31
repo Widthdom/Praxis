@@ -166,6 +166,17 @@ public partial class MainModel : ObservableObject
     public async Task ExecuteButtonAsync(
         LauncherButtonModel? button,
         CancellationToken cancellationToken = default)
+        => await ExecuteButtonAsync(button, addToDock: true, cancellationToken);
+
+    public async Task ExecuteDockButtonAsync(
+        LauncherButtonModel? button,
+        CancellationToken cancellationToken = default)
+        => await ExecuteButtonAsync(button, addToDock: false, cancellationToken);
+
+    private async Task ExecuteButtonAsync(
+        LauncherButtonModel? button,
+        bool addToDock,
+        CancellationToken cancellationToken = default)
     {
         if (button is null)
         {
@@ -173,7 +184,7 @@ public partial class MainModel : ObservableObject
             return;
         }
 
-        await ExecuteButtonCoreAsync(button, source: "button", updateStatus: true, cancellationToken);
+        await ExecuteButtonCoreAsync(button, source: "button", updateStatus: true, addToDock, cancellationToken);
     }
 
     public async Task ExecuteCommandInputAsync(CancellationToken cancellationToken = default)
@@ -217,7 +228,7 @@ public partial class MainModel : ObservableObject
 
             if (targets.Count == 1)
             {
-                await ExecuteButtonCoreAsync(targets[0], source: "command", updateStatus: true, cancellationToken);
+                await ExecuteButtonCoreAsync(targets[0], source: "command", updateStatus: true, addToDock: false, cancellationToken);
                 return;
             }
 
@@ -225,7 +236,7 @@ public partial class MainModel : ObservableObject
             string? lastFailureMessage = null;
             foreach (var target in targets)
             {
-                var result = await ExecuteButtonCoreAsync(target, source: "command", updateStatus: false, cancellationToken);
+                var result = await ExecuteButtonCoreAsync(target, source: "command", updateStatus: false, addToDock: false, cancellationToken);
                 if (result.Succeeded)
                 {
                     successCount++;
@@ -259,7 +270,7 @@ public partial class MainModel : ObservableObject
 
         CommandText = suggestion.Command;
         CloseCommandSuggestions();
-        await ExecuteButtonCoreAsync(suggestion.Source, source: "command", updateStatus: true, cancellationToken);
+        await ExecuteButtonCoreAsync(suggestion.Source, source: "command", updateStatus: true, addToDock: false, cancellationToken);
     }
 
     public void MoveSuggestionUp()
@@ -837,6 +848,7 @@ public partial class MainModel : ObservableObject
         LauncherButtonModel button,
         string source,
         bool updateStatus,
+        bool addToDock,
         CancellationToken cancellationToken)
     {
         button.IsExecuting = true;
@@ -855,7 +867,10 @@ public partial class MainModel : ObservableObject
             {
                 button.LastExecutedAtUtc = DateTime.UtcNow;
                 await SaveButtonAsync(button, cancellationToken);
-                await MoveDockButtonToFrontAsync(button, cancellationToken);
+                if (addToDock)
+                {
+                    await MoveDockButtonToFrontAsync(button, cancellationToken);
+                }
             }
 
             await TryAddLaunchLogAsync(button, result, source, cancellationToken);
