@@ -6,6 +6,9 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 
 ## [Unreleased]
 
+### Fixed
+- Command-field execution and Dock-button execution no longer add or move entries in the persisted Dock order; only placement-area launcher-button clicks promote the button into the Dock.
+
 ## [2.0.4] - 2026-05-18
 
 ### Fixed
@@ -564,6 +567,9 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 形式は Keep a Changelog に準拠し、バージョン管理は Semantic Versioning に従います。
 
 ## [Unreleased]
+
+### 修正
+- Command field と Dock button からの実行では、永続化された Dock 順への追加や先頭移動を行わないようにしました。配置領域の launcher button クリックだけが button を Dock へ昇格します。
 
 ## [2.0.4] - 2026-05-18
 

@@ -38,7 +38,7 @@ This guide describes the current Praxis v2 Avalonia architecture. Test-specific 
 - `Praxis.Data/Storage/` - platform-aware app data path resolution
 
 ### Current Migration State
-The Avalonia app loads launcher buttons from SQLite at startup, executes registered commands from the top command field, maintains command suggestions from loaded launcher records, writes newly created/edited/executed/moved/deleted launcher records back to SQLite, persists recent Dock order, writes launch logs, and uses a desktop execution service for direct commands or default-app opening. The former MAUI app project has been removed.
+The Avalonia app loads launcher buttons from SQLite at startup, executes registered commands from the top command field, maintains command suggestions from loaded launcher records, writes newly created/edited/executed/moved/deleted launcher records back to SQLite, persists Dock order promoted from placement-area launcher-button clicks, writes launch logs, and uses a desktop execution service for direct commands or default-app opening. Command-field and Dock-button execution do not promote or reorder Dock entries. The former MAUI app project has been removed.
 
 Launcher-button editing, drag/multi-select wiring, theme mode switching, and app-local cross-window launcher-button sync have been reintroduced. `MainModel` detects edit conflicts when a record was changed or deleted by another window, exposes Reload/Overwrite/Cancel state for the Avalonia conflict dialog, reloads immediately when no editor is open, and defers external reloads while the editor is open. Persisted theme settings and runtime error-log writes remain migration follow-up work and should be reintroduced behind shared service abstractions rather than view code.
 
@@ -140,7 +140,7 @@ dotnet test Praxis.Tests/Praxis.Tests.csproj -c Release --nologo
 - `Praxis.Data/Storage/` - platform-aware な app data path 解決
 
 ### 現在の移行状態
-Avalonia アプリは起動時に SQLite から launcher button を読み込み、上部 command field から登録済み command を実行し、読み込んだ launcher record から command suggestion を作り、作成/編集/実行/移動/削除した launcher record を SQLite に書き戻し、最近使った Dock 順と launch log を保存し、desktop execution service で直接コマンドまたは既定アプリ起動を行います。旧 MAUI アプリプロジェクトは削除済みです。
+Avalonia アプリは起動時に SQLite から launcher button を読み込み、上部 command field から登録済み command を実行し、読み込んだ launcher record から command suggestion を作り、作成/編集/実行/移動/削除した launcher record を SQLite に書き戻し、配置領域のランチャーボタンクリックから昇格した Dock 順と launch log を保存し、desktop execution service で直接コマンドまたは既定アプリ起動を行います。Command field と Dock button からの実行は Dock への昇格や並び替えを行いません。旧 MAUI アプリプロジェクトは削除済みです。
 
 launcher-button 編集、ドラッグ/複数選択 wiring、テーマモード切り替え、app-local な複数ウィンドウ間 launcher-button 同期は再導入済みです。`MainModel` は、他のウィンドウで record が変更または削除された状態で編集を保存しようとした場合に競合を検出し、Avalonia の競合ダイアログ向けに Reload / Overwrite / Cancel の状態を公開します。外部変更は editor が開いていなければ即時 reload し、editor が開いている間は reload を遅延します。テーマ設定の永続化と runtime error-log 書き込みは今後の移行対象であり、View ではなく共有 service abstraction の背後に戻します。
 

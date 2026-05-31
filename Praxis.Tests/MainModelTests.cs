@@ -113,7 +113,7 @@ public class MainModelTests
     }
 
     [Fact]
-    public async Task CommandText_RefreshesSuggestionsAndExecutesMatchingButton()
+    public async Task CommandText_RefreshesSuggestionsAndExecutesMatchingButtonWithoutUpdatingDock()
     {
         var repository = new InMemoryLauncherButtonRepository();
         await repository.UpsertButtonAsync(new LauncherButtonRecord
@@ -137,8 +137,26 @@ public class MainModelTests
 
         Assert.Single(execution.ExecutedButtons);
         Assert.NotNull(model.Buttons[0].LastExecutedAtUtc);
-        Assert.Same(model.Buttons[0], Assert.Single(model.RecentButtons));
-        Assert.Equal([model.Buttons[0].Id], await repository.GetDockButtonIdsAsync());
+        Assert.Empty(model.RecentButtons);
+        Assert.Empty(await repository.GetDockButtonIdsAsync());
+    }
+
+    [Fact]
+    public async Task ExecuteDockButtonAsync_ExecutesWithoutMovingButtonToFront()
+    {
+        var repository = new InMemoryLauncherButtonRepository();
+        var first = new LauncherButtonRecord { Command = "first", ButtonText = "First" };
+        var second = new LauncherButtonRecord { Command = "second", ButtonText = "Second" };
+        await repository.UpsertButtonAsync(first);
+        await repository.UpsertButtonAsync(second);
+        await repository.SetDockButtonIdsAsync([first.Id, second.Id]);
+        var model = new MainModel(new StubLauncherExecutionService(), repository);
+        await model.InitializeAsync();
+
+        await model.ExecuteDockButtonAsync(model.Buttons[1]);
+
+        Assert.Equal([first.Id, second.Id], model.RecentButtons.Select(static button => button.Id));
+        Assert.Equal([first.Id, second.Id], await repository.GetDockButtonIdsAsync());
     }
 
     [Fact]
