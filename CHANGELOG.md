@@ -6,6 +6,8 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 
 ## [Unreleased]
 
+## [2.0.5] - 2026-06-01
+
 ### Fixed
 - Command-field execution and Dock-button execution no longer add or move entries in the persisted Dock order; only placement-area launcher-button clicks promote the button into the Dock.
 
@@ -568,6 +570,8 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 
 ## [Unreleased]
 
+## [2.0.5] - 2026-06-01
+
 ### 修正
 - Command field と Dock button からの実行では、永続化された Dock 順への追加や先頭移動を行わないようにしました。配置領域の launcher button クリックだけが button を Dock へ昇格します。
 
@@ -998,7 +1002,8 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - 重複 `using` ディレクティブの削除と `using` 順序の正規化
 - `MainViewModel` と各 partial クラスに主要ライフサイクルイベントの `LogInfo` 呼び出しを追加
 
-[Unreleased]: https://github.com/Widthdom/Praxis/compare/v2.0.4...HEAD
+[Unreleased]: https://github.com/Widthdom/Praxis/compare/v2.0.5...HEAD
+[2.0.5]: https://github.com/Widthdom/Praxis/compare/v2.0.4...v2.0.5
 [2.0.4]: https://github.com/Widthdom/Praxis/compare/v2.0.3...v2.0.4
 [2.0.3]: https://github.com/Widthdom/Praxis/compare/v2.0.2...v2.0.3
 [2.0.2]: https://github.com/Widthdom/Praxis/compare/v2.0.1...v2.0.2
