@@ -6,6 +6,9 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 
 ## [Unreleased]
 
+### Fixed
+- Editor modal text boxes now reserve a modest copy-button gutter so long single-line and multi-line values clip before the hover copy button instead of drawing underneath it.
+
 ## [2.0.5] - 2026-06-01
 
 ### Fixed
@@ -569,6 +572,9 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 形式は Keep a Changelog に準拠し、バージョン管理は Semantic Versioning に従います。
 
 ## [Unreleased]
+
+### 修正
+- エディタモーダルの text box は控えめなクリップボタン用右余白を確保し、1 行入力と複数行入力の長い値が hover 表示されるクリップボタンの下へ重ならず手前で見切れるようにしました。
 
 ## [2.0.5] - 2026-06-01
 
