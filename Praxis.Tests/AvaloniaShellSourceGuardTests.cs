@@ -83,6 +83,9 @@ public class AvaloniaShellSourceGuardTests
         Assert.Contains("MouseButton.Left", behavior, StringComparison.Ordinal);
         Assert.Contains("IsRightButtonPressed", behavior, StringComparison.Ordinal);
         Assert.Contains("IsMiddleButtonPressed", behavior, StringComparison.Ordinal);
+        Assert.Contains("ReadClipboardTextAsync", behavior, StringComparison.Ordinal);
+        Assert.Contains("clipboard.TryGetTextAsync()", behavior, StringComparison.Ordinal);
+        Assert.Contains("Arguments = arguments", behavior, StringComparison.Ordinal);
     }
 
     [Fact]

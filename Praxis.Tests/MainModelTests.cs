@@ -423,6 +423,54 @@ public class MainModelTests
     }
 
     [Fact]
+    public async Task AddButtonAsync_OpensEditorAtVisibleViewportCenter()
+    {
+        var model = new MainModel(
+            new StubLauncherExecutionService(),
+            new InMemoryLauncherButtonRepository());
+        model.Buttons.Add(new LauncherButtonModel
+        {
+            Text = "Far",
+            X = 1300,
+            Y = 900,
+            Width = 120,
+            Height = 40,
+        });
+        model.SearchText = "far";
+        model.UpdateViewport(800, 400, 500, 300);
+
+        await model.AddButtonAsync();
+
+        Assert.True(model.IsEditorOpen);
+        Assert.NotNull(model.EditorButton);
+        Assert.Equal(990, model.EditorButton.X);
+        Assert.Equal(530, model.EditorButton.Y);
+        Assert.Equal(1050, model.EditorButton.X + (model.EditorButton.Width / 2));
+        Assert.Equal(550, model.EditorButton.Y + (model.EditorButton.Height / 2));
+    }
+
+    [Fact]
+    public void OpenNewButtonEditor_AppliesPayloadArguments()
+    {
+        var model = new MainModel(
+            new StubLauncherExecutionService(),
+            new InMemoryLauncherButtonRepository());
+
+        model.OpenNewButtonEditor(new NewButtonPayload
+        {
+            X = 40,
+            Y = 40,
+            HasPosition = true,
+            Arguments = "README.md",
+        });
+
+        Assert.True(model.IsEditorOpen);
+        Assert.Equal(40, model.EditorButton?.X);
+        Assert.Equal(40, model.EditorButton?.Y);
+        Assert.Equal("README.md", model.EditorButton?.Arguments);
+    }
+
+    [Fact]
     public async Task SaveEditorAsync_NotifiesStateSyncAfterSuccessfulSave()
     {
         var repository = new InMemoryLauncherButtonRepository();

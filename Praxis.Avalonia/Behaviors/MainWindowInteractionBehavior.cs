@@ -1542,7 +1542,7 @@ public sealed class MainWindowInteractionBehavior
         }
     }
 
-    private void PlacementSurface_PointerPressed(object? sender, PointerPressedEventArgs e)
+    private async void PlacementSurface_PointerPressed(object? sender, PointerPressedEventArgs e)
     {
         if (placementSurface is null || FindButtonFromEvent(sender, e.Source, "praxis-launcher") is not null)
         {
@@ -1553,8 +1553,15 @@ public sealed class MainWindowInteractionBehavior
         if (point.Properties.IsRightButtonPressed)
         {
             var position = e.GetPosition(placementSurface);
-            ViewModel?.OpenNewButtonEditorCommand.Execute(new NewButtonPayload { X = position.X, Y = position.Y, HasPosition = true });
             e.Handled = true;
+            var arguments = await ReadClipboardTextAsync();
+            ViewModel?.OpenNewButtonEditorCommand.Execute(new NewButtonPayload
+            {
+                X = position.X,
+                Y = position.Y,
+                HasPosition = true,
+                Arguments = arguments,
+            });
             return;
         }
 
@@ -1678,6 +1685,24 @@ public sealed class MainWindowInteractionBehavior
         }
 
         e.Handled = true;
+    }
+
+    private async Task<string> ReadClipboardTextAsync()
+    {
+        var clipboard = TopLevel.GetTopLevel(window)?.Clipboard;
+        if (clipboard is null)
+        {
+            return string.Empty;
+        }
+
+        try
+        {
+            return await clipboard.TryGetTextAsync() ?? string.Empty;
+        }
+        catch
+        {
+            return string.Empty;
+        }
     }
 
     private void ShowCopyToast()
