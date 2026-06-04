@@ -6,6 +6,9 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 
 ## [Unreleased]
 
+### Fixed
+- Right-clicking the placement area to create a launcher button now initializes the editor `Arguments` field from the clipboard on Windows and macOS.
+
 ## [2.0.5] - 2026-06-01
 
 ### Fixed
@@ -569,6 +572,9 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 形式は Keep a Changelog に準拠し、バージョン管理は Semantic Versioning に従います。
 
 ## [Unreleased]
+
+### 修正
+- 配置領域を右クリックして launcher button を作成するとき、Windows と macOS の両方で編集モーダルの `Arguments` に clipboard 内容を初期入力するようにしました。
 
 ## [2.0.5] - 2026-06-01
 

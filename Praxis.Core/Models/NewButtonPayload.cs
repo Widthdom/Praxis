@@ -7,4 +7,6 @@ public sealed class NewButtonPayload
     public double Y { get; init; }
 
     public bool HasPosition { get; init; }
+
+    public string Arguments { get; init; } = string.Empty;
 }

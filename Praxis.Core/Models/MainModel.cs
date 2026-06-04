@@ -612,6 +612,7 @@ public partial class MainModel : ObservableObject
             X = Math.Max(0, GridSnapper.Snap(x)),
             Y = Math.Max(0, GridSnapper.Snap(y)),
             ColorKey = LauncherButtonColorKey.Default,
+            Arguments = payload?.Arguments ?? string.Empty,
         };
         editorCreatesNewButton = true;
         IsEditorCreatingNewButton = true;

@@ -423,6 +423,25 @@ public class MainModelTests
     }
 
     [Fact]
+    public void OpenNewButtonEditor_AppliesPayloadArguments()
+    {
+        var model = new MainModel(
+            new StubLauncherExecutionService(),
+            new InMemoryLauncherButtonRepository());
+
+        model.OpenNewButtonEditor(new NewButtonPayload
+        {
+            X = 40,
+            Y = 40,
+            HasPosition = true,
+            Arguments = "README.md",
+        });
+
+        Assert.True(model.IsEditorOpen);
+        Assert.Equal("README.md", model.EditorButton?.Arguments);
+    }
+
+    [Fact]
     public async Task SaveEditorAsync_NotifiesStateSyncAfterSuccessfulSave()
     {
         var repository = new InMemoryLauncherButtonRepository();
