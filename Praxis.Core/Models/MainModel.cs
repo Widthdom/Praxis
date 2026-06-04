@@ -141,12 +141,12 @@ public partial class MainModel : ObservableObject
 
     public void AddButton()
     {
-        var ordinal = Buttons.Count + 1;
+        var position = ResolveNewButtonPosition(null);
         var button = new LauncherButtonModel
         {
             Text = "New",
-            X = 48 + ((ordinal - 1) % 4) * 148,
-            Y = 48 + ((ordinal - 1) / 4) * 76,
+            X = Math.Max(0, GridSnapper.Snap(position.X)),
+            Y = Math.Max(0, GridSnapper.Snap(position.Y)),
             ColorKey = LauncherButtonColorKey.Default,
             ToolTip = "New launcher button",
         };
@@ -603,14 +603,12 @@ public partial class MainModel : ObservableObject
 
     public void OpenNewButtonEditor(NewButtonPayload? payload)
     {
-        var ordinal = Buttons.Count + 1;
-        var x = payload?.HasPosition == true ? payload.X : 48 + ((ordinal - 1) % 4) * 148;
-        var y = payload?.HasPosition == true ? payload.Y : 48 + ((ordinal - 1) / 4) * 76;
+        var position = ResolveNewButtonPosition(payload);
         EditorButton = new LauncherButtonModel
         {
             Text = "New",
-            X = Math.Max(0, GridSnapper.Snap(x)),
-            Y = Math.Max(0, GridSnapper.Snap(y)),
+            X = Math.Max(0, GridSnapper.Snap(position.X)),
+            Y = Math.Max(0, GridSnapper.Snap(position.Y)),
             ColorKey = LauncherButtonColorKey.Default,
             Arguments = payload?.Arguments ?? string.Empty,
         };
@@ -618,6 +616,29 @@ public partial class MainModel : ObservableObject
         IsEditorCreatingNewButton = true;
         IsEditorOpen = true;
         CloseContextMenu();
+    }
+
+    private (double X, double Y) ResolveNewButtonPosition(NewButtonPayload? payload)
+    {
+        if (payload?.HasPosition == true)
+        {
+            return (payload.X, payload.Y);
+        }
+
+        if (double.IsFinite(viewportWidth)
+            && double.IsFinite(viewportHeight)
+            && viewportWidth > 0
+            && viewportHeight > 0)
+        {
+            return (
+                viewportX + ((viewportWidth - ButtonLayoutDefaults.Width) / 2),
+                viewportY + ((viewportHeight - ButtonLayoutDefaults.Height) / 2));
+        }
+
+        var ordinal = Buttons.Count + 1;
+        return (
+            48 + ((ordinal - 1) % 4) * 148,
+            48 + ((ordinal - 1) / 4) * 76);
     }
 
     public void CancelEditor()

@@ -8,6 +8,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 
 ### Fixed
 - Right-clicking the placement area to create a launcher button now initializes the editor `Arguments` field from the clipboard on Windows and macOS.
+- Creating a launcher button from the top-bar create button now places it at the center of the currently visible placement viewport.
 
 ## [2.0.5] - 2026-06-01
 
@@ -575,6 +576,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 
 ### 修正
 - 配置領域を右クリックして launcher button を作成するとき、Windows と macOS の両方で編集モーダルの `Arguments` に clipboard 内容を初期入力するようにしました。
+- top bar の新規追加ボタンから launcher button を作成するとき、現在表示中の配置 viewport の中央に配置するようにしました。
 
 ## [2.0.5] - 2026-06-01
 
