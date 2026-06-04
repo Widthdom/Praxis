@@ -6,6 +6,8 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 
 ## [Unreleased]
 
+## [2.0.6] - 2026-06-04
+
 ### Fixed
 - Right-clicking the placement area to create a launcher button now initializes the editor `Arguments` field from the clipboard on Windows and macOS.
 - Creating a launcher button from the top-bar create button now places it at the center of the currently visible placement viewport.
@@ -575,6 +577,8 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 
 ## [Unreleased]
 
+## [2.0.6] - 2026-06-04
+
 ### 修正
 - 配置領域を右クリックして launcher button を作成するとき、Windows と macOS の両方で編集モーダルの `Arguments` に clipboard 内容を初期入力するようにしました。
 - top bar の新規追加ボタンから launcher button を作成するとき、現在表示中の配置 viewport の中央に配置するようにしました。
@@ -1012,7 +1016,8 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - 重複 `using` ディレクティブの削除と `using` 順序の正規化
 - `MainViewModel` と各 partial クラスに主要ライフサイクルイベントの `LogInfo` 呼び出しを追加
 
-[Unreleased]: https://github.com/Widthdom/Praxis/compare/v2.0.5...HEAD
+[Unreleased]: https://github.com/Widthdom/Praxis/compare/v2.0.6...HEAD
+[2.0.6]: https://github.com/Widthdom/Praxis/compare/v2.0.5...v2.0.6
 [2.0.5]: https://github.com/Widthdom/Praxis/compare/v2.0.4...v2.0.5
 [2.0.4]: https://github.com/Widthdom/Praxis/compare/v2.0.3...v2.0.4
 [2.0.3]: https://github.com/Widthdom/Praxis/compare/v2.0.2...v2.0.3
