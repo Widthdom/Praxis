@@ -2,6 +2,7 @@
         xmlns:chrome="using:Avalonia.Controls.Chrome"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
   <Styles.Resources>
+    <FontFamily x:Key="PraxisUiFontFamily">avares://Praxis/Assets/Fonts#Inter</FontFamily>
     <LinearGradientBrush x:Key="PraxisShellBackground" StartPoint="0%,0%" EndPoint="100%,100%">
       <GradientStop Color="#F0202020" Offset="0" />
       <GradientStop Color="#E2323232" Offset="0.42" />
@@ -39,12 +40,8 @@
 
   <Style Selector="Window.praxis-main">
     <Setter Property="Background" Value="Transparent" />
-    <Setter Property="FontFamily" Value="Inter, Hiragino Sans, Yu Gothic, Meiryo, Segoe UI, -apple-system, BlinkMacSystemFont" />
+    <Setter Property="FontFamily" Value="{StaticResource PraxisUiFontFamily}" />
     <Setter Property="Foreground" Value="{StaticResource PraxisTextPrimaryBrush}" />
-  </Style>
-
-  <Style Selector="Window.praxis-main.windows">
-    <Setter Property="FontFamily" Value="Segoe UI Variable Text, Segoe UI, Yu Gothic UI, Meiryo" />
   </Style>
 
   <Style Selector="Window.praxis-main.light">
@@ -224,11 +221,13 @@
   <Style Selector="Button.praxis-create">
     <Setter Property="Background" Value="#565656" />
     <Setter Property="Foreground" Value="{StaticResource PraxisTextPrimaryBrush}" />
-    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="BorderBrush" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="2" />
     <Setter Property="CornerRadius" Value="4" />
     <Setter Property="Padding" Value="8,5" />
     <Setter Property="Height" Value="40" />
     <Setter Property="MinHeight" Value="40" />
+    <Setter Property="FocusAdorner" Value="{x:Null}" />
     <Setter Property="Template">
       <ControlTemplate>
         <Border Background="{TemplateBinding Background}"
@@ -243,6 +242,11 @@
         </Border>
       </ControlTemplate>
     </Setter>
+  </Style>
+
+  <Style Selector="Button.praxis-create:focus">
+    <Setter Property="BorderBrush" Value="#A0A0A0" />
+    <Setter Property="BorderThickness" Value="2" />
   </Style>
 
   <Style Selector="Button.praxis-create:pointerover">
@@ -886,22 +890,14 @@
   </Style>
 
   <Style Selector="Grid.praxis-tooltip-grid TextBlock">
-    <Setter Property="FontFamily" Value="Inter, Hiragino Sans, Yu Gothic, Meiryo, Segoe UI, -apple-system, BlinkMacSystemFont" />
-  </Style>
-
-  <Style Selector="Window.windows Grid.praxis-tooltip-grid TextBlock">
-    <Setter Property="FontFamily" Value="Segoe UI Variable Text, Segoe UI, Yu Gothic UI, Meiryo" />
+    <Setter Property="FontFamily" Value="{StaticResource PraxisUiFontFamily}" />
   </Style>
 
   <Style Selector="ToolTip">
-    <Setter Property="FontFamily" Value="Inter, Hiragino Sans, Yu Gothic, Meiryo, Segoe UI, -apple-system, BlinkMacSystemFont" />
+    <Setter Property="FontFamily" Value="{StaticResource PraxisUiFontFamily}" />
     <Setter Property="MinHeight" Value="32" />
     <Setter Property="Padding" Value="8,8" />
     <Setter Property="VerticalContentAlignment" Value="Center" />
-  </Style>
-
-  <Style Selector="Window.windows ToolTip">
-    <Setter Property="FontFamily" Value="Segoe UI Variable Text, Segoe UI, Yu Gothic UI, Meiryo" />
   </Style>
 
   <Style Selector="ToolTip TextBlock">
@@ -909,10 +905,8 @@
     <Setter Property="VerticalAlignment" Value="Center" />
   </Style>
 
-  <Style Selector="TextBlock.praxis-caption-tooltip">
-    <Setter Property="LineHeight" Value="16" />
-    <Setter Property="Margin" Value="0,1,0,2" />
-    <Setter Property="VerticalAlignment" Value="Center" />
+  <Style Selector="TextBlock.praxis-compact-tooltip">
+    <Setter Property="Margin" Value="0,1,0,0" />
   </Style>
 
   <Style Selector="TextBlock.praxis-tooltip-label">

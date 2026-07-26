@@ -135,6 +135,28 @@ public class AvaloniaShellSourceGuardTests
     }
 
     [Fact]
+    public void AvaloniaTheme_EmbedsInterAndAlignsTopBarInteractionVisuals()
+    {
+        var project = ReadRepositoryFile("Praxis.Avalonia", "Praxis.Avalonia.csproj");
+        var theme = ReadRepositoryFile("Praxis.Avalonia", "Themes", "PseudoAcrylicTheme.axaml");
+        var xaml = ReadRepositoryFile("Praxis.Avalonia", "Views", "MainWindow.axaml");
+        var fontsPath = Path.Combine(ResolveRepositoryRoot(), "Praxis.Avalonia", "Assets", "Fonts");
+
+        Assert.Contains("<AvaloniaResource Include=\"Assets\\**\" />", project, StringComparison.Ordinal);
+        Assert.Contains("<FontFamily x:Key=\"PraxisUiFontFamily\">avares://Praxis/Assets/Fonts#Inter</FontFamily>", theme, StringComparison.Ordinal);
+        Assert.Contains("<Style Selector=\"Button.praxis-create:focus\">", theme, StringComparison.Ordinal);
+        Assert.Contains("<Setter Property=\"BorderBrush\" Value=\"#A0A0A0\" />", theme, StringComparison.Ordinal);
+        Assert.Contains("<Style Selector=\"TextBlock.praxis-compact-tooltip\">", theme, StringComparison.Ordinal);
+        Assert.Contains("<Setter Property=\"Margin\" Value=\"0,1,0,0\" />", theme, StringComparison.Ordinal);
+        Assert.Contains("Classes=\"praxis-compact-tooltip\" Text=\"Create button\"", xaml, StringComparison.Ordinal);
+        Assert.DoesNotContain("Segoe UI Variable Text", theme, StringComparison.Ordinal);
+        Assert.True(File.Exists(Path.Combine(fontsPath, "Inter-Regular.ttf")));
+        Assert.True(File.Exists(Path.Combine(fontsPath, "Inter-SemiBold.ttf")));
+        Assert.True(File.Exists(Path.Combine(fontsPath, "Inter-Bold.ttf")));
+        Assert.True(File.Exists(Path.Combine(fontsPath, "LICENSE.txt")));
+    }
+
+    [Fact]
     public void AvaloniaProject_EmbedsIconAssets()
     {
         var project = ReadRepositoryFile("Praxis.Avalonia", "Praxis.Avalonia.csproj");

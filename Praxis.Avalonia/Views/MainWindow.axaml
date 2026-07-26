@@ -43,8 +43,10 @@
                   VerticalAlignment="Top">
         <Button Classes="praxis-traffic praxis-close"
                 IsTabStop="False"
-                ToolTip.Tip="Close"
                 behaviors:WindowChromeButtonBehavior.Action="Close">
+          <ToolTip.Tip>
+            <TextBlock Classes="praxis-compact-tooltip" Text="Close" />
+          </ToolTip.Tip>
           <Grid Classes="praxis-traffic-symbol praxis-traffic-close-glyph">
             <Path Data="M 4.4 4.4 L 8.6 8.6 M 8.6 4.4 L 4.4 8.6"
                   StrokeThickness="1.3"
@@ -54,8 +56,10 @@
         <Button Classes="praxis-traffic praxis-minimize"
                 x:Name="MacMinimizeButton"
                 IsTabStop="False"
-                ToolTip.Tip="Minimize"
                 behaviors:WindowChromeButtonBehavior.Action="Minimize">
+          <ToolTip.Tip>
+            <TextBlock Classes="praxis-compact-tooltip" Text="Minimize" />
+          </ToolTip.Tip>
           <Grid Classes="praxis-traffic-symbol praxis-traffic-minimize-glyph">
             <Path Data="M 4 6.5 L 9 6.5"
                   StrokeThickness="1.4"
@@ -64,8 +68,10 @@
         </Button>
         <Button Classes="praxis-traffic praxis-maximize"
                 IsTabStop="False"
-                ToolTip.Tip="Full Screen"
                 behaviors:WindowChromeButtonBehavior.Action="ToggleMaximize">
+          <ToolTip.Tip>
+            <TextBlock Classes="praxis-compact-tooltip" Text="Full Screen" />
+          </ToolTip.Tip>
           <Grid Classes="praxis-traffic-symbol praxis-traffic-fullscreen-glyph">
             <Path Data="M 3.6 3.6 L 8.2 3.6 L 3.6 8.2 Z" />
             <Path Data="M 9.4 4.8 L 9.4 9.4 L 4.8 9.4 Z" />
@@ -88,7 +94,7 @@
                 chrome:WindowDecorationProperties.ElementRole="MinimizeButton"
                 behaviors:WindowChromeButtonBehavior.Action="Minimize">
           <ToolTip.Tip>
-            <TextBlock Classes="praxis-caption-tooltip" Text="Minimize" />
+            <TextBlock Classes="praxis-compact-tooltip" Text="Minimize" />
           </ToolTip.Tip>
           <TextBlock Text="&#xE921;"
                      FontFamily="Segoe Fluent Icons, Segoe UI Symbol"
@@ -101,7 +107,7 @@
                 behaviors:WindowChromeButtonBehavior.Action="ToggleMaximize">
           <ToolTip.Tip>
             <TextBlock x:Name="WindowsMaximizeTooltip"
-                       Classes="praxis-caption-tooltip"
+                       Classes="praxis-compact-tooltip"
                        Text="Maximize" />
           </ToolTip.Tip>
           <TextBlock x:Name="WindowsMaximizeGlyph"
@@ -114,7 +120,7 @@
                 chrome:WindowDecorationProperties.ElementRole="CloseButton"
                 behaviors:WindowChromeButtonBehavior.Action="Close">
           <ToolTip.Tip>
-            <TextBlock Classes="praxis-caption-tooltip" Text="Close" />
+            <TextBlock Classes="praxis-compact-tooltip" Text="Close" />
           </ToolTip.Tip>
           <TextBlock Text="&#xE8BB;"
                      FontFamily="Segoe Fluent Icons, Segoe UI Symbol"
@@ -173,8 +179,10 @@
       <Button Grid.Column="1"
               Classes="praxis-create"
               Height="40"
-              Command="{Binding AddButtonCommand}"
-              ToolTip.Tip="Create button">
+              Command="{Binding AddButtonCommand}">
+        <ToolTip.Tip>
+          <TextBlock Classes="praxis-compact-tooltip" Text="Create button" />
+        </ToolTip.Tip>
         <Viewbox Width="30"
                  Height="30">
           <Canvas Width="30"

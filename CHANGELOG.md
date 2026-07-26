@@ -6,6 +6,13 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 
 ## [Unreleased]
 
+### Changed
+- Bundled Inter Regular, SemiBold, and Bold font assets so Windows and the other desktop targets use consistent Latin UI typography without depending on an installed UI font.
+
+### Fixed
+- The Create button now uses the same rounded two-pixel focus border as the Command and Search fields without shifting its content.
+- Compact Create and window-caption button tooltips now optically center their text vertically.
+
 ## [2.0.6] - 2026-06-04
 
 ### Fixed
