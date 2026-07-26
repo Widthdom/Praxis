@@ -14,6 +14,9 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - Compact Create and window-caption button tooltips now optically center their text vertically.
 - macOS and Linux retain their platform font stacks instead of inheriting the Windows-targeted embedded Inter family, preventing unsupported characters from rendering as missing-glyph boxes.
 
+#### Documentation
+- **Simplified the cdidx code-search policy** — Replaced duplicated version-specific setup, freshness, query, fallback, and command examples in `AGENT_GUIDE.md` with a concise requirement to use `cdidx`, identify [Widthdom/CodeIndex](https://github.com/Widthdom/CodeIndex) as its official source, and follow the MCP instructions and tool descriptions or CLI help and diagnostics provided by `cdidx` itself.
+
 ## [2.0.6] - 2026-06-04
 
 ### Fixed
@@ -592,6 +595,9 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - Create button は内容をずらさず、Command field と Search field と同じ角丸 2 pixel の focus border を表示するようになりました。
 - Create button と window caption button のコンパクトな tooltip text を、垂直方向の見た目上の中央へ揃えました。
 - macOS と Linux は Windows 向けの埋め込み Inter family を引き継がず、それぞれの platform font stack を維持するようにし、未対応文字が missing-glyph box で表示される問題を防ぎました。
+
+#### ドキュメント
+- **cdidx コード検索ポリシーを簡素化** — `AGENT_GUIDE.md` に重複していたバージョン依存のセットアップ、鮮度確認、クエリ、フォールバック、コマンド例を削除し、[Widthdom/CodeIndex](https://github.com/Widthdom/CodeIndex) を公式配布元として明示したうえで `cdidx` を使い、`cdidx` 自身が提供する MCP の instructions と tool descriptions、または CLI の help と diagnostics に従うという簡潔な要件へ置き換えました。
 
 ## [2.0.6] - 2026-06-04
 
