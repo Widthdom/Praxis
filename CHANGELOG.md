@@ -6,6 +6,8 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 
 ## [Unreleased]
 
+## [2.0.7] - 2026-07-26
+
 ### Changed
 - Bundled Inter Regular, SemiBold, and Bold font assets so Windows uses consistent Latin UI typography without depending on an installed UI font, with `Yu Gothic UI` and `Meiryo` retained as Japanese fallbacks.
 
@@ -588,6 +590,8 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 
 ## [Unreleased]
 
+## [2.0.7] - 2026-07-26
+
 ### 変更
 - Windows がインストール済み UI font に依存せず一貫した英数字 UI typography を使えるよう、Inter の Regular、SemiBold、Bold font asset を同梱し、日本語 fallback には `Yu Gothic UI` と `Meiryo` を維持しました。
 
@@ -1038,7 +1042,8 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - 重複 `using` ディレクティブの削除と `using` 順序の正規化
 - `MainViewModel` と各 partial クラスに主要ライフサイクルイベントの `LogInfo` 呼び出しを追加
 
-[Unreleased]: https://github.com/Widthdom/Praxis/compare/v2.0.6...HEAD
+[Unreleased]: https://github.com/Widthdom/Praxis/compare/v2.0.7...HEAD
+[2.0.7]: https://github.com/Widthdom/Praxis/compare/v2.0.6...v2.0.7
 [2.0.6]: https://github.com/Widthdom/Praxis/compare/v2.0.5...v2.0.6
 [2.0.5]: https://github.com/Widthdom/Praxis/compare/v2.0.4...v2.0.5
 [2.0.4]: https://github.com/Widthdom/Praxis/compare/v2.0.3...v2.0.4
