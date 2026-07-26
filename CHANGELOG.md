@@ -6,6 +6,14 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 
 ## [Unreleased]
 
+### Changed
+- Bundled Inter Regular, SemiBold, and Bold font assets so Windows uses consistent Latin UI typography without depending on an installed UI font, with `Yu Gothic UI` and `Meiryo` retained as Japanese fallbacks.
+
+### Fixed
+- The Create button now uses the same rounded two-pixel focus border as the Command and Search fields without shifting its content.
+- Compact Create and window-caption button tooltips now optically center their text vertically.
+- macOS and Linux retain their platform font stacks instead of inheriting the Windows-targeted embedded Inter family, preventing unsupported characters from rendering as missing-glyph boxes.
+
 ## [2.0.6] - 2026-06-04
 
 ### Fixed
