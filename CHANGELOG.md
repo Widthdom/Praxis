@@ -585,6 +585,14 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 
 ## [Unreleased]
 
+### 変更
+- Windows がインストール済み UI font に依存せず一貫した英数字 UI typography を使えるよう、Inter の Regular、SemiBold、Bold font asset を同梱し、日本語 fallback には `Yu Gothic UI` と `Meiryo` を維持しました。
+
+### 修正
+- Create button は内容をずらさず、Command field と Search field と同じ角丸 2 pixel の focus border を表示するようになりました。
+- Create button と window caption button のコンパクトな tooltip text を、垂直方向の見た目上の中央へ揃えました。
+- macOS と Linux は Windows 向けの埋め込み Inter family を引き継がず、それぞれの platform font stack を維持するようにし、未対応文字が missing-glyph box で表示される問題を防ぎました。
+
 ## [2.0.6] - 2026-06-04
 
 ### 修正
