@@ -2,7 +2,7 @@
         xmlns:chrome="using:Avalonia.Controls.Chrome"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
   <Styles.Resources>
-    <FontFamily x:Key="PraxisUiFontFamily">avares://Praxis/Assets/Fonts#Inter</FontFamily>
+    <FontFamily x:Key="PraxisWindowsUiFontFamily">avares://Praxis/Assets/Fonts#Inter, Yu Gothic UI, Meiryo</FontFamily>
     <LinearGradientBrush x:Key="PraxisShellBackground" StartPoint="0%,0%" EndPoint="100%,100%">
       <GradientStop Color="#F0202020" Offset="0" />
       <GradientStop Color="#E2323232" Offset="0.42" />
@@ -40,8 +40,12 @@
 
   <Style Selector="Window.praxis-main">
     <Setter Property="Background" Value="Transparent" />
-    <Setter Property="FontFamily" Value="{StaticResource PraxisUiFontFamily}" />
+    <Setter Property="FontFamily" Value="Inter, Hiragino Sans, Yu Gothic, Meiryo, Segoe UI, -apple-system, BlinkMacSystemFont" />
     <Setter Property="Foreground" Value="{StaticResource PraxisTextPrimaryBrush}" />
+  </Style>
+
+  <Style Selector="Window.praxis-main.windows">
+    <Setter Property="FontFamily" Value="{StaticResource PraxisWindowsUiFontFamily}" />
   </Style>
 
   <Style Selector="Window.praxis-main.light">
@@ -890,14 +894,22 @@
   </Style>
 
   <Style Selector="Grid.praxis-tooltip-grid TextBlock">
-    <Setter Property="FontFamily" Value="{StaticResource PraxisUiFontFamily}" />
+    <Setter Property="FontFamily" Value="Inter, Hiragino Sans, Yu Gothic, Meiryo, Segoe UI, -apple-system, BlinkMacSystemFont" />
+  </Style>
+
+  <Style Selector="Window.windows Grid.praxis-tooltip-grid TextBlock">
+    <Setter Property="FontFamily" Value="{StaticResource PraxisWindowsUiFontFamily}" />
   </Style>
 
   <Style Selector="ToolTip">
-    <Setter Property="FontFamily" Value="{StaticResource PraxisUiFontFamily}" />
+    <Setter Property="FontFamily" Value="Inter, Hiragino Sans, Yu Gothic, Meiryo, Segoe UI, -apple-system, BlinkMacSystemFont" />
     <Setter Property="MinHeight" Value="32" />
     <Setter Property="Padding" Value="8,8" />
     <Setter Property="VerticalContentAlignment" Value="Center" />
+  </Style>
+
+  <Style Selector="Window.windows ToolTip">
+    <Setter Property="FontFamily" Value="{StaticResource PraxisWindowsUiFontFamily}" />
   </Style>
 
   <Style Selector="ToolTip TextBlock">

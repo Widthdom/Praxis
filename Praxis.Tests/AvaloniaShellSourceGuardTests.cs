@@ -135,7 +135,7 @@ public class AvaloniaShellSourceGuardTests
     }
 
     [Fact]
-    public void AvaloniaTheme_EmbedsInterAndAlignsTopBarInteractionVisuals()
+    public void AvaloniaTheme_EmbedsInterForWindowsAndAlignsTopBarInteractionVisuals()
     {
         var project = ReadRepositoryFile("Praxis.Avalonia", "Praxis.Avalonia.csproj");
         var theme = ReadRepositoryFile("Praxis.Avalonia", "Themes", "PseudoAcrylicTheme.axaml");
@@ -143,7 +143,10 @@ public class AvaloniaShellSourceGuardTests
         var fontsPath = Path.Combine(ResolveRepositoryRoot(), "Praxis.Avalonia", "Assets", "Fonts");
 
         Assert.Contains("<AvaloniaResource Include=\"Assets\\**\" />", project, StringComparison.Ordinal);
-        Assert.Contains("<FontFamily x:Key=\"PraxisUiFontFamily\">avares://Praxis/Assets/Fonts#Inter</FontFamily>", theme, StringComparison.Ordinal);
+        Assert.Contains("<FontFamily x:Key=\"PraxisWindowsUiFontFamily\">avares://Praxis/Assets/Fonts#Inter, Yu Gothic UI, Meiryo</FontFamily>", theme, StringComparison.Ordinal);
+        Assert.Contains("<Style Selector=\"Window.praxis-main.windows\">", theme, StringComparison.Ordinal);
+        Assert.Contains("<Setter Property=\"FontFamily\" Value=\"{StaticResource PraxisWindowsUiFontFamily}\" />", theme, StringComparison.Ordinal);
+        Assert.Contains("<Setter Property=\"FontFamily\" Value=\"Inter, Hiragino Sans, Yu Gothic, Meiryo, Segoe UI, -apple-system, BlinkMacSystemFont\" />", theme, StringComparison.Ordinal);
         Assert.Contains("<Style Selector=\"Button.praxis-create:focus\">", theme, StringComparison.Ordinal);
         Assert.Contains("<Setter Property=\"BorderBrush\" Value=\"#A0A0A0\" />", theme, StringComparison.Ordinal);
         Assert.Contains("<Style Selector=\"TextBlock.praxis-compact-tooltip\">", theme, StringComparison.Ordinal);
